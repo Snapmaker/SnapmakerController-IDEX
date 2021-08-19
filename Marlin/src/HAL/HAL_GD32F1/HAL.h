@@ -103,7 +103,7 @@
 #elif SERIAL_PORT == 5
   #define MYSERIAL0 MSerial5
 #endif
-#define MYSERIAL1 MYSERIAL0
+
 #ifdef SERIAL_PORT_2
   #if !WITHIN(SERIAL_PORT_2, -1, 5)
     #error "SERIAL_PORT_2 must be from -1 to 5"
@@ -128,6 +128,7 @@
   #endif
 #else
   #define NUM_SERIAL 1
+  #define MYSERIAL1 MYSERIAL0
 #endif
 
 #if defined(HMI_SERIAL_PORT)

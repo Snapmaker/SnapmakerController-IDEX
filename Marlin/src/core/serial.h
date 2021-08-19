@@ -181,7 +181,7 @@ void SERIAL_PRINTLN(T x, U y) { SERIAL_IMPL.println(x, y); }
 
 // Flush the serial port
 inline void SERIAL_FLUSH()    { SERIAL_IMPL.flush(); }
-inline void SERIAL_FLUSHTX()  { SERIAL_IMPL.flushTX(); }
+inline void SERIAL_FLUSHTX()  { SERIAL_IMPL.flush(); }
 
 // Print a single PROGMEM string to serial
 void serialprintPGM(PGM_P str);
