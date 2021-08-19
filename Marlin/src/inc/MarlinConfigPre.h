@@ -48,15 +48,8 @@
 
 #include "Conditionals_LCD.h"
 
-#ifndef __MARLIN_DEPS__
-  #include HAL_PATH(../HAL, inc/Conditionals_LCD.h)
-#endif
 
 #include "../core/drivers.h"
 #include "../../Configuration_adv.h"
 
 #include "Conditionals_adv.h"
-
-#ifndef __MARLIN_DEPS__
-  #include HAL_PATH(../HAL, inc/Conditionals_adv.h)
-#endif
