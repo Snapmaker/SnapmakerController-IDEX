@@ -199,3 +199,23 @@ extern const uint8 boardUsedPins[BOARD_NR_USED_PINS] __FLASH__ = {
 	//DEFINE_HWSERIAL_UART(Serial3, 4);
 	//DEFINE_HWSERIAL_UART(Serial4, 5);
 #endif
+
+#ifdef __cplusplus
+  extern "C" { /* C-declarations for C++ */
+#endif
+
+__weak void __irq_eth() {
+
+}
+
+__weak void __irq_eth_wkup() {
+
+}
+
+__weak void __irq_otg_fs() {
+
+}
+
+#ifdef __cplusplus
+  } /* C-declarations for C++ */
+#endif

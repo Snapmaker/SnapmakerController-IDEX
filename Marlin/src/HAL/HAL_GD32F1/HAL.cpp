@@ -280,7 +280,7 @@ void HAL_adc_init(void) {
 }
 
 void HAL_adc_start_conversion(const uint8_t adc_pin) {
-  TEMP_PINS pin_index;
+  TEMP_PINS pin_index = TEMP_0;
   switch (adc_pin) {
     #if HAS_TEMP_ADC_0
       case TEMP_0_PIN: pin_index = TEMP_0; break;
@@ -325,6 +325,7 @@ inline uint32_t SaveSR(void)
 	"CPSID I\n"
 	"bx lr"
 	);
+  return 0;
 }
 
 inline void RestoreSR(uint32_t Sr)

@@ -454,5 +454,46 @@ uint8_t Canbus2ParseData(uint32_t *ID, uint8_t *IDType, uint8_t *FrameType, uint
   return FMI;
 }
 
+/*
+ * Interrupt handlers.
+ */
+#ifdef __cplusplus
+  extern "C" { /* C-declarations for C++ */
+#endif
+
+__weak void __irq_can1_tx() {
+
+}
+
+__weak void __irq_can1_rx0() {
+  
+}
+
+__weak void __irq_can1_rx1() {
+  
+}
+
+__weak void __irq_can1_sce() {
+  
+}
+
+__weak void __irq_can2_tx() {
+  
+}
+
+__weak void __irq_can2_rx0() {
+  
+}
+
+__weak void __irq_can2_rx1() {
+  
+}
+
+__weak void __irq_can2_sce() {
+  
+}
+#ifdef __cplusplus
+  } /* C-declarations for C++ */
+#endif
 
 #endif // def __GD32F1__

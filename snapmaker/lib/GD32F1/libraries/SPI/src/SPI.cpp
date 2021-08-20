@@ -763,6 +763,7 @@ static spi_baud_rate determine_baud_rate(spi_dev *dev, uint32_t freq) {
     {
     case RCC_APB2: clock = STM32_PCLK2; break; // 72 Mhz
     case RCC_APB1: clock = STM32_PCLK1; break; // 36 Mhz
+    default: break; // 36 Mhz
     }
     clock /= 2;
     i = 0;

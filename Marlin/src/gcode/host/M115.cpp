@@ -62,7 +62,7 @@ void GcodeSuite::M115() {
   #if ENABLED(EXTENDED_CAPABILITIES_REPORT)
 
     // The port that sent M115
-    serial_index_t port = queue.ring_buffer.command_port();
+    // serial_index_t port = queue.ring_buffer.command_port();
 
     // PAREN_COMMENTS
     TERN_(PAREN_COMMENTS, cap_line(PSTR("PAREN_COMMENTS"), true));
