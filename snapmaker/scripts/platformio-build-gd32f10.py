@@ -163,6 +163,7 @@ env.Append(
         "MCU_%s" % mcu[0:10].upper(),
         "__STM32F1__",
         "__GD32F1__",
+        # "USE_STDPERIPH_DRIVER",
         "BOARD_%s" % variant,
         ("F_CPU", "$BOARD_F_CPU"),
         ("VECT_TAB_ADDR", get_vector_tab_addr(board_name, upload_protocol))

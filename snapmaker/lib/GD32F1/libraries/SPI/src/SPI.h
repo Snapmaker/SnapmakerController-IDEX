@@ -157,16 +157,6 @@ private:
 };
 
 
-/*
-    Should move this to within the class once tested out, just for tidyness
-*/
-static uint8_t ff = 0XFF;
-static void (*_spi1_this);
-static void (*_spi2_this);
-#if BOARD_NR_SPI >= 3
-static void (*_spi3_this);
-#endif
-
 /**
  * @brief Wirish SPI interface.
  *
@@ -402,6 +392,9 @@ private:
 
 	SPISettings _settings[BOARD_NR_SPI];
 	SPISettings *_currentSetting;
+/*
+    Should move this to within the class once tested out, just for tidyness
+*/
 
 	void updateSettings(void);
     /*
@@ -423,6 +416,13 @@ private:
 	uint8_t dataMode;
 	BitOrder bitOrder;
 	*/
+public:
+  uint8_t ff = 0XFF;
+  static void (*_spi1_this);
+  static void (*_spi2_this);
+  #if BOARD_NR_SPI >= 3
+  static void (*_spi3_this);
+  #endif
 };
 
 

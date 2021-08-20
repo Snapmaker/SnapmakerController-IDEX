@@ -99,19 +99,19 @@ SPIClass::SPIClass(uint32 spi_num)
 #if BOARD_NR_SPI >= 1
     case 1:
         _currentSetting->spi_d = SPI1;
-        _spi1_this = (void*) this;						  
+        // _spi1_this = (void*) this;						  
         break;
 #endif
 #if BOARD_NR_SPI >= 2
     case 2:
         _currentSetting->spi_d = SPI2;
-        _spi2_this = (void*) this;								  
+        // _spi2_this = (void*) this;								  
         break;
 #endif
 #if BOARD_NR_SPI >= 3
     case 3:
         _currentSetting->spi_d = SPI3;
-        _spi3_this = (void*) this;								  
+        // _spi3_this = (void*) this;								  
         break;
 #endif
     default:
@@ -376,11 +376,11 @@ uint16_t SPIClass::transfer16(uint16_t data) const
     spi_rx_reg(spi_d);                   // read any previous data
     spi_tx_reg(spi_d, data>>8);          // write high byte
     while (spi_is_tx_empty(spi_d) == 0); // wait until TXE=1
-    while (spi_is_busy(spi_d) != 0);     // wait until BSY=0
+    while (spi_is_busy(spi_d) != 0) {};     // wait until BSY=0
 	uint16_t ret = spi_rx_reg(spi_d)<<8; // read and shift high byte
     spi_tx_reg(spi_d, data);             // write low byte
-    while (spi_is_tx_empty(spi_d) == 0); // wait until TXE=1
-    while (spi_is_busy(spi_d) != 0);     // wait until BSY=0
+    while (spi_is_tx_empty(spi_d) == 0) {}; // wait until TXE=1
+    while (spi_is_busy(spi_d) != 0) {};     // wait until BSY=0
 	ret += spi_rx_reg(spi_d);            // read low byte
     return ret;
 }
@@ -775,3 +775,16 @@ static spi_baud_rate determine_baud_rate(spi_dev *dev, uint32_t freq) {
 }
 
 SPIClass SPI(1);
+
+
+#ifdef __cplusplus
+  extern "C" { /* C-declarations for C++ */
+#endif
+
+__weak void __irq_spi3() {
+
+}
+
+#ifdef __cplusplus
+  } /* C-declarations for C++ */
+#endif
