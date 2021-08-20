@@ -167,3 +167,4 @@ __pycache__
 # Simulation / Native
 eeprom.dat
 imgui.ini
+snapmaker/scripts/env.txt
