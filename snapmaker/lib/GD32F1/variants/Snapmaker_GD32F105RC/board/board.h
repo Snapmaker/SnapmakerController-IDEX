@@ -48,8 +48,8 @@
 
 // USARTS
 #define BOARD_NR_USARTS         5
-#define BOARD_USART1_TX_PIN     PA9
-#define BOARD_USART1_RX_PIN     PA10
+#define BOARD_USART1_TX_PIN     PB6
+#define BOARD_USART1_RX_PIN     PB7
 
 #define BOARD_USART2_TX_PIN     PD5
 #define BOARD_USART2_RX_PIN     PD6
