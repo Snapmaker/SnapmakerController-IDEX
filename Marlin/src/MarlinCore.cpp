@@ -63,6 +63,7 @@
 #include "sd/cardreader.h"
 
 #include "lcd/marlinui.h"
+#include "../snapmaker/J1/tmc_driver.h"
 #if HAS_TOUCH_BUTTONS
   #include "lcd/touch/touch_buttons.h"
 #endif
@@ -1588,6 +1589,14 @@ void setup() {
   #endif
 
   marlin_state = MF_RUNNING;
+  // Powerup
+  OUT_WRITE(MOTOR_PWR_PIN, HIGH);
+  OUT_WRITE(HEATER_PWR_PIN, HIGH);
+  OUT_WRITE(SCREEN_PWR_PIN, HIGH);
+  OUT_WRITE(HEATER_BED_PWR_PIN, HIGH);
+
+  tmc_driver.init();
+  tmc_driver.configure_axis();
 
   SETUP_LOG("setup() completed.");
 }

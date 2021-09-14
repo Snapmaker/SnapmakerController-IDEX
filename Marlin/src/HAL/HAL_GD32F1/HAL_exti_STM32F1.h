@@ -12,6 +12,11 @@
 #define PF 5
 #define PG 6
 
+typedef enum {
+    EXTI_Falling,
+    EXTI_Rising,
+    EXTI_Rising_and_falling
+}EXTI_MODE_E;
 /**
 * ExtiInit:Exti Interrup INIT_AUTO_FAN_PIN
 * para PortIndex:GPIOA-GPIOI
@@ -19,4 +24,7 @@
 * para RisingFallingEdge:0-3,0:Falling, 1:Rising, 2:Rising and falling
 */
 void ExtiInit(uint8_t PortIndex, uint8_t PinIndex, uint8_t RisingFallingEdge) ;
-
+void ExtiInit(uint8_t pin, EXTI_MODE_E mode) ;
+void EnableExtiInterrupt(uint8_t pin);
+void DisableExtiInterrupt(uint8_t pin);
+void ExtiClearITPendingBit(uint8_t pin);

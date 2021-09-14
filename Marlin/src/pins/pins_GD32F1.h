@@ -48,41 +48,57 @@ enum BoardVer {
 #define U_MIN_PIN         -1
 #define V_MIN_PIN         -1
 #define W_MIN_PIN         -1
-#define X_STOP_PIN        PE12
-#define Y_STOP_PIN        PE12
-#define Z_STOP_PIN        PE12
+
+#define X_MIN_PIN         PB0
+#define Y_MIN_PIN         -1
+#define Z_MIN_PIN         -1
+#define X_MAX_PIN         PB1
+#define Y_MAX_PIN         PC5
+#define Z_MAX_PIN         PA15
+
 #define Z_MIN_PROBE_PIN   -1 
 
 //
 // Steppers
 //
-#define X_STEP_PIN         PC6
-#define X_DIR_PIN          PD15
-#define X_ENABLE_PIN       PA3
+#define X_STEP_PIN         PE8
+#define X_DIR_PIN          PE7
+#define X_ENABLE_PIN       PE9
 
-#define Y_STEP_PIN         PB4
-#define Y_DIR_PIN          PB3
-#define Y_ENABLE_PIN       PB5
+#define X2_STEP_PIN        PE11
+#define X2_DIR_PIN         PE10
+#define X2_ENABLE_PIN      PE12
 
-#define Z_STEP_PIN         PB7
-#define Z_DIR_PIN          PB6
-#define Z_ENABLE_PIN       PA2
+#define Y_STEP_PIN         PC2
+#define Y_DIR_PIN          PC1
+#define Y_ENABLE_PIN       PC3
 
-#define E0_STEP_PIN        PE14
-#define E0_DIR_PIN         PB10
-#define E0_ENABLE_PIN      PB11
+#define Z_STEP_PIN         PE5
+#define Z_DIR_PIN          PE4
+#define Z_ENABLE_PIN       PE6
+
+#define E0_STEP_PIN        PB13
+#define E0_DIR_PIN         PB12
+#define E0_ENABLE_PIN      PB14
 
 /**
  * TODO: Currently using same Enable pin to all steppers.
  */
 
-#define E1_STEP_PIN        PE13
-#define E1_DIR_PIN         PC10
-#define E1_ENABLE_PIN      PD11
+#define E1_STEP_PIN        PB10
+#define E1_DIR_PIN         PE15
+#define E1_ENABLE_PIN      PB11
 
 #define E2_STEP_PIN        -1
 #define E2_DIR_PIN         -1
 #define E2_ENABLE_PIN      -1
+
+//
+//  X Y Calibration dection
+//
+#define X0_CAL_PIN          PA7
+#define X1_CAL_PIN          PA6
+
 
 //
 // Misc. Functions
@@ -93,8 +109,8 @@ enum BoardVer {
 //
 // Heaters / Fans
 //
-#define HEATER_0_PIN       PA15   // EXTRUDER 1
-
+#define HEATER_0_PIN       PA14   // EXTRUDER 1
+#define HEATER_1_PIN       PE13   // EXTRUDER 2
 #define HEATER_BED_PIN     PA7   // BED
 
 #define LASER_PIN      PB1
@@ -105,9 +121,9 @@ enum BoardVer {
 //
 // Temperature Sensors
 //
-#define TEMP_BED_PIN       PC4   // ANALOG NUMBERING
-#define TEMP_0_PIN         PC5   // ANALOG NUMBERING
-#define TEMP_1_PIN         -1   // ANALOG NUMBERING
+#define TEMP_BED_PIN       PC0   // ANALOG NUMBERING
+#define TEMP_0_PIN         PA3   // ANALOG NUMBERING
+#define TEMP_1_PIN         PA1   // ANALOG NUMBERING
 
 //
 // Filament Switch
@@ -146,9 +162,30 @@ enum BoardVer {
 #define POWER_NORMAL_STATE  HIGH
 
 //
+// Power controls
+//
+#define MOTOR_PWR_PIN       PB8
+#define HEATER_PWR_PIN      PB9
+#define HEATER_BED_PWR_PIN  PA9
+#define SCREEN_PWR_PIN      PD4
+
+//
+// Power lost check
+//
+#define POWER_LOST_PIN      PE1
+
+//
 // Heatedbed error detect pin
 //
 #define HEATEDBED_ON_PIN  PD13
+//
+// TMC
+//
+#define STALL_GUARD_PIN  PE2
+#define TMC_SEL0_PIN     PB15
+#define TMC_SEL1_PIN     PD10
+#define TMC_SEL2_PIN     PD11
+#define TMC_STALL_GUARD_PIN PE3
 
 //
 // LCD Pins

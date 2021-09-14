@@ -78,11 +78,30 @@ void ExtiInit(uint8_t PortIndex, uint8_t PinIndex, uint8_t RisingFallingEdge)
   GPIO_EXTILineConfig(PortIndex, PinIndex);
 
   NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 0;
-  NVIC_InitStruct.NVIC_IRQChannelSubPriority = 0;
+  NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 2;
+  NVIC_InitStruct.NVIC_IRQChannelSubPriority = 2;
   NVIC_InitStruct.NVIC_IRQChannel = EXTI_IRQN[PinIndex];
   NVIC_Init(&NVIC_InitStruct);
 }
 
+// pin: PA0-PE15
+void ExtiInit(uint8_t pin,  EXTI_MODE_E mode) {
+  ExtiInit(pin/16, pin%16, mode);
+}
 
+void EnableExtiInterrupt(uint8_t pin) {
+  uint32_t exti_Line = (1 << (pin%16));
+  EXTI->PR |= exti_Line;
+  EXTI->IMR |= exti_Line;
+}
+
+void DisableExtiInterrupt(uint8_t pin) {
+  uint32_t exti_Line = (1 << (pin%16));
+  EXTI->IMR &= ~exti_Line;
+  EXTI->PR |= exti_Line;
+}
+
+void ExtiClearITPendingBit(uint8_t pin) {
+  EXTI_ClearITPendingBit(1 << (pin%16));
+}
 #endif // def __GD32F1__

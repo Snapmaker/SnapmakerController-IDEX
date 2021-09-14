@@ -111,7 +111,7 @@ void reset_stepper_drivers();    // Called by settings.load / settings.reset
   #endif
   #ifndef X2_DIR_INIT
     #define X2_DIR_INIT() SET_OUTPUT(X2_DIR_PIN)
-    #define X2_DIR_WRITE(STATE) WRITE(X2_DIR_PIN,STATE)
+    #define X2_DIR_WRITE(STATE) WRITE(X2_DIR_PIN,!(STATE))
     #define X2_DIR_READ() bool(READ(X2_DIR_PIN))
   #endif
   #define X2_STEP_INIT() SET_OUTPUT(X2_STEP_PIN)

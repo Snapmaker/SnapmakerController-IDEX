@@ -53,6 +53,7 @@
 #include "watchdog_STM32F1.h"
 
 #include "HAL_timers_STM32F1.h"
+#include "HAL_exti_STM32F1.h"
 #include "../../inc/MarlinConfigPre.h"
 
 #include "HAL_breathlight_STM32F1.h"
