@@ -10,7 +10,7 @@
 #include "HAL.h"
 // #include "src/HAL/STM32_F4_F7/ExtiInterrupt.h"
 // #include "src/jf_modules/JFMachineStatus.h"
-// #include "src/jf_modules/JFSwitchDetect.h"
+// #include "src/jf_modules/switch_detect.h"
 
 extern TMCDriver tmc_driver;
 

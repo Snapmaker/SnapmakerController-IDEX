@@ -30,6 +30,7 @@
 #include "../sd/cardreader.h"
 #include "temperature.h"
 #include "../lcd/marlinui.h"
+#include "../../../snapmaker/J1/switch_detect.h"
 
 #if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
   #include HAL_PATH(../HAL, endstop_interrupts.h)
@@ -586,6 +587,9 @@ void _O2 Endstops::report_states() {
   #elif HAS_FILAMENT_SENSOR
     print_es_state(READ(FIL_RUNOUT1_PIN) != FIL_RUNOUT1_STATE, PSTR(STR_FILAMENT_RUNOUT_SENSOR));
   #endif
+  print_es_state(switch_detect.read_e0_probe_status(), "PROBE_0");
+  print_es_state(switch_detect.read_e1_probe_status(), "PROBE_1");
+  
 
   TERN_(BLTOUCH, bltouch._reset_SW_mode());
   TERN_(JOYSTICK_DEBUG, joystick.report());

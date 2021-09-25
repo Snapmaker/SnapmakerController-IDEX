@@ -187,6 +187,16 @@ enum BoardVer {
 #define TMC_SEL2_PIN     PD11
 #define TMC_STALL_GUARD_PIN PE3
 
+// Nozzle detector adc
+#define NOZZLE_ADC_0                        PA5
+#define NOZZLE_ADC_1                        PA2
+
+//
+//  X Y Calibration dection
+//
+#define X0_CAL_PIN                          PA7
+#define X1_CAL_PIN                          PA6
+
 //
 // LCD Pins
 //
