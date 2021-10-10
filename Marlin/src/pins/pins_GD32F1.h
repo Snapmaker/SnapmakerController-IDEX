@@ -109,9 +109,9 @@ enum BoardVer {
 //
 // Heaters / Fans
 //
-#define HEATER_0_PIN       PA14   // EXTRUDER 1
-#define HEATER_1_PIN       PE13   // EXTRUDER 2
-#define HEATER_BED_PIN     PA7   // BED
+#define HEATER_0_PIN       PA13   // EXTRUDER 1
+#define HEATER_1_PIN       PE14   // EXTRUDER 2
+#define HEATER_BED_PIN     PA9   // BED
 
 #define LASER_PIN      PB1
 // #define SPINDLE_LASER_ENABLE_PIN       PB10
@@ -122,8 +122,8 @@ enum BoardVer {
 // Temperature Sensors
 //
 #define TEMP_BED_PIN       PC0   // ANALOG NUMBERING
-#define TEMP_0_PIN         PA3   // ANALOG NUMBERING
-#define TEMP_1_PIN         PA1   // ANALOG NUMBERING
+#define TEMP_0_PIN         PA1   // ANALOG NUMBERING
+#define TEMP_1_PIN         PA3   // ANALOG NUMBERING
 
 //
 // Filament Switch
@@ -166,7 +166,7 @@ enum BoardVer {
 //
 #define MOTOR_PWR_PIN       PB8
 #define HEATER_PWR_PIN      PB9
-#define HEATER_BED_PWR_PIN  PA9
+#define HEATER_BED_PWR_PIN  PA10
 #define SCREEN_PWR_PIN      PD4
 
 //
