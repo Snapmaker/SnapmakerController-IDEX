@@ -17,6 +17,12 @@ static float z_offset_cali_pos_xy[2] = {
         };
 static float z_probe_height[4];
 
+static float bed_cali_pos_xy[4][2] = {
+  {X_MAX_POS / 2, 202},
+  {4, 10 + 3},
+  {227 + 96, 10 + 3},
+  {X_MAX_POS / 2, 178},
+};
 
 /*
 * extruder_index: active extruder index of preapare end
@@ -93,6 +99,98 @@ float Calibration::probe(uint8_t axis, float distance, uint16_t feedrate) {
 
   switch_detect.disable_probe();
   return (pos_before_probe - pos_after_probe);
+}
+
+void Calibration::move_to_bed_calibration_point(uint8_t index) {
+  move.move_to_xy(bed_cali_pos_xy[index][X_AXIS], bed_cali_pos_xy[index][Y_AXIS], Z_CAIL_FEEDRATE);
+}
+
+bool Calibration::bed_leveling_probe(uint8_t extruder_index) {
+  uint32_t i;
+  uint32_t j;
+  bool process_complete;
+  uint16_t probe_feedrate;
+  float tmp_z_height;
+  float z_probe_distance;
+  float last_valid_zoffset;
+
+  // Store last valid zoffset for calibration fail
+  last_valid_zoffset = home_offset[Z_AXIS];
+  
+  set_home_offset(Z_AXIS, 0);
+
+  process_complete = true;
+
+  preapare(extruder_index);
+
+  // Probe the calibration point
+  for(i=0;i<3; i++) {
+
+    move.move_to_z(35, 200);
+    // Move to the X Y calibration position
+    move_to_bed_calibration_point(i);
+
+    z_probe_distance = 40;
+
+    // probe_feedrate = 400;
+    for(j=0;j<3;j++) {
+      while(!READ(X0_CAL_PIN));
+
+      if(j == 0) {
+        tmc_driver.configure_for_platform_calibration(162);
+        probe_feedrate = 300;
+      }
+      else {
+        // Unused, the volacity is too low
+        probe_feedrate = 60;
+      }
+      tmp_z_height = z_probe(-z_probe_distance, probe_feedrate);
+      z_probe_height[i] = current_position[Z_AXIS];
+
+      if(j == 0) 
+        tmc_driver.configure_for_platform_calibration(40);
+      
+      // Fail
+      if(tmp_z_height == -z_probe_distance) {
+        process_complete = false;
+        break;
+      }
+      else {
+        // Raise Z
+        move.move_z(5, 200);
+      }
+      // probe_feedrate = probe_feedrate / 2;
+    }
+    // z_probe_height[i] = tmp_z_height;
+    SERIAL_ECHOLNPAIR_F("Probe z height:", z_probe_height[i], 2);
+    if(process_complete == false)
+      break;
+  }
+
+  move.move_z(35, 200);
+
+  tmc_driver.disable_stall_guard();
+
+  homeaxis(X_AXIS);
+  homeaxis(Y_AXIS);
+
+  // Restore last valid zoffset
+  set_home_offset(Z_AXIS, last_valid_zoffset);
+
+  // Report
+  if(process_complete == true) {
+    SERIAL_ECHOLN("JF-Bed Level: Success!");
+    SERIAL_ECHO("JF-Bed Level Probe:");
+    SERIAL_ECHOPAIR_F("JF-0:", z_probe_height[0], 2);
+    SERIAL_ECHOPAIR_F(" 1:", z_probe_height[1], 2);
+    SERIAL_ECHOPAIR_F(" 2:", z_probe_height[2], 2);
+    SERIAL_ECHOLNPAIR_F_P(" 3:", z_probe_height[3], 2);
+    return true;
+  }
+  else {
+    SERIAL_ECHOLN("JF-Bed Level: Fail!");
+    return false;
+  }
 }
 
 /**
@@ -183,7 +281,7 @@ bool Calibration::probe_nozzle(uint8_t extruder) {
 
   move.move_to_z(35);
   move.move_to_xy(z_offset_cali_pos_xy[0], z_offset_cali_pos_xy[1], 1500);
-  
+
   z_probe_distance = 30;
   for(i=0;i<3;i++) {
     if(i == 0) {
@@ -282,3 +380,37 @@ bool Calibration::calibrate_nozzle_height() {
   return 0;
 }
 
+
+bool Calibration::calibrate_platform() {
+  float nozzle_height[4];
+  uint32_t i;
+  int32_t turn_round[4];
+  float del[4];
+  float ref;
+
+  // TODO : Need check that the nozzle is working 
+
+  if (bed_leveling_probe(0) == true) {
+    get_z_probe_height(nozzle_height);
+  } else {
+    return false;
+  }
+
+  // Set Point3 as reference
+  ref = nozzle_height[1];
+  nozzle_height[3] = nozzle_height[1];
+
+  // Greater than 0 means need to turn upper
+  for(i=0;i<4;i++) {
+    del[i] = nozzle_height[i] - ref;
+    turn_round[i] = (del[i] * 1000 / ADJUST_BED_MM_PER_STEP);
+    turn_round[i] = turn_round[i] - (turn_round[i] % 1000);
+    if((turn_round[i] > -2000) && (turn_round[i] < 2000))
+      turn_round[i] = 0;
+  }
+
+  SERIAL_ECHOLNPAIR("turn left bed round:", turn_round[0] / 1000);
+  SERIAL_ECHOLNPAIR("turn right bed round:", turn_round[2] / 1000);
+
+  return true;
+}

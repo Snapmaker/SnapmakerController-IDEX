@@ -29,6 +29,7 @@
 enum {
   CALIBRATION_Z_OFFSET, // 0
   CALIBRATION_NOZZLE_HEIGHT, // 1
+  CALIBRATION_DED_LEVEL, // 2
 };
 
 void GcodeSuite::G1029() {
@@ -41,6 +42,9 @@ void GcodeSuite::G1029() {
         break;
       case CALIBRATION_NOZZLE_HEIGHT:
         calibration.calibrate_nozzle_height();
+        break;
+      case CALIBRATION_DED_LEVEL:
+        calibration.calibrate_platform();
         break;
     }
   }
