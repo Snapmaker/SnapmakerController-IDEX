@@ -8,6 +8,7 @@
 #include "src/core/types.h"
 #include "move.h"
 #include "switch_detect.h"
+#include "tmc_driver.h"
 
 Calibration calibration;
 
@@ -160,5 +161,124 @@ bool Calibration::calibrate_z_offset() {
   }
   end();
   return true;
+}
+
+/**
+  * @brief  Probe nozzle
+  * @param  Extruder: Extruder index
+  * @retval True if probe success.
+  */
+bool Calibration::probe_nozzle(uint8_t extruder) {
+  uint32_t i;
+  bool process_complete;
+  uint16_t probe_feedrate;
+  float tmp_z_height;
+  float z_probe_distance;
+
+  // Mark calibration success
+  process_complete = true;
+
+  // Prepare for calibration
+  preapare(extruder);
+
+  move.move_to_z(35);
+  move.move_to_xy(z_offset_cali_pos_xy[0], z_offset_cali_pos_xy[1], 1500);
+  
+  z_probe_distance = 30;
+  for(i=0;i<3;i++) {
+    if(i == 0) {
+      tmc_driver.configure_for_platform_calibration(162);
+      probe_feedrate = 400;
+    }
+    else {
+      tmc_driver.configure_for_platform_calibration(70);
+      probe_feedrate = 60;
+    }
+    tmp_z_height = z_probe(-z_probe_distance, probe_feedrate);
+    // Fail
+    if(tmp_z_height == -z_probe_distance) {
+      process_complete = false;
+      break;
+    }
+    else {
+      // Save current Z height
+      z_probe_height[0] = current_position[Z_AXIS];
+      // Raise Z
+      move.move_z(5, 200);
+    }
+  }
+  tmc_driver.disable_stall_guard();
+
+  // Raise Z
+  move.move_z(35, 200);
+  active_extruder = 0;
+  homeaxis(X_AXIS);
+  active_extruder = 1;
+  homeaxis(X_AXIS);
+  active_extruder = 0;
+  homeaxis(X_AXIS);
+  
+  if(process_complete == true) {
+    SERIAL_ECHOLN("JF-Z offset calibration: Success!");
+    SERIAL_ECHO("JF-Z offset calibration Probe:");
+    SERIAL_ECHOLNPAIR_F("JF-Z offset height:", z_probe_height[0], 2);
+    return true;
+  }
+  else {
+    SERIAL_ECHOLN("JF-Z offset calibration: Fail!");
+    return false;
+  }
+}
+
+/**
+  * @brief  Get the Z probe height of the last
+  * @param  height: The buffer to store the height
+  * @retval None
+  */
+void Calibration::get_z_probe_height(float *height) {
+  height[0] = z_probe_height[0];
+  height[1] = z_probe_height[1];
+  height[2] = z_probe_height[2];
+  height[3] = z_probe_height[3];
+}
+
+/**
+  * @brief  Nozzle probe process
+  * @retval Reply data length
+  */
+bool Calibration::calibrate_nozzle_height() {
+  float nozzle_height[2][4];
+  uint32_t i;
+  int32_t turn_round;
+  float del;
+  bool result = true;
+
+  for(i=0;i<2;i++) {
+    if(probe_nozzle(i) == true) {
+      get_z_probe_height(nozzle_height[i]);
+    }
+    else {
+      result = false;
+      break;
+    }
+  }
+
+  if(result == false) {
+    SERIAL_ECHOLN("nozzle height calibration: Fail!");
+    return result;
+  }
+
+  // Caculate the deltal z. 
+  del = nozzle_height[1][0] - nozzle_height[0][0];
+  turn_round = (del * 1000 / ADJUST_NOZZLE_MM_PER_STEP);
+  turn_round = turn_round - (turn_round % 1000);
+
+  if((turn_round > -2000) && (turn_round < 2000)) {
+    turn_round = 0;
+  } else {
+    turn_round /= 1000;
+  }
+  SERIAL_ECHOLNPAIR("right nozzle height turn round:", turn_round);
+  return 0;
 }
 
