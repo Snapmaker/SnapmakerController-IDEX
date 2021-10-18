@@ -13,17 +13,38 @@
 
 Calibration calibration;
 
+static float build_plate_thickness = 5.4;
 static float z_offset_cali_pos_xy[2] = {
           X_MAX_POS / 2, 202
         };
 static float z_probe_height[4];
-
+static float xy_center[2][2];
 static float bed_cali_pos_xy[4][2] = {
   {X_MAX_POS / 2, 202},
   {4, 10 + 3},
   {227 + 96, 10 + 3},
   {X_MAX_POS / 2, 178},
 };
+static float xy_cali_pos_xy[2] = {
+  (X_MAX_POS / 2), (Y_MAX_POS / 2), 
+};
+
+/**
+  * @param  thickness:The thickness of the build plate
+  */
+void Calibration::set_build_plate_thickness(float thickness) {
+  float old_thickness = build_plate_thickness;
+  float del_thickness = thickness - old_thickness;
+  home_offset.z += del_thickness;
+  SERIAL_ECHOLNPAIR("set plate thickness:old[", build_plate_thickness, "] new[" , thickness, "]");
+  build_plate_thickness = thickness;
+  update_workspace_offset(Z_AXIS);
+  settings.save();
+}
+
+float Calibration:: get_build_plate_thickness() {
+  return build_plate_thickness;
+}
 
 /*
 * extruder_index: active extruder index of preapare end
@@ -187,6 +208,26 @@ bool Calibration::bed_leveling_probe(uint8_t extruder_index) {
     SERIAL_ECHOLN("JF-Bed Level: Fail!");
     return false;
   }
+}
+
+/**
+  * @brief  X Axis probe
+  * @param  x_distance: The distance of z to move down
+  * @param  feedrate: Feed rate of the nozzle, in mm/min
+  * @retval The probe distance(Posision before - position after)
+  */
+float Calibration::x_probe(float x_distance, uint16_t feedrate) {
+  return probe(X_AXIS, x_distance, feedrate);
+}
+
+/**
+  * @brief  Y Axis probe
+  * @param  y_distance: The distance of z to move down
+  * @param  feedrate: Feed rate of the nozzle, in mm/min
+  * @retval The probe distance(Posision before - position after)
+  */
+float Calibration::y_probe(float y_distance, uint16_t feedrate) {
+  return probe(Y_AXIS, y_distance, feedrate);
 }
 
 /**
@@ -417,4 +458,211 @@ bool Calibration::calibrate_platform() {
   SERIAL_ECHOLNPAIR("turn right bed round:", turn_round[2] / 1000);
 
   return true;
+}
+
+bool Calibration::probe_xy(uint8_t extruder_index) {
+  uint32_t i;
+  millis_t tmp_tick;
+  bool process_complete;
+  uint16_t probe_first_feedrate;
+  uint16_t probe_feedrate_slow;
+  float tmp_trigger_distance;
+  float probe_distance;
+  float x_left_trig_pos, x_right_trig_pos;
+  float y_top_trig_pos, y_bottom_trig_pos;
+  
+  if (home_offset[Z_AXIS] == 0) {
+    SERIAL_ECHOLN("Calibrate XY after calibrating Z offset");
+    return false;
+  }
+  // Mark calibration success
+  process_complete = true;
+
+  // Extruder 0 calibration 
+  // Prepare for calibration
+  preapare(extruder_index);
+
+  move.move_to_z(15 - workspace_offset.z);
+  move.move_to_xy(xy_cali_pos_xy[0], xy_cali_pos_xy[1], 1500);
+  // Move down the calibration hole
+  tmc_driver.configure_for_platform_calibration(162);
+  move.move_z(-(18 + get_build_plate_thickness()), 300);
+
+  do {
+    // X calibration left
+    probe_first_feedrate = 1200;
+    probe_feedrate_slow = 150;
+    probe_distance = 40;
+    tmc_driver.configure_for_xy_calibration(38,52);
+    tmp_tick = millis() + 50;
+    while(tmp_tick > millis());
+    for(i=0;i<3;i++) {
+      if(i == 0) {
+        tmp_trigger_distance = x_probe(-probe_distance, probe_first_feedrate);
+        tmc_driver.disable_stall_guard();
+      }
+      else {
+        tmp_trigger_distance = x_probe(-probe_distance, probe_feedrate_slow);
+        probe_feedrate_slow = probe_feedrate_slow / 2;
+      }
+      // Fail
+      if(tmp_trigger_distance == probe_distance) {
+        process_complete = false;
+        break;
+      }
+      else {
+        // Track back
+        x_left_trig_pos = current_position[X_AXIS];
+        move.move_x(tmp_trigger_distance / 2, 1500);
+      }
+    }
+    if(process_complete == false)
+      break;
+
+    // X calibration right
+    move.move_to_xy(xy_cali_pos_xy[0], xy_cali_pos_xy[1], 1500);
+    probe_feedrate_slow = 150;
+    probe_distance = 40;
+    tmc_driver.configure_for_xy_calibration(38,52);
+    tmp_tick = millis() + 50;
+    while(tmp_tick > millis());
+    for(i=0;i<3;i++) {
+      if(i == 0) {
+        tmp_trigger_distance = x_probe(probe_distance, probe_first_feedrate);
+        tmc_driver.disable_stall_guard();
+      }
+      else {
+        tmp_trigger_distance = x_probe(probe_distance, probe_feedrate_slow);
+        probe_feedrate_slow = probe_feedrate_slow / 2;
+      }
+      // Fail
+      if(tmp_trigger_distance == -probe_distance) {
+        process_complete = false;
+        break;
+      }
+      else {
+        // Track back
+        x_right_trig_pos = current_position[X_AXIS];
+        move.move_x(tmp_trigger_distance / 2, 1500);
+      }
+    }
+    if(process_complete == false)
+      break;
+
+    // Y calibration bottom
+    move.move_to_xy(xy_cali_pos_xy[0], xy_cali_pos_xy[1], 150);
+    probe_feedrate_slow = 150;
+    probe_distance = 40;
+    tmc_driver.configure_for_xy_calibration(38, 52);
+    tmp_tick = millis() + 50;
+    while(tmp_tick > millis());
+    for(i=0;i<3;i++) {
+      if(i == 0) {
+        tmp_trigger_distance = y_probe(-probe_distance, probe_first_feedrate);
+        tmc_driver.disable_stall_guard();
+      }
+      else {
+        tmp_trigger_distance = y_probe(-probe_distance, probe_feedrate_slow);
+        probe_feedrate_slow = probe_feedrate_slow / 2;
+      }
+      // Fail
+      if(tmp_trigger_distance == probe_distance) {
+        process_complete = false;
+        break;
+      }
+      else {
+        // Track back
+        y_bottom_trig_pos = current_position[Y_AXIS];
+        move.move_y(tmp_trigger_distance / 2, 1500);
+      }        
+    }
+    if(process_complete == false)
+      break;
+
+    // Y calibration top
+    move.move_to_xy(xy_cali_pos_xy[0], xy_cali_pos_xy[1], 1500);
+    probe_feedrate_slow = 150;
+    probe_distance = 40;
+    tmc_driver.configure_for_xy_calibration(38,52);
+    tmp_tick = millis() + 50;
+    while(tmp_tick > millis());
+    for(i=0;i<3;i++) {
+      if(i == 0) {
+        tmp_trigger_distance = y_probe(probe_distance, probe_first_feedrate);
+        tmc_driver.disable_stall_guard();
+      }
+      else {
+        tmp_trigger_distance = y_probe(probe_distance, probe_feedrate_slow);
+        probe_feedrate_slow = probe_feedrate_slow / 2;
+      }
+      // Fail
+      if(tmp_trigger_distance == -probe_distance) {
+        process_complete = false;
+        break;
+      }
+      else {
+        // Track back
+        y_top_trig_pos = current_position[Y_AXIS];
+        move.move_y(tmp_trigger_distance / 2, 1500);
+      }
+    }
+  }while(0);
+
+  tmc_driver.configure_for_xy_calibration(1, 1);
+  // Raise Z
+  move.move_z(20);
+  x_home();
+  if(process_complete == true) {
+    xy_center[extruder_index][0] = (x_left_trig_pos + x_right_trig_pos) / 2;
+    xy_center[extruder_index][1] = (y_top_trig_pos + y_bottom_trig_pos) / 2;
+    if(extruder_index == 0)
+      SERIAL_ECHOLN("JF-Extruder0 XY probe: Success!");
+    else
+      SERIAL_ECHOLN("JF-Extruder1 XY probe: Success!");
+    return true;
+  }
+  else {
+    if(extruder_index == 0)
+      SERIAL_ECHOLN("JF-Extruder0 XY probe: Fail!");
+    else
+      SERIAL_ECHOLN("JF-Extruder1 XY probe: Fail!");
+    return false;
+  }
+}
+
+bool Calibration::calibrate_xy() {
+  bool process_complete;
+  uint8_t old_active_extruder = active_extruder;
+
+  process_complete = true;
+  hotend_offset[1].y = 0;
+  if(probe_xy(0) == false) {
+    process_complete = false;
+  }
+  else {
+    if(probe_xy(1) == false)
+      process_complete = false;
+  }
+
+  end();
+  tool_change(old_active_extruder, true);
+  if(process_complete == true) {
+    SERIAL_ECHOLN("JF-XY calibration: Success!");
+    SERIAL_ECHOPAIR_F("JF-XY Extruder1:", xy_center[0][0]);
+    SERIAL_ECHOLNPAIR_F(" ", xy_center[0][1]);
+    SERIAL_ECHOPAIR_F("JF-XY Extruder2:", xy_center[1][0]);
+    SERIAL_ECHOLNPAIR_F(" ", xy_center[1][1]);
+
+    hotend_offset[1].x -= (xy_center[1][0] - xy_center[0][0]);
+    hotend_offset[1].y -= (xy_center[1][1] - xy_center[0][1]);
+    SERIAL_ECHOPAIR_F("JF-Extruder2 hotend offset:", hotend_offset[1].x);
+    SERIAL_ECHOPAIR_F(" ", hotend_offset[1].y);
+    // Store to eeprom
+    settings.save();
+    return true;
+  }
+  else {
+    SERIAL_ECHOLN("JF-XY calibration: Fail!");
+    return false;
+  }
 }

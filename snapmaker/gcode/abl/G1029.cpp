@@ -30,6 +30,8 @@ enum {
   CALIBRATION_Z_OFFSET, // 0
   CALIBRATION_NOZZLE_HEIGHT, // 1
   CALIBRATION_DED_LEVEL, // 2
+  CALIBRATION_XY, //3
+  CALIBRATION_PLATE_THICKNESS, // 4
 };
 
 void GcodeSuite::G1029() {
@@ -45,6 +47,13 @@ void GcodeSuite::G1029() {
         break;
       case CALIBRATION_DED_LEVEL:
         calibration.calibrate_platform();
+        break;
+      case CALIBRATION_XY:
+        calibration.calibrate_xy();
+      case CALIBRATION_PLATE_THICKNESS:
+        if(parser.seenval('F')) {
+          calibration.set_build_plate_thickness(parser.value_float());
+        }
         break;
     }
   }

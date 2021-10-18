@@ -18,10 +18,16 @@ class Calibration
     bool calibrate_z_offset();
     bool calibrate_nozzle_height();
     bool calibrate_platform();
+    bool calibrate_xy();
+    void set_build_plate_thickness(float thickness);
+    float get_build_plate_thickness();
   private:
     bool probe_nozzle(uint8_t extruder);
+    bool probe_xy(uint8_t extruder_index);
     void get_z_probe_height(float *height);
     void preapare(uint8_t extruder_index);
+    float x_probe(float x_distance, uint16_t feedrate);
+    float y_probe(float y_distance, uint16_t feedrate);
     float z_probe(float z_distance, uint16_t feedrate);
     float probe(uint8_t axis, float distance, uint16_t feedrate);
     void x_home();
