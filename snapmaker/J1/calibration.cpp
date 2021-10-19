@@ -4,6 +4,7 @@
 #include "src/module/planner.h"
 #include "src/module/stepper.h"
 #include "src/module/settings.h"
+#include "src/module/tool_change.h"
 #include "src/core/macros.h"
 #include "src/core/types.h"
 #include "move.h"
@@ -44,10 +45,8 @@ void Calibration::preapare(uint8_t extruder_index) {
       move.move_z(15, 1000);
   }
 
-  active_extruder = !extruder_index;
-  homeaxis(X_AXIS);
-  active_extruder = extruder_index;
-  homeaxis(X_AXIS);
+  x_home();
+  tool_change(extruder_index, true);
 
   homeaxis(Y_AXIS);
 
@@ -61,10 +60,7 @@ void Calibration::preapare(uint8_t extruder_index) {
 
 void Calibration::end() {
   endstops.enable(true);
-  active_extruder = 1;
-  homeaxis(X_AXIS);
-  active_extruder = 0;
-  homeaxis(X_AXIS);
+  x_home();
   homeaxis(Y_AXIS);
   restore_feedrate_and_scaling();
 }
@@ -203,6 +199,13 @@ float Calibration::z_probe(float z_distance, uint16_t feedrate) {
   return probe(Z_AXIS, z_distance, feedrate);
 }
 
+void Calibration::x_home() {
+  tool_change(1, true);
+  homeaxis(X_AXIS);
+  tool_change(0, true);
+  homeaxis(X_AXIS);
+}
+
 bool Calibration::calibrate_z_offset() {
   uint32_t i;
   bool process_complete;
@@ -210,7 +213,7 @@ bool Calibration::calibrate_z_offset() {
   float tmp_z_height;
   float z_probe_distance;
   float last_valid_zoffset;
-
+  uint8_t old_active_extruder = active_extruder;
   // Store last valid zoffset for calibration fail
   last_valid_zoffset = home_offset[Z_AXIS];
   set_home_offset(Z_AXIS, 0);
@@ -258,6 +261,7 @@ bool Calibration::calibrate_z_offset() {
     SERIAL_ECHOLN("JF-Z offset calibration: Fail!");
   }
   end();
+  tool_change(old_active_extruder, true);
   return true;
 }
 

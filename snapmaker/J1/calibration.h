@@ -24,6 +24,7 @@ class Calibration
     void preapare(uint8_t extruder_index);
     float z_probe(float z_distance, uint16_t feedrate);
     float probe(uint8_t axis, float distance, uint16_t feedrate);
+    void x_home();
     bool bed_leveling_probe(uint8_t extruder_index);
     void move_to_bed_calibration_point(uint8_t index);
     void end();
