@@ -293,7 +293,7 @@ bool Calibration::calibrate_z_offset() {
     SERIAL_ECHOLNPAIR_F("JF-Z offset height:", z_probe_height[0], 2);
 
     // Set Z offset
-    set_home_offset(Z_AXIS, -z_probe_height[0]);
+    set_home_offset(Z_AXIS, -(z_probe_height[0] + get_build_plate_thickness()));
     // Store to eeprom
     settings.save();
   }
