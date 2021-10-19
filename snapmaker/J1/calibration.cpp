@@ -395,7 +395,7 @@ bool Calibration::calibrate_nozzle_height() {
   int32_t turn_round;
   float del;
   bool result = true;
-
+  uint8_t old_active_extruder = active_extruder;
   for(i=0;i<2;i++) {
     if(probe_nozzle(i) == true) {
       get_z_probe_height(nozzle_height[i]);
@@ -405,7 +405,8 @@ bool Calibration::calibrate_nozzle_height() {
       break;
     }
   }
-
+  end();
+  tool_change(old_active_extruder, true);
   if(result == false) {
     SERIAL_ECHOLN("nozzle height calibration: Fail!");
     return result;
@@ -432,7 +433,7 @@ bool Calibration::calibrate_platform() {
   int32_t turn_round[4];
   float del[4];
   float ref;
-
+  uint8_t old_active_extruder = active_extruder;
   // TODO : Need check that the nozzle is working 
 
   if (bed_leveling_probe(0) == true) {
@@ -440,7 +441,8 @@ bool Calibration::calibrate_platform() {
   } else {
     return false;
   }
-
+  end();
+  tool_change(old_active_extruder, true);
   // Set Point3 as reference
   ref = nozzle_height[1];
   nozzle_height[3] = nozzle_height[1];
