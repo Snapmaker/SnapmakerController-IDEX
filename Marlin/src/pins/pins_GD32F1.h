@@ -77,17 +77,17 @@ enum BoardVer {
 #define Z_DIR_PIN          PE4
 #define Z_ENABLE_PIN       PE6
 
-#define E0_STEP_PIN        PB13
-#define E0_DIR_PIN         PB12
-#define E0_ENABLE_PIN      PB14
+#define E0_STEP_PIN        PB10
+#define E0_DIR_PIN         PE15
+#define E0_ENABLE_PIN      PB11
 
 /**
  * TODO: Currently using same Enable pin to all steppers.
  */
 
-#define E1_STEP_PIN        PB10
-#define E1_DIR_PIN         PE15
-#define E1_ENABLE_PIN      PB11
+#define E1_STEP_PIN        PB13
+#define E1_DIR_PIN         PB12
+#define E1_ENABLE_PIN      PB14
 
 #define E2_STEP_PIN        -1
 #define E2_DIR_PIN         -1
