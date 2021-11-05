@@ -50,10 +50,10 @@ enum BoardVer {
 #define W_MIN_PIN         -1
 
 #define X_MIN_PIN         PB0
-#define Y_MIN_PIN         -1
+#define Y_MIN_PIN         PC5
 #define Z_MIN_PIN         -1
-#define X_MAX_PIN         PB1
-#define Y_MAX_PIN         PC5
+#define X_MAX_PIN         PB2
+#define Y_MAX_PIN         -1
 #define Z_MAX_PIN         PA15
 
 #define Z_MIN_PROBE_PIN   -1 
