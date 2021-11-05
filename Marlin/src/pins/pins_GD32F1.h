@@ -109,7 +109,7 @@ enum BoardVer {
 //
 // Heaters / Fans
 //
-#define HEATER_0_PIN       PA13   // EXTRUDER 1
+#define HEATER_0_PIN       PE13   // EXTRUDER 1
 #define HEATER_1_PIN       PE14   // EXTRUDER 2
 #define HEATER_BED_PIN     PA9   // BED
 
