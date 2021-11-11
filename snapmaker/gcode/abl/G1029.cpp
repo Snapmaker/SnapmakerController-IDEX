@@ -56,5 +56,8 @@ void GcodeSuite::G1029() {
         }
         break;
     }
+  } else if(parser.seenval('P')) {
+    uint8_t number = parser.value_byte();
+    calibration.calibrate_move_xy(number);
   }
 }

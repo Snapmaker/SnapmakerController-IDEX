@@ -664,3 +664,10 @@ bool Calibration::calibrate_xy() {
     return false;
   }
 }
+
+bool Calibration::calibrate_move_xy(uint8_t number) {
+  if (number < sizeof(calibration_position_xy) / sizeof(calibration_position_xy[0])) {
+    move.move_to_xy(calibration_position_xy[number][0], calibration_position_xy[number][1], 1500);
+  }
+  return true;
+}

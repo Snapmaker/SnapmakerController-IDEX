@@ -19,6 +19,7 @@ class Calibration
     bool calibrate_nozzle_height();
     bool calibrate_platform();
     bool calibrate_xy();
+    bool calibrate_move_xy(uint8_t number);
     void set_build_plate_thickness(float thickness);
     float get_build_plate_thickness();
   private:
