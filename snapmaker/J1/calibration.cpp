@@ -13,20 +13,16 @@
 
 Calibration calibration;
 
-static float build_plate_thickness = 5.4;
-static float z_offset_cali_pos_xy[2] = {
-          X_MAX_POS / 2, 202
-        };
+static float build_plate_thickness = 5.2;
 static float z_probe_height[4];
 static float xy_center[2][2];
-static float bed_cali_pos_xy[4][2] = {
-  {X_MAX_POS / 2, 202},
-  {4, 10 + 3},
-  {227 + 96, 10 + 3},
+static float calibration_position_xy[6][2] = {
+  {(X_MAX_POS / 2), (Y_MAX_POS / 2)}, 
+  {X_MAX_POS / 2, 202 - 6},
+  {42, 8},
+  {272, 8},
   {X_MAX_POS / 2, 178},
-};
-static float xy_cali_pos_xy[2] = {
-  (X_MAX_POS / 2), (Y_MAX_POS / 2), 
+  {X_MAX_POS / 2, 178},
 };
 
 /**
@@ -119,7 +115,7 @@ float Calibration::probe(uint8_t axis, float distance, uint16_t feedrate) {
 }
 
 void Calibration::move_to_bed_calibration_point(uint8_t index) {
-  move.move_to_xy(bed_cali_pos_xy[index][X_AXIS], bed_cali_pos_xy[index][Y_AXIS], Z_CAIL_FEEDRATE);
+  move.move_to_xy(calibration_position_xy[index][X_AXIS], calibration_position_xy[index][Y_AXIS], Z_CAIL_FEEDRATE);
 }
 
 bool Calibration::bed_leveling_probe(uint8_t extruder_index) {
@@ -145,7 +141,7 @@ bool Calibration::bed_leveling_probe(uint8_t extruder_index) {
 
     move.move_to_z(35, 200);
     // Move to the X Y calibration position
-    move_to_bed_calibration_point(i);
+    move_to_bed_calibration_point(i+1);
 
     z_probe_distance = 40;
 
@@ -265,7 +261,7 @@ bool Calibration::calibrate_z_offset() {
   preapare(0);
 
   move.move_to_z(15);
-  move.move_to_xy(z_offset_cali_pos_xy[0], z_offset_cali_pos_xy[1], 3000);
+  move.move_to_xy(calibration_position_xy[1][0], calibration_position_xy[1][1], 3000);
   probe_feedrate = 150;
   z_probe_distance = 25;
   for(i=0;i<3;i++) {
@@ -324,8 +320,8 @@ bool Calibration::probe_nozzle(uint8_t extruder) {
   // Prepare for calibration
   preapare(extruder);
 
-  move.move_to_z(35);
-  move.move_to_xy(z_offset_cali_pos_xy[0], z_offset_cali_pos_xy[1], 1500);
+  move.move_to_z(20);
+  move.move_to_xy(calibration_position_xy[1][0], calibration_position_xy[1][1], 1500);
 
   z_probe_distance = 30;
   for(i=0;i<3;i++) {
@@ -444,7 +440,7 @@ bool Calibration::calibrate_platform() {
   end();
   tool_change(old_active_extruder, true);
   // Set Point3 as reference
-  ref = nozzle_height[1];
+  ref = nozzle_height[0];
   nozzle_height[3] = nozzle_height[1];
 
   // Greater than 0 means need to turn upper
@@ -456,7 +452,7 @@ bool Calibration::calibrate_platform() {
       turn_round[i] = 0;
   }
 
-  SERIAL_ECHOLNPAIR("turn left bed round:", turn_round[0] / 1000);
+  SERIAL_ECHOLNPAIR("turn left bed round:", turn_round[1] / 1000);
   SERIAL_ECHOLNPAIR("turn right bed round:", turn_round[2] / 1000);
 
   return true;
@@ -485,7 +481,7 @@ bool Calibration::probe_xy(uint8_t extruder_index) {
   preapare(extruder_index);
 
   move.move_to_z(15 - workspace_offset.z);
-  move.move_to_xy(xy_cali_pos_xy[0], xy_cali_pos_xy[1], 1500);
+  move.move_to_xy(calibration_position_xy[0][0], calibration_position_xy[0][1], 1500);
   // Move down the calibration hole
   tmc_driver.configure_for_platform_calibration(162);
   move.move_z(-(18 + get_build_plate_thickness()), 300);
@@ -522,7 +518,7 @@ bool Calibration::probe_xy(uint8_t extruder_index) {
       break;
 
     // X calibration right
-    move.move_to_xy(xy_cali_pos_xy[0], xy_cali_pos_xy[1], 1500);
+    move.move_to_xy(calibration_position_xy[0][0], calibration_position_xy[0][1], 1500);
     probe_feedrate_slow = 150;
     probe_distance = 40;
     tmc_driver.configure_for_xy_calibration(38,52);
@@ -552,7 +548,7 @@ bool Calibration::probe_xy(uint8_t extruder_index) {
       break;
 
     // Y calibration bottom
-    move.move_to_xy(xy_cali_pos_xy[0], xy_cali_pos_xy[1], 150);
+    move.move_to_xy(calibration_position_xy[0][0], calibration_position_xy[0][1], 150);
     probe_feedrate_slow = 150;
     probe_distance = 40;
     tmc_driver.configure_for_xy_calibration(38, 52);
@@ -582,7 +578,7 @@ bool Calibration::probe_xy(uint8_t extruder_index) {
       break;
 
     // Y calibration top
-    move.move_to_xy(xy_cali_pos_xy[0], xy_cali_pos_xy[1], 1500);
+    move.move_to_xy(calibration_position_xy[0][0], calibration_position_xy[0][1], 1500);
     probe_feedrate_slow = 150;
     probe_distance = 40;
     tmc_driver.configure_for_xy_calibration(38,52);
