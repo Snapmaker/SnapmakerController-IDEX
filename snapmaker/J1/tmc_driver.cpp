@@ -225,7 +225,7 @@ void TMCDriver::set_reg_value(uint8_t index, uint8_t reg, uint32_t value) {
 void TMCDriver::configure_axis() {
   uint32_t reg_value;
 
-  reg_value = (4 << 16) | (16 << 8) | (6);
+  reg_value = (4 << 16) | (20 << 8) | (6);
 
   // X Axis
   for(int i=0;i<2;i++) {
@@ -237,9 +237,8 @@ void TMCDriver::configure_axis() {
     // set_reg_value(i, R_GCONF, 0x101);
     set_reg_value(i, R_SGTHRS, 65);
   }
-
   // Y Axis
-  reg_value = (7 << 16) | (25 << 8) | (16);
+  reg_value = (7 << 16) | (20 << 8) | (16);
   set_reg_value(2, R_GCONF, 0x141);
   set_reg_value(2, R_TCOOLTHRS, 0x300);
   set_reg_value(2, R_TPWMTHRS, 8);
@@ -248,7 +247,7 @@ void TMCDriver::configure_axis() {
   set_reg_value(2, R_SGTHRS, 5);
 
   // Z Axis
-  reg_value = (7 << 16) | (28 << 8) | (16);
+  reg_value = (7 << 16) | (25 << 8) | (16);
   set_reg_value(3, R_GCONF, 0x141);
   set_reg_value(3, R_TCOOLTHRS, 0x300);
   set_reg_value(3, R_TPWMTHRS, 16);
@@ -256,7 +255,7 @@ void TMCDriver::configure_axis() {
   // set_reg_value(3, R_GCONF, 0x101);
   set_reg_value(3, R_SGTHRS, 5);
 
-  reg_value = (7 << 16) | (15 << 8) | (16);
+  reg_value = (7 << 16) | (20 << 8) | (16);
   // Extrder left
   set_reg_value(4, R_GCONF, 0x141);
   set_reg_value(4, R_IHOLD_IRUN, reg_value);
@@ -461,7 +460,7 @@ void TMCDriver::trigger_stall_guard() {
   * @param  level: Level, 0-4
   * @retval None
   */
-void TMCDriver::set_sta_guar_level(uint8_t level) {
+void TMCDriver::set_stall_guard_level(uint8_t level) {
   print_stall_guard_level = level;
 }
 

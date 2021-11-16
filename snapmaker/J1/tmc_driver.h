@@ -35,7 +35,7 @@ public:
   static void configure_for_idle();
   static void configure_for_aixs_test(uint8_t index, uint8_t sg_value);
   static void stall_guard_deinit(uint8_t index);
-  static void set_sta_guar_level(uint8_t level);
+  static void set_stall_guard_level(uint8_t level);
   static void update_stepper_tick(uint32_t tick);
   static void set_stepper_tick_threshold(uint32_t tick);
   static bool check_stepper_tick();
