@@ -1911,11 +1911,11 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
  * Case Light requirements
  */
 #if NEED_CASE_LIGHT_PIN
-  #if !PIN_EXISTS(CASE_LIGHT)
-    #error "CASE_LIGHT_ENABLE requires CASE_LIGHT_PIN, CASE_LIGHT_USE_NEOPIXEL, or CASE_LIGHT_USE_RGB_LED."
-  #elif CASE_LIGHT_PIN == FAN_PIN
-    #error "CASE_LIGHT_PIN conflicts with FAN_PIN. Resolve before continuing."
-  #endif
+  // #if !PIN_EXISTS(CASE_LIGHT)
+    // #error "CASE_LIGHT_ENABLE requires CASE_LIGHT_PIN, CASE_LIGHT_USE_NEOPIXEL, or CASE_LIGHT_USE_RGB_LED."
+  // #elif CASE_LIGHT_PIN == FAN_PIN
+  //   #error "CASE_LIGHT_PIN conflicts with FAN_PIN. Resolve before continuing."
+  // #endif
 #endif
 
 /**
