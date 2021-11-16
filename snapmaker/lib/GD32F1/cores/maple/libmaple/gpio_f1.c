@@ -166,6 +166,7 @@ void afio_init(void) {
     rcc_reset_dev(RCC_AFIO);
     afio_remap(AFIO_REMAP_USART2);
     afio_remap(AFIO_REMAP_USART1);
+    afio_remap(AFIO_REMAP_USART3_FULL);
     afio_remap(AFIO_REMAP_TIM3_FULL);
     AFIO_BASE->MAPR &= ~(7 << 24);
     AFIO_BASE->MAPR |= (2 << 24);
