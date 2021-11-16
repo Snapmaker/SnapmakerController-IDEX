@@ -120,12 +120,10 @@ extern const stm32_pin_info PIN_MAP[BOARD_NR_GPIO_PINS] = {
   {&gpioc,   NULL, &adc1,  3, 0,   13}, /* PC3 */
   {&gpioc,   NULL, &adc1,  4, 0,   14}, /* PC4 */
   {&gpioc,   NULL, &adc1,  5, 0,   15}, /* PC5 */
-  {&gpioc,   NULL, NULL,  6, 0, ADCx}, /* PC6 I2S2_MCK/SDIO_D6*/	
-//{&gpioc, &timer8, NULL,  7, 2, ADCx}, /* PC7 I2S3_MCK/SDIO_D7*/
-  //{&gpioc, &timer8, NULL,  8, 3, ADCx}, /* PC8 SDIO_D0*/
-  {&gpioc, NULL, NULL,  7, 0, ADCx}, /* PC7 I2S3_MCK/SDIO_D7*/
-  {&gpioc, NULL, NULL,  8, 0, ADCx}, /* PC8 SDIO_D0*/
-  {&gpioc, NULL, NULL,  9, 0, ADCx}, /* PC9 SDIO_D1*/
+  {&gpioc,   &timer3, NULL,  6, 1, ADCx}, /* PC6 I2S2_MCK/SDIO_D6*/	
+  {&gpioc,   &timer3, NULL,  7, 2, ADCx}, /* PC7 I2S3_MCK/SDIO_D7*/
+  {&gpioc,   &timer3, NULL,  8, 3, ADCx}, /* PC8 SDIO_D0*/
+  {&gpioc,   &timer3, NULL,  9, 4, ADCx}, /* PC9 SDIO_D1*/
   {&gpioc,   NULL, NULL, 10, 0, ADCx}, /* PC10 UART4_TX/SDIO_D2 */
   {&gpioc,   NULL, NULL, 11, 0, ADCx}, /* PC11 UART4_RX/SDIO_D3 */
   {&gpioc,   NULL, NULL, 12, 0, ADCx}, /* PC12 UART5_TX/SDIO_CK */	

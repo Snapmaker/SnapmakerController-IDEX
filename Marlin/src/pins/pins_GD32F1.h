@@ -197,6 +197,11 @@ enum BoardVer {
 #define X0_CAL_PIN                          PA7
 #define X1_CAL_PIN                          PA6
 
+#define FAN_PIN PC6
+#define FAN1_PIN PC8
+#define FAN2_PIN PC7
+#define FAN3_PIN PC9
+
 //
 // LCD Pins
 //
