@@ -29,9 +29,9 @@
 #include "stepper.h"
 #include "planner.h"
 #include "temperature.h"
+#include "tool_change.h"
 
 #include "../gcode/gcode.h"
-
 #include "../inc/MarlinConfig.h"
 
 #if IS_SCARA
@@ -1196,20 +1196,25 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
           if (active_extruder == 0) {
             // Restore planner to parked head (T1) X position
             xyze_pos_t pos_now = current_position;
-            pos_now.x = inactive_extruder_x;
-            planner.set_position_mm(pos_now);
 
             // Keep the same X or add the duplication X offset
             xyze_pos_t new_pos = pos_now;
-            if (dual_x_carriage_mode == DXC_DUPLICATION_MODE)
-              new_pos.x += duplicate_extruder_x_offset;
-
+            DualXMode previous_mode = dual_x_carriage_mode;
+            dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+            parser.parse((char *)"G28 X"); 
+            gcode.process_parsed_command();
+            tool_change(1);
+            if (previous_mode == DXC_DUPLICATION_MODE) {
+              new_pos.x = duplicate_extruder_x_offset + new_pos.x;
+            }
             // Move duplicate extruder into the correct position
             if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Set planner X", inactive_extruder_x, " ... Line to X", new_pos.x);
-            if (!planner.buffer_line(new_pos, planner.settings.max_feedrate_mm_s[X_AXIS], 1)) break;
+            if (!planner.buffer_line(new_pos, DUPLICATION_SWITCH_FEEDRATE, 1)) break;
             planner.synchronize();
 
             sync_plan_position();             // Extra sync for good measure
+            tool_change(0);
+            dual_x_carriage_mode = previous_mode;
             set_duplication_enabled(true);    // Enable Duplication
             idex_set_parked(false);           // No longer parked
             if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("set_duplication_enabled(true)\nidex_set_parked(false)");
