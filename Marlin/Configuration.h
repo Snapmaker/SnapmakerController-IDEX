@@ -496,6 +496,8 @@
 #define TEMP_CHAMBER_WINDOW          1  // (°C) Temperature proximity for the "temperature reached" timer
 #define TEMP_CHAMBER_HYSTERESIS      3  // (°C) Temperature proximity considered "close enough" to the target
 
+#define TEMP_AUTO_OPEN_COOL_FAN      60 // (°C) Temperature at which the cooling fan is automatically turned on
+
 /**
  * Redundant Temperature Sensor (TEMP_SENSOR_REDUNDANT)
  *
