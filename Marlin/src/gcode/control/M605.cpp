@@ -24,7 +24,7 @@
 
 #if HAS_DUPLICATION_MODE
 
-//#define DEBUG_DXC_MODE
+#define DEBUG_DXC_MODE
 
 #include "../gcode.h"
 #include "../../module/motion.h"
