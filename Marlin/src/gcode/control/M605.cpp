@@ -52,10 +52,11 @@
    *             follow with "M605 S2" to initiate duplicated movement. For example, use "M605 S2 X100 R2" to
    *             make a copy 100mm to the right with E1 2° hotter than E0.
    *
-   *   M605 S3 : (MIRRORED) Formbot/Vivedino-inspired mirrored mode in which the second extruder duplicates
+   *   M605 S3 X R : (MIRRORED) Formbot/Vivedino-inspired mirrored mode in which the second extruder duplicates
    *             the movement of the first except the second extruder is reversed in the X axis.
-   *             The temperature differential and initial X offset must be set with "M605 S2 X[offs] R[deg]",
-   *             then followed by "M605 S3" to initiate mirrored movement.
+   *             Set the constant X-offset and temperature differential with M605 S3 X[offs] R[deg] and
+   *             follow with "M605 S3" to initiate duplicated movement. For example, use "M605 S3 X100 R2" to
+   *             make a copy 100mm to the right with E1 2° hotter than E0.
    *
    *    M605 W  : IDEX What? command.
    *
@@ -65,7 +66,6 @@
     planner.synchronize();
 
     if (parser.seen('S')) {
-      const DualXMode previous_mode = dual_x_carriage_mode;
       bool is_duplication_enable = false;
       dual_x_carriage_mode = (DualXMode)parser.value_byte();
       idex_set_mirrored_mode(false);
@@ -77,25 +77,21 @@
           break;
 
         case DXC_DUPLICATION_MODE:
+        case DXC_MIRRORED_MODE:
           // Set the X offset, but no less than the safety gap
-          if (parser.seen('X')) duplicate_extruder_x_offset = _MAX(parser.value_linear_units(), (X2_MIN_POS) - (X1_MIN_POS));
-          if (parser.seen('R')) duplicate_extruder_temp_offset = parser.value_celsius_diff();
+          if (parser.seen('X')) {
+            duplicate_extruder_x_offset = _MAX(parser.value_linear_units(), (X2_MIN_POS) - (X1_MIN_POS));
+          } else {
+            duplicate_extruder_x_offset = dual_x_carriage_mode == DXC_DUPLICATION_MODE ? \
+                        (X1_MAX_POS - X1_MIN_POS) / 2 : (X2_MAX_POS - X1_MIN_POS);
+          }
+          if (parser.seen('R')) {
+            duplicate_extruder_temp_offset = parser.value_celsius_diff();
+          }
           // Always switch back to tool 0
           if (active_extruder != 0) tool_change(0);
           is_duplication_enable = true;
           break;
-
-        case DXC_MIRRORED_MODE: {
-          if (previous_mode != DXC_MIRRORED_MODE && previous_mode != DXC_DUPLICATION_MODE) {
-            SERIAL_ECHOLNPGM("Printer must be in DXC_DUPLICATION_MODE prior to ");
-            SERIAL_ECHOLNPGM("specifying DXC_MIRRORED_MODE.");
-            dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
-            return;
-          }
-          idex_set_mirrored_mode(true);
-          SERIAL_ECHOLNPGM("specifying DXC_MIRRORED_MODE.");
-        } return;
-
         default:
           dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
           break;
@@ -104,6 +100,8 @@
       idex_set_parked(is_duplication_enable);
       set_duplication_enabled(false);
       if (is_duplication_enable) {
+        parser.parse((char *)"G28 X");
+        gcode.process_parsed_command();
         dual_x_carriage_unpark();
       }
 

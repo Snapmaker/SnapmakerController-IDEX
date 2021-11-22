@@ -1201,12 +1201,8 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
             xyze_pos_t new_pos = pos_now;
             DualXMode previous_mode = dual_x_carriage_mode;
             dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-            parser.parse((char *)"G28 X"); 
-            gcode.process_parsed_command();
             tool_change(1);
-            if (previous_mode == DXC_DUPLICATION_MODE) {
-              new_pos.x = duplicate_extruder_x_offset + new_pos.x;
-            }
+            new_pos.x = duplicate_extruder_x_offset + X1_MIN_POS;
             // Move duplicate extruder into the correct position
             if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Set planner X", inactive_extruder_x, " ... Line to X", new_pos.x);
             if (!planner.buffer_line(new_pos, DUPLICATION_SWITCH_FEEDRATE, 1)) break;
@@ -1216,6 +1212,9 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
             tool_change(0);
             dual_x_carriage_mode = previous_mode;
             set_duplication_enabled(true);    // Enable Duplication
+            if (dual_x_carriage_mode == DXC_MIRRORED_MODE) {
+              idex_set_mirrored_mode(true);
+            }
             idex_set_parked(false);           // No longer parked
             if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("set_duplication_enabled(true)\nidex_set_parked(false)");
           }
