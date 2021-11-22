@@ -213,11 +213,6 @@ void GcodeSuite::G28() {
 
   TERN_(FULL_REPORT_TO_HOST_FEATURE, set_and_report_grblstate(M_HOMING));
 
-  #if ENABLED(DUAL_X_CARRIAGE)
-    bool IDEX_saved_duplication_state = extruder_duplication_enabled;
-    DualXMode IDEX_saved_mode = dual_x_carriage_mode;
-  #endif
-
   #if ENABLED(MARLIN_DEV_MODE)
     if (parser.seen_test('S')) {
       LOOP_LINEAR_AXES(a) set_axis_is_at_home((AxisEnum)a);
@@ -432,40 +427,6 @@ void GcodeSuite::G28() {
 
   #endif
 
-  /**
-   * Preserve DXC mode across a G28 for IDEX printers in DXC_DUPLICATION_MODE.
-   * This is important because it lets a user use the LCD Panel to set an IDEX Duplication mode, and
-   * then print a standard GCode file that contains a single print that does a G28 and has no other
-   * IDEX specific commands in it.
-   */
-  #if ENABLED(DUAL_X_CARRIAGE)
-
-    if (idex_is_duplicating()) {
-
-      TERN_(IMPROVE_HOMING_RELIABILITY, saved_motion_state = begin_slow_homing());
-
-      // Always home the 2nd (right) extruder first
-      active_extruder = 1;
-      homeaxis(X_AXIS);
-
-      // Remember this extruder's position for later tool change
-      inactive_extruder_x = current_position.x;
-
-      // Home the 1st (left) extruder
-      active_extruder = 0;
-      homeaxis(X_AXIS);
-
-      // Consider the active extruder to be parked
-      idex_set_parked();
-
-      dual_x_carriage_mode = IDEX_saved_mode;
-      set_duplication_enabled(IDEX_saved_duplication_state);
-
-      TERN_(IMPROVE_HOMING_RELIABILITY, end_slow_homing(saved_motion_state));
-    }
-
-  #endif // DUAL_X_CARRIAGE
-
   endstops.not_homing();
 
   // Clear endstop state for polled stallGuard endstops
@@ -519,6 +480,13 @@ void GcodeSuite::G28() {
     SERIAL_ECHOLNPGM(STR_Z_MOVE_COMP);
 
   TERN_(FULL_REPORT_TO_HOST_FEATURE, set_and_report_grblstate(M_IDLE));
+  #if ENABLED(DUAL_X_CARRIAGE)
+    if (idex_is_duplicating() && doX) {
+      idex_set_parked(true);
+      set_duplication_enabled(false);
+      dual_x_carriage_unpark();
+    }
+  #endif // DUAL_X_CARRIAGE
 
   #if HAS_L64XX
     // Set L6470 absolute position registers to counts
