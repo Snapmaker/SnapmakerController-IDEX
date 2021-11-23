@@ -1012,6 +1012,7 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
         case 1004: M1004(); break;                                // M1004: UBL Mesh Wizard
       #endif
 
+      case 1999: M1999(); break;                                  // M1999: Restart the machine
       case 2020: M2020(); break;
 
       #if ENABLED(MAX7219_GCODE)
