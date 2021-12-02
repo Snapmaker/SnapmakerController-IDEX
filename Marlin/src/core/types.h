@@ -127,7 +127,7 @@ typedef float feedRate_t;
 // celsius_t is the native unit of temperature. Signed to handle a disconnected thermistor value (-14).
 // For more resolition (e.g., for a chocolate printer) this may later be changed to Celsius x 100
 //
-typedef int16_t celsius_t;
+typedef int32_t celsius_t;
 typedef float celsius_float_t;
 
 //

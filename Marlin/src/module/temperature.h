@@ -180,11 +180,11 @@ enum ADCSensorState : char {
 
 // A temperature sensor
 typedef struct TempInfo {
-  uint16_t acc;
-  int16_t raw;
+  uint32_t acc;
+  int32_t raw;
   celsius_float_t celsius;
   inline void reset() { acc = 0; }
-  inline void sample(const uint16_t s) { acc += s; }
+  inline void sample(const uint32_t s) { acc += s; }
   inline void update() { raw = acc; }
 } temp_info_t;
 
@@ -272,9 +272,9 @@ struct HeaterWatch {
 #endif
 
 // Temperature sensor read value ranges
-typedef struct { int16_t raw_min, raw_max; } raw_range_t;
+typedef struct { int32_t raw_min, raw_max; } raw_range_t;
 typedef struct { celsius_t mintemp, maxtemp; } celsius_range_t;
-typedef struct { int16_t raw_min, raw_max; celsius_t mintemp, maxtemp; } temp_range_t;
+typedef struct { int32_t raw_min, raw_max; celsius_t mintemp, maxtemp; } temp_range_t;
 
 #define THERMISTOR_ABS_ZERO_C           -273.15f  // bbbbrrrrr cold !
 #define THERMISTOR_RESISTANCE_NOMINAL_C 25.0f     // mmmmm comfortable
@@ -458,7 +458,7 @@ class Temperature {
         static chamber_watch_t watch_chamber;
       #endif
       TERN(PIDTEMPCHAMBER,,static millis_t next_chamber_check_ms);
-      static int16_t mintemp_raw_CHAMBER, maxtemp_raw_CHAMBER;
+      static int32_t mintemp_raw_CHAMBER, maxtemp_raw_CHAMBER;
     #endif
 
     #if HAS_COOLER
@@ -466,7 +466,7 @@ class Temperature {
         static cooler_watch_t watch_cooler;
       #endif
       static millis_t next_cooler_check_ms, cooler_fan_flush_ms;
-      static int16_t mintemp_raw_COOLER, maxtemp_raw_COOLER;
+      static int32_t mintemp_raw_COOLER, maxtemp_raw_COOLER;
     #endif
 
     #if MAX_CONSECUTIVE_LOW_TEMPERATURE_ERROR_ALLOWED > 1
@@ -509,7 +509,7 @@ class Temperature {
       static user_thermistor_t user_thermistor[USER_THERMISTORS];
       static void log_user_thermistor(const uint8_t t_index, const bool eprom=false);
       static void reset_user_thermistors();
-      static celsius_float_t user_thermistor_to_deg_c(const uint8_t t_index, const int16_t raw);
+      static celsius_float_t user_thermistor_to_deg_c(const uint8_t t_index, const int32_t raw);
       static inline bool set_pull_up_res(int8_t t_index, float value) {
         //if (!WITHIN(t_index, 0, USER_THERMISTORS - 1)) return false;
         if (!WITHIN(value, 1, 1000000)) return false;
@@ -537,22 +537,22 @@ class Temperature {
     #endif
 
     #if HAS_HOTEND
-      static celsius_float_t analog_to_celsius_hotend(const int16_t raw, const uint8_t e);
+      static celsius_float_t analog_to_celsius_hotend(const int32_t raw, const uint8_t e);
     #endif
     #if HAS_HEATED_BED
-      static celsius_float_t analog_to_celsius_bed(const int16_t raw);
+      static celsius_float_t analog_to_celsius_bed(const int32_t raw);
     #endif
     #if HAS_TEMP_PROBE
-      static celsius_float_t analog_to_celsius_probe(const int16_t raw);
+      static celsius_float_t analog_to_celsius_probe(const int32_t raw);
     #endif
     #if HAS_TEMP_CHAMBER
-      static celsius_float_t analog_to_celsius_chamber(const int16_t raw);
+      static celsius_float_t analog_to_celsius_chamber(const int32_t raw);
     #endif
     #if HAS_TEMP_COOLER
-      static celsius_float_t analog_to_celsius_cooler(const int16_t raw);
+      static celsius_float_t analog_to_celsius_cooler(const int32_t raw);
     #endif
     #if HAS_TEMP_REDUNDANT
-      static celsius_float_t analog_to_celsius_redundant(const int16_t raw);
+      static celsius_float_t analog_to_celsius_redundant(const int32_t raw);
     #endif
 
     #if HAS_FAN
@@ -647,7 +647,7 @@ class Temperature {
     }
 
     #if ENABLED(SHOW_TEMP_ADC_VALUES)
-      static inline int16_t rawHotendTemp(const uint8_t E_NAME) {
+      static inline int32_t rawHotendTemp(const uint8_t E_NAME) {
         return TERN0(HAS_HOTEND, temp_hotend[HOTEND_INDEX].raw);
       }
     #endif
@@ -789,8 +789,8 @@ class Temperature {
 
     #if HAS_TEMP_REDUNDANT
       #if ENABLED(SHOW_TEMP_ADC_VALUES)
-        static inline int16_t rawRedundantTemp()         { return temp_redundant.raw; }
-        static inline int16_t rawRedundanTargetTemp()    { return (*temp_redundant.target).raw; }
+        static inline int32_t rawRedundantTemp()         { return temp_redundant.raw; }
+        static inline int32_t rawRedundanTargetTemp()    { return (*temp_redundant.target).raw; }
       #endif
       static inline celsius_float_t degRedundant()       { return temp_redundant.celsius; }
       static inline celsius_float_t degRedundantTarget() { return (*temp_redundant.target).celsius; }

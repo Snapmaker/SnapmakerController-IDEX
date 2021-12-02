@@ -23,7 +23,7 @@
 
 #include "../../inc/MarlinConfig.h"
 
-#define THERMISTOR_TABLE_ADC_RESOLUTION 10
+#define THERMISTOR_TABLE_ADC_RESOLUTION 12
 #define THERMISTOR_TABLE_SCALE (HAL_ADC_RANGE / _BV(THERMISTOR_TABLE_ADC_RESOLUTION))
 #if ENABLED(HAL_ADC_FILTERED)
   #define OVERSAMPLENR 1
@@ -40,7 +40,7 @@
 #endif
 
 #define OV_SCALE(N) (N)
-#define OV(N) int16_t(OV_SCALE(N) * (OVERSAMPLENR) * (THERMISTOR_TABLE_SCALE))
+#define OV(N) int32_t(OV_SCALE(N) * (OVERSAMPLENR) * (THERMISTOR_TABLE_SCALE))
 
 #define TEMP_SENSOR_IS(n,H) (n == TEMP_SENSOR_##H)
 #define ANY_THERMISTOR_IS(n) ( TEMP_SENSOR_IS(n, 0) || TEMP_SENSOR_IS(n, 1) \
@@ -53,7 +53,7 @@
                             || TEMP_SENSOR_IS(n, PROBE) \
                             || TEMP_SENSOR_IS(n, REDUNDANT) )
 
-typedef struct { int16_t value; celsius_t celsius; } temp_entry_t;
+typedef struct { int32_t value; celsius_t celsius; } temp_entry_t;
 
 // Pt1000 and Pt100 handling
 //

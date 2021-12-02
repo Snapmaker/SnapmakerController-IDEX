@@ -1582,15 +1582,15 @@ void Temperature::manage_heater() {
   uint8_t l = 0, r = LEN, m;                                              \
   for (;;) {                                                              \
     m = (l + r) >> 1;                                                     \
-    if (!m) return celsius_t(pgm_read_word(&TBL[0].celsius));             \
-    if (m == l || m == r) return celsius_t(pgm_read_word(&TBL[LEN-1].celsius)); \
-    int16_t v00 = pgm_read_word(&TBL[m-1].value),                         \
-            v10 = pgm_read_word(&TBL[m-0].value);                         \
+    if (!m) return celsius_t(pgm_read_dword(&TBL[0].celsius));             \
+    if (m == l || m == r) return celsius_t(pgm_read_dword(&TBL[LEN-1].celsius)); \
+    int32_t v00 = pgm_read_dword(&TBL[m-1].value),                         \
+            v10 = pgm_read_dword(&TBL[m-0].value);                         \
          if (raw < v00) r = m;                                            \
     else if (raw > v10) l = m;                                            \
     else {                                                                \
-      const celsius_t v01 = celsius_t(pgm_read_word(&TBL[m-1].celsius)),  \
-                      v11 = celsius_t(pgm_read_word(&TBL[m-0].celsius));  \
+      const celsius_t v01 = celsius_t(pgm_read_dword(&TBL[m-1].celsius)),  \
+                      v11 = celsius_t(pgm_read_dword(&TBL[m-0].celsius));  \
       return v01 + (raw - v00) * float(v11 - v01) / float(v10 - v00);     \
     }                                                                     \
   }                                                                       \
@@ -1679,7 +1679,7 @@ void Temperature::manage_heater() {
     SERIAL_EOL();
   }
 
-  celsius_float_t Temperature::user_thermistor_to_deg_c(const uint8_t t_index, const int16_t raw) {
+  celsius_float_t Temperature::user_thermistor_to_deg_c(const uint8_t t_index, const int32_t raw) {
     //#if (MOTHERBOARD == BOARD_RAMPS_14_EFB)
     //  static uint32_t clocks_total = 0;
     //  static uint32_t calls = 0;
@@ -1728,7 +1728,7 @@ void Temperature::manage_heater() {
 #if HAS_HOTEND
   // Derived from RepRap FiveD extruder::getTemperature()
   // For hot end temperature measurement.
-  celsius_float_t Temperature::analog_to_celsius_hotend(const int16_t raw, const uint8_t e) {
+  celsius_float_t Temperature::analog_to_celsius_hotend(const int32_t raw, const uint8_t e) {
       if (e >= HOTENDS) {
         SERIAL_ERROR_START();
         SERIAL_ECHO(e);
@@ -1837,7 +1837,7 @@ void Temperature::manage_heater() {
 
 #if HAS_HEATED_BED
   // For bed temperature measurement.
-  celsius_float_t Temperature::analog_to_celsius_bed(const int16_t raw) {
+  celsius_float_t Temperature::analog_to_celsius_bed(const int32_t raw) {
     #if TEMP_SENSOR_BED_IS_CUSTOM
       return user_thermistor_to_deg_c(CTI_BED, raw);
     #elif TEMP_SENSOR_BED_IS_THERMISTOR
@@ -1855,7 +1855,7 @@ void Temperature::manage_heater() {
 
 #if HAS_TEMP_CHAMBER
   // For chamber temperature measurement.
-  celsius_float_t Temperature::analog_to_celsius_chamber(const int16_t raw) {
+  celsius_float_t Temperature::analog_to_celsius_chamber(const int32_t raw) {
     #if TEMP_SENSOR_CHAMBER_IS_CUSTOM
       return user_thermistor_to_deg_c(CTI_CHAMBER, raw);
     #elif TEMP_SENSOR_CHAMBER_IS_THERMISTOR
@@ -1873,7 +1873,7 @@ void Temperature::manage_heater() {
 
 #if HAS_TEMP_COOLER
   // For cooler temperature measurement.
-  celsius_float_t Temperature::analog_to_celsius_cooler(const int16_t raw) {
+  celsius_float_t Temperature::analog_to_celsius_cooler(const int32_t raw) {
     #if TEMP_SENSOR_COOLER_IS_CUSTOM
       return user_thermistor_to_deg_c(CTI_COOLER, raw);
     #elif TEMP_SENSOR_COOLER_IS_THERMISTOR
@@ -1891,7 +1891,7 @@ void Temperature::manage_heater() {
 
 #if HAS_TEMP_PROBE
   // For probe temperature measurement.
-  celsius_float_t Temperature::analog_to_celsius_probe(const int16_t raw) {
+  celsius_float_t Temperature::analog_to_celsius_probe(const int32_t raw) {
     #if TEMP_SENSOR_PROBE_IS_CUSTOM
       return user_thermistor_to_deg_c(CTI_PROBE, raw);
     #elif TEMP_SENSOR_PROBE_IS_THERMISTOR
@@ -1909,7 +1909,7 @@ void Temperature::manage_heater() {
 
 #if HAS_TEMP_REDUNDANT
   // For redundant temperature measurement.
-  celsius_float_t Temperature::analog_to_celsius_redundant(const int16_t raw) {
+  celsius_float_t Temperature::analog_to_celsius_redundant(const int32_t raw) {
     #if TEMP_SENSOR_REDUNDANT_IS_CUSTOM
       return user_thermistor_to_deg_c(CTI_REDUNDANT, raw);
     #elif TEMP_SENSOR_REDUNDANT_IS_MAX_TC && TEMP_SENSOR_REDUNDANT_SOURCE == 0
@@ -1984,7 +1984,7 @@ void Temperature::updateTemperaturesFromRawValues() {
     LOOP_L_N(e, COUNT(temp_dir)) {
       const int8_t tdir = temp_dir[e];
       if (tdir) {
-        const int16_t rawtemp = temp_hotend[e].raw * tdir; // normal direction, +rawtemp, else -rawtemp
+        const int32_t rawtemp = temp_hotend[e].raw * tdir; // normal direction, +rawtemp, else -rawtemp
         if (rawtemp > temp_range[e].raw_max * tdir) max_temp_error((heater_id_t)e);
 
         const bool heater_on = temp_hotend[e].target > 0;
@@ -2336,13 +2336,13 @@ void Temperature::init() {
   #if HAS_HOTEND
 
     #define _TEMP_MIN_E(NR) do{ \
-      const celsius_t tmin = _MAX(HEATER_##NR##_MINTEMP, TERN(TEMP_SENSOR_##NR##_IS_CUSTOM, 0, (int)pgm_read_word(&TEMPTABLE_##NR [TEMP_SENSOR_##NR##_MINTEMP_IND].celsius))); \
+      const celsius_t tmin = _MAX(HEATER_##NR##_MINTEMP, TERN(TEMP_SENSOR_##NR##_IS_CUSTOM, 0, (int)pgm_read_dword(&TEMPTABLE_##NR [TEMP_SENSOR_##NR##_MINTEMP_IND].celsius))); \
       temp_range[NR].mintemp = tmin; \
       while (analog_to_celsius_hotend(temp_range[NR].raw_min, NR) < tmin) \
         temp_range[NR].raw_min += TEMPDIR(NR) * (OVERSAMPLENR); \
     }while(0)
     #define _TEMP_MAX_E(NR) do{ \
-      const celsius_t tmax = _MIN(HEATER_##NR##_MAXTEMP, TERN(TEMP_SENSOR_##NR##_IS_CUSTOM, 2000, (int)pgm_read_word(&TEMPTABLE_##NR [TEMP_SENSOR_##NR##_MAXTEMP_IND].celsius) - 1)); \
+      const celsius_t tmax = _MIN(HEATER_##NR##_MAXTEMP, TERN(TEMP_SENSOR_##NR##_IS_CUSTOM, 2000, (int)pgm_read_dword(&TEMPTABLE_##NR [TEMP_SENSOR_##NR##_MAXTEMP_IND].celsius) - 1)); \
       temp_range[NR].maxtemp = tmax; \
       while (analog_to_celsius_hotend(temp_range[NR].raw_max, NR) > tmax) \
         temp_range[NR].raw_max -= TEMPDIR(NR) * (OVERSAMPLENR); \
