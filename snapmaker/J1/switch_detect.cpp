@@ -6,6 +6,7 @@
 #include "src/module/planner.h"
 #include "src/module/stepper.h"
 #include "switch_detect.h"
+#include "filament_sensor.h"
 
 #define SW_FILAMNET0_BIT      0
 #define SW_FILAMNET1_BIT      1
@@ -65,6 +66,17 @@ void SwitchDetect::check() {
       UPDATE_STATUS(X1_CAL_PIN, HIGH, tmp_status_bits, SW_PROBE1_BIT);
   }while(0);
 
+  FILAMENT_LOOP(i) {
+    if (filament_sensor.is_enable(i)) {
+      if (filament_sensor.is_trigger(i)) {
+        trigged = true;
+        SBI(status_bits, i);
+      } else {
+        CBI(status_bits, i);
+      }
+    }
+  }
+  
   if(trigged == true)
     stepper.quick_stop();
   status_bits = tmp_status_bits;

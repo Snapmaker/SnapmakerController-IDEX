@@ -64,6 +64,7 @@
 
 #include "lcd/marlinui.h"
 #include "../snapmaker/J1/tmc_driver.h"
+#include "../snapmaker/J1/filament_sensor.h"
 #if HAS_TOUCH_BUTTONS
   #include "lcd/touch/touch_buttons.h"
 #endif
@@ -1313,6 +1314,10 @@ void setup() {
 
   sync_plan_position();               // Vital to init stepper/planner equivalent for current_position
 
+  tmc_driver.init();
+  tmc_driver.configure_axis();
+  filament_sensor.init();
+
   SETUP_RUN(thermalManager.init());   // Initialize temperature loop
 
   SETUP_RUN(print_job_timer.init());  // Initial setup of print job timer
@@ -1595,8 +1600,6 @@ void setup() {
   OUT_WRITE(SCREEN_PWR_PIN, HIGH);
   OUT_WRITE(HEATER_BED_PWR_PIN, HIGH);
 
-  tmc_driver.init();
-  tmc_driver.configure_axis();
 
   SETUP_LOG("setup() completed.");
 }

@@ -23,6 +23,7 @@
 #include "../../../Marlin/src/gcode/gcode.h"
 #include "../../J1/calibration.h"
 #include "../../J1/tmc_driver.h"
+#include "../../J1/filament_sensor.h"
 
 /**
  *  S0
@@ -105,6 +106,15 @@ void GcodeSuite::M2020() {
       break;
 
       case 7:
+        if(parser.seen('O')) {
+          bool level = parser.byteval('O');
+          if (level) {
+            filament_sensor.enable_all();
+          } else {
+            filament_sensor.disable_all();
+          }
+        }
+        filament_sensor.debug();
       break;
 
       case 9:

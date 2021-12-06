@@ -97,6 +97,7 @@ Stepper stepper; // Singleton
 #include "../MarlinCore.h"
 #include "../HAL/shared/Delay.h"
 #include "../../../snapmaker/J1/switch_detect.h"
+#include "../../../snapmaker/J1/filament_sensor.h"
 
 #if ENABLED(INTEGRATED_BABYSTEPPING)
   #include "../feature/babystep.h"
@@ -1543,6 +1544,7 @@ void Stepper::isr() {
  * is to keep pulse timing as regular as possible.
  */
 void Stepper::pulse_phase_isr() {
+  filament_sensor.check();
   switch_detect.check();
   // If we must abort the current block, do so!
   if (abort_current_block) {

@@ -203,6 +203,9 @@ enum BoardVer {
 #define FAN3_PIN PC9
 
 #define CASE_LIGHT_PIN PD12
+
+#define FILAMENT0_ADC_PIN PA0
+#define FILAMENT1_ADC_PIN PA4
 //
 // LCD Pins
 //

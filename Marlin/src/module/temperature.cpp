@@ -34,6 +34,7 @@
 #include "temperature.h"
 #include "endstops.h"
 #include "planner.h"
+#include "../../../snapmaker/J1/filament_sensor.h"
 
 #if EITHER(HAS_COOLER, LASER_COOLANT_FLOW_METER)
   #include "../feature/cooler.h"
@@ -2241,6 +2242,8 @@ void Temperature::init() {
   #if HAS_TEMP_ADC_1
     HAL_ANALOG_SELECT(TEMP_1_PIN);
   #endif
+  HAL_ANALOG_SELECT(FILAMENT0_ADC_PIN);
+  HAL_ANALOG_SELECT(FILAMENT1_ADC_PIN);
   #if HAS_TEMP_ADC_2
     HAL_ANALOG_SELECT(TEMP_2_PIN);
   #endif
@@ -2854,6 +2857,7 @@ void Temperature::readings_ready() {
     update_raw_temperatures();
     raw_temps_ready = true;
   }
+  filament_sensor.ready();
 
   // Filament Sensor - can be read any time since IIR filtering is used
   TERN_(FILAMENT_WIDTH_SENSOR, filwidth.reading_ready());
@@ -3276,6 +3280,12 @@ void Temperature::isr() {
       case PrepareTemp_BED: HAL_START_ADC(TEMP_BED_PIN); break;
       case MeasureTemp_BED: ACCUMULATE_ADC(temp_bed); break;
     #endif
+
+    case PrepareFilament_0: HAL_START_ADC(FILAMENT0_ADC_PIN); break;
+    case MeasureFilament_0: ACCUMULATE_ADC(filament_sensor.filament[0]); break;
+
+    case PrepareFilament_1: HAL_START_ADC(FILAMENT1_ADC_PIN); break;
+    case MeasureFilament_1: ACCUMULATE_ADC(filament_sensor.filament[1]); break;
 
     #if HAS_TEMP_ADC_CHAMBER
       case PrepareTemp_CHAMBER: HAL_START_ADC(TEMP_CHAMBER_PIN); break;
