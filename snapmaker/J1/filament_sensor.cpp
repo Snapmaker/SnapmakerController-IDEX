@@ -49,8 +49,9 @@ void FilamentSensor::check() {
       if (e_step_count[i] < 0) {
         diff = -diff;
       }
+
       // SERIAL_ECHOLNPAIR("i:", i, ", val:", val, ", start:", start, ", diff:", diff, ", e:", e_step_count[i]);
-      if (diff < FILAMENT_THRESHOLD) {
+      if (diff < FILAMENT_THRESHOLD && diff >= 0) {
         error[i] |= 0x1;
       }
 

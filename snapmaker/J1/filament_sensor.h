@@ -5,8 +5,8 @@
 
 #define FILAMENT_SENSOR_COUNT 2
 #define FILAMENT_LOOP(i) for (uint8_t i = 0; i < FILAMENT_SENSOR_COUNT; i++)
-#define FILAMENT_BASE_LEN 1.5  // mm
-#define FILAMENT_SAMPLE_COUNT_MASK 0x1f
+#define FILAMENT_BASE_LEN 3  // mm
+#define FILAMENT_SAMPLE_COUNT_MASK 0x3
 #define FILAMENT_THRESHOLD 10  // ADC diff value
 
 typedef struct {
