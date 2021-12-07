@@ -1986,14 +1986,17 @@ void Temperature::updateTemperaturesFromRawValues() {
       const int8_t tdir = temp_dir[e];
       if (tdir) {
         const int32_t rawtemp = temp_hotend[e].raw * tdir; // normal direction, +rawtemp, else -rawtemp
-        if (rawtemp > temp_range[e].raw_max * tdir) max_temp_error((heater_id_t)e);
-
+        #if ENABLED(THERMAL_PROTECTION_HOTENDS)
+          if (rawtemp > temp_range[e].raw_max * tdir) max_temp_error((heater_id_t)e);
+        #endif
         const bool heater_on = temp_hotend[e].target > 0;
         if (heater_on && rawtemp < temp_range[e].raw_min * tdir && !is_preheating(e)) {
-          #if MAX_CONSECUTIVE_LOW_TEMPERATURE_ERROR_ALLOWED > 1
-            if (++consecutive_low_temperature_error[e] >= MAX_CONSECUTIVE_LOW_TEMPERATURE_ERROR_ALLOWED)
-          #endif
+          #if ENABLED(THERMAL_PROTECTION_HOTENDS)
+            #if MAX_CONSECUTIVE_LOW_TEMPERATURE_ERROR_ALLOWED > 1
+              if (++consecutive_low_temperature_error[e] >= MAX_CONSECUTIVE_LOW_TEMPERATURE_ERROR_ALLOWED)
+            #endif
               min_temp_error((heater_id_t)e);
+          #endif
         }
         #if MAX_CONSECUTIVE_LOW_TEMPERATURE_ERROR_ALLOWED > 1
           else
