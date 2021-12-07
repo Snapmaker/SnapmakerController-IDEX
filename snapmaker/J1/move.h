@@ -1,5 +1,6 @@
+#ifndef MOVE_H
+#define MOVE_H
 #include "stdint.h"
-
 class Move
 {
 public:
@@ -32,3 +33,4 @@ public:
 };
 
 extern Move move;
+#endif

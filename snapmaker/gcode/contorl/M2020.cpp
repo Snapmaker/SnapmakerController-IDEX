@@ -118,6 +118,9 @@ void GcodeSuite::M2020() {
       break;
 
       case 9:
+        if(parser.seen('E') && parser.seen('D') && parser.seen('C')) {
+          filament_sensor.test_adc(parser.byteval('E'), parser.longval('D'), parser.longval('C'));
+        }
       break;
 
       case 10:

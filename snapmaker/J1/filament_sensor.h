@@ -72,7 +72,7 @@ class FilamentSensor
 
     void debug();
     void check();
-
+    void test_adc(uint8_t e, float step_mm, uint32_t count);
   public:
     FilamentSample filament[FILAMENT_SENSOR_COUNT];
   private:

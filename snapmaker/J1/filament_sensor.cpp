@@ -5,6 +5,7 @@
 #include "../../Marlin/src/pins/pins.h"
 #include "../../Marlin/src/core/serial.h"
 #include "../../Marlin/src/module/planner.h"
+#include "move.h"
 #include "filament_sensor.h"
 
 FilamentSensor filament_sensor;
@@ -69,4 +70,36 @@ void FilamentSensor::debug() {
     SERIAL_ECHOLNPAIR("s", i, " enable:", is_enable(i));
     SERIAL_ECHOLNPAIR("s", i, " state:", is_trigger(i));
   }
+}
+
+void FilamentSensor::test_adc(uint8_t e, float step_mm, uint32_t count) {
+  uint16_t max = 0x0, min=0xffff;
+  uint32_t acc = 0, time=0;
+  if (e >= FILAMENT_SENSOR_COUNT) {
+    return;
+  }
+  uint16_t last_adc = filament[e].get();
+  SERIAL_ECHOLNPAIR("tast filament sensor ", e);
+  for (uint32_t i = 0; i < count; i++) {
+    move.extrude_e(step_mm, 15 * 60);
+    planner.synchronize();
+    time = millis();
+    while ((time + 8) > millis());
+    uint16_t adc = filament[e].get();
+    int32_t diff = adc - last_adc;
+    if (diff > 500 || diff < -500) {
+      continue;
+    }
+    last_adc = adc;
+    SERIAL_ECHOLNPAIR("diff:", diff);
+    SERIAL_ECHOLNPAIR("rawadc:", adc);
+    if (diff < min) {
+      min = diff;
+    }
+    if (diff > max) {
+      max = diff;
+    }
+    acc += diff;
+  }
+  SERIAL_ECHOLNPAIR("max:", max, ", min:", min, ", avr:", acc / count);
 }
