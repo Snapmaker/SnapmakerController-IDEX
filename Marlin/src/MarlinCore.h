@@ -22,6 +22,7 @@
 #pragma once
 
 #include "inc/MarlinConfig.h"
+#include "MapleFreeRTOS1030.h"
 
 #ifdef DEBUG_GCODE_PARSER
   #include "gcode/parser.h"

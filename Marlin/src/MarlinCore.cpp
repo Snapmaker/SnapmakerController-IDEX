@@ -245,6 +245,8 @@ MarlinState marlin_state = MF_INITIALIZING;
 // For M109 and M190, this flag may be cleared (by M108) to exit the wait loop
 bool wait_for_heatup = true;
 
+void marlin_loop();
+
 // For M0/M1, this flag may be cleared (by M108) to exit the wait-for-user loop
 #if HAS_RESUME_CONTINUE
   bool wait_for_user; // = false;
@@ -1600,6 +1602,15 @@ void setup() {
   marlin_state = MF_RUNNING;
 
   SETUP_LOG("setup() completed.");
+  BaseType_t ret = xTaskCreate((TaskFunction_t)marlin_loop, "marlin_loop", 1000,NULL, 5, NULL);
+  if (ret != pdPASS) {
+    SERIAL_ECHO("Failed to create marlin_loop!\n");
+  }
+  else {
+    SERIAL_ECHO("Created marlin_loop task!\n");
+  }
+
+  vTaskStartScheduler();
 }
 
 /**
@@ -1615,8 +1626,8 @@ void setup() {
  *    card, host, or by direct injection. The queue will continue to fill
  *    as long as idle() or manage_inactivity() are being called.
  */
-void loop() {
-  do {
+void marlin_loop() {
+  while (1) {
     idle();
 
     #if ENABLED(SDSUPPORT)
@@ -1629,6 +1640,17 @@ void loop() {
     endstops.event_handler();
 
     TERN_(HAS_TFT_LVGL_UI, printer_state_polling());
+    // vTaskDelay(pdMS_TO_TICKS(1));
+  }
+}
 
-  } while (ENABLED(__AVR__)); // Loop forever on slower (AVR) boards
+void loop() {
+
+}
+
+extern "C" {
+
+void vApplicationMallocFailedHook( void ) {
+}
+
 }
