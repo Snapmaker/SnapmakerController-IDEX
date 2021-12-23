@@ -1082,7 +1082,11 @@ void setup() {
   #ifdef BOARD_PREINIT
     BOARD_PREINIT(); // Low-level init (before serial init)
   #endif
-
+  // Powerup
+  OUT_WRITE(MOTOR_PWR_PIN, HIGH);
+  OUT_WRITE(HEATER_PWR_PIN, HIGH);
+  OUT_WRITE(SCREEN_PWR_PIN, HIGH);
+  OUT_WRITE(HEATER_BED_PWR_PIN, HIGH);
   tmc_standby_setup();  // TMC Low Power Standby pins must be set early or they're not usable
 
   #if ENABLED(MARLIN_DEV_MODE)
@@ -1314,8 +1318,8 @@ void setup() {
 
   sync_plan_position();               // Vital to init stepper/planner equivalent for current_position
 
-  tmc_driver.init();
-  tmc_driver.configure_axis();
+  // tmc_driver.init();
+  // tmc_driver.configure_axis();
   filament_sensor.init();
 
   SETUP_RUN(thermalManager.init());   // Initialize temperature loop
@@ -1594,12 +1598,6 @@ void setup() {
   #endif
 
   marlin_state = MF_RUNNING;
-  // Powerup
-  OUT_WRITE(MOTOR_PWR_PIN, HIGH);
-  OUT_WRITE(HEATER_PWR_PIN, HIGH);
-  OUT_WRITE(SCREEN_PWR_PIN, HIGH);
-  OUT_WRITE(HEATER_BED_PWR_PIN, HIGH);
-
 
   SETUP_LOG("setup() completed.");
 }

@@ -206,6 +206,15 @@ enum BoardVer {
 
 #define FILAMENT0_ADC_PIN PA0
 #define FILAMENT1_ADC_PIN PA4
+
+#define X_HARDWARE_SERIAL  MSerial3
+#define X2_HARDWARE_SERIAL MSerial3
+#define Y_HARDWARE_SERIAL  MSerial3
+#define Z_HARDWARE_SERIAL  MSerial3
+#define E0_HARDWARE_SERIAL MSerial3
+#define E1_HARDWARE_SERIAL MSerial3
+
+#define TMC_BAUD_RATE 56700
 //
 // LCD Pins
 //
