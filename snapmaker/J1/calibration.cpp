@@ -484,7 +484,7 @@ bool Calibration::probe_xy(uint8_t extruder_index) {
   move.move_to_xy(calibration_position_xy[0][0], calibration_position_xy[0][1], 1500);
   // Move down the calibration hole
   tmc_driver.configure_for_platform_calibration(162);
-  move.move_z(-(18 + get_build_plate_thickness()), 300);
+  move.move_z(-(16.5 + get_build_plate_thickness()), 300);
 
   do {
     // X calibration left
