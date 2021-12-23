@@ -26,7 +26,7 @@
  * Stepper driver indirection for Trinamic
  */
 
-#include <TMCStepper.h>
+#include "../../../../snapmaker/lib/TMCStepper/src/TMCStepper.h"
 #if TMCSTEPPER_VERSION < 0x000500
   #error "Update TMCStepper library to 0.5.0 or newer."
 #endif

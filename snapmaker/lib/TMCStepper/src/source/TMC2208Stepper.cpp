@@ -1,6 +1,44 @@
-#include "TMCStepper.h"
+#include "../TMCStepper.h"
 #include "TMC_MACROS.h"
 #include "SERIAL_SWITCH.h"
+#include "HAL.h"
+#include <src/pins/pins.h>
+
+
+#define SELA_PIN  TMC_SEL0_PIN
+#define SELB_PIN  TMC_SEL1_PIN
+#define SELC_PIN  TMC_SEL2_PIN
+
+uint8_t st_sel_table[8][3] = { 
+  //SELA, SELB， SELC
+  { LOW,    HIGH,    LOW},    //X1
+  { LOW,    LOW,     HIGH},   //X2
+  { HIGH,   LOW,     LOW},    //Y1
+  { HIGH,   HIGH,    LOW},    //Z
+  { LOW,    HIGH,    HIGH},   //E0
+  { HIGH,   HIGH,    HIGH},   //E1
+  { LOW,    LOW,     LOW},    //Unselect
+  { LOW,    LOW,     LOW}     //Unselect
+};
+
+uint8_t st_slave_address = 0x03;
+
+uint8_t st_select_index = 0xff;
+
+void select(uint8_t index) {
+  if(st_select_index == index)
+    return;
+  OUT_WRITE(SELA_PIN, LOW);
+  OUT_WRITE(SELB_PIN, LOW);
+  OUT_WRITE(SELC_PIN, LOW);
+
+  if(index < (sizeof(st_sel_table) / sizeof(st_sel_table[0]))) {
+    OUT_WRITE(SELA_PIN, st_sel_table[index][0]);
+    OUT_WRITE(SELB_PIN, st_sel_table[index][1]);
+    OUT_WRITE(SELC_PIN, st_sel_table[index][2]);
+    st_select_index = index;
+	}
+}
 
 // Protected
 // addr needed for TMC2209
@@ -186,8 +224,9 @@ void TMC2208Stepper::postReadCommunication() {
 
 void TMC2208Stepper::write(uint8_t addr, uint32_t regVal) {
 	uint8_t len = 7;
+	select(slave_address);
 	addr |= TMC_WRITE;
-	uint8_t datagram[] = {TMC2208_SYNC, slave_address, addr, (uint8_t)(regVal>>24), (uint8_t)(regVal>>16), (uint8_t)(regVal>>8), (uint8_t)(regVal>>0), 0x00};
+	uint8_t datagram[] = {TMC2208_SYNC, st_slave_address, addr, (uint8_t)(regVal>>24), (uint8_t)(regVal>>16), (uint8_t)(regVal>>8), (uint8_t)(regVal>>0), 0x00};
 
 	datagram[len] = calcCRC(datagram, len);
 
@@ -281,7 +320,8 @@ uint64_t TMC2208Stepper::_sendDatagram(uint8_t datagram[], const uint8_t len, ui
 uint32_t TMC2208Stepper::read(uint8_t addr) {
 	constexpr uint8_t len = 3;
 	addr |= TMC_READ;
-	uint8_t datagram[] = {TMC2208_SYNC, slave_address, addr, 0x00};
+	select(slave_address);
+	uint8_t datagram[] = {TMC2208_SYNC, st_slave_address, addr, 0x00};
 	datagram[len] = calcCRC(datagram, len);
 	uint64_t out = 0x00000000UL;
 

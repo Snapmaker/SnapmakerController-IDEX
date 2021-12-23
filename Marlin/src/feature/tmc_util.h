@@ -26,7 +26,7 @@
 
 #if HAS_TRINAMIC_CONFIG
 
-#include <TMCStepper.h>
+#include "../../../snapmaker/lib/TMCStepper/src/TMCStepper.h"
 #include "../module/planner.h"
 
 #define CHOPPER_DEFAULT_12V  { 3, -1, 1 }

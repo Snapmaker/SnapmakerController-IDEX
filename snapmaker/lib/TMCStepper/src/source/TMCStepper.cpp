@@ -1,4 +1,4 @@
-#include "TMCStepper.h"
+#include "../TMCStepper.h"
 #include "TMC_MACROS.h"
 
 /*
