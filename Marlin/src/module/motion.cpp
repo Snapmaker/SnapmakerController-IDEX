@@ -2018,7 +2018,8 @@ void prepare_line_to_destination() {
       sync_plan_position();
 
       destination[axis] = current_position[axis];
-
+      if (axis == X_AXIS)
+        do_blocking_move_to_x(current_position[axis] + (axis_home_dir * -HOMING_X_POX_TO_ENDSTOP), homing_feedrate(axis));
       if (DEBUGGING(LEVELING)) DEBUG_POS("> AFTER set_axis_is_at_home", current_position);
 
     #endif
