@@ -33,8 +33,9 @@ SwitchDetect switch_detect;
 #define TRIGER
 
 void SwitchDetect::init() {
-  SET_INPUT(X0_CAL_PIN);
-  SET_INPUT(X1_CAL_PIN);
+  SET_INPUT_PULLUP(X0_CAL_PIN);
+  SET_INPUT_PULLUP(X1_CAL_PIN);
+  SET_OUTPUT(PROBE_POWER_EN_PIN);
   SET_INPUT_PULLUP(STALL_GUARD_PIN);
   SET_INPUT_PULLUP(POWER_LOST_PIN);
   disable_all();
@@ -96,11 +97,13 @@ void SwitchDetect::set_probe_detect_level(uint8_t Level) {
 void SwitchDetect::enable_probe() {
   enable(SW_PROBE0_BIT);
   enable(SW_PROBE1_BIT);
+  WRITE(PROBE_POWER_EN_PIN, 1);
 }
 
 void SwitchDetect::disable_probe() {
   disable(SW_PROBE0_BIT);
   disable(SW_PROBE1_BIT);
+  WRITE(PROBE_POWER_EN_PIN, 0);
 }
 
 void SwitchDetect::enable_power_lost() {
@@ -137,11 +140,25 @@ void SwitchDetect::stall_guard_stop() {
   SBI(status_bits, SW_STALLGUARD_BIT);
 }
 
+bool get_cal_pin_status(uint8_t pin) {
+  bool ret = 0;
+  if (!READ(PROBE_POWER_EN_PIN)) {
+    WRITE(PROBE_POWER_EN_PIN, 1);
+    uint32_t delay = millis() + 1;
+    while (delay > millis());
+    ret = READ(pin) == LOW;
+    WRITE(PROBE_POWER_EN_PIN, 0);
+  } else {
+    ret = READ(pin) == LOW;
+  }
+  return ret;
+}
+
 bool SwitchDetect::read_e0_probe_status() {
-  return READ(X0_CAL_PIN) == LOW;
+  return get_cal_pin_status(X0_CAL_PIN);
 }
 
 bool SwitchDetect::read_e1_probe_status() {
-  return READ(X1_CAL_PIN) == LOW;
+  return get_cal_pin_status(X1_CAL_PIN);
 }
 

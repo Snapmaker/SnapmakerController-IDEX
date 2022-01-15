@@ -28,20 +28,6 @@
 #define DEFAULT_MACHINE_NAME "GD32F105RCT6"
 #define BOARD_NAME "Marlin for GD32"
 
-// Ignore temp readings during develpment.
-#define BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
-
-
-enum BoardVer {
-  BOARD_SNAPMAKER1 = 0,
-  BOARD_SNAPMAKER2_V1,
-  BOARD_SNAPMAKER2_V2,
-
-  BOARD_INVALID
-};
-
-#define BOARD_VER     BOARD_SNAPMAKER2_V2
-
 //
 // Limit Switches
 //
@@ -49,45 +35,45 @@ enum BoardVer {
 #define V_MIN_PIN         -1
 #define W_MIN_PIN         -1
 
-#define X_MIN_PIN         PB0
-#define Y_MIN_PIN         PC5
+#define X_MIN_PIN         PD13
+#define Y_MIN_PIN         PB9
 #define Z_MIN_PIN         -1
 #define X_MAX_PIN         PB2
 #define Y_MAX_PIN         -1
-#define Z_MAX_PIN         PA15
+#define Z_MAX_PIN         PE7
 
 #define Z_MIN_PROBE_PIN   -1 
 
 //
 // Steppers
 //
-#define X_STEP_PIN         PE8
-#define X_DIR_PIN          PE7
-#define X_ENABLE_PIN       PE9
+#define X_STEP_PIN         PB10
+#define X_DIR_PIN          PE15
+#define X_ENABLE_PIN       PB11
 
-#define X2_STEP_PIN        PE11
-#define X2_DIR_PIN         PE10
-#define X2_ENABLE_PIN      PE12
+#define X2_STEP_PIN        PC5
+#define X2_DIR_PIN         PC4
+#define X2_ENABLE_PIN      PB0
 
-#define Y_STEP_PIN         PC2
-#define Y_DIR_PIN          PC1
-#define Y_ENABLE_PIN       PC3
+#define Y_STEP_PIN         PE5
+#define Y_DIR_PIN          PE4
+#define Y_ENABLE_PIN       PE6
 
-#define Z_STEP_PIN         PE5
-#define Z_DIR_PIN          PE4
-#define Z_ENABLE_PIN       PE6
+#define Z_STEP_PIN         PE11
+#define Z_DIR_PIN          PE10
+#define Z_ENABLE_PIN       PE12
 
-#define E0_STEP_PIN        PB10
-#define E0_DIR_PIN         PE15
-#define E0_ENABLE_PIN      PB11
+#define E0_STEP_PIN        PB13
+#define E0_DIR_PIN         PB12
+#define E0_ENABLE_PIN      PB14
 
 /**
  * TODO: Currently using same Enable pin to all steppers.
  */
 
-#define E1_STEP_PIN        PB13
-#define E1_DIR_PIN         PB12
-#define E1_ENABLE_PIN      PB14
+#define E1_STEP_PIN        PC2
+#define E1_DIR_PIN         PC1
+#define E1_ENABLE_PIN      PC3
 
 #define E2_STEP_PIN        -1
 #define E2_DIR_PIN         -1
@@ -97,8 +83,8 @@ enum BoardVer {
 //  X Y Calibration dection
 //
 #define X0_CAL_PIN          PA7
-#define X1_CAL_PIN          PA6
-
+#define X1_CAL_PIN          PE8
+#define PROBE_POWER_EN_PIN  PD14
 
 //
 // Misc. Functions
@@ -109,79 +95,37 @@ enum BoardVer {
 //
 // Heaters / Fans
 //
-#define HEATER_0_PIN       PE13   // EXTRUDER 1
-#define HEATER_1_PIN       PE14   // EXTRUDER 2
-#define HEATER_BED_PIN     PA9   // BED
-
-#define LASER_PIN      PB1
-// #define SPINDLE_LASER_ENABLE_PIN       PB10
-
-#define CNC_PIN        PB1
+#define HEATER_0_PIN       PE14   // EXTRUDER 1
+#define HEATER_1_PIN       PE13   // EXTRUDER 2
+#define HEATER_BED_PIN     PA10   // BED
 
 //
 // Temperature Sensors
 //
 #define TEMP_BED_PIN       PC0   // ANALOG NUMBERING
-#define TEMP_0_PIN         PA1   // ANALOG NUMBERING
-#define TEMP_1_PIN         PA3   // ANALOG NUMBERING
+#define TEMP_0_PIN         PA3   // ANALOG NUMBERING
+#define TEMP_1_PIN         PA1   // ANALOG NUMBERING
 
-//
-// Filament Switch
-//
-#define FIL_RUNOUT_PIN  PD0
-
-//
-// Power 0 supply, for HMI
-//
-#define POWER0_SUPPLY_PIN PB0
-#define POWER0_SUPPLY_OFF HIGH
-#define POWER0_SUPPLY_ON  LOW
-
-//
-// Power1 supply, for motor and extruder
-//
-#define POWER1_SUPPLY_PIN PB1
-#define POWER1_SUPPLY_OFF LOW
-#define POWER1_SUPPLY_ON  HIGH
-
-//
-// Power2 supply, for bed and add-on
-//
-#define POWER2_SUPPLY_PIN PB2
-
-#define SCREEN_DET_PIN PD14
-
-#define POWER2_SUPPLY_OFF  LOW
-#define POWER2_SUPPLY_ON   HIGH
 
 //
 // to detect power loss
 //
-#define POWER_DETECT_PIN PE0
+#define POWER_LOST_PIN PE1
 #define POWER_LOSS_STATE LOW
 #define POWER_NORMAL_STATE  HIGH
 
 //
 // Power controls
 //
-#define MOTOR_PWR_PIN       PB8
-#define HEATER_PWR_PIN      PB9
-#define HEATER_BED_PWR_PIN  PA10
+#define MOTOR_PWR_PIN       PC10
+#define HEATER_PWR_PIN      PC11
+#define HEATER_BED_PWR_PIN  PA9
 #define SCREEN_PWR_PIN      PD4
 
 //
-// Power lost check
-//
-#define POWER_LOST_PIN      PE1
-
-//
-// Heatedbed error detect pin
-//
-#define HEATEDBED_ON_PIN  PD13
-//
 // TMC
 //
-#define STALL_GUARD_PIN  PE2
+#define STALL_GUARD_PIN  PE3
 #define TMC_SEL0_PIN     PB15
 #define TMC_SEL1_PIN     PD10
 #define TMC_SEL2_PIN     PD11
@@ -189,23 +133,18 @@ enum BoardVer {
 
 // Nozzle detector adc
 #define NOZZLE_ADC_0                        PA5
-#define NOZZLE_ADC_1                        PA2
+#define NOZZLE_ADC_1                        PA6
 
-//
-//  X Y Calibration dection
-//
-#define X0_CAL_PIN                          PA7
-#define X1_CAL_PIN                          PA6
+#define FAN_PIN  PC9
+#define FAN1_PIN PC7
+#define FAN2_PIN PA8
+#define FAN3_PIN PC8
+#define FAN4_PIN PC6
 
-#define FAN_PIN PC6
-#define FAN1_PIN PC8
-#define FAN2_PIN PC7
-#define FAN3_PIN PC9
+#define CASE_LIGHT_PIN PB8
 
-#define CASE_LIGHT_PIN PD12
-
-#define FILAMENT0_ADC_PIN PA0
-#define FILAMENT1_ADC_PIN PA4
+#define FILAMENT0_ADC_PIN PA4
+#define FILAMENT1_ADC_PIN PA0
 
 #define X_HARDWARE_SERIAL  MSerial3
 #define X2_HARDWARE_SERIAL MSerial3
