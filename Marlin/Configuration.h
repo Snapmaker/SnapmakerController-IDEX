@@ -1721,7 +1721,7 @@
 
 #define DUPLICATION_SWITCH_FEEDRATE 50  // MM/S
 
-#define HOMING_X_POX_TO_ENDSTOP (5)  // mm
+#define HOMING_X_POX_TO_ENDSTOP (0)  // mm
 // Validate that endstops are triggered on homing moves
 #define VALIDATE_HOMING_ENDSTOPS
 
