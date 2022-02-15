@@ -225,6 +225,7 @@ void TMC2208Stepper::postReadCommunication() {
 void TMC2208Stepper::write(uint8_t addr, uint32_t regVal) {
 	uint8_t len = 7;
 	select(slave_address);
+	delay(2);
 	addr |= TMC_WRITE;
 	uint8_t datagram[] = {TMC2208_SYNC, st_slave_address, addr, (uint8_t)(regVal>>24), (uint8_t)(regVal>>16), (uint8_t)(regVal>>8), (uint8_t)(regVal>>0), 0x00};
 
