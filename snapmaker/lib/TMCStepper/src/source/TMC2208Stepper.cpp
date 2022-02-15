@@ -15,8 +15,8 @@ uint8_t st_sel_table[8][3] = {
   { LOW,    LOW,     HIGH},   //X2
   { HIGH,   LOW,     LOW},    //Y1
   { HIGH,   HIGH,    LOW},    //Z
-  { LOW,    HIGH,    HIGH},   //E0
-  { HIGH,   HIGH,    HIGH},   //E1
+  { HIGH,   HIGH,    HIGH},   //E0
+  { LOW,    HIGH,    HIGH},   //E1
   { LOW,    LOW,     LOW},    //Unselect
   { LOW,    LOW,     LOW}     //Unselect
 };
