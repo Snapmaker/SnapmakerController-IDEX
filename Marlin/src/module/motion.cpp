@@ -1225,6 +1225,13 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
     return false;
   }
 
+  float x_position() {
+    return active_extruder != 0 ? inactive_extruder_x : current_position[X_AXIS];
+  }
+  float x2_position() {
+    return active_extruder == 0 ? inactive_extruder_x : current_position[X_AXIS];
+  }
+
 #endif // DUAL_X_CARRIAGE
 
 /**

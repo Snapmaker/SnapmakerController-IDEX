@@ -587,7 +587,8 @@ void home_if_needed(const bool keeplev=false);
   void idex_set_mirrored_mode(const bool mirr);
   void idex_set_parked(const bool park=true);
   bool dual_x_carriage_unpark();
-
+  float x_position();
+  float x2_position();
 #else
 
   #if ENABLED(MULTI_NOZZLE_DUPLICATION)
