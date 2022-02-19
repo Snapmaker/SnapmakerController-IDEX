@@ -1,0 +1,96 @@
+#include "event.h"
+#include "../J1/common_type.h"
+EventHandler event_handler;
+static QueueHandle_t event_queue = NULL;
+
+event_cb_info_t * get_event_info(uint8_t cmd_set, uint8_t cmd_id) {
+  switch (cmd_set) {
+  }
+  return NULL;
+}
+
+void EventHandler::parse_event_info(evevt_struct_t &data, event_cache_node_t *event) {
+  event_param_t *param = &event->param;
+  SACP_struct_t *info = data.info;
+  param->info.attribute = info->arrt.type;
+  param->info.command_set = info->command_set;
+  param->info.command_id = info->command_id;
+  param->info.recever_id = info->recever_id;
+  param->info.sequence = info->sequence;
+  param->source = data.onwer;
+  param->length = info->length;
+  param->length -= 8;  // Effective data length
+  SERIAL_ECHOLNPAIR("event data len:", param->length);
+  for (uint32_t i = 0; i < param->length; i++) {
+    param->data[i] = info->data[i];
+  }
+  param->write_byte = data.write;
+}
+
+event_cache_node_t * EventHandler::get_event_cache() {
+  for (uint8_t i = 0; i < EVENT_CACHE_COUNT; i++) {
+    if (event_cache[i].block_status == EVENT_CACHT_STATUS_IDLE) {
+      event_cache[i].block_status = EVENT_CACHT_STATUS_BUSY;
+      return &event_cache[i];
+    }
+  }
+  return NULL;
+}
+
+ErrCode EventHandler::parse(evevt_struct_t &data) {
+  event_cache_node_t *event = get_event_cache();
+  if (!event) {
+    SERIAL_ECHO("ERROR:event no cache\n");
+    return E_NO_MEM;
+  }
+
+  parse_event_info(data, event);
+  event_cb_info_t * cb_info = get_event_info(data.info->command_set, data.info->command_id);
+  if (!cb_info) {
+    event->block_status = EVENT_CACHT_STATUS_IDLE;
+    SERIAL_ECHOLN("ERROR: find no event cb");
+    return E_PARAM;
+  }
+
+  event->cb = cb_info->cb;
+  if (cb_info->type == EVENT_CB_DIRECT_RUN) {
+    SERIAL_ECHOLN("run event cb");
+    (event->cb)(event->param);
+    event->block_status = EVENT_CACHT_STATUS_IDLE;
+    return E_SUCCESS;
+  } else {
+    SERIAL_ECHOLN("wait event cb");
+    event->block_status = EVENT_CACHT_STATUS_WAIT;
+    if (xQueueSend(event_queue, (void *)&event, (TickType_t)0) != pdPASS ) {
+      SERIAL_ECHOLN("event cacne full!!!");
+    }
+  }
+  return E_PARAM;
+}
+
+void EventHandler::loop_task() {
+  event_cache_node_t *event = NULL;
+  while (true) {
+    xQueueReceive(event_queue, &event, portMAX_DELAY );
+    if (event->block_status == EVENT_CACHT_STATUS_WAIT) {
+      event->block_status = EVENT_CACHT_STATUS_BUSY;
+      (event->cb)(event->param);
+      event->block_status = EVENT_CACHT_STATUS_IDLE;
+    }
+  }
+}
+
+static void event_task(void * arg) {
+  event_handler.loop_task();
+}
+
+void event_init() {
+  event_queue = xQueueCreate(EVENT_CACHE_COUNT, sizeof(event_cache_node_t *));
+  BaseType_t ret = xTaskCreate(event_task, "event_loop", 1000,NULL, 5, NULL);
+  if (ret != pdPASS) {
+    SERIAL_ECHO("Failed to create event_loop!\n");
+  }
+  else {
+    SERIAL_ECHO("Created event_loop task!\n");
+  }
+}

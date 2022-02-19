@@ -65,6 +65,7 @@
 #include "lcd/marlinui.h"
 #include "../snapmaker/J1/tmc_driver.h"
 #include "../snapmaker/J1/filament_sensor.h"
+#include "../snapmaker/J1/J1.h"
 #if HAS_TOUCH_BUTTONS
   #include "lcd/touch/touch_buttons.h"
 #endif
@@ -1609,6 +1610,7 @@ void setup() {
   else {
     SERIAL_ECHO("Created marlin_loop task!\n");
   }
+  J1_setup();
 
   vTaskStartScheduler();
 }
@@ -1645,7 +1647,7 @@ void marlin_loop() {
 }
 
 void loop() {
-
+  vTaskDelay(pdMS_TO_TICKS(100));
 }
 
 extern "C" {
