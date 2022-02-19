@@ -2,6 +2,7 @@
 #include "event_base.h"
 #include "subscribe.h"
 #include "../module/fdm.h"
+#include "../module/bed_control.h"
 #include "../module/system.h"
 #include "../module/motion_control.h"
 
@@ -25,6 +26,7 @@ static ErrCode req_module_info(event_param_t& event) {
   uint8_t index = 0;
   fdm_head.get_module_info(0, module_info[index++]);
   fdm_head.get_module_info(1, module_info[index++]);
+  bed_control.get_module_info(module_info[index++]);
   *array_count = index;
   event.length = index * sizeof(module_info_t) + 2;
   send_event(event);
