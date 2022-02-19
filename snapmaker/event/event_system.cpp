@@ -18,6 +18,14 @@ static ErrCode unsubscribe_event(event_param_t& event) {
   return send_event(event);
 }
 
+
+static ErrCode heart_event(event_param_t& event) {
+  event.data[0] = E_SUCCESS;
+  event.data[1] = system_service.get_status();
+  event.length = 2;
+  send_event(event);
+  return E_SUCCESS;
+}
 static ErrCode req_module_info(event_param_t& event) {
   uint8_t *array_count = &event.data[1];
   module_info_t *module_info = (module_info_t *)(event.data + 2);
@@ -78,6 +86,8 @@ static ErrCode move(event_param_t& event) {
 event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_SUBSCRIBE             , EVENT_CB_DIRECT_RUN, subscribe_event},
   {SYS_ID_UNSUBSCRIBE           , EVENT_CB_DIRECT_RUN, unsubscribe_event},
+  {SYS_ID_HEARTBEAT             , EVENT_CB_DIRECT_RUN, heart_event},
+  {SYS_ID_REPORT_LOG            , EVENT_CB_DIRECT_RUN, retport_log},
   {SYS_ID_REQ_MODULE_INFO       , EVENT_CB_DIRECT_RUN, req_module_info},
   {SYS_ID_REQ_MACHINE_INFO      , EVENT_CB_DIRECT_RUN, req_machine_info},
   {SYS_ID_REQ_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, req_coordinate_system},

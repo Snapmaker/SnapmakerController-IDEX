@@ -11,6 +11,21 @@ enum : uint8_t {
   AXIS_Z1 = 2,
   AXIS_X2 = 6,
 };
+
+typedef enum : uint8_t {
+  SYSTEM_STATUE_IDLE,
+  SYSTEM_STATUE_STARTING,
+  SYSTEM_STATUE_PRINTING,
+  SYSTEM_STATUE_PAUSING,
+  SYSTEM_STATUE_PAUSED,
+  SYSTEM_STATUE_STOPPING,
+  SYSTEM_STATUE_STOPPED,
+  SYSTEM_STATUE_FINISHING,
+  SYSTEM_STATUE_COMPLETED,
+  SYSTEM_STATUE_RECOVERING,
+  SYSTEM_STATUE_RESUMING,
+} system_status_e;
+
 #define AXIS_COUNT 4
 
 #pragma pack(1)
@@ -42,6 +57,9 @@ class SystemService {
     void get_coordinate_system_info(coordinate_system_t * info);
     void get_machine_info(machine_info_t *info);
     ErrCode set_origin(coordinate_info_t axis);
+    system_status_e get_status() {return status_;}
+  private:
+    system_status_e status_;
 };
 
 extern SystemService system_service;
