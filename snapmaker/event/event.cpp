@@ -1,6 +1,7 @@
 #include "event.h"
 #include "../J1/common_type.h"
 #include "event_system.h"
+#include "event_fdm.h"
 EventHandler event_handler;
 static QueueHandle_t event_queue = NULL;
 
@@ -8,6 +9,8 @@ event_cb_info_t * get_event_info(uint8_t cmd_set, uint8_t cmd_id) {
   switch (cmd_set) {
     case COMMAND_SET_SYS:
       return get_evevt_info_by_id(cmd_id, system_cb_info, SYS_ID_CB_COUNT);
+    case COMMAND_SET_FDM:
+      return get_evevt_info_by_id(cmd_id, fdm_cb_info, FDM_ID_CB_COUNT);
   }
   return NULL;
 }

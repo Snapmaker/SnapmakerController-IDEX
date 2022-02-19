@@ -1,6 +1,7 @@
 #include "event_system.h"
 #include "event_base.h"
 #include "subscribe.h"
+#include "../module/fdm.h"
 #include "../module/system.h"
 #include "../module/motion_control.h"
 
@@ -16,6 +17,19 @@ static ErrCode unsubscribe_event(event_param_t& event) {
   return send_event(event);
 }
 
+static ErrCode req_module_info(event_param_t& event) {
+  uint8_t *array_count = &event.data[1];
+  module_info_t *module_info = (module_info_t *)(event.data + 2);
+  event.data[0] = E_SUCCESS;
+
+  uint8_t index = 0;
+  fdm_head.get_module_info(0, module_info[index++]);
+  fdm_head.get_module_info(1, module_info[index++]);
+  *array_count = index;
+  event.length = index * sizeof(module_info_t) + 2;
+  send_event(event);
+  return E_SUCCESS;
+}
 
 static ErrCode req_machine_info(event_param_t& event) {
   machine_info_t *machine_info = (machine_info_t *)(event.data + 1);
@@ -62,6 +76,7 @@ static ErrCode move(event_param_t& event) {
 event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_SUBSCRIBE             , EVENT_CB_DIRECT_RUN, subscribe_event},
   {SYS_ID_UNSUBSCRIBE           , EVENT_CB_DIRECT_RUN, unsubscribe_event},
+  {SYS_ID_REQ_MODULE_INFO       , EVENT_CB_DIRECT_RUN, req_module_info},
   {SYS_ID_REQ_MACHINE_INFO      , EVENT_CB_DIRECT_RUN, req_machine_info},
   {SYS_ID_REQ_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, req_coordinate_system},
   {SYS_ID_SET_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, set_coordinate_system},
