@@ -1,5 +1,6 @@
 #include "J1.h"
 #include "../event/event.h"
+#include "../event/subscribe.h"
 #include "../protocol/protocol_sacp.h"
 
 HardwareSerial *hmi_serial = &MSerial2;
@@ -33,5 +34,6 @@ void J1_setup() {
   else {
     SERIAL_ECHO("Created hmi_loop task!\n");
   }
+  subscribe_init();
   event_init();
 }
