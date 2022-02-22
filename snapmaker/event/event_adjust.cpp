@@ -1,0 +1,118 @@
+#include "event_adjust.h"
+#include "../module/adjusting.h"
+
+enum {
+  DED_AUTO_ADJUST_MODE = 0,
+  BED_MANUAL_ADJUST_MODE = 1,
+  NOZZLE_AUTO_ADJUST_MODE = 50,
+  NOZZLE_MANUAL_ADJUST_MODE = 51,
+  XY_AUTO_ADJUST_MODE = 100,
+};
+
+#pragma pack(1)
+typedef struct {
+  uint8_t result;
+  uint8_t cur_pos;
+  float_to_int_t offset;
+} report_probe_info_t;
+#pragma pack()
+
+
+static ErrCode adjust_set_mode(event_param_t& event) {
+  uint8_t mode = event.data[0];
+  SERIAL_ECHOLNPAIR("set adjust mode:", mode);
+  event.data[0] = E_SUCCESS;
+  switch (mode) {
+    case DED_AUTO_ADJUST_MODE:
+    case BED_MANUAL_ADJUST_MODE:
+    case NOZZLE_AUTO_ADJUST_MODE:
+    case NOZZLE_MANUAL_ADJUST_MODE:
+    case XY_AUTO_ADJUST_MODE:
+      break;
+    default:
+      event.data[0] = E_PARAM;
+  }
+  event.length = 1;
+  return send_event(event);
+}
+
+static ErrCode adjust_move_to_pos(event_param_t& event) {
+  adjust_position_e pos = (adjust_position_e)event.data[0];
+  bool is_probe = event.data[1];
+  SERIAL_ECHOLNPAIR("move to adjust pos:", pos, ", probe status:", is_probe);
+  event.data[0] = adjusting.bed_adjust_preapare(pos, is_probe);
+  event.length = 1;
+  send_event(event);
+  return E_SUCCESS;
+}
+
+static ErrCode adjust_start_bed_probe(event_param_t& event) {
+  event.data[0] = adjusting.bed_start_bead_mode();
+  event.length = 1;
+  SERIAL_ECHOLNPAIR("start bed bead mode");
+  return send_event(event);
+}
+
+static ErrCode adjust_exit(event_param_t& event) {
+  event.data[0] = adjusting.exit();
+  event.length = 1;
+  SERIAL_ECHOLNPAIR("exit adjust");
+  return send_event(event);
+}
+
+static ErrCode adjust_report_status(event_param_t& event) {
+  SERIAL_ECHOLNPAIR("adjust report ststus not support");
+  return E_SUCCESS;
+}
+
+static ErrCode adjust_report_bed_offset(event_param_t& event) {
+  report_probe_info_t * info = (report_probe_info_t *)event.data;
+  if (adjusting.probe_offset == ADJUSTINT_ERR_CODE) {
+    info->result = E_IN_PROGRESS;
+  } else {
+    info->result = E_SUCCESS;
+  }
+  info->cur_pos = adjusting.cur_pos;
+  info->offset = FLOAT_TO_INT(adjusting.probe_offset);
+  event.length = sizeof(report_probe_info_t);
+  return send_event(event);
+}
+
+static ErrCode adjust_move_nozzle(event_param_t& event) {
+  adjust_position_e pos = (adjust_position_e)event.data[0];
+  adjusting.nozzle_adjust_preapare(pos);
+  event.data[0] = adjusting.bed_probe(pos, 1);
+  event.length = 1;
+  return send_event(event);
+}
+
+static ErrCode adjust_start_xy(event_param_t& event) {
+  SERIAL_ECHOLNPAIR("start adjust xy");
+  event.data[0] = adjusting.adjust_xy();
+  event.length = 1;
+  SERIAL_ECHOLNPAIR("adjust xy over");
+  return send_event(event);
+}
+
+static ErrCode adjust_set_xy_offset(event_param_t& event) {
+
+  return E_SUCCESS;
+}
+
+static ErrCode adjust_report_xy_offset(event_param_t& event) {
+
+  return E_SUCCESS;
+}
+
+event_cb_info_t adjust_cb_info[ADJUST_ID_CB_COUNT] = {
+  {ADJUST_ID_SET_MODE         , EVENT_CB_TASK_RUN, adjust_set_mode},
+  {ADJUST_ID_MOVE_TO_POSITION , EVENT_CB_TASK_RUN, adjust_move_to_pos},
+  {ADJUST_ID_START_BED_PROBE  , EVENT_CB_TASK_RUN, adjust_start_bed_probe},
+  {ADJUST_ID_EXIT             , EVENT_CB_TASK_RUN, adjust_exit},
+  {ADJUST_ID_REPORT_STATUS    , EVENT_CB_TASK_RUN, adjust_report_status},
+  {ADJUST_ID_REPORT_BED_OFFSET, EVENT_CB_TASK_RUN, adjust_report_bed_offset},
+  {ADJUST_ID_MOVE_NOZZLE      , EVENT_CB_TASK_RUN, adjust_move_nozzle},
+  {ADJUST_ID_START_XY         , EVENT_CB_TASK_RUN, adjust_start_xy},
+  {ADJUST_ID_SET_XY_OFFSET    , EVENT_CB_TASK_RUN, adjust_set_xy_offset},
+  {ADJUST_ID_REPORT_XY_OFFSET , EVENT_CB_TASK_RUN, adjust_report_xy_offset},
+};

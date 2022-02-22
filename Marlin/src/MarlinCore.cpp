@@ -66,6 +66,7 @@
 #include "../snapmaker/J1/tmc_driver.h"
 #include "../snapmaker/J1/filament_sensor.h"
 #include "../snapmaker/J1/J1.h"
+#include "../snapmaker/module/adjusting.h"
 #if HAS_TOUCH_BUTTONS
   #include "lcd/touch/touch_buttons.h"
 #endif
@@ -1643,6 +1644,7 @@ void marlin_loop() {
 
     TERN_(HAS_TFT_LVGL_UI, printer_state_polling());
     // vTaskDelay(pdMS_TO_TICKS(1));
+    adjusting.loop();
   }
 }
 

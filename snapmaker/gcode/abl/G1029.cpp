@@ -25,6 +25,8 @@
  */
 #include "../../../Marlin/src/gcode/gcode.h"
 #include "../../J1/calibration.h"
+#include "../../module/adjusting.h"
+
 
 enum {
   CALIBRATION_Z_OFFSET, // 0
@@ -56,8 +58,22 @@ void GcodeSuite::G1029() {
         }
         break;
     }
-  } else if(parser.seenval('P')) {
+  } else if(parser.seenval('I')) {
     uint8_t number = parser.value_byte();
-    calibration.calibrate_move_xy(number);
+    adjusting.goto_position(number);
+  } else if (parser.seenval('B')) {
+    uint8_t number = parser.value_byte();
+    adjusting.bed_adjust_preapare((adjust_position_e)number, number==ADJUST_POS_1);
+    if (number != ADJUST_POS_1) {
+      adjusting.bed_start_bead_mode();
+    }
+  } else if (parser.seenval('N')) {
+    uint8_t number = parser.value_byte();
+    adjusting.nozzle_adjust_preapare((adjust_position_e)number);
+    adjusting.bed_start_bead_mode();
+  } else if (parser.seen('A')) {
+    adjusting.adjust_xy();
+  } else if (parser.seen('E')) {
+    adjusting.exit();
   }
 }

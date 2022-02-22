@@ -3,6 +3,8 @@
 #include "event_system.h"
 #include "event_fdm.h"
 #include "event_bed.h"
+#include "event_adjust.h"
+
 EventHandler event_handler;
 static QueueHandle_t event_queue = NULL;
 
@@ -14,6 +16,8 @@ event_cb_info_t * get_event_info(uint8_t cmd_set, uint8_t cmd_id) {
       return get_evevt_info_by_id(cmd_id, fdm_cb_info, FDM_ID_CB_COUNT);
     case COMMAND_SET_BED:
       return get_evevt_info_by_id(cmd_id, bed_cb_info, BED_ID_CB_COUNT);
+    case COMMAND_SET_ADJUSTING:
+      return get_evevt_info_by_id(cmd_id, adjust_cb_info, ADJUST_ID_CB_COUNT);
   }
   return NULL;
 }
