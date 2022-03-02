@@ -37,8 +37,9 @@ void SystemService::get_coordinate_system_info(coordinate_system_t * info) {
 
 void SystemService::get_machine_info(machine_info_t *info) {
   char *ver = (char *)DETAILED_BUILD_VERSION;
-  info->type = 2; // J1
-  info->number =  0;
+  info->Ji_num = 4; // J1
+  info->hw_version = 1;
+  info->sn = 0;
   info->version_length = strlen(ver) + 1;
   for (uint16_t i = 0; i < info->version_length; i++) {
     info->version[i] = ver[i];

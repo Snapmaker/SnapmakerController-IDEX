@@ -30,8 +30,9 @@ typedef enum : uint8_t {
 
 #pragma pack(1)
 typedef struct {
-  uint8_t type;  // J generation machine is 2
-  uint8_t number; // J1 is 0
+  uint8_t Ji_num;  // J generation machine is 4
+  uint8_t hw_version; // J1 is 0
+  uint32_t sn;
   uint16_t version_length;
   uint8_t version[MODULE_VER_LEN];
 } machine_info_t;
