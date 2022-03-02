@@ -9,7 +9,7 @@ SACP_param_t hmi_sacp_params = {0};
 void hmi_loop(void *arg) {
   hmi_serial->begin(115200);
   evevt_struct_t event;
-  event.write = [](unsigned char ch)->size_t{return hmi_serial->write(ch);};
+  write_fun_register(EVENT_SOURCE_HMI, [](unsigned char ch)->size_t{return hmi_serial->write(ch);});
   event.onwer = EVENT_SOURCE_HMI;
   event.info = &hmi_sacp_params.sacp;
 

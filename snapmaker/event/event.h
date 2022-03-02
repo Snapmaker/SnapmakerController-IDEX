@@ -25,7 +25,6 @@ typedef struct {
 typedef struct {
   SACP_struct_t *info;  // Full sacp protocol information
   event_source_e onwer;  // Event source
-  write_byte_f write;  // Callback of the sending function of the event source
 }evevt_struct_t;
 
 class EventHandler {

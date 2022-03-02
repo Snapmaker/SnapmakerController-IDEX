@@ -37,7 +37,6 @@ void EventHandler::parse_event_info(evevt_struct_t &data, event_cache_node_t *ev
   for (uint32_t i = 0; i < param->length; i++) {
     param->data[i] = info->data[i];
   }
-  param->write_byte = data.write;
 }
 
 event_cache_node_t * EventHandler::get_event_cache() {
