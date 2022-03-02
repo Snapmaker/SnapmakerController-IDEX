@@ -23,6 +23,8 @@ typedef std::function<size_t(unsigned char ch)> write_byte_f;
 #define COMMAND_SET_ENCLOUSER 0x15
 // Machine calibration function
 #define COMMAND_SET_ADJUSTING 0xA0
+// print control
+#define COMMAND_SET_PRINTER 0xAC
 
 // Event Source
 typedef enum {

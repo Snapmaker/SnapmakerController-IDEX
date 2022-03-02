@@ -15,6 +15,9 @@
 #define PACK_PARSE_MAX_SIZE 512
 #define PACK_PACKET_MAX_SIZE 1024
 
+#define SACP_ATTR_REQ 0
+#define SACP_ATTR_ACK 1
+
 #pragma pack(1)
 typedef struct {
   uint8_t sof_h;

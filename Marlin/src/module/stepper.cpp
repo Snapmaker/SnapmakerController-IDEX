@@ -98,6 +98,7 @@ Stepper stepper; // Singleton
 #include "../HAL/shared/Delay.h"
 #include "../../../snapmaker/J1/switch_detect.h"
 #include "../../../snapmaker/J1/filament_sensor.h"
+#include "../../../snapmaker/module/print_control.h"
 
 #if ENABLED(INTEGRATED_BABYSTEPPING)
   #include "../feature/babystep.h"
@@ -2198,7 +2199,7 @@ uint32_t Stepper::block_phase_isr() {
       // Compute the acceleration and deceleration points
       accelerate_until = current_block->accelerate_until << oversampling;
       decelerate_after = current_block->decelerate_after << oversampling;
-
+      print_control.set_cur_line(current_block->file_position);
       TERN_(MIXING_EXTRUDER, mixer.stepper_setup(current_block->b_color))
 
       TERN_(HAS_MULTI_EXTRUDER, stepper_extruder = current_block->extruder);

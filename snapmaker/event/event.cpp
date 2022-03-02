@@ -4,6 +4,7 @@
 #include "event_fdm.h"
 #include "event_bed.h"
 #include "event_adjust.h"
+#include "event_printer.h"
 
 EventHandler event_handler;
 static QueueHandle_t event_queue = NULL;
@@ -18,6 +19,8 @@ event_cb_info_t * get_event_info(uint8_t cmd_set, uint8_t cmd_id) {
       return get_evevt_info_by_id(cmd_id, bed_cb_info, BED_ID_CB_COUNT);
     case COMMAND_SET_ADJUSTING:
       return get_evevt_info_by_id(cmd_id, adjust_cb_info, ADJUST_ID_CB_COUNT);
+    case COMMAND_SET_PRINTER:
+      return get_evevt_info_by_id(cmd_id, printer_cb_info, PRINTER_ID_CB_COUNT);
   }
   return NULL;
 }
@@ -75,6 +78,8 @@ ErrCode EventHandler::parse(evevt_struct_t &data) {
     event->block_status = EVENT_CACHT_STATUS_WAIT;
     if (xQueueSend(event_queue, (void *)&event, (TickType_t)0) != pdPASS ) {
       SERIAL_ECHOLN("event cacne full!!!");
+      send_result(event->param, E_NO_MEM);
+    } else {
     }
   }
   return E_PARAM;
@@ -83,12 +88,14 @@ ErrCode EventHandler::parse(evevt_struct_t &data) {
 void EventHandler::loop_task() {
   event_cache_node_t *event = NULL;
   while (true) {
-    xQueueReceive(event_queue, &event, portMAX_DELAY );
-    if (event->block_status == EVENT_CACHT_STATUS_WAIT) {
-      event->block_status = EVENT_CACHT_STATUS_BUSY;
-      (event->cb)(event->param);
-      event->block_status = EVENT_CACHT_STATUS_IDLE;
+    if (xQueueReceive(event_queue, &event, 1 ) == pdPASS) {
+      if (event->block_status == EVENT_CACHT_STATUS_WAIT) {
+        event->block_status = EVENT_CACHT_STATUS_BUSY;
+        (event->cb)(event->param);
+        event->block_status = EVENT_CACHT_STATUS_IDLE;
+      }
     }
+    printer_event_loop();
   }
 }
 

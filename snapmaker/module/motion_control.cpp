@@ -60,16 +60,16 @@ ErrCode MotionControl::move_axis_to(mobile_instruction_t move) {
 ErrCode MotionControl::home(uint8_t axis) {
   switch (axis) {
     case 0:
-      parser.parse((char *)"G28");
+      home();
       break;
     case 1:
-      parser.parse((char *)"G28 X");
+      home_x();
       break;
     case 2:
-      parser.parse((char *)"G28 Y");
+      home_y();
       break;
     case 3:
-      parser.parse((char *)"G28 Z");
+      home_z();
       break;
     default:
       return E_PARAM;
@@ -77,6 +77,25 @@ ErrCode MotionControl::home(uint8_t axis) {
   gcode.process_parsed_command();
   return E_SUCCESS;
 }
+
+ErrCode MotionControl::home_x() {
+  parser.parse((char *)"G28 X");
+  gcode.process_parsed_command();
+  return E_SUCCESS;
+}
+
+ErrCode MotionControl::home_y() {
+  parser.parse((char *)"G28 Y");
+  gcode.process_parsed_command();
+  return E_SUCCESS;
+}
+
+ErrCode MotionControl::home_z() {
+  parser.parse((char *)"G28 Z");
+  gcode.process_parsed_command();
+  return E_SUCCESS;
+}
+
 
 ErrCode MotionControl::home() {
   parser.parse((char *)"G28");
@@ -131,6 +150,11 @@ void MotionControl::move_to_z(float z, uint16_t feedrate) {
 
 void MotionControl::move_to_xyz(float x, float y, float z, uint16_t feedrate) {
   do_blocking_move_to(x, y, z, MMM_TO_MMS(feedrate));
+  planner.synchronize();
+}
+
+void MotionControl::move_to_xyz(xyze_pos_t &pos, uint16_t feedrate) {
+  do_blocking_move_to(pos.x, pos.y, pos.z, MMM_TO_MMS(feedrate));
   planner.synchronize();
 }
 

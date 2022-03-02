@@ -1795,7 +1795,7 @@ bool Planner::_buffer_steps(const xyze_long_t &target
     //  Simply accept that as movement queued and done
     return true;
   }
-
+  block->file_position = queue.file_line_number();
   // If this is the first added movement, reload the delay, otherwise, cancel it.
   if (block_buffer_head == block_buffer_tail) {
     // If it was the first queued block, restart the 1st block delivery delay, to

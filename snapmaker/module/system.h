@@ -59,8 +59,9 @@ class SystemService {
     void get_machine_info(machine_info_t *info);
     ErrCode set_origin(coordinate_info_t axis);
     system_status_e get_status() {return status_;}
+    void set_status(system_status_e status) {status_ = status;}
   private:
-    system_status_e status_;
+    system_status_e status_ = SYSTEM_STATUE_IDLE;
 };
 
 extern SystemService system_service;

@@ -2,7 +2,7 @@
 #define MOTION_CONTROL_H
 
 #include "../J1/common_type.h"
-
+#include "src/core/types.h"
 
 #pragma pack(1)
 typedef struct {
@@ -17,6 +17,9 @@ class MotionControl {
     ErrCode move_axis_to(mobile_instruction_t move);
     ErrCode home(uint8_t axis);
     ErrCode home();
+    ErrCode home_x();
+    ErrCode home_y();
+    ErrCode home_z();
     ErrCode move_e(float distance, uint16_t feedrate);
     void move_x(float x, uint16_t feedrate=0);
     void move_y(float y, uint16_t feedrate=0);
@@ -26,6 +29,7 @@ class MotionControl {
     void move_to_y(float y, uint16_t feedrate=0);
     void move_to_z(float z, uint16_t feedrate=0);
     void move_to_xyz(float x, float y, float z, uint16_t feedrate=0);
+    void move_to_xyz(xyze_pos_t &pos, uint16_t feedrate=0);
     void move_to_xy(float x, float y, uint16_t feedrate);
 
     void retrack_e(float distance, uint16_t feedrate);

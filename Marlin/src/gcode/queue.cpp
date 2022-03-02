@@ -36,7 +36,7 @@ GCodeQueue queue;
 #include "../module/temperature.h"
 #include "../MarlinCore.h"
 #include "../core/bug_on.h"
-
+#include "../../../snapmaker/module/print_control.h"
 #if ENABLED(PRINTER_EVENT_LEDS)
   #include "../feature/leds/printer_event_leds.h"
 #endif
@@ -102,6 +102,7 @@ bool GCodeQueue::RingBuffer::enqueue(const char *cmd, bool skip_ok/*=true*/
 ) {
   if (*cmd == ';' || length >= BUFSIZE) return false;
   strcpy(commands[index_w].buffer, cmd);
+  commands[index_w].lines = INVALID_CMD_LINE;
   commit_command(skip_ok
     #if HAS_MULTI_SERIAL
       , serial_ind
@@ -535,6 +536,16 @@ void GCodeQueue::get_serial_commands() {
   } // queue has space, serial has data
 }
 
+void GCodeQueue::get_hmi_commands() {
+  if (ring_buffer.full()) return;
+  uint32_t lines = 0;
+  if (print_control.get_commands((uint8_t *)ring_buffer.commands[ring_buffer.index_w].buffer, lines, MAX_CMD_SIZE)) {
+    ring_buffer.commands[ring_buffer.index_w].lines = lines;
+    ring_buffer.commands[ring_buffer.index_w].skip_ok = true;
+    ring_buffer.advance_pos(ring_buffer.index_w, 1);
+  }
+}
+
 #if ENABLED(SDSUPPORT)
 
   /**
@@ -602,6 +613,7 @@ void GCodeQueue::get_available_commands() {
   get_serial_commands();
 
   TERN_(SDSUPPORT, get_sdcard_commands());
+  get_hmi_commands();
 }
 
 /**

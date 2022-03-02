@@ -243,7 +243,7 @@ typedef struct block_t {
   #if ENABLED(LASER_POWER_INLINE)
     block_laser_t laser;
   #endif
-
+  uint32_t file_position;                        // position of gcode of this block in the file
 } block_t;
 
 #if ANY(LIN_ADVANCE, SCARA_FEEDRATE_SCALING, GRADIENT_MIX, LCD_SHOW_E_TOTAL)
