@@ -83,6 +83,13 @@ static ErrCode move(event_param_t& event) {
   return send_event(event);
 }
 
+static ErrCode home(event_param_t& event) {
+  motion_control.home();
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
+}
+
 event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_SUBSCRIBE             , EVENT_CB_DIRECT_RUN, subscribe_event},
   {SYS_ID_UNSUBSCRIBE           , EVENT_CB_DIRECT_RUN, unsubscribe_event},
@@ -95,4 +102,5 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_SET_ORIGIN            , EVENT_CB_DIRECT_RUN, set_origin},
   {SYS_ID_MOVE_RELATIVE         , EVENT_CB_TASK_RUN  , move_relative},
   {SYS_ID_MOVE                  , EVENT_CB_TASK_RUN  , move},
+  {SYS_ID_HOME                  , EVENT_CB_TASK_RUN  , home},
 };
