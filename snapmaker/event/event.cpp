@@ -104,6 +104,7 @@ static void event_task(void * arg) {
 }
 
 void event_init() {
+  printer_event_init();
   event_queue = xQueueCreate(EVENT_CACHE_COUNT, sizeof(event_cache_node_t *));
   BaseType_t ret = xTaskCreate(event_task, "event_loop", 1000,NULL, 5, NULL);
   if (ret != pdPASS) {

@@ -98,7 +98,7 @@ Stepper stepper; // Singleton
 #include "../HAL/shared/Delay.h"
 #include "../../../snapmaker/J1/switch_detect.h"
 #include "../../../snapmaker/J1/filament_sensor.h"
-#include "../../../snapmaker/module/print_control.h"
+#include "../../../snapmaker/module/power_loss.h"
 
 #if ENABLED(INTEGRATED_BABYSTEPPING)
   #include "../feature/babystep.h"
@@ -1547,6 +1547,7 @@ void Stepper::isr() {
 void Stepper::pulse_phase_isr() {
   filament_sensor.check();
   switch_detect.check();
+  power_loss.check();
   // If we must abort the current block, do so!
   if (abort_current_block) {
     abort_current_block = false;
@@ -2199,7 +2200,7 @@ uint32_t Stepper::block_phase_isr() {
       // Compute the acceleration and deceleration points
       accelerate_until = current_block->accelerate_until << oversampling;
       decelerate_after = current_block->decelerate_after << oversampling;
-      print_control.set_cur_line(current_block->file_position);
+      power_loss.cur_line = current_block->file_position;
       TERN_(MIXING_EXTRUDER, mixer.stepper_setup(current_block->b_color))
 
       TERN_(HAS_MULTI_EXTRUDER, stepper_extruder = current_block->extruder);
