@@ -24,6 +24,7 @@
 #include "../../J1/calibration.h"
 #include "../../J1/tmc_driver.h"
 #include "../../J1/filament_sensor.h"
+#include "../../module/fdm.h"
 
 /**
  *  S0
@@ -78,6 +79,13 @@ void GcodeSuite::M2020() {
       break;
 
       case 5:
+        if(parser.seenval('T')) {
+          uint8_t e = (uint8_t)parser.value_byte();
+          if(parser.seenval('D')) {
+            uint8_t d = (uint8_t)parser.value_byte();
+            fdm_head.change_filamenter(e, 600, (filamenter_change_status_e)d);
+          }
+        }
       break;
 
       case 6:

@@ -31,6 +31,13 @@ typedef struct {
   float_to_int_t retrack_speed;
 } extrusion_control_t;
 
+typedef struct {
+  uint8_t key;
+  uint8_t type;  // 0-extruder 1-retrack
+  float_to_int_t lenght;  // <0 sustain, =0 stop, >0 distance
+  float_to_int_t speed;
+} extrusion_until_t;
+
 #pragma pack()
 
 static ErrCode fdm_get_info(event_param_t& event) {
@@ -86,6 +93,27 @@ static ErrCode fdm_get_nozzle_spacing(event_param_t& event) {
   return E_SUCCESS;
 }
 
+static ErrCode fdm_extrusion_until(event_param_t& event) {
+  extrusion_until_t *extrusion = (extrusion_until_t *)event.data;
+  float  length = INT_TO_FLOAT(extrusion->lenght);
+  float  speed = INT_TO_FLOAT(extrusion->speed);
+  filamenter_change_status_e status = extrusion->type ? FILAMENT_CHANGE_RETRACK : FILAMENT_CHANGE_EXTRUDER;
+  SERIAL_ECHOLNPAIR("SC req extrusion ", MODULE_INDEX(extrusion->key), " lenght:", length, ",speed:", speed, ",type:", status);
+  if (length < 0) {
+    fdm_head.change_filamenter(MODULE_INDEX(extrusion->key), speed, status);
+  } else if (length == 0) {
+    fdm_head.change_filamenter(MODULE_INDEX(extrusion->key), speed, FILAMENT_CHANGE_STOP);
+  } else {
+    if (extrusion->type) {
+      motion_control.extrude_e(length, speed);
+    } else {
+      motion_control.retrack_e(length, speed);
+    }
+  }
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
+}
 
 static ErrCode fdm_extrusion_control(event_param_t& event) {
   extrusion_control_t * extrusion = (extrusion_control_t *)event.data;
@@ -134,5 +162,6 @@ event_cb_info_t fdm_cb_info[FDM_ID_CB_COUNT] = {
   {FDM_ID_SET_NOZZLE_SPACING    , EVENT_CB_DIRECT_RUN, fdm_set_nozzle_spacing},
   {FDM_ID_GET_NOZZLE_SPACING    , EVENT_CB_DIRECT_RUN, fdm_get_nozzle_spacing},
   {FDM_ID_EXTRUSION_CONTROL     , EVENT_CB_DIRECT_RUN, fdm_extrusion_control},
+  {FDM_ID_EXTRUSION_UNTIL       , EVENT_CB_DIRECT_RUN, fdm_extrusion_until},
   {FDM_ID_REPORT_SUBSCRIBE_INFO , EVENT_CB_DIRECT_RUN, fdm_report_subscribe_info},
 };

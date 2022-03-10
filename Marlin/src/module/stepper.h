@@ -414,6 +414,7 @@ class Stepper {
     #if ENABLED(LIN_ADVANCE)
       // The Linear advance ISR phase
       static uint32_t advance_isr();
+      static void filament_isr();
       FORCE_INLINE static void initiateLA() { nextAdvanceISR = 0; }
     #endif
 

@@ -99,6 +99,7 @@ Stepper stepper; // Singleton
 #include "../../../snapmaker/J1/switch_detect.h"
 #include "../../../snapmaker/J1/filament_sensor.h"
 #include "../../../snapmaker/module/power_loss.h"
+#include "../../../snapmaker/module/fdm.h"
 
 #if ENABLED(INTEGRATED_BABYSTEPPING)
   #include "../feature/babystep.h"
@@ -1407,10 +1408,13 @@ void Stepper::isr() {
     ENABLE_ISRS();
 
     if (!nextMainISR) pulse_phase_isr();                            // 0 = Do coordinated axes Stepper pulses
-
-    #if ENABLED(LIN_ADVANCE)
-      if (!nextAdvanceISR) nextAdvanceISR = advance_isr();          // 0 = Do Linear Advance E Stepper pulses
-    #endif
+    if (!nextMainISR && fdm_head.is_change_filamenter()) {
+      filament_isr();
+    } else {
+      #if ENABLED(LIN_ADVANCE)
+        if (!nextAdvanceISR) nextAdvanceISR = advance_isr();          // 0 = Do Linear Advance E Stepper pulses
+      #endif
+    }
 
     #if ENABLED(INTEGRATED_BABYSTEPPING)
       const bool is_babystep = (nextBabystepISR == 0);              // 0 = Do Babystepping (XY)Z pulses
@@ -1889,11 +1893,13 @@ uint32_t Stepper::block_phase_isr() {
         acceleration_time += interval;
 
         #if ENABLED(LIN_ADVANCE)
-          if (LA_use_advance_lead) {
-            // Fire ISR if final adv_rate is reached
-            if (LA_steps && LA_isr_rate != current_block->advance_speed) nextAdvanceISR = 0;
-          }
-          else if (LA_steps) nextAdvanceISR = 0;
+         if (!fdm_head.is_change_filamenter()) {
+            if (LA_use_advance_lead) {
+              // Fire ISR if final adv_rate is reached
+              if (LA_steps && LA_isr_rate != current_block->advance_speed) nextAdvanceISR = 0;
+            }
+            else if (LA_steps) nextAdvanceISR = 0;
+         }
         #endif
 
         // Update laser - Accelerating
@@ -1963,6 +1969,7 @@ uint32_t Stepper::block_phase_isr() {
         deceleration_time += interval;
 
         #if ENABLED(LIN_ADVANCE)
+        if (!fdm_head.is_change_filamenter()) {
           if (LA_use_advance_lead) {
             // Wake up eISR on first deceleration loop and fire ISR if final adv_rate is reached
             if (step_events_completed <= decelerate_after + steps_per_isr || (LA_steps && LA_isr_rate != current_block->advance_speed)) {
@@ -1971,6 +1978,7 @@ uint32_t Stepper::block_phase_isr() {
             }
           }
           else if (LA_steps) nextAdvanceISR = 0;
+        }
         #endif // LIN_ADVANCE
 
         // Update laser - Decelerating
@@ -2007,7 +2015,9 @@ uint32_t Stepper::block_phase_isr() {
 
         #if ENABLED(LIN_ADVANCE)
           // If there are any esteps, fire the next advance_isr "now"
-          if (LA_steps && LA_isr_rate != current_block->advance_speed) initiateLA();
+          if (!fdm_head.is_change_filamenter()) {
+            if (LA_steps && LA_isr_rate != current_block->advance_speed) initiateLA();
+          }
         #endif
 
         // Calculate the ticks_nominal for this nominal speed, if not done yet
@@ -2207,18 +2217,20 @@ uint32_t Stepper::block_phase_isr() {
 
       // Initialize the trapezoid generator from the current block.
       #if ENABLED(LIN_ADVANCE)
-        #if DISABLED(MIXING_EXTRUDER) && E_STEPPERS > 1
-          // If the now active extruder wasn't in use during the last move, its pressure is most likely gone.
-          if (stepper_extruder != last_moved_extruder) LA_current_adv_steps = 0;
-        #endif
+        if (!fdm_head.is_change_filamenter()) {
+          #if DISABLED(MIXING_EXTRUDER) && E_STEPPERS > 1
+            // If the now active extruder wasn't in use during the last move, its pressure is most likely gone.
+            if (stepper_extruder != last_moved_extruder) LA_current_adv_steps = 0;
+          #endif
 
-        if ((LA_use_advance_lead = current_block->use_advance_lead)) {
-          LA_final_adv_steps = current_block->final_adv_steps;
-          LA_max_adv_steps = current_block->max_adv_steps;
-          initiateLA(); // Start the ISR
-          LA_isr_rate = current_block->advance_speed;
+          if ((LA_use_advance_lead = current_block->use_advance_lead)) {
+            LA_final_adv_steps = current_block->final_adv_steps;
+            LA_max_adv_steps = current_block->max_adv_steps;
+            initiateLA(); // Start the ISR
+            LA_isr_rate = current_block->advance_speed;
+          }
+          else LA_isr_rate = LA_ADV_NEVER;
         }
-        else LA_isr_rate = LA_ADV_NEVER;
       #endif
 
       if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
@@ -2420,6 +2432,27 @@ uint32_t Stepper::block_phase_isr() {
   }
 
 #endif // LIN_ADVANCE
+
+void Stepper::filament_isr() {
+  HOTEND_LOOP() {
+    if (fdm_head.is_change_filamenter(e)) {
+      if (fdm_head.get_filamenter_dir(e)) {
+        _NORM_E_DIR(e);
+      } else {
+        _REV_E_DIR(e);
+      }
+      USING_TIMED_PULSE();
+      DIR_WAIT_AFTER();
+      _E_STEP_WRITE(e, !INVERT_E_STEP_PIN);
+      AWAIT_HIGH_PULSE();
+      E_STEP_WRITE(e, INVERT_E_STEP_PIN);
+    }
+  }
+
+  if (step_events_completed > decelerate_after) {
+    step_events_completed = decelerate_after;
+  }
+}
 
 #if ENABLED(INTEGRATED_BABYSTEPPING)
 

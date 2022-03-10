@@ -12,10 +12,11 @@ enum : uint8_t {
   FDM_ID_SET_NOZZLE_SPACING      = 0x07,
   FDM_ID_GET_NOZZLE_SPACING      = 0x08,
   FDM_ID_EXTRUSION_CONTROL       = 0x09,
+  FDM_ID_EXTRUSION_UNTIL         = 0x0A,
   FDM_ID_REPORT_SUBSCRIBE_INFO   = 0xA0,
 };
 
-#define FDM_ID_CB_COUNT 10
+#define FDM_ID_CB_COUNT 11
 
 extern event_cb_info_t fdm_cb_info[FDM_ID_CB_COUNT];
 

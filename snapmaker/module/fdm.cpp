@@ -3,6 +3,8 @@
 #include "../../Marlin/src/module/tool_change.h"
 #include "../../Marlin/src/module/temperature.h"
 #include "../../Marlin/src/module/motion.h"
+#include "../J1/filament_sensor.h"
+#include "motion_control.h"
 FDM_Head fdm_head;
 
 enum {
@@ -30,7 +32,14 @@ ErrCode FDM_Head::set_work_speed(float speed) {
   return E_SUCCESS;
 }
 
-ErrCode FDM_Head::get_filamenter(uint8_t e, bool state) {
+ErrCode FDM_Head::change_filamenter(uint8_t e, float feedrate, filamenter_change_status_e status) {
+  SERIAL_ECHOLNPAIR("change head", e, " filament status:", status);
+  change_filamenter_status[e] = status;
+  motion_control.quickstop();
+  if (is_change_filamenter()) {
+    // The extruded length is arbitrary, and this is just to rotate the e axis
+    motion_control.extrude_e(50, feedrate);
+  }
   return E_SUCCESS;
 }
 

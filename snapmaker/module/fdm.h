@@ -32,12 +32,18 @@ typedef struct {
 }FDM_info;
 #pragma pack()
 
+typedef enum {
+  FILAMENT_CHANGE_STOP,
+  FILAMENT_CHANGE_EXTRUDER,
+  FILAMENT_CHANGE_RETRACK,
+} filamenter_change_status_e;
+
 class FDM_Head {
   public:
     ErrCode set_temperature(uint8_t e, uint16_t temperature);
     float   get_temperature(uint8_t e);
     ErrCode set_work_speed(float speed);
-    ErrCode get_filamenter(uint8_t e, bool state);
+    ErrCode change_filamenter(uint8_t e, float feedrate, filamenter_change_status_e status);
     ErrCode change_tool(uint8_t e);
     ErrCode set_fan_speed(uint8_t e, uint8_t fan_index, uint8_t speed);
     ErrCode get_fan_speed(uint8_t e, uint8_t fan_index, uint8_t &speed);
@@ -46,8 +52,22 @@ class FDM_Head {
     ErrCode get_extruder_info(uint8_t e, extruder_info_t *info);
     ErrCode get_module_info(uint8_t e, module_info_t &info);
     uint8_t get_key(uint8_t e);
+    bool is_change_filamenter(uint8_t e) {
+      return (change_filamenter_status[e] != FILAMENT_CHANGE_STOP );
+    }
+    bool is_change_filamenter() {
+      return is_change_filamenter(0)||is_change_filamenter(1);
+    }
+    bool get_filamenter_dir(uint8_t e) {
+      if (change_filamenter_status[e] == FILAMENT_CHANGE_EXTRUDER) {
+        return true;
+      }
+      return false;
+    }
   private:
     module_info_t module_info[EXTRUDERS];
+    filamenter_change_status_e change_filamenter_status[EXTRUDERS] = {FILAMENT_CHANGE_STOP, FILAMENT_CHANGE_STOP};
+    bool filamenter_dir[EXTRUDERS] = {true, true};
 };
 
 extern FDM_Head fdm_head;

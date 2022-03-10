@@ -35,6 +35,10 @@ class MotionControl {
     void retrack_e(float distance, uint16_t feedrate);
     void extrude_e(float distance, uint16_t feedrate);
     void synchronize();
+    void quickstop() {
+      quickstop_stepper();
+      synchronize();
+    }
 };
 
 extern MotionControl motion_control;
