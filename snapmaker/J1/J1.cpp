@@ -2,6 +2,7 @@
 #include "../event/event.h"
 #include "../event/subscribe.h"
 #include "../protocol/protocol_sacp.h"
+#include "switch_detect.h"
 
 HardwareSerial *hmi_serial = &MSerial2;
 SACP_param_t hmi_sacp_params = {0};
@@ -27,6 +28,7 @@ void hmi_loop(void *arg) {
 }
 
 void J1_setup() {
+  switch_detect.init();
   BaseType_t ret = xTaskCreate(hmi_loop, "hmi_loop", 1024*3,NULL, 5, NULL);
   if (ret != pdPASS) {
     SERIAL_ECHO("Failed to create hmi_loop!\n");

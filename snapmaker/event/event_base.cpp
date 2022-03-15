@@ -61,19 +61,26 @@ ErrCode send_event(event_source_e source, SACP_head_base_t &sacp, uint8_t *data,
   send_lock = true;
   // Package the data and call write_byte to emit the information
   uint16_t pack_len = protocol_sacp.package(sacp, data, length, send_buf);
+  // SERIAL_ECHOLNPAIR("source:", source, " set:", sacp.command_set, " id:", sacp.command_id, " sequence:", sacp.sequence,
+  //                   " lenght:", length);
   send_data(source, send_buf, pack_len);
   send_lock = false;
   return E_SUCCESS;
 }
 
 ErrCode send_event(event_source_e source, uint8_t recever_id, uint8_t attribute,
-                   uint8_t command_set, uint8_t command_id, uint8_t *data, uint16_t length) {
+                   uint8_t command_set, uint8_t command_id, uint8_t *data, uint16_t length, uint16_t sequence) {
   SACP_head_base_t sacp = {recever_id, attribute, 0, command_set, command_id};
-  sacp.sequence = protocol_sacp.sequence_pop();
+  if (!sequence) {
+    sacp.sequence = protocol_sacp.sequence_pop();
+  } else {
+    sacp.sequence = sequence;
+  }
+
   send_event(source, sacp, data, length);
   return E_SUCCESS;
 }
 
 ErrCode send_result(event_param_t &event, ErrCode result) {
-  send_event(event, (uint8_t *)&result, 1);
+  return send_event(event, (uint8_t *)&result, 1);
 }

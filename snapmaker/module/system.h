@@ -26,6 +26,15 @@ typedef enum : uint8_t {
   SYSTEM_STATUE_RESUMING,
 } system_status_e;
 
+typedef enum {
+  SYSTEM_STATUE_SCOURCE_NONE,  // Do not change the trigger source
+  SYSTEM_STATUE_SCOURCE_SACP,
+  SYSTEM_STATUE_SCOURCE_GCODE,
+  SYSTEM_STATUE_SCOURCE_FILAMENT,
+  SYSTEM_STATUE_SCOURCE_PL,
+  SYSTEM_STATUE_SCOURCE_TOOL_CHANGE,
+} system_status_source_e;
+
 #define AXIS_COUNT 4
 
 #pragma pack(1)
@@ -59,9 +68,11 @@ class SystemService {
     void get_machine_info(machine_info_t *info);
     ErrCode set_origin(coordinate_info_t axis);
     system_status_e get_status() {return status_;}
-    void set_status(system_status_e status) {status_ = status;}
+    system_status_source_e get_source() {return source_;}
+    void set_status(system_status_e status, system_status_source_e source=SYSTEM_STATUE_SCOURCE_NONE);
   private:
     system_status_e status_ = SYSTEM_STATUE_IDLE;
+    system_status_source_e source_ = SYSTEM_STATUE_SCOURCE_NONE;
 };
 
 extern SystemService system_service;

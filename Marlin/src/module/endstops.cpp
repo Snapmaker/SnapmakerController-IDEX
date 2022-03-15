@@ -31,6 +31,7 @@
 #include "temperature.h"
 #include "../lcd/marlinui.h"
 #include "../../../snapmaker/J1/switch_detect.h"
+#include "../../../snapmaker/J1/filament_sensor.h"
 
 #if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
   #include HAL_PATH(../HAL, endstop_interrupts.h)
@@ -590,7 +591,8 @@ void _O2 Endstops::report_states() {
   print_es_state(switch_detect.read_e0_probe_status(), "PROBE_0");
   print_es_state(switch_detect.read_e1_probe_status(), "PROBE_1");
   
-
+  print_es_state(filament_sensor.is_trigger(0), "filament_0");
+  print_es_state(filament_sensor.is_trigger(1), "filament_1");
   TERN_(BLTOUCH, bltouch._reset_SW_mode());
   TERN_(JOYSTICK_DEBUG, joystick.report());
 

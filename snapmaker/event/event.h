@@ -5,7 +5,7 @@
 #include "../J1/common_type.h"
 #include "../protocol/protocol_sacp.h"
 
-#define EVENT_CACHE_COUNT 3
+#define EVENT_CACHE_COUNT 6
 
 typedef enum {
   EVENT_CACHT_STATUS_IDLE,

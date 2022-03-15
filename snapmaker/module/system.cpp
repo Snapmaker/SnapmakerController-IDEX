@@ -49,3 +49,19 @@ void SystemService::get_machine_info(machine_info_t *info) {
 ErrCode SystemService::set_origin(coordinate_info_t axis) {
   return E_SUCCESS;
 }
+
+void SystemService::set_status(system_status_e status, system_status_source_e source) {
+  switch (status) {
+    case SYSTEM_STATUE_PAUSING:
+    case SYSTEM_STATUE_STOPPING:
+    case SYSTEM_STATUE_FINISHING:
+      wait_for_heatup = false;
+      break;
+    default:
+      break;
+  }
+  status_ = status;
+  if (source != SYSTEM_STATUE_SCOURCE_NONE) {
+    source_ = source;
+  }
+}

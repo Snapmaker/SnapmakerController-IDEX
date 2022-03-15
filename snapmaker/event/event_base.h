@@ -72,8 +72,8 @@ event_cb_info_t * get_evevt_info_by_id(uint8_t id, event_cb_info_t *array, uint8
 ErrCode send_event(event_param_t &event);
 ErrCode send_event(event_param_t &event, uint8_t *data, uint16_t length);
 ErrCode send_event(event_source_e source, SACP_head_base_t &sacp, uint8_t *data, uint16_t length);
-ErrCode send_event(event_source_e source, uint8_t recever_id, uint8_t attribute,
-                   uint8_t command_set, uint8_t command_id, uint8_t *data, uint16_t length);
+ErrCode send_event(event_source_e source, uint8_t recever_id, uint8_t attribute, uint8_t command_set,
+                   uint8_t command_id, uint8_t *data, uint16_t length, uint16_t sequence=0);
 ErrCode send_result(event_param_t &event, ErrCode result);
 ErrCode write_fun_register(event_source_e source, write_byte_f cb);
 #endif // EVENT_BASE_H

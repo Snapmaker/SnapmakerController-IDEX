@@ -29,7 +29,6 @@
 #include "stepper.h"
 #include "planner.h"
 #include "temperature.h"
-#include "tool_change.h"
 
 #include "../gcode/gcode.h"
 #include "../inc/MarlinConfig.h"
@@ -73,7 +72,7 @@
 
 #define DEBUG_OUT ENABLED(DEBUG_LEVELING_FEATURE)
 #include "../core/debug_out.h"
-
+#include "tool_change.h"
 // Relative Mode. Enable with G91, disable with G90.
 bool relative_mode; // = false;
 
@@ -1193,32 +1192,43 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
 
         case DXC_MIRRORED_MODE:
         case DXC_DUPLICATION_MODE:
-          if (active_extruder == 0) {
-            // Restore planner to parked head (T1) X position
-            xyze_pos_t pos_now = current_position;
-
-            // Keep the same X or add the duplication X offset
-            xyze_pos_t new_pos = pos_now;
-            DualXMode previous_mode = dual_x_carriage_mode;
-            dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-            tool_change(1);
-            new_pos.x = duplicate_extruder_x_offset + X1_MIN_POS;
-            // Move duplicate extruder into the correct position
-            if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Set planner X", inactive_extruder_x, " ... Line to X", new_pos.x);
-            if (!planner.buffer_line(new_pos, DUPLICATION_SWITCH_FEEDRATE, 1)) break;
-            planner.synchronize();
-
-            sync_plan_position();             // Extra sync for good measure
+          DualXMode dual_mode = dual_x_carriage_mode;
+          xyze_pos_t destination_bak = destination;
+          dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+          set_duplication_enabled(false);
+          if (active_extruder != 0) {
             tool_change(0);
-            dual_x_carriage_mode = previous_mode;
-            set_duplication_enabled(true);    // Enable Duplication
-            if (dual_x_carriage_mode == DXC_MIRRORED_MODE) {
-              idex_set_mirrored_mode(true);
-            }
-            idex_set_parked(false);           // No longer parked
-            if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("set_duplication_enabled(true)\nidex_set_parked(false)");
           }
-          else if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("Active extruder not 0");
+          // Restore planner to parked head (T1) X position
+          xyze_pos_t pos_now = current_position;
+          // pos_now.x = inactive_extruder_x;
+          planner.set_position_mm(pos_now);
+
+          // Keep the same X or add the duplication X offset
+          xyze_pos_t new_pos = pos_now;
+          if (dual_mode == DXC_DUPLICATION_MODE)
+            new_pos.x += duplicate_extruder_x_offset;
+          else
+            new_pos.x += duplicate_extruder_x_offset - (new_pos.x - X1_MIN_POS);
+
+          // Move duplicate extruder into the correct position
+          if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Set planner X", inactive_extruder_x, " ... Line to X", new_pos.x);
+          tool_change(1);
+          if (!planner.buffer_line(new_pos, DUPLICATION_SWITCH_FEEDRATE, 1)) {
+            tool_change(0);
+            dual_x_carriage_mode = dual_mode;
+            destination = destination_bak;
+            break;
+          }
+          planner.synchronize();
+          tool_change(0);
+
+          sync_plan_position();             // Extra sync for good measure
+          dual_x_carriage_mode = dual_mode;
+          set_duplication_enabled(true);    // Enable Duplication
+          idex_set_parked(false);           // No longer parked
+          destination = destination_bak;
+          if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("set_duplication_enabled(true)\nidex_set_parked(false)");
           break;
       }
     }

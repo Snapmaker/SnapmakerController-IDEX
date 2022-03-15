@@ -47,7 +47,7 @@ static ErrCode req_module_info(event_param_t& event) {
   uint8_t *array_count = &event.data[1];
   module_info_t *module_info = (module_info_t *)(event.data + 2);
   event.data[0] = E_SUCCESS;
-
+  SERIAL_ECHOLN("SC req module info");
   uint8_t index = 0;
   fdm_head.get_module_info(0, module_info[index++]);
   fdm_head.get_module_info(1, module_info[index++]);
@@ -59,6 +59,7 @@ static ErrCode req_module_info(event_param_t& event) {
 }
 
 static ErrCode req_machine_info(event_param_t& event) {
+  SERIAL_ECHOLN("SC req machine info");
   machine_info_t *machine_info = (machine_info_t *)(event.data + 1);
   event.data[0] = E_SUCCESS;
   system_service.get_machine_info(machine_info);
@@ -71,7 +72,7 @@ static ErrCode req_coordinate_system(event_param_t& event) {
   coordinate_system_t * info = (coordinate_system_t *)(event.data + 1);
   event.data[0] = E_SUCCESS;
   system_service.get_coordinate_system_info(info);
-  event.length = sizeof(coordinate_system_t);
+  event.length = sizeof(coordinate_system_t) + 1;
   send_event(event);
   return E_SUCCESS;
 }

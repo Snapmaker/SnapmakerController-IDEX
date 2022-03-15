@@ -110,7 +110,7 @@
 //
 // to detect power loss
 //
-#define POWER_LOST_PIN PE1
+#define POWER_LOST_PIN PC12
 #define POWER_LOSS_STATE LOW
 #define POWER_NORMAL_STATE  HIGH
 

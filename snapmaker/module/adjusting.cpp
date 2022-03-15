@@ -13,16 +13,18 @@ Adjusting adjusting;
 #define PROBE_XY_FEEDRATE 200
 #define PROBE_MOVE_XY_FEEDRATE 5000
 #define PROBE_MOVE_Z_FEEDRATE 2000
-#define PROBE_LIFTINT_DISTANCE -2  // mm
+#define PROBE_LIFTINT_DISTANCE (6 - build_plate_thickness)  // mm
 
 static float build_plate_thickness = 5;
+
+#define Y_POS_DIFF 4
 static float calibration_position_xy[6][2] = {
-  /*ADJUST_POS_0*/ {(X_MAX_POS / 2), (Y_MAX_POS / 2)}, 
-  /*ADJUST_POS_1*/ {X_MAX_POS / 2, 196},
-  /*ADJUST_POS_2*/ {42, 8},
-  /*ADJUST_POS_3*/ {272, 8},
-  /*ADJUST_POS_4*/ {42, 196},
-  /*ADJUST_POS_5*/ {272, 196},
+  /*ADJUST_POS_0*/ {(X_MAX_POS / 2), (Y_MAX_POS / 2) - Y_POS_DIFF}, 
+  /*ADJUST_POS_1*/ {X_MAX_POS / 2, 196 - Y_POS_DIFF},
+  /*ADJUST_POS_2*/ {42, 8 - Y_POS_DIFF},
+  /*ADJUST_POS_3*/ {272, 8 - Y_POS_DIFF},
+  /*ADJUST_POS_4*/ {42, 196 - Y_POS_DIFF},
+  /*ADJUST_POS_5*/ {272, 196 - Y_POS_DIFF},
 };
 
 void Adjusting::bed_preapare(uint8_t extruder_index) {
@@ -92,13 +94,13 @@ ErrCode Adjusting::probe_z_offset(adjust_position_e pos) {
   motion_control.move_to_z(15, PROBE_MOVE_Z_FEEDRATE);
   goto_position(pos);
   z_probe_distance = 25;
-  temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_MOVE_Z_FEEDRATE);
+  temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
   if (temp_z == -z_probe_distance) {
     SERIAL_ECHOLN("failed to probe z !!!");
     set_home_offset(Z_AXIS, last_valid_zoffset);
     return E_ADJUST_PRIOBE;
   }
-  motion_control.move_z(-PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
+  motion_control.move_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
 
   temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
   position = current_position[Z_AXIS];
@@ -131,7 +133,7 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
     ret = probe_z_offset(pos);
   } else {
     goto_position(pos);
-    motion_control.move_to_z(PROBE_LIFTINT_DISTANCE + build_plate_thickness, PROBE_MOVE_Z_FEEDRATE);
+    motion_control.logical_move_to_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
     z_probe_distance = 15;
     temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
     if (temp_z == -z_probe_distance) {
@@ -139,11 +141,11 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
       probe_offset = ADJUSTINT_ERR_CODE;
       ret = E_ADJUST_PRIOBE;
     } else {
-      probe_offset = current_position[Z_AXIS] + build_plate_thickness + home_offset[Z_AXIS];
+      probe_offset = current_position[Z_AXIS] + home_offset[Z_AXIS];
       SERIAL_ECHOLNPAIR("JF-Z offset height:", probe_offset);
     }
   }
-  motion_control.move_to_z(PROBE_LIFTINT_DISTANCE + build_plate_thickness, PROBE_MOVE_Z_FEEDRATE);
+  motion_control.logical_move_to_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
   extruder_duplication_enabled = duplication_enabled;
   if (last_active_extruder != active_extruder) {
     tool_change(last_active_extruder, true);
@@ -211,14 +213,15 @@ ErrCode Adjusting::adjust_xy() {
     hotend_offset[e].x = 0;
     hotend_offset[e].y = 0;
     bed_preapare(e);
-    motion_control.move_to_z(15 - build_plate_thickness);
+    motion_control.logical_move_to_z(15 - build_plate_thickness);
     goto_position(ADJUST_POS_0);
-    motion_control.move_to_z(-2 + build_plate_thickness + home_offset[Z_AXIS]);
+    motion_control.logical_move_to_z(-2 - build_plate_thickness);
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
       goto_position(ADJUST_POS_0);
       probe_value = probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
       if (probe_value == -probe_distance) {
         ret =  E_ADJUST_XY;
+        SERIAL_ECHOLNPAIR("e:", e, " axis:", axis, " probe 0 filed");
         break;
       }
       float pos = current_position[axis];
@@ -226,11 +229,14 @@ ErrCode Adjusting::adjust_xy() {
       probe_value = probe(axis, probe_distance, PROBE_XY_FEEDRATE);
       if (probe_value == probe_distance) {
         ret = E_ADJUST_XY;
+        SERIAL_ECHOLNPAIR("e:", e, " axis:", axis, " probe 1 filed");
         break;
       }
       xy_center[e][axis] = (current_position[axis] + pos) / 2;
+      goto_position(ADJUST_POS_0);
     }
     if (ret != E_SUCCESS) {
+      SERIAL_ECHOLNPAIR("adjust e[", e,"] xy filed");
       break;
     }
   }

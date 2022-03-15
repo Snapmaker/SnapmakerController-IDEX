@@ -480,13 +480,6 @@ void GcodeSuite::G28() {
     SERIAL_ECHOLNPGM(STR_Z_MOVE_COMP);
 
   TERN_(FULL_REPORT_TO_HOST_FEATURE, set_and_report_grblstate(M_IDLE));
-  #if ENABLED(DUAL_X_CARRIAGE)
-    if (idex_is_duplicating() && doX) {
-      idex_set_parked(true);
-      set_duplication_enabled(false);
-      dual_x_carriage_unpark();
-    }
-  #endif // DUAL_X_CARRIAGE
 
   #if HAS_L64XX
     // Set L6470 absolute position registers to counts

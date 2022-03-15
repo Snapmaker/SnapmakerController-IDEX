@@ -7,6 +7,7 @@
 #include "../../Marlin/src/module/planner.h"
 #include "move.h"
 #include "filament_sensor.h"
+#include "../module/system.h"
 
 FilamentSensor filament_sensor;
 
@@ -39,26 +40,21 @@ void FilamentSensor::next_sample(uint8_t e) {
 
 void FilamentSensor::check() {
   FILAMENT_LOOP(i) {
+    if (!is_enable(i)) {
+      continue;
+    }
     if (start_adc[i] == 0) {
+      // The value is assigned once at startup
       next_sample(i);
       continue;
     }
     if ((e_step_count[i] >= check_step_count[i]) || (e_step_count[i] <= -check_step_count[i])) {
-      error[i] = (error[i] << 1) & FILAMENT_SAMPLE_COUNT_MASK;
-      int32_t diff = (filament[i].get() - start_adc[i]) * filament_dir[i];
-      if (e_step_count[i] < 0) {
-        diff = -diff;
-      }
-
-      // SERIAL_ECHOLNPAIR("i:", i, ", val:", val, ", start:", start, ", diff:", diff, ", e:", e_step_count[i]);
-      if (diff < FILAMENT_THRESHOLD && diff >= 0) {
-        error[i] |= 0x1;
-      }
-
-      if ((error[i] == FILAMENT_SAMPLE_COUNT_MASK) || (error[i] == 0)) {
-        if (status[i] != (error[i] & 0x01)) {
-          status[i] = error[i] & 0x01;
-        }
+      int32_t diff = (filament[i].get() - start_adc[i]);
+      diff = diff > 0 ? diff : -diff;
+      if (diff < FILAMENT_THRESHOLD) {
+        triggered[i] = true;
+      } else {
+        triggered[i] = false;
       }
       next_sample(i);
     }

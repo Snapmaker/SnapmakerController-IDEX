@@ -33,12 +33,16 @@ SwitchDetect switch_detect;
 #define TRIGER
 
 void SwitchDetect::init() {
-  SET_INPUT_PULLUP(X0_CAL_PIN);
-  SET_INPUT_PULLUP(X1_CAL_PIN);
   SET_OUTPUT(PROBE_POWER_EN_PIN);
   SET_INPUT_PULLUP(STALL_GUARD_PIN);
   SET_INPUT_PULLUP(POWER_LOST_PIN);
+  init_probe();
   disable_all();
+}
+
+void SwitchDetect::init_probe() {
+  SET_INPUT_PULLUP(X0_CAL_PIN);
+  SET_INPUT_PULLUP(X1_CAL_PIN);
 }
 
 void SwitchDetect::check() {
@@ -66,17 +70,6 @@ void SwitchDetect::check() {
     else
       UPDATE_STATUS(X1_CAL_PIN, HIGH, tmp_status_bits, SW_PROBE1_BIT);
   }while(0);
-
-  FILAMENT_LOOP(i) {
-    if (filament_sensor.is_enable(i)) {
-      if (filament_sensor.is_trigger(i)) {
-        trigged = true;
-        SBI(status_bits, i);
-      } else {
-        CBI(status_bits, i);
-      }
-    }
-  }
   
   if(trigged == true)
     stepper.quick_stop();
@@ -95,6 +88,7 @@ void SwitchDetect::set_probe_detect_level(uint8_t Level) {
 }
 
 void SwitchDetect::enable_probe() {
+  init_probe();
   enable(SW_PROBE0_BIT);
   enable(SW_PROBE1_BIT);
   WRITE(PROBE_POWER_EN_PIN, 1);

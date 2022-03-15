@@ -4,6 +4,7 @@ class SwitchDetect
 {
 public:
   void init();
+  void init_probe();
   void check();
   void disable_all();
   void enable_filament();

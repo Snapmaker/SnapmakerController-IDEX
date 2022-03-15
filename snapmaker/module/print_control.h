@@ -2,8 +2,9 @@
 #define PRINT_CONTROL_H
 #include "../J1/common_type.h"
 #include "src/core/types.h"
-#define GCODE_MD5_LENGTH 64
-#define GCODE_FILE_NAME_SIZE 128
+
+#define DUPLICATION_MODE_X_OFFSET 164
+#define MIRRORED_MODE_X_OFFSET (X2_MAX_POS - X1_MIN_POS - HOMING_X_POX_TO_ENDSTOP)
 
 typedef enum {
   PRINT_RESULT_GCODE_RECV_DONE_E = 201,
@@ -41,10 +42,11 @@ class PrintControl {
     ErrCode stop();
     ErrCode set_mode(print_mode_e mode);
     bool is_auto_pack_mode();
+    bool filament_check();
     bool get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len);
     void loop();
-  private:
-
+  public:
+    print_mode_e mode_ = PRINT_FULL_CONTROL_MODE;
 };
 
 extern PrintControl print_control;

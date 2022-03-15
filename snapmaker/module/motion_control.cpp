@@ -1,16 +1,20 @@
 #include "motion_control.h"
-#include "src/module/motion.h"
 #include "src/module/planner.h"
 #include "src/module/endstops.h"
 #include "src/inc/MarlinConfigPre.h"
 #include "src/gcode/parser.h"
 #include "src/gcode/gcode.h"
+#include "src/module/tool_change.h"
 #include "system.h"
 
 MotionControl motion_control;
 
 void MotionControl::synchronize() {
   planner.synchronize();
+}
+
+void MotionControl::blocking_move_to(float x, float y, float z, float feedrate) {
+  do_blocking_move_to(x, y, z, feedrate);
 }
 
 ErrCode MotionControl::move_axis(mobile_instruction_t move) {
@@ -29,7 +33,7 @@ ErrCode MotionControl::move_axis(mobile_instruction_t move) {
       break;
   }
   feedrate_mm_s = move.feedrate ? MMM_TO_MMS(move.feedrate) : feedrate_mm_s;
-  do_blocking_move_to(xyze.x, xyze.y, xyze.z, feedrate_mm_s);
+  blocking_move_to(xyze.x, xyze.y, xyze.z, feedrate_mm_s);
   synchronize();
   feedrate_mm_s = save_feedrate;
   return E_SUCCESS;
@@ -51,55 +55,60 @@ ErrCode MotionControl::move_axis_to(mobile_instruction_t move) {
       break;
   }
   feedrate_mm_s = move.feedrate ? MMM_TO_MMS(move.feedrate) : feedrate_mm_s;
-  do_blocking_move_to(xyze.x, xyze.y, xyze.z, feedrate_mm_s);
+  blocking_move_to(xyze.x, xyze.y, xyze.z, feedrate_mm_s);
   feedrate_mm_s = save_feedrate;
   synchronize();
   return E_SUCCESS;
 }
 
-ErrCode MotionControl::home(uint8_t axis) {
-  switch (axis) {
-    case 0:
-      home();
-      break;
-    case 1:
-      home_x();
-      break;
-    case 2:
-      home_y();
-      break;
-    case 3:
-      home_z();
-      break;
-    default:
-      return E_PARAM;
+ErrCode MotionControl::home(AxisEnum axis) {
+  uint8_t save_active_extruder;
+  bool save_dup_enable;
+  save_dup_enable = extruder_duplication_enabled;
+  DualXMode dual_mode = dual_x_carriage_mode;
+  save_active_extruder = active_extruder;
+  extruder_duplication_enabled = false;
+  endstops.enable(true);
+  if (axis == X_AXIS) {
+    dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+    tool_change(1);
+    homeaxis(X_AXIS);
+    tool_change(0);
+    homeaxis(X_AXIS);
+    tool_change(save_active_extruder);
+    dual_x_carriage_mode = dual_mode;
+    if (dual_x_carriage_mode >= DXC_DUPLICATION_MODE) {
+      idex_set_parked();
+    }
+  } else {
+    homeaxis(axis);
   }
-  gcode.process_parsed_command();
+  endstops.not_homing();
+  extruder_duplication_enabled = save_dup_enable;
   return E_SUCCESS;
 }
 
 ErrCode MotionControl::home_x() {
-  parser.parse((char *)"G28 X");
-  gcode.process_parsed_command();
+  home(X_AXIS);
   return E_SUCCESS;
 }
 
 ErrCode MotionControl::home_y() {
-  parser.parse((char *)"G28 Y");
-  gcode.process_parsed_command();
+  home(Y_AXIS);
   return E_SUCCESS;
 }
 
 ErrCode MotionControl::home_z() {
-  parser.parse((char *)"G28 Z");
-  gcode.process_parsed_command();
+  home(Z_AXIS);
   return E_SUCCESS;
 }
 
 
 ErrCode MotionControl::home() {
-  parser.parse((char *)"G28");
-  gcode.process_parsed_command();
+  quickstop_stepper();
+  home(Z_AXIS);
+  home(X_AXIS);
+  home(Y_AXIS);
   return E_SUCCESS;
 }
 
@@ -114,52 +123,52 @@ ErrCode MotionControl::move_e(float distance, uint16_t feedrate) {
 }
 
 void MotionControl::move_x(float x, uint16_t feedrate) {
-  do_blocking_move_to(current_position.x + x, current_position.y, current_position.z, MMM_TO_MMS(feedrate));
+  blocking_move_to(current_position.x + x, current_position.y, current_position.z, MMM_TO_MMS(feedrate));
   planner.synchronize();
 }
 
 void MotionControl::move_y(float y, uint16_t feedrate) {
-  do_blocking_move_to(current_position.x, current_position.y + y, current_position.z, MMM_TO_MMS(feedrate));
+  blocking_move_to(current_position.x, current_position.y + y, current_position.z, MMM_TO_MMS(feedrate));
   planner.synchronize();
 }
 
 void MotionControl::move_z(float z, uint16_t feedrate) {
-  do_blocking_move_to(current_position.x, current_position.y, current_position.z + z, MMM_TO_MMS(feedrate));
+  blocking_move_to(current_position.x, current_position.y, current_position.z + z, MMM_TO_MMS(feedrate));
   planner.synchronize();
 }
 
 void MotionControl::move_xy(float x, float y, uint16_t feedrate) {
-  do_blocking_move_to(current_position.x + x, current_position.y + y, current_position.z, MMM_TO_MMS(feedrate));
+  blocking_move_to(current_position.x + x, current_position.y + y, current_position.z, MMM_TO_MMS(feedrate));
   planner.synchronize();
 }
 
 void MotionControl::move_to_x(float x, uint16_t feedrate) {
-  do_blocking_move_to(x, current_position.y, current_position.z, MMM_TO_MMS(feedrate));
+  blocking_move_to(x, current_position.y, current_position.z, MMM_TO_MMS(feedrate));
   planner.synchronize();
 }
 
 void MotionControl::move_to_y(float y, uint16_t feedrate) {
-  do_blocking_move_to(current_position.x, y, current_position.z, MMM_TO_MMS(feedrate));
+  blocking_move_to(current_position.x, y, current_position.z, MMM_TO_MMS(feedrate));
   planner.synchronize();
 }
 
 void MotionControl::move_to_z(float z, uint16_t feedrate) {
-  do_blocking_move_to(current_position.x, current_position.y, z, MMM_TO_MMS(feedrate));
+  blocking_move_to(current_position.x, current_position.y, z, MMM_TO_MMS(feedrate));
   planner.synchronize();
 }
 
 void MotionControl::move_to_xyz(float x, float y, float z, uint16_t feedrate) {
-  do_blocking_move_to(x, y, z, MMM_TO_MMS(feedrate));
+  blocking_move_to(x, y, z, MMM_TO_MMS(feedrate));
   planner.synchronize();
 }
 
 void MotionControl::move_to_xyz(xyze_pos_t &pos, uint16_t feedrate) {
-  do_blocking_move_to(pos.x, pos.y, pos.z, MMM_TO_MMS(feedrate));
+  blocking_move_to(pos.x, pos.y, pos.z, MMM_TO_MMS(feedrate));
   planner.synchronize();
 }
 
 void MotionControl::move_to_xy(float x, float y, uint16_t feedrate) {
-  do_blocking_move_to(x, y, current_position.z, MMM_TO_MMS(feedrate));
+  blocking_move_to(x, y, current_position.z, MMM_TO_MMS(feedrate));
   planner.synchronize();
 }
 

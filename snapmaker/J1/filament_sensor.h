@@ -5,8 +5,7 @@
 
 #define FILAMENT_SENSOR_COUNT 2
 #define FILAMENT_LOOP(i) for (uint8_t i = 0; i < FILAMENT_SENSOR_COUNT; i++)
-#define FILAMENT_BASE_LEN 3  // mm
-#define FILAMENT_SAMPLE_COUNT_MASK 0x3
+#define FILAMENT_BASE_LEN 5  // mm
 #define FILAMENT_THRESHOLD 10  // ADC diff value
 
 typedef struct {
@@ -46,11 +45,12 @@ class FilamentSensor
     }
     void enable(uint8_t e) {
       enable_flag[e] = true;
-      error[e] = 0;
+      triggered[e] = false;
+      check_step_count[e] = 0;
       next_sample(e);
     }
     void disable(uint8_t e) {
-      error[e] = 0;
+      triggered[e] = false;
       enable_flag[e] = false;
     }
     void enable_all() {
@@ -64,7 +64,10 @@ class FilamentSensor
       }
     }
     bool is_trigger(uint8_t e) {
-      return error[e];
+      return triggered[e] && is_enable(e);
+    }
+    bool is_trigger() {
+      return is_trigger(0) || is_trigger(1);
     }
     bool is_enable(uint8_t e) {
       return enable_flag[e];
@@ -73,16 +76,20 @@ class FilamentSensor
     void debug();
     void check();
     void test_adc(uint8_t e, float step_mm, uint32_t count);
+    void reset() {
+      FILAMENT_LOOP(i) {
+        next_sample(i);
+        triggered[i] = false;
+      }
+    }
   public:
     FilamentSample filament[FILAMENT_SENSOR_COUNT];
   private:
     int32_t check_step_count[FILAMENT_SENSOR_COUNT];
-    bool enable_flag[FILAMENT_SENSOR_COUNT] = {false, false};
+    bool enable_flag[FILAMENT_SENSOR_COUNT] = {true, true};
     int32_t e_step_count[FILAMENT_SENSOR_COUNT] = {0, 0};
-    uint8_t error[FILAMENT_SENSOR_COUNT];
-    bool status[FILAMENT_SENSOR_COUNT];
+    bool triggered[FILAMENT_SENSOR_COUNT] = {false, false};
     uint16_t start_adc[FILAMENT_SENSOR_COUNT] = {0, 0};
-    int8_t filament_dir[FILAMENT_SENSOR_COUNT] = {1, -1};
 };
 
 extern FilamentSensor filament_sensor;

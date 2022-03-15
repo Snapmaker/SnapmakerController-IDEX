@@ -28,10 +28,10 @@ event_cb_info_t * get_event_info(uint8_t cmd_set, uint8_t cmd_id) {
 void EventHandler::parse_event_info(evevt_struct_t &data, event_cache_node_t *event) {
   event_param_t *param = &event->param;
   SACP_struct_t *info = data.info;
-  param->info.attribute = info->arrt.type;
+  param->info.attribute = SACP_ATTR_ACK;
   param->info.command_set = info->command_set;
   param->info.command_id = info->command_id;
-  param->info.recever_id = info->recever_id;
+  param->info.recever_id = info->sender_id;
   param->info.sequence = info->sequence;
   param->source = data.onwer;
   param->length = info->length;
@@ -60,6 +60,7 @@ ErrCode EventHandler::parse(evevt_struct_t &data) {
   }
 
   parse_event_info(data, event);
+  // SERIAL_ECHOLNPAIR("event set:", data.info->command_set, " ,id:", data.info->command_id);
   event_cb_info_t * cb_info = get_event_info(data.info->command_set, data.info->command_id);
   if (!cb_info) {
     event->block_status = EVENT_CACHT_STATUS_IDLE;
