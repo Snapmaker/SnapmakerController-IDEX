@@ -298,7 +298,7 @@ void wait_print_end(void) {
   }
 }
 
-void pause_event_deal() {
+void pausing_status_deal() {
   ErrCode result = print_control.pause();
   switch (system_service.get_source()) {
     case SYSTEM_STATUE_SCOURCE_FILAMENT:
@@ -328,35 +328,60 @@ void printer_event_init(void) {
   power_loss.init();
 }
 
+void printing_status_deal() {
+  switch (gcode_req_status) {
+    case GCODE_PACK_REQ_WAIT_CACHE:
+      req_gcode_pack();
+      break;
+    case GCODE_PACK_REQ_WAIT_RECV:
+      gcode_req_timeout_deal();
+      break;
+    case GCODE_PACK_REQ_DONE:
+      wait_print_end();
+      break;
+    default:
+      break;
+  }
+}
+
+void paused_status_deal() {
+  // 如果5分钟没有操作就关闭电机进入休眠状态
+}
+
+void resuming_status_deal() {
+  uint8_t data[7];
+  batch_gcode_req_info_t *info = (batch_gcode_req_info_t *)(data + 1);
+  ErrCode result = print_control.resume();
+  SERIAL_ECHOLNPAIR("resume work success, ret:", result);
+  data[0] = result;
+  info->buf_max_size = GCODE_MAX_PACK_SIZE;
+  info->line_number = print_control.next_req_line();
+  send_event(print_source, source_recever_id, SACP_ATTR_ACK,
+    COMMAND_SET_PRINTER, PRINTER_ID_RESUME_WORK, data, 7, source_sequence);
+  req_gcode_pack();
+}
+
+void stopping_status_deal() {
+}
+
 void printer_event_loop(void) {
-  if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
-    switch (gcode_req_status) {
-      case GCODE_PACK_REQ_WAIT_CACHE:
-        req_gcode_pack();
-        break;
-      case GCODE_PACK_REQ_WAIT_RECV:
-        gcode_req_timeout_deal();
-        break;
-      case GCODE_PACK_REQ_DONE:
-        wait_print_end();
-        break;
-      default:
-        break;
-    }
-  } else if (system_service.get_status() == SYSTEM_STATUE_PAUSED) {
-    // 如果5分钟没有操作就关闭电机进入休眠状态
-  } else if (system_service.get_status() == SYSTEM_STATUE_PAUSING) {
-    pause_event_deal();
-  } else if (system_service.get_status() == SYSTEM_STATUE_RESUMING) {
-    uint8_t data[7];
-    batch_gcode_req_info_t *info = (batch_gcode_req_info_t *)(data + 1);
-    ErrCode result = print_control.resume();
-    SERIAL_ECHOLNPAIR("resume work success, ret:", result);
-    data[0] = result;
-    info->buf_max_size = GCODE_MAX_PACK_SIZE;
-    info->line_number = print_control.next_req_line();
-    send_event(print_source, source_recever_id, SACP_ATTR_ACK,
-      COMMAND_SET_PRINTER, PRINTER_ID_RESUME_WORK, data, 7, source_sequence);
-    req_gcode_pack();
+  switch (system_service.get_status()) {
+    case SYSTEM_STATUE_PRINTING:
+      printing_status_deal();
+      break;
+    case SYSTEM_STATUE_PAUSED:
+      paused_status_deal();
+      break;
+    case SYSTEM_STATUE_PAUSING:
+      pausing_status_deal();
+      break;
+    case SYSTEM_STATUE_RESUMING:
+      resuming_status_deal();
+      break;
+    case SYSTEM_STATUE_STOPPING:
+      stopping_status_deal();
+      break;
+    default:
+      break; 
   }
 }

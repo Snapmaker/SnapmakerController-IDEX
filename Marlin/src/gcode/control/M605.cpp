@@ -65,8 +65,6 @@
     planner.synchronize();
 
     if (parser.seen('S')) {
-      const DualXMode previous_mode = dual_x_carriage_mode;
-
       dual_x_carriage_mode = (DualXMode)parser.value_byte();
       idex_set_mirrored_mode(false);
 
