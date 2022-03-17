@@ -134,3 +134,7 @@ ErrCode FDM_Head::get_module_info(uint8_t e, module_info_t &info) {
   info.version[0] = 0;
   return E_SUCCESS;
 }
+
+bool FDM_Head::is_duplicating() {
+  return idex_is_duplicating();
+}

@@ -31,6 +31,7 @@ void PowerLoss::stash_print_env() {
   stash_data.duplicate_extruder_x_offset = duplicate_extruder_x_offset;
   HOTEND_LOOP() {
     stash_data.nozzle_temp[e] = thermalManager.degTargetHotend(e);
+    stash_data.extruder_dual_enable[e] = fdm_head.is_duplication_enabled(e);
     for (uint8_t i = 0; i < 2; i++) {
       fdm_head.get_fan_speed(e, i, stash_data.fan[e][i]);
     }
@@ -38,6 +39,9 @@ void PowerLoss::stash_print_env() {
 }
 
 void PowerLoss::extrude_before_resume() {
+  HOTEND_LOOP() {
+    fdm_head.set_duplication_enabled(e, true);
+  }
   if (stash_data.dual_x_carriage_mode >= DXC_DUPLICATION_MODE) {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
     tool_change(0);
@@ -94,10 +98,16 @@ void PowerLoss::resume_print_env() {
 
   thermalManager.setTargetBed(stash_data.bed_temp);
   HOTEND_LOOP() {
-    thermalManager.setTargetHotend(stash_data.nozzle_temp[e], e);
-    for (uint8_t i = 0; i < 2; i++) {
-      fdm_head.set_fan_speed(e, i, stash_data.fan[e][i]);
+    fdm_head.set_duplication_enabled(e, stash_data.extruder_dual_enable[e]);
+    if (fdm_head.is_duplication_enabled(e)) {
+      thermalManager.setTargetHotend(stash_data.nozzle_temp[e], e);
+      fdm_head.set_fan_speed(e, 0, stash_data.fan[e][0]);
     }
+    else {
+      thermalManager.setTargetHotend(0, e);
+      fdm_head.set_fan_speed(e, 0, 0);
+    }
+
   }
   thermalManager.wait_for_bed();
   HOTEND_LOOP() {
@@ -109,6 +119,7 @@ void PowerLoss::resume_print_env() {
   gcode.axis_relative = stash_data.axis_relative;
   duplicate_extruder_x_offset = stash_data.duplicate_extruder_x_offset;
   next_req = cur_line = line_number_sum = stash_data.file_position;
+  print_control.mode_ = (print_mode_e)stash_data.print_mode;
   prepare_line_to_destination();
   motion_control.move_to_xyz(stash_data.position, PRINT_TRAVEL_FEADRATE);
   motion_control.synchronize();

@@ -31,6 +31,7 @@ typedef struct {
   xyze_pos_t position;
   uint32_t accumulator;
   uint16_t bed_temp;
+  uint8_t extruder_dual_enable[EXTRUDERS];
   uint8_t active_extruder;
   uint8_t axis_relative;
   uint8_t gcode_file_name_len = 0;

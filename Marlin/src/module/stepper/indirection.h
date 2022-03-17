@@ -650,7 +650,12 @@ void reset_stepper_drivers();    // Called by settings.load / settings.reset
         #define REV_E_DIR(E)  do{ if (extruder_duplication_enabled) { RDIR(0); RDIR(1); RDIR(2); } else  _REV_E_DIR(E); }while(0)
       #endif
     #else
-      #define DUPE(T,V)     do{ _E_STEP_WRITE(0, V); _E_STEP_WRITE(1, V); }while(0)
+      #define DUPE(T,V)     do{ \
+          if (fdm_head.is_duplication_enabled(0)) \
+            _E_STEP_WRITE(0, V); \
+          if (fdm_head.is_duplication_enabled(1)) \
+            _E_STEP_WRITE(1, V); \
+        }while(0)
       #define NORM_E_DIR(E) do{ if (extruder_duplication_enabled) { NDIR(0); NDIR(1); } else _NORM_E_DIR(E); }while(0)
       #define REV_E_DIR(E)  do{ if (extruder_duplication_enabled) { RDIR(0); RDIR(1); } else  _REV_E_DIR(E); }while(0)
     #endif

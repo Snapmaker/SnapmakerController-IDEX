@@ -359,7 +359,12 @@ xyze_int8_t Stepper::count_direction{0};
     else if (last_moved_extruder) X2_DIR_WRITE(v); else X_DIR_WRITE(v); \
   }while(0)
   #define X_APPLY_STEP(v,ALWAYS) do{ \
-    if (extruder_duplication_enabled || ALWAYS) { X_STEP_WRITE(v); X2_STEP_WRITE(v); } \
+    if (extruder_duplication_enabled || ALWAYS) { \
+      if (fdm_head.is_duplication_enabled(0)) \
+        X_STEP_WRITE(v); \
+      if (fdm_head.is_duplication_enabled(1)) \
+        X2_STEP_WRITE(v); \
+    } \
     else if (last_moved_extruder) X2_STEP_WRITE(v); else X_STEP_WRITE(v); \
   }while(0)
 #else

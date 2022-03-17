@@ -16,10 +16,11 @@ enum {
   PRINTER_ID_SET_MODE             = 0x0A,
   PRINTER_ID_REQ_AUTO_PARK_STATUS = 0x0B,
   PRINTER_ID_SET_AUTO_PARK_STATUS = 0x0C,
+  PRINTER_ID_STOP_SINGLE_EXTRUDE  = 0x0D,
   PRINTER_ID_REQ_LINE             = 0xA0,
 };
 
-#define PRINTER_ID_CB_COUNT 13
+#define PRINTER_ID_CB_COUNT 14
 
 extern event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT];
 void printer_event_init(void);

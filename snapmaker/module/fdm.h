@@ -52,6 +52,12 @@ class FDM_Head {
     ErrCode get_extruder_info(uint8_t e, extruder_info_t *info);
     ErrCode get_module_info(uint8_t e, module_info_t &info);
     uint8_t get_key(uint8_t e);
+
+    bool is_duplication_enabled(uint8_t e) {return duplication_enabled_move[e];}
+    // Double - head printing will not work after disable
+    void set_duplication_enabled(uint8_t e, bool status) {duplication_enabled_move[e] = status;}
+    bool is_duplicating();
+ 
     bool is_change_filamenter(uint8_t e) {
       return (change_filamenter_status[e] != FILAMENT_CHANGE_STOP );
     }
@@ -68,6 +74,7 @@ class FDM_Head {
     module_info_t module_info[EXTRUDERS];
     filamenter_change_status_e change_filamenter_status[EXTRUDERS] = {FILAMENT_CHANGE_STOP, FILAMENT_CHANGE_STOP};
     bool filamenter_dir[EXTRUDERS] = {true, true};
+    bool duplication_enabled_move[EXTRUDERS] = {true, true};
 };
 
 extern FDM_Head fdm_head;

@@ -3,6 +3,7 @@
 #include "../module/power_loss.h"
 #include "../J1/filament_sensor.h"
 #include "../module/system.h"
+#include "../module/fdm.h"
 
 #define GCODE_MAX_PACK_SIZE 450
 #define GCODE_REQ_TIMEOUT_MS 2000
@@ -167,10 +168,37 @@ static ErrCode request_resume_work(event_param_t& event) {
 
 static ErrCode request_stop_work(event_param_t& event) {
   SERIAL_ECHOLNPAIR("SC req stop work");
-  event.data[0] = print_control.stop();
-  event.length = 1;
+  system_service.set_status(SYSTEM_STATUE_STOPPING, SYSTEM_STATUE_SCOURCE_SACP);
+  gcode_req_status = GCODE_PACK_REQ_IDLE;
   save_event_suorce_info(event);
-  return send_event(event);
+  return E_SUCCESS;
+}
+
+static ErrCode request_stop_single_extrude_work(event_param_t& event) {
+  uint8_t e = MODULE_INDEX(event.data[0]);
+  uint8_t en = event.data[1];
+  SERIAL_ECHOLNPAIR("SC req extrude:", e, " enable:", en);
+
+  if (system_service.get_status() == SYSTEM_STATUE_IDLE && !fdm_head.is_duplicating()) {
+    event.data[0] = PRINT_RESULT_START_ERR_E;
+    event.length = 1;
+    SERIAL_ECHOLNPAIR("SC req single stop work failed");
+    return send_event(event);
+  }
+
+  // Printing can only be stopped.
+  // This function will be enabled again when printing ends
+  save_event_suorce_info(event);
+  if (system_service.get_status() != SYSTEM_STATUE_PRINTING) {
+    power_loss.stash_data.extruder_dual_enable[e] = en;
+    event.data[0] = E_SUCCESS;
+    event.length = 1;
+    return send_event(event);
+  }
+
+  fdm_head.set_duplication_enabled(e, en);
+  system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_STOP_EXTRUDE);
+  return E_SUCCESS;
 }
 
 static ErrCode request_power_loss_status(event_param_t& event) {
@@ -256,6 +284,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_SET_MODE            , EVENT_CB_TASK_RUN,   set_printer_mode},
   {PRINTER_ID_REQ_AUTO_PARK_STATUS, EVENT_CB_DIRECT_RUN, request_auto_pack_status},
   {PRINTER_ID_SET_AUTO_PARK_STATUS, EVENT_CB_TASK_RUN,   set_auto_pack_mode},
+  {PRINTER_ID_STOP_SINGLE_EXTRUDE, EVENT_CB_DIRECT_RUN,   request_stop_single_extrude_work},
   {PRINTER_ID_REQ_LINE            , EVENT_CB_DIRECT_RUN, request_cur_line},
 };
 
@@ -292,9 +321,7 @@ void wait_print_end(void) {
   if (print_control.buffer_is_empty()) {
     SERIAL_ECHOLNPAIR("print done and will stop");
     gcode_req_status = GCODE_PACK_REQ_IDLE;
-    print_control.stop();
-    report_status_info(STATUS_PRINT_DONE);
-    SERIAL_ECHOLNPAIR("Active stop end");
+    system_service.set_status(SYSTEM_STATUE_STOPPING, SYSTEM_STATUE_SCOURCE_DONE);
   }
 }
 
@@ -315,6 +342,12 @@ void pausing_status_deal() {
       print_control.resume();
       req_gcode_pack();
       break;
+    case SYSTEM_STATUE_SCOURCE_STOP_EXTRUDE:
+      SERIAL_ECHOLNPAIR("stop single extrude done and continue");
+      print_control.resume();
+      req_gcode_pack();
+      break;
+    
     default:
       send_event(print_source, source_recever_id, SACP_ATTR_ACK,
                   COMMAND_SET_PRINTER, PRINTER_ID_PAUSE_WORK, &result, 1, source_sequence);
@@ -362,6 +395,20 @@ void resuming_status_deal() {
 }
 
 void stopping_status_deal() {
+  ErrCode result = E_SUCCESS;
+  SERIAL_ECHOLNPAIR("stop working...");
+  result = print_control.stop();
+
+  HOTEND_LOOP() {
+    fdm_head.set_duplication_enabled(e, true);
+  }
+  if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_SACP) {
+    send_event(print_source, source_recever_id, SACP_ATTR_ACK,
+      COMMAND_SET_PRINTER, PRINTER_ID_STOP_WORK, &result, 1, source_sequence);
+  } else {
+    report_status_info(STATUS_PRINT_DONE);
+  }
+  SERIAL_ECHOLNPAIR("stop success");
 }
 
 void printer_event_loop(void) {
