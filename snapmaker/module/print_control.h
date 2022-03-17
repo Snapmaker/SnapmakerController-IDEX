@@ -45,8 +45,13 @@ class PrintControl {
     bool filament_check();
     bool get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len);
     void loop();
+    bool temperature_lock(uint8_t e) {
+      return temperature_lock_status[e];
+    }
+    void temperature_lock(uint8_t e, bool enable) {temperature_lock_status[e] = enable;}
   public:
     print_mode_e mode_ = PRINT_FULL_CONTROL_MODE;
+    bool temperature_lock_status[EXTRUDERS] = {false, false};
 };
 
 extern PrintControl print_control;

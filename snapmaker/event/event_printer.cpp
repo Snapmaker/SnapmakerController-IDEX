@@ -271,6 +271,14 @@ static ErrCode request_cur_line(event_param_t& event) {
   return send_event(event);
 }
 
+static ErrCode request_temperature_lock(event_param_t& event) {
+  if (system_service.get_status() == SYSTEM_STATUE_IDLE) {
+    event.data[0] = 1;
+  }
+  event.length = 1;
+  return send_event(event);
+}
+
 event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_REQ_FILE_INFO       , EVENT_CB_DIRECT_RUN, request_file_info},
   {PRINTER_ID_REQ_GCODE           , EVENT_CB_TASK_RUN,   gcode_pack_deal},
@@ -284,8 +292,9 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_SET_MODE            , EVENT_CB_TASK_RUN,   set_printer_mode},
   {PRINTER_ID_REQ_AUTO_PARK_STATUS, EVENT_CB_DIRECT_RUN, request_auto_pack_status},
   {PRINTER_ID_SET_AUTO_PARK_STATUS, EVENT_CB_TASK_RUN,   set_auto_pack_mode},
-  {PRINTER_ID_STOP_SINGLE_EXTRUDE, EVENT_CB_DIRECT_RUN,   request_stop_single_extrude_work},
+  {PRINTER_ID_STOP_SINGLE_EXTRUDE , EVENT_CB_DIRECT_RUN,   request_stop_single_extrude_work},
   {PRINTER_ID_REQ_LINE            , EVENT_CB_DIRECT_RUN, request_cur_line},
+  {PRINTER_ID_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, request_temperature_lock},
 };
 
 static void req_gcode_pack() {
@@ -401,6 +410,7 @@ void stopping_status_deal() {
 
   HOTEND_LOOP() {
     fdm_head.set_duplication_enabled(e, true);
+    print_control.temperature_lock(e, false);
   }
   if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_SACP) {
     send_event(print_source, source_recever_id, SACP_ATTR_ACK,

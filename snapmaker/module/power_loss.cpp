@@ -32,6 +32,7 @@ void PowerLoss::stash_print_env() {
   HOTEND_LOOP() {
     stash_data.nozzle_temp[e] = thermalManager.degTargetHotend(e);
     stash_data.extruder_dual_enable[e] = fdm_head.is_duplication_enabled(e);
+    stash_data.extruder_temperature_lock[e] = print_control.temperature_lock(e);
     for (uint8_t i = 0; i < 2; i++) {
       fdm_head.get_fan_speed(e, i, stash_data.fan[e][i]);
     }
@@ -41,6 +42,7 @@ void PowerLoss::stash_print_env() {
 void PowerLoss::extrude_before_resume() {
   HOTEND_LOOP() {
     fdm_head.set_duplication_enabled(e, true);
+    print_control.temperature_lock(e, stash_data.extruder_temperature_lock[e]);
   }
   if (stash_data.dual_x_carriage_mode >= DXC_DUPLICATION_MODE) {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
@@ -237,6 +239,11 @@ bool PowerLoss::change_head() {
   val = stash_data.fan[0][0];
   stash_data.fan[0][0] = stash_data.fan[1][0];
   stash_data.fan[1][0] = val;
+
+  val = stash_data.extruder_temperature_lock[0];
+  stash_data.extruder_temperature_lock[0] = stash_data.extruder_temperature_lock[1];
+  stash_data.extruder_temperature_lock[1] = val;
+
   return true;
 }
 
