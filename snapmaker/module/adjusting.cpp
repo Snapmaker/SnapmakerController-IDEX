@@ -241,6 +241,7 @@ ErrCode Adjusting::adjust_xy() {
     }
   }
   goto_position(ADJUST_POS_0);
+  motion_control.move_z(100);
   tool_change(old_active_extruder, true);
   extruder_duplication_enabled = duplication_enabled;
   if(ret == E_SUCCESS) {
