@@ -814,6 +814,15 @@ void restore_feedrate_and_scaling() {
         #if !HAS_SOFTWARE_ENDSTOPS || ENABLED(MAX_SOFTWARE_ENDSTOP_X)
           NOMORE(target.x, soft_endstop.max.x);
         #endif
+        if (dual_x_carriage_mode == DXC_FULL_CONTROL_MODE) {
+          if (active_extruder) {
+            float min = x_position() + EXTRUDERS_MIN_DISTANCE;
+            NOLESS(target.x, min);
+          } else {
+            float max = x2_position() - EXTRUDERS_MIN_DISTANCE;
+            NOLESS(target.x, max);
+          }
+        }
       }
 
       #if HAS_Y_AXIS
