@@ -141,7 +141,7 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
       probe_offset = ADJUSTINT_ERR_CODE;
       ret = E_ADJUST_PRIOBE;
     } else {
-      probe_offset = current_position[Z_AXIS] + home_offset[Z_AXIS];
+      probe_offset = current_position[Z_AXIS];
       SERIAL_ECHOLNPAIR("JF-Z offset height:", probe_offset);
     }
   }
