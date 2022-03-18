@@ -292,3 +292,23 @@ void Adjusting::loop(void) {
   }
 }
 
+void Adjusting::set_z_offset(float offset, bool is_moved) {
+  planner.synchronize();
+  float cur_z = current_position[Z_AXIS];
+  float diff = offset - home_offset[Z_AXIS];
+  if (!is_moved) {
+    current_position[Z_AXIS] += diff;
+  } else {
+    motion_control.move_z(diff, 5);
+    current_position[Z_AXIS] = cur_z;
+  }
+  planner.synchronize();
+  home_offset[Z_AXIS] = offset;
+  sync_plan_position();
+
+  SERIAL_ECHOLNPAIR("Apply Z offset: ", live_z_offset);
+}
+
+float Adjusting::get_z_offset() {
+  return home_offset[Z_AXIS];
+}

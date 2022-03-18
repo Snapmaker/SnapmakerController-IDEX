@@ -53,6 +53,8 @@ class Adjusting {
     float get_probe_offset();
     void loop(void);
     void bed_level();
+    void set_z_offset(float offset, bool is_moved=false);
+    float get_z_offset();
 
   private:
     ErrCode probe_z_offset(adjust_position_e pos);
@@ -62,6 +64,7 @@ class Adjusting {
     adjust_mode_e mode = ADJUST_MODE_IDLE;
     adjust_status_e status;
     float probe_offset = ADJUSTINT_ERR_CODE;
+    float live_z_offset = 0;
 };
 
 extern Adjusting adjusting;
