@@ -5,6 +5,7 @@
 #include "../module/bed_control.h"
 #include "../module/system.h"
 #include "../module/motion_control.h"
+#include "../module/enclosure.h"
 
 static ErrCode subscribe_event(event_param_t& event) {
   event.data[0] = subscribe.enable(event);
@@ -52,6 +53,7 @@ static ErrCode req_module_info(event_param_t& event) {
   fdm_head.get_module_info(0, module_info[index++]);
   fdm_head.get_module_info(1, module_info[index++]);
   bed_control.get_module_info(module_info[index++]);
+  enclosure.get_module_info(module_info[index++]);
   *array_count = index;
   event.length = index * sizeof(module_info_t) + 2;
   send_event(event);

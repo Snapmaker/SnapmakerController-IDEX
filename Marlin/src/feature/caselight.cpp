@@ -91,4 +91,14 @@ void CaseLight::update(const bool sflag) {
   #endif
 }
 
+uint8_t CaseLight::get_power() {
+  return brightness;
+}
+
+void CaseLight::set_power(uint8_t p) {
+  on = !!p;
+  brightness = p;
+  update(true);
+}
+
 #endif // CASE_LIGHT_ENABLE

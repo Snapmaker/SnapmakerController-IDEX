@@ -51,6 +51,8 @@ public:
   static void update(const bool sflag);
   static inline void update_brightness() { update(false); }
   static inline void update_enabled()    { update(true);  }
+  static uint8_t get_power();
+  static void set_power(uint8_t p);
 
   #if ENABLED(CASE_LIGHT_IS_COLOR_LED)
     private:
