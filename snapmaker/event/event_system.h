@@ -18,9 +18,11 @@ enum : uint8_t {
   SYS_ID_MOVE_RELATIVE          = 0x33,
   SYS_ID_MOVE                   = 0x34,
   SYS_ID_HOME                   = 0x35,
+  SYS_ID_GET_MOTOR_ENABLE       = 0x37,
+  SYS_ID_SET_MOTOR_ENABLE       = 0x38,
 };
 
-#define SYS_ID_CB_COUNT 15
+#define SYS_ID_CB_COUNT 17
 
 extern event_cb_info_t system_cb_info[SYS_ID_CB_COUNT];
 

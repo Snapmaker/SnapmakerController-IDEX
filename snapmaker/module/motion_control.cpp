@@ -5,6 +5,7 @@
 #include "src/gcode/parser.h"
 #include "src/gcode/gcode.h"
 #include "src/module/tool_change.h"
+#include "src/module/stepper/indirection.h"
 #include "system.h"
 
 MotionControl motion_control;
@@ -179,4 +180,45 @@ void MotionControl::retrack_e(float distance, uint16_t feedrate) {
 
 void MotionControl::extrude_e(float distance, uint16_t feedrate) {
   move_e(distance, feedrate);
+}
+
+void MotionControl::motor_enable(uint8_t axis, uint8_t index) {
+  switch (axis) {
+    case X_AXIS:
+      if (index == 0) ENABLE_STEPPER_X();
+      else ENABLE_STEPPER_X2(); break;
+    case Y_AXIS: ENABLE_AXIS_Y(); break;
+    case Z_AXIS: ENABLE_AXIS_Z(); break;
+    case E_AXIS: 
+      if (index == 0) ENABLE_STEPPER_E0();
+      else ENABLE_STEPPER_E1(); break;
+  }
+}
+
+void MotionControl::motor_disable(uint8_t axis, uint8_t index) {
+  switch (axis) {
+    case X_AXIS:
+      if (index == 0) DISABLE_STEPPER_X();
+      else DISABLE_STEPPER_X2(); break;
+    case Y_AXIS: DISABLE_AXIS_Y(); break;
+    case Z_AXIS: DISABLE_AXIS_Z(); break;
+    case E_AXIS: 
+      if (index == 0) DISABLE_STEPPER_E0();
+      else DISABLE_STEPPER_E1(); break;
+  }
+}
+
+bool MotionControl::is_motor_enable(uint8_t axis, uint8_t index) {
+  bool ret = false;
+  switch (axis) {
+    case X_AXIS:
+      if (index == 0) ret = X_ENABLE_READ();
+      else ret = X2_ENABLE_READ(); break;
+    case Y_AXIS: ret = Y_ENABLE_READ(); break;
+    case Z_AXIS: ret = Z_ENABLE_READ(); break;
+    case E_AXIS: 
+      if (index == 0) ret = E0_ENABLE_READ();
+      else ret = E1_ENABLE_READ(); break;
+  }
+  return ret;
 }

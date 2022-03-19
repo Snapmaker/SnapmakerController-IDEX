@@ -7,6 +7,15 @@
 #include "../module/motion_control.h"
 #include "../module/enclosure.h"
 
+#pragma pack(1)
+
+typedef struct {
+  uint8_t axis;
+  bool state;
+} motor_state_t;
+
+#pragma pack()
+
 static ErrCode subscribe_event(event_param_t& event) {
   event.data[0] = subscribe.enable(event);
   event.length = 1;
@@ -110,6 +119,65 @@ static ErrCode home(event_param_t& event) {
   return send_event(event);
 }
 
+static bool motor_remap_to_marlin(uint8_t sacp, uint8_t &marlin, uint8_t &index) {
+  switch (sacp) {
+    case AXIS_X1: marlin = X_AXIS; index = 0; return true;
+    case AXIS_Y1: marlin = Y_AXIS; index = 0; return true;
+    case AXIS_Z1: marlin = Z_AXIS; index = 0; return true;
+    case AXIS_X2: marlin = X_AXIS; index = 1; return true;
+    case AXIS_E0: marlin = E_AXIS; index = 0; return true;
+    case AXIS_E1: marlin = E_AXIS; index = 1; return true;
+  }
+  return false;
+}
+
+static ErrCode get_motor_enable(event_param_t& event) {
+  SERIAL_ECHOLNPAIR("SC get motor enable state");
+  uint8_t axis_count = 0;
+  uint8_t axis, index;
+  motor_state_t *motor_state = (motor_state_t *)(event.data + 2);
+
+  #define GET_AXIS_STATE(AXIS) \
+    motor_remap_to_marlin(AXIS_ ## AXIS, axis, index); \
+    motor_state[axis_count].axis = AXIS_ ## AXIS; \
+    motor_state[axis_count].state = motion_control.is_motor_enable(axis, index); \
+    axis_count++;
+
+  GET_AXIS_STATE(X1);
+  GET_AXIS_STATE(Y1);
+  GET_AXIS_STATE(Z1);
+  GET_AXIS_STATE(X2);
+  GET_AXIS_STATE(E0);
+  GET_AXIS_STATE(E1);
+
+  event.data[0] = E_SUCCESS;
+  event.data[1] = axis_count;
+  event.length = sizeof(motor_state_t) * axis_count + 2;
+  return send_event(event);
+}
+
+static ErrCode set_motor_enable(event_param_t& event) {
+  uint8_t axis_count = event.data[0];
+  SERIAL_ECHOLNPAIR("SC set motor enable and count:", axis_count);
+  motor_state_t *motor_state = (motor_state_t *)(event.data + 1);
+  for (uint8_t i = 0; i < axis_count; i++) {
+    uint8_t axis = motor_state[i].axis;
+    uint8_t index = 0;
+    uint8_t state = motor_state[i].state;
+    if (motor_remap_to_marlin(axis, axis, index)) {
+      SERIAL_ECHOLNPAIR("set axis:", axis, " index:", index, " state:", state);
+      if (state)
+        motion_control.motor_enable(axis, index);
+      else
+        motion_control.motor_disable(axis, index);
+    }
+  }
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
+}
+
+
 event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_SUBSCRIBE             , EVENT_CB_DIRECT_RUN, subscribe_event},
   {SYS_ID_UNSUBSCRIBE           , EVENT_CB_DIRECT_RUN, unsubscribe_event},
@@ -126,4 +194,6 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_MOVE_RELATIVE         , EVENT_CB_TASK_RUN  , move_relative},
   {SYS_ID_MOVE                  , EVENT_CB_TASK_RUN  , move},
   {SYS_ID_HOME                  , EVENT_CB_TASK_RUN  , home},
+  {SYS_ID_GET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN  , get_motor_enable},
+  {SYS_ID_SET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN  , set_motor_enable},
 };

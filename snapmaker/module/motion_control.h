@@ -72,6 +72,9 @@ class MotionControl {
       quickstop_stepper();
       synchronize();
     }
+    void motor_enable(uint8_t axis, uint8_t index=0);
+    void motor_disable(uint8_t axis, uint8_t index=0);
+    bool is_motor_enable(uint8_t axis, uint8_t index=0);
 };
 
 extern MotionControl motion_control;

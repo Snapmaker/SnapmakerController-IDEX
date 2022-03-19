@@ -10,6 +10,8 @@ enum : uint8_t {
   AXIS_Y1 = 1,
   AXIS_Z1 = 2,
   AXIS_X2 = 6,
+  AXIS_E0 = 7,
+  AXIS_E1 = 8,
 };
 
 typedef enum : uint8_t {
