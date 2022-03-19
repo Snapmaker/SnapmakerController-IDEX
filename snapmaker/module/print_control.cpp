@@ -233,3 +233,7 @@ ErrCode PrintControl::set_mode(print_mode_e mode) {
   mode_ = mode;
   return E_SUCCESS;
 }
+
+void PrintControl::set_feedrate_percentage(float percentage) {
+  feedrate_percentage = percentage;
+}

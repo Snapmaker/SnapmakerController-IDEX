@@ -30,6 +30,13 @@ typedef struct {
   uint8_t data[];
 } batch_gcode_t;
 
+typedef struct {
+  uint8_t key;
+  uint8_t e_index;
+  float_to_int_t percentage;
+} feedrate_percentage_t;
+
+
 #pragma pack()
 
 typedef enum {
@@ -279,6 +286,16 @@ static ErrCode request_temperature_lock(event_param_t& event) {
   return send_event(event);
 }
 
+static ErrCode set_work_feedrate_percentage(event_param_t& event) {
+  feedrate_percentage_t *info = (feedrate_percentage_t *)event.data;
+  float percent = INT_TO_FLOAT(info->percentage);
+  SERIAL_ECHOLNPAIR_F("SC set feedrate percentage:", percent);
+  print_control.set_feedrate_percentage(percent);
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
+}
+
 event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_REQ_FILE_INFO       , EVENT_CB_DIRECT_RUN, request_file_info},
   {PRINTER_ID_REQ_GCODE           , EVENT_CB_TASK_RUN,   gcode_pack_deal},
@@ -293,6 +310,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_REQ_AUTO_PARK_STATUS, EVENT_CB_DIRECT_RUN, request_auto_pack_status},
   {PRINTER_ID_SET_AUTO_PARK_STATUS, EVENT_CB_TASK_RUN,   set_auto_pack_mode},
   {PRINTER_ID_STOP_SINGLE_EXTRUDE , EVENT_CB_DIRECT_RUN,   request_stop_single_extrude_work},
+  {PRINTER_ID_SET_WORK_PERCENTAGE , EVENT_CB_DIRECT_RUN,   set_work_feedrate_percentage},
   {PRINTER_ID_REQ_LINE            , EVENT_CB_DIRECT_RUN, request_cur_line},
   {PRINTER_ID_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, request_temperature_lock},
 };
@@ -412,6 +430,7 @@ void stopping_status_deal() {
     fdm_head.set_duplication_enabled(e, true);
     print_control.temperature_lock(e, false);
   }
+  print_control.set_feedrate_percentage(100);
   if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_SACP) {
     send_event(print_source, source_recever_id, SACP_ATTR_ACK,
       COMMAND_SET_PRINTER, PRINTER_ID_STOP_WORK, &result, 1, source_sequence);

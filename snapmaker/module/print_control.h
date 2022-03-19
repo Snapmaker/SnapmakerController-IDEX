@@ -41,6 +41,7 @@ class PrintControl {
     ErrCode resume();
     ErrCode stop();
     ErrCode set_mode(print_mode_e mode);
+    void set_feedrate_percentage(float percentage);
     bool is_auto_pack_mode();
     bool filament_check();
     bool get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len);
