@@ -5,9 +5,9 @@
 #include "../../Marlin/src/pins/pins.h"
 #include "../../Marlin/src/core/serial.h"
 #include "../../Marlin/src/module/planner.h"
-#include "move.h"
 #include "filament_sensor.h"
-#include "../module/system.h"
+#include "system.h"
+#include "motion_control.h"
 
 FilamentSensor filament_sensor;
 
@@ -78,7 +78,7 @@ void FilamentSensor::test_adc(uint8_t e, float step_mm, uint32_t count) {
   uint16_t last_adc = filament[e].get();
   SERIAL_ECHOLNPAIR("tast filament sensor ", e);
   for (uint32_t i = 0; i < count; i++) {
-    move.extrude_e(step_mm, 15 * 60);
+    motion_control.extrude_e(step_mm, 15 * 60);
     planner.synchronize();
     time = millis();
     while ((time + 8) > millis());

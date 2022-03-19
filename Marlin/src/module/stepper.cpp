@@ -97,7 +97,7 @@ Stepper stepper; // Singleton
 #include "../MarlinCore.h"
 #include "../HAL/shared/Delay.h"
 #include "../../../snapmaker/J1/switch_detect.h"
-#include "../../../snapmaker/J1/filament_sensor.h"
+#include "../../../snapmaker/module/filament_sensor.h"
 #include "../../../snapmaker/module/power_loss.h"
 #include "../../../snapmaker/module/fdm.h"
 

@@ -34,7 +34,7 @@
 #include "temperature.h"
 #include "endstops.h"
 #include "planner.h"
-#include "../../../snapmaker/J1/filament_sensor.h"
+#include "../../../snapmaker/module/filament_sensor.h"
 
 #if EITHER(HAS_COOLER, LASER_COOLANT_FLOW_METER)
   #include "../feature/cooler.h"

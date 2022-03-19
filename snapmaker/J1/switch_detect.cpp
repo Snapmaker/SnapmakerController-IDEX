@@ -6,7 +6,7 @@
 #include "src/module/planner.h"
 #include "src/module/stepper.h"
 #include "switch_detect.h"
-#include "filament_sensor.h"
+#include "../module/filament_sensor.h"
 
 #define SW_FILAMNET0_BIT      0
 #define SW_FILAMNET1_BIT      1

@@ -3,7 +3,7 @@
 #include "../../Marlin/src/module/tool_change.h"
 #include "../../Marlin/src/module/temperature.h"
 #include "../../Marlin/src/module/motion.h"
-#include "../J1/filament_sensor.h"
+#include "../module/filament_sensor.h"
 #include "motion_control.h"
 FDM_Head fdm_head;
 

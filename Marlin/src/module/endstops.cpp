@@ -31,7 +31,7 @@
 #include "temperature.h"
 #include "../lcd/marlinui.h"
 #include "../../../snapmaker/J1/switch_detect.h"
-#include "../../../snapmaker/J1/filament_sensor.h"
+#include "../../../snapmaker/module/filament_sensor.h"
 
 #if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
   #include HAL_PATH(../HAL, endstop_interrupts.h)

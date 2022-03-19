@@ -1,7 +1,7 @@
 #include "event_printer.h"
 #include "../module/print_control.h"
 #include "../module/power_loss.h"
-#include "../J1/filament_sensor.h"
+#include "../module/filament_sensor.h"
 #include "../module/system.h"
 #include "../module/fdm.h"
 

@@ -8,7 +8,7 @@
 #include "system.h"
 #include "fdm.h"
 #include "power_loss.h"
-#include "../J1/filament_sensor.h"
+#include "../module/filament_sensor.h"
 
 
 PrintControl print_control;
