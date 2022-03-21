@@ -3,7 +3,7 @@
 #include "../J1/common_type.h"
 #include "src/core/types.h"
 
-#define POWER_LOSS_TRIGGER_STATUS 1
+#define POWER_LOSS_TRIGGER_STATUS 0
 
 #define GCODE_MD5_LENGTH 64
 #define GCODE_FILE_NAME_SIZE 128
