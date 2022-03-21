@@ -1724,6 +1724,9 @@
 #define DUPLICATION_SWITCH_FEEDRATE 50  // MM/S
 
 #define HOMING_X_POX_TO_ENDSTOP (0)  // mm
+#define DUPLICATION_MODE_X_OFFSET 164
+#define MIRRORED_MODE_X_OFFSET (X2_MAX_POS - X1_MIN_POS - HOMING_X_POX_TO_ENDSTOP)
+
 // Validate that endstops are triggered on homing moves
 #define VALIDATE_HOMING_ENDSTOPS
 

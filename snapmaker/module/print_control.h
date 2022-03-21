@@ -3,9 +3,6 @@
 #include "../J1/common_type.h"
 #include "src/core/types.h"
 
-#define DUPLICATION_MODE_X_OFFSET 164
-#define MIRRORED_MODE_X_OFFSET (X2_MAX_POS - X1_MIN_POS - HOMING_X_POX_TO_ENDSTOP)
-
 typedef enum {
   PRINT_RESULT_GCODE_RECV_DONE_E = 201,
   PRINT_RESULT_START_ERR_E = 202,

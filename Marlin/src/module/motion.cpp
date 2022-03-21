@@ -722,7 +722,11 @@ void restore_feedrate_and_scaling() {
           // In Duplication Mode, T0 can move as far left as X1_MIN_POS
           // but not so far to the right that T1 would move past the end
           soft_endstop.min.x = X1_MIN_POS;
-          soft_endstop.max.x = _MIN(X1_MAX_POS, dual_max_x - duplicate_extruder_x_offset);
+          if (dual_x_carriage_mode == DXC_DUPLICATION_MODE) {
+            soft_endstop.max.x = _MIN(X1_MAX_POS, dual_max_x - duplicate_extruder_x_offset);
+          } else {
+            soft_endstop.max.x = _MIN(X1_MAX_POS, (X1_MIN_POS + dual_max_x - EXTRUDERS_MIN_DISTANCE) / 2 );
+          }
         }
         else {
           // In other modes, T0 can move from X1_MIN_POS to X1_MAX_POS
@@ -820,7 +824,7 @@ void restore_feedrate_and_scaling() {
             NOLESS(target.x, min);
           } else {
             float max = x2_position() - EXTRUDERS_MIN_DISTANCE;
-            NOLESS(target.x, max);
+            NOMORE(target.x, max);
           }
         }
       }
@@ -1240,6 +1244,7 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
           if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("set_duplication_enabled(true)\nidex_set_parked(false)");
           break;
       }
+      update_software_endstops(X_AXIS, active_extruder);
     }
     return false;
   }

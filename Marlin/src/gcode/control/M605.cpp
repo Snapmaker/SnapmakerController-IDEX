@@ -81,7 +81,7 @@
             duplicate_extruder_x_offset = _MAX(parser.value_linear_units(), (X2_MIN_POS) - (X1_MIN_POS));
           } else {
             duplicate_extruder_x_offset = dual_x_carriage_mode == DXC_DUPLICATION_MODE ? \
-                        (X1_MAX_POS - X1_MIN_POS) / 2 : (X2_MAX_POS - X1_MIN_POS - HOMING_X_POX_TO_ENDSTOP);
+                                          DUPLICATION_MODE_X_OFFSET : MIRRORED_MODE_X_OFFSET;
           }
           if (parser.seen('R')) {
             duplicate_extruder_temp_offset = parser.value_celsius_diff();
@@ -95,7 +95,7 @@
           break;
       }
 
-      idex_set_parked(false);
+      idex_set_parked(true);
       set_duplication_enabled(false);
 
       #ifdef EVENT_GCODE_IDEX_AFTER_MODECHANGE
