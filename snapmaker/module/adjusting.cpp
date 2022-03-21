@@ -210,8 +210,6 @@ ErrCode Adjusting::adjust_xy() {
   }
   extruder_duplication_enabled = false;
   HOTEND_LOOP() {
-    hotend_offset[e].x = 0;
-    hotend_offset[e].y = 0;
     bed_preapare(e);
     motion_control.logical_move_to_z(15 - build_plate_thickness);
     goto_position(ADJUST_POS_0);
@@ -251,8 +249,8 @@ ErrCode Adjusting::adjust_xy() {
     SERIAL_ECHOPAIR_F("JF-XY Extruder2:", xy_center[1][0]);
     SERIAL_ECHOLNPAIR_F(" ", xy_center[1][1]);
 
-    hotend_offset[1].x -= (xy_center[1][0] - xy_center[0][0]);
-    hotend_offset[1].y -= (xy_center[1][1] - xy_center[0][1]);
+    hotend_offset[1].x = X2_MAX_POS - (xy_center[1][0] - xy_center[0][0]);
+    hotend_offset[1].y = -(xy_center[1][1] - xy_center[0][1]);
     SERIAL_ECHOPAIR_F("JF-Extruder2 hotend offset:", hotend_offset[1].x);
     SERIAL_ECHOLNPAIR_F(" ", hotend_offset[1].y);
     // Store to eeprom
