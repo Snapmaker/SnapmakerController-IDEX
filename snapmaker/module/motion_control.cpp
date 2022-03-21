@@ -15,7 +15,13 @@ void MotionControl::synchronize() {
 }
 
 void MotionControl::blocking_move_to(float x, float y, float z, float feedrate) {
-  do_blocking_move_to(x, y, z, feedrate);
+  float save_feedrate = feedrate_mm_s;
+  feedrate_mm_s = feedrate;
+  destination[X_AXIS] = x;
+  destination[Y_AXIS] = y;
+  destination[Z_AXIS] = z;
+  prepare_line_to_destination();
+  feedrate_mm_s = save_feedrate;
 }
 
 ErrCode MotionControl::move_axis(mobile_instruction_t move) {

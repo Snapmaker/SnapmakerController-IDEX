@@ -1199,7 +1199,6 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
           }
           stepper.set_directions();
 
-          idex_set_parked(false);
           if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("idex_set_parked(false)");
         } break;
 
@@ -1239,11 +1238,12 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
           sync_plan_position();             // Extra sync for good measure
           dual_x_carriage_mode = dual_mode;
           set_duplication_enabled(true);    // Enable Duplication
-          idex_set_parked(false);           // No longer parked
+          
           destination = destination_bak;
           if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("set_duplication_enabled(true)\nidex_set_parked(false)");
           break;
       }
+      idex_set_parked(false);           // No longer parked
       update_software_endstops(X_AXIS, active_extruder);
     }
     return false;
