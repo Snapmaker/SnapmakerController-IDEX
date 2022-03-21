@@ -13,18 +13,26 @@ Adjusting adjusting;
 #define PROBE_XY_FEEDRATE 200
 #define PROBE_MOVE_XY_FEEDRATE 5000
 #define PROBE_MOVE_Z_FEEDRATE 2000
-#define PROBE_LIFTINT_DISTANCE (6 - build_plate_thickness)  // mm
-
+#define PROBE_LIFTINT_DISTANCE (3)  // mm
+#define Z_REMOVE_PLATE_THICKNESS(z) (z - build_plate_thickness)
 static float build_plate_thickness = 5;
 
 #define Y_POS_DIFF 4
+//  ______________________
+// |                      |
+// | [4]     [1]     [5]  |
+// |                      |
+// |         [0]          |
+// |                      |
+// | [2]             [3]  |
+// |______________________|  
 static float calibration_position_xy[6][2] = {
-  /*ADJUST_POS_0*/ {(X_MAX_POS / 2), (Y_MAX_POS / 2) - Y_POS_DIFF}, 
-  /*ADJUST_POS_1*/ {X_MAX_POS / 2, 196 - Y_POS_DIFF},
-  /*ADJUST_POS_2*/ {42, 8 - Y_POS_DIFF},
-  /*ADJUST_POS_3*/ {272, 8 - Y_POS_DIFF},
-  /*ADJUST_POS_4*/ {42, 196 - Y_POS_DIFF},
-  /*ADJUST_POS_5*/ {272, 196 - Y_POS_DIFF},
+  /*ADJUST_POS_0*/ {158, 103}, 
+  /*ADJUST_POS_1*/ {158, 188},
+  /*ADJUST_POS_2*/ {43.5, 9},
+  /*ADJUST_POS_3*/ {273.5, 9},
+  /*ADJUST_POS_4*/ {43.5, 188},
+  /*ADJUST_POS_5*/ {273.5, 188},
 };
 
 void Adjusting::bed_preapare(uint8_t extruder_index) {
@@ -133,7 +141,7 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
     ret = probe_z_offset(pos);
   } else {
     goto_position(pos);
-    motion_control.logical_move_to_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
+    motion_control.logical_move_to_z(Z_REMOVE_PLATE_THICKNESS(PROBE_LIFTINT_DISTANCE), PROBE_MOVE_Z_FEEDRATE);
     z_probe_distance = 15;
     temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
     if (temp_z == -z_probe_distance) {
@@ -141,11 +149,11 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
       probe_offset = ADJUSTINT_ERR_CODE;
       ret = E_ADJUST_PRIOBE;
     } else {
-      probe_offset = current_position[Z_AXIS];
+      probe_offset = current_position[Z_AXIS] + home_offset[Z_AXIS] + build_plate_thickness;
       SERIAL_ECHOLNPAIR("JF-Z offset height:", probe_offset);
     }
   }
-  motion_control.logical_move_to_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
+  motion_control.logical_move_to_z(Z_REMOVE_PLATE_THICKNESS(PROBE_LIFTINT_DISTANCE), PROBE_MOVE_Z_FEEDRATE);
   extruder_duplication_enabled = duplication_enabled;
   if (last_active_extruder != active_extruder) {
     tool_change(last_active_extruder, true);
