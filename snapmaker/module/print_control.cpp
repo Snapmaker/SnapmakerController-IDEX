@@ -219,6 +219,11 @@ ErrCode PrintControl::stop() {
     system_service.set_status(SYSTEM_STATUE_IDLE);
     mode_ = PRINT_FULL_CONTROL_MODE;
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+    HOTEND_LOOP() {
+      thermalManager.setTargetHotend(0, e);
+      fdm_head.set_fan_speed(e, 0, 0);
+    }
+    thermalManager.setTargetBed(0);
   }
   return E_SUCCESS;
 }
