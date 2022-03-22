@@ -16,11 +16,12 @@ void MotionControl::synchronize() {
 
 void MotionControl::blocking_move_to(float x, float y, float z, float feedrate) {
   float save_feedrate = feedrate_mm_s;
-  feedrate_mm_s = feedrate;
-  destination[X_AXIS] = x;
-  destination[Y_AXIS] = y;
-  destination[Z_AXIS] = z;
-  prepare_line_to_destination();
+  xyze_pos_t xyz = current_position;
+  xyz[X_AXIS] = x;
+  xyz[Y_AXIS] = y;
+  xyz[Z_AXIS] = z;
+  apply_motion_limits(xyz);
+  do_blocking_move_to(xyz, feedrate);
   feedrate_mm_s = save_feedrate;
 }
 
@@ -218,13 +219,13 @@ bool MotionControl::is_motor_enable(uint8_t axis, uint8_t index) {
   bool ret = false;
   switch (axis) {
     case X_AXIS:
-      if (index == 0) ret = X_ENABLE_READ();
-      else ret = X2_ENABLE_READ(); break;
+      if (index == 0) {ret = X_ENABLE_READ();}
+      else {ret = X2_ENABLE_READ();} break;
     case Y_AXIS: ret = Y_ENABLE_READ(); break;
     case Z_AXIS: ret = Z_ENABLE_READ(); break;
     case E_AXIS: 
-      if (index == 0) ret = E0_ENABLE_READ();
-      else ret = E1_ENABLE_READ(); break;
+      if (index == 0) {ret = E0_ENABLE_READ();}
+      else {ret = E1_ENABLE_READ();} break;
   }
   return ret;
 }
