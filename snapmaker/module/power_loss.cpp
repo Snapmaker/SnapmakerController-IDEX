@@ -297,11 +297,16 @@ uint8_t * PowerLoss::get_file_md5(uint8_t &len) {
   return stash_data.gcode_file_md5;
 }
 
+bool PowerLoss::is_power_pin_trigger() {
+  return READ(POWER_LOST_PIN) == POWER_LOSS_TRIGGER_STATUS;
+}
+
 void PowerLoss::check() {
-  if (is_inited && power_loss_en && system_service.get_status() != SYSTEM_STATUE_IDLE) {
-    if (READ(POWER_LOST_PIN) == POWER_LOSS_TRIGGER_STATUS) {
+  if (is_inited && power_loss_en && system_service.is_working()) {
+    if (is_power_pin_trigger()) {
       stash_print_env();
       write_flash();
+      wait_for_heatup = false;
       stepper.quick_stop();
       is_power_loss = true;
     }

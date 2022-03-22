@@ -32,6 +32,7 @@
 #include "../lcd/marlinui.h"
 #include "../../../snapmaker/J1/switch_detect.h"
 #include "../../../snapmaker/module/filament_sensor.h"
+#include "../../../snapmaker/module/power_loss.h"
 
 #if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
   #include HAL_PATH(../HAL, endstop_interrupts.h)
@@ -593,6 +594,7 @@ void _O2 Endstops::report_states() {
   
   print_es_state(filament_sensor.is_trigger(0), "filament_0");
   print_es_state(filament_sensor.is_trigger(1), "filament_1");
+  print_es_state(power_loss.is_power_pin_trigger(), "power_loss");
   TERN_(BLTOUCH, bltouch._reset_SW_mode());
   TERN_(JOYSTICK_DEBUG, joystick.report());
 

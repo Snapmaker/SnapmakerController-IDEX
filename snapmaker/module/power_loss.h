@@ -65,6 +65,7 @@ class PowerLoss {
     void clear();
     void show_power_loss_info();
     void check();
+    bool is_power_pin_trigger();
   private:
     void write_flash(void);
   public:
