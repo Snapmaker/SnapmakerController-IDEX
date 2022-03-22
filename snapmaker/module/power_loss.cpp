@@ -25,7 +25,7 @@ void PowerLoss::stash_print_env() {
   stash_data.bed_temp = thermalManager.degTargetBed();
   stash_data.print_feadrate = feedrate_mm_s;
   stash_data.active_extruder = active_extruder;
-  stash_data.print_feadrate = fast_move_feedrate;
+  stash_data.travel_feadrate = fast_move_feedrate;
   stash_data.axis_relative = gcode.axis_relative;
   stash_data.print_mode = print_control.mode_;
   stash_data.duplicate_extruder_x_offset = duplicate_extruder_x_offset;
@@ -55,11 +55,6 @@ void PowerLoss::extrude_before_resume() {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
     tool_change(stash_data.active_extruder);
   }
-  if (homing_needed()) {
-    motion_control.home();
-  } else {
-    motion_control.home_x();
-  }
 
   thermalManager.setTargetBed(stash_data.bed_temp);
   HOTEND_LOOP() {
@@ -72,6 +67,11 @@ void PowerLoss::extrude_before_resume() {
     for (uint8_t i = 0; i < 2; i++) {
       fdm_head.set_fan_speed(e, i, stash_data.fan[e][i]);
     }
+  }
+  if (homing_needed()) {
+    motion_control.home();
+  } else {
+    motion_control.home_x();
   }
   HOTEND_LOOP() {
     thermalManager.wait_for_hotend(e);
@@ -112,9 +112,6 @@ void PowerLoss::resume_print_env() {
 
   }
   thermalManager.wait_for_bed();
-  HOTEND_LOOP() {
-    thermalManager.wait_for_hotend(e);
-  }
 
   feedrate_mm_s = stash_data.print_feadrate;
   fast_move_feedrate = stash_data.travel_feadrate;

@@ -124,8 +124,9 @@ static ErrCode gcode_pack_deal(event_param_t& event) {
 }
 
 static ErrCode request_start_work(event_param_t& event) {
+  SERIAL_ECHOLNPAIR("SC req start work");
   ErrCode result= print_control.start();
-  SERIAL_ECHOLNPAIR("SC req start work, ret:", result);
+  SERIAL_ECHOLNPAIR("start work result:", result);
   if (result == E_SUCCESS) {
     // set md5 and file name
     uint16_t data_len = *((uint16_t *)event.data);
