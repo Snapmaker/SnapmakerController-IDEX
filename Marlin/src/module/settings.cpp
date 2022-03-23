@@ -137,6 +137,8 @@
   #include "../feature/caselight.h"
 #endif
 
+#include "../../../snapmaker/module/filament_sensor.h"
+
 #if ENABLED(PASSWORD_FEATURE)
   #include "../feature/password/password.h"
 #endif
@@ -216,6 +218,8 @@ typedef struct SettingsDataStruct {
   //
   bool runout_sensor_enabled;                           // M412 S
   float runout_distance_mm;                             // M412 D
+
+  filament_check_param_t filament_param;
 
   //
   // ENABLE_LEVELING_FADE_HEIGHT
@@ -711,6 +715,7 @@ void MarlinSettings::postprocess() {
         constexpr float runout_distance_mm = 0;
       #endif
       EEPROM_WRITE(runout_distance_mm);
+      EEPROM_WRITE(filament_sensor.filament_param);
     }
 
     //
@@ -1551,6 +1556,7 @@ void MarlinSettings::postprocess() {
         #if HAS_FILAMENT_RUNOUT_DISTANCE
           if (!validating) runout.set_runout_distance(runout_distance_mm);
         #endif
+        EEPROM_READ(filament_sensor.filament_param);
       }
 
       //
@@ -2810,6 +2816,8 @@ void MarlinSettings::reset() {
     thermalManager.temp_chamber.pid.Ki = scalePID_i(DEFAULT_chamberKi);
     thermalManager.temp_chamber.pid.Kd = scalePID_d(DEFAULT_chamberKd);
   #endif
+
+  filament_sensor.used_default_param();
 
   //
   // User-Defined Thermistors

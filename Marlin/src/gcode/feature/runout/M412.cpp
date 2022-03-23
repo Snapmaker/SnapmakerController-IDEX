@@ -22,10 +22,12 @@
 
 #include "../../../inc/MarlinConfig.h"
 
-#if HAS_FILAMENT_SENSOR
+// #if HAS_FILAMENT_SENSOR
 
 #include "../../gcode.h"
-#include "../../../feature/runout.h"
+// #include "../../../feature/runout.h"
+#include "../../../../../snapmaker/module/filament_sensor.h"
+#include "../../../module/settings.h"
 
 /**
  * M412: Enable / Disable filament runout detection
@@ -37,33 +39,59 @@
  *  D<linear> : Extra distance to continue after runout is triggered
  */
 void GcodeSuite::M412() {
-  if (parser.seen("RS"
-    TERN_(HAS_FILAMENT_RUNOUT_DISTANCE, "D")
-    TERN_(HOST_ACTION_COMMANDS, "H")
-  )) {
-    #if ENABLED(HOST_ACTION_COMMANDS)
-      if (parser.seen('H')) runout.host_handling = parser.value_bool();
-    #endif
-    const bool seenR = parser.seen_test('R'), seenS = parser.seen('S');
-    if (seenR || seenS) runout.reset();
-    if (seenS) runout.enabled = parser.value_bool();
-    #if HAS_FILAMENT_RUNOUT_DISTANCE
-      if (parser.seen('D')) runout.set_runout_distance(parser.value_linear_units());
-    #endif
+  bool need_save = false;
+  if (parser.seenval('S')) {
+    bool enable = parser.value_bool();
+    uint8_t e = 0;
+    if (parser.seenval('T')) {
+      e = parser.value_bool();
+    }
+    filament_sensor.filament_param.enabled[e] = enable;
+    need_save = true;
   }
-  else {
-    SERIAL_ECHO_START();
-    SERIAL_ECHOPGM("Filament runout ");
-    serialprint_onoff(runout.enabled);
-    #if HAS_FILAMENT_RUNOUT_DISTANCE
-      SERIAL_ECHOPAIR(" ; Distance ", runout.runout_distance(), "mm");
-    #endif
-    #if ENABLED(HOST_ACTION_COMMANDS)
-      SERIAL_ECHOPGM(" ; Host handling ");
-      serialprint_onoff(runout.host_handling);
-    #endif
-    SERIAL_EOL();
+
+  if (parser.seenval('D')) {
+    uint8_t d = parser.value_byte();
+    if (d < 1) {
+      d = 1;
+    }
+    filament_sensor.filament_param.distance = d;
+    need_save = true;
   }
+
+  if (parser.seenval('H')) {
+    uint16_t h = parser.value_ushort();
+    if (h < 1) {
+      h = 1;
+    }
+    filament_sensor.filament_param.threshold = h;
+    need_save = true;
+  }
+
+  if (parser.seenval('N')) {
+    uint8_t n = parser.value_byte();
+    if (n < 1) {
+      n = 1;
+    } else if (n > 8){
+      n = 8;
+    }
+    filament_sensor.filament_param.check_times = n;
+    need_save = true;
+  }
+
+  if (parser.seen('R') || need_save) {
+    if (need_save)
+      (void)settings.save();
+    filament_sensor.reset();
+  }
+
+  SERIAL_ECHOLNPAIR("filament check enable T[0]:", filament_sensor.filament_param.enabled[0],
+                    ", T[1]:", filament_sensor.filament_param.enabled[1]);
+  SERIAL_ECHOLNPAIR("filament check param - diatance:", filament_sensor.filament_param.distance,
+                    ", threshold:", filament_sensor.filament_param.threshold,
+                    ", times:", filament_sensor.filament_param.check_times);
+  SERIAL_ECHOLNPAIR("filament sensor value T[0]:", filament_sensor.filament[0].get(),
+                    ", T[1]:", filament_sensor.filament[1].get());
 }
 
-#endif // HAS_FILAMENT_SENSOR
+// #endif // HAS_FILAMENT_SENSOR

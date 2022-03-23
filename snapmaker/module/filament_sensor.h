@@ -5,14 +5,16 @@
 
 #define FILAMENT_SENSOR_COUNT 2
 #define FILAMENT_LOOP(i) for (uint8_t i = 0; i < FILAMENT_SENSOR_COUNT; i++)
-#define FILAMENT_BASE_LEN 5  // mm
-#define FILAMENT_THRESHOLD 6  // ADC diff value
+#define FILAMENT_CHECK_DISTANCE 5  // mm
+#define FILAMENT_THRESHOLD 3  // ADC diff value
+#define FILAMENT_CHECK_TIMES 1
 
 typedef struct {
-  uint32_t scale;
-  uint32_t tar_scale;
-  uint32_t e_steps;
-}strFILErrorRecord;
+  bool enabled[FILAMENT_SENSOR_COUNT];
+  float distance;  // Move this distance to detect abnormal sensing deviation
+  uint8_t check_times;  // Determine the number of exceptions
+  uint16_t threshold;
+}filament_check_param_t;
 
 class FilamentSample {
   public:
@@ -44,14 +46,14 @@ class FilamentSensor
       }
     }
     void enable(uint8_t e) {
-      enable_flag[e] = true;
+      filament_param.enabled[e] = true;
       triggered[e] = false;
       check_step_count[e] = 0;
       next_sample(e);
     }
     void disable(uint8_t e) {
       triggered[e] = false;
-      enable_flag[e] = false;
+      filament_param.enabled[e] = false;
     }
     void enable_all() {
       FILAMENT_LOOP(i) {
@@ -70,23 +72,21 @@ class FilamentSensor
       return is_trigger(0) || is_trigger(1);
     }
     bool is_enable(uint8_t e) {
-      return enable_flag[e];
+      return filament_param.enabled[e];
     }
 
     void debug();
     void check();
     void test_adc(uint8_t e, float step_mm, uint32_t count);
-    void reset() {
-      FILAMENT_LOOP(i) {
-        next_sample(i);
-        triggered[i] = false;
-      }
-    }
+    void reset();
+    void used_default_param();
   public:
     FilamentSample filament[FILAMENT_SENSOR_COUNT];
+    filament_check_param_t filament_param;
   private:
+    uint8_t err_mask = 0x1;
     int32_t check_step_count[FILAMENT_SENSOR_COUNT];
-    bool enable_flag[FILAMENT_SENSOR_COUNT] = {true, true};
+    uint8_t err_times[FILAMENT_SENSOR_COUNT] = {0, 0};
     int32_t e_step_count[FILAMENT_SENSOR_COUNT] = {0, 0};
     bool triggered[FILAMENT_SENSOR_COUNT] = {false, false};
     uint16_t start_adc[FILAMENT_SENSOR_COUNT] = {0, 0};

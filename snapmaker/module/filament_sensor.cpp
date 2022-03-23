@@ -12,9 +12,27 @@
 FilamentSensor filament_sensor;
 
 void FilamentSensor::init() {
+  reset();
+}
+
+void FilamentSensor::reset() {
   FILAMENT_LOOP(i) {
-    check_step_count[i] = FILAMENT_BASE_LEN * planner.settings.axis_steps_per_mm[E_AXIS_N(i)];
+    next_sample(i);
+    triggered[i] = false;
+    err_times[i] = 0;
+    check_step_count[i] = filament_param.distance * planner.settings.axis_steps_per_mm[E_AXIS_N(i)];
   }
+  err_mask = ~(0xff << filament_param.check_times);
+}
+
+void FilamentSensor::used_default_param() {
+  FILAMENT_LOOP(i) {
+    filament_param.enabled[i] = true;
+  }
+  filament_param.check_times = FILAMENT_CHECK_TIMES;
+  filament_param.distance = FILAMENT_CHECK_DISTANCE;
+  filament_param.threshold = FILAMENT_THRESHOLD;
+  reset();
 }
 
 void FilamentSensor::e0_step(uint8_t step) {
@@ -51,7 +69,9 @@ void FilamentSensor::check() {
     if ((e_step_count[i] >= check_step_count[i]) || (e_step_count[i] <= -check_step_count[i])) {
       int32_t diff = (filament[i].get() - start_adc[i]);
       diff = diff > 0 ? diff : -diff;
-      if (diff < FILAMENT_THRESHOLD) {
+      bool is_err = diff < filament_param.threshold;
+      err_times[i] = err_times[i] << 1 | is_err;
+      if ((err_times[i] & err_mask) == err_mask) {
         triggered[i] = true;
       } else {
         triggered[i] = false;
