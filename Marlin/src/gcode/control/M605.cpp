@@ -34,6 +34,7 @@
 
 #define DEBUG_OUT ENABLED(DEBUG_DXC_MODE)
 #include "../../core/debug_out.h"
+#include "../../../../snapmaker/module/print_control.h"
 
 #if ENABLED(DUAL_X_CARRIAGE)
 
@@ -105,6 +106,14 @@
     else if (!parser.seen('W'))  // if no S or W parameter, the DXC mode gets reset to the user's default
       dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
 
+    if (parser.seenval('B')) {
+      if (parser.value_bool())
+        print_control.set_mode(PRINT_AUTO_PARK_MODE);
+      else
+        print_control.set_mode(PRINT_BACKUP_MODE);
+
+    }
+
     #ifdef DEBUG_DXC_MODE
 
       if (parser.seen('W')) {
@@ -119,6 +128,7 @@
         DEBUG_ECHOPAIR("\nActive Ext: ", active_extruder);
         if (!active_extruder_parked) DEBUG_ECHOPGM(" NOT ");
         DEBUG_ECHOPGM(" parked.");
+        DEBUG_ECHOPAIR("\nbackup moed enable status: ", print_control.is_backup_mode());
         DEBUG_ECHOPAIR("\nactive_extruder_x_pos: ", current_position.x);
         DEBUG_ECHOPAIR("\ninactive_extruder_x: ", inactive_extruder_x);
         DEBUG_ECHOPAIR("\nextruder_duplication_enabled: ", extruder_duplication_enabled);

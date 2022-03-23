@@ -27,7 +27,7 @@ bool PrintControl::buffer_is_empty() {
  return buffer_head == buffer_tail && !planner.has_blocks_queued();
 }
 
-bool PrintControl::is_auto_pack_mode() {
+bool PrintControl::is_backup_mode() {
   return mode_ == PRINT_AUTO_PARK_MODE;
 }
 
@@ -61,7 +61,7 @@ bool PrintControl::filament_check() {
 
   system_status_source_e source = SYSTEM_STATUE_SCOURCE_NONE;
   switch (mode_) {
-    case PRINT_FULL_CONTROL_MODE:
+    case PRINT_BACKUP_MODE:
     case PRINT_DUPLICATION_MODE:
     case PRINT_MIRRORED_MODE:
       source = SYSTEM_STATUE_SCOURCE_FILAMENT;
@@ -158,7 +158,7 @@ ErrCode PrintControl::start() {
     return PRINT_RESULT_START_ERR_E;
   }
   switch (mode_) {
-    case PRINT_FULL_CONTROL_MODE:
+    case PRINT_BACKUP_MODE:
     case PRINT_AUTO_PARK_MODE:
       dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
       break;
@@ -221,7 +221,7 @@ ErrCode PrintControl::stop() {
     motion_control.retrack_e(PRINT_RETRACK_DISTANCE, PRINT_RETRACK_SPEED);
     motion_control.home();
     system_service.set_status(SYSTEM_STATUE_IDLE);
-    mode_ = PRINT_FULL_CONTROL_MODE;
+    mode_ = PRINT_BACKUP_MODE;
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
     HOTEND_LOOP() {
       thermalManager.setTargetHotend(0, e);
@@ -233,11 +233,9 @@ ErrCode PrintControl::stop() {
 }
 
 ErrCode PrintControl::set_mode(print_mode_e mode) {
-  if (system_service.get_status() != SYSTEM_STATUE_IDLE) {
-    if (mode_ > PRINT_AUTO_PARK_MODE) {
-      SERIAL_ECHOLNPAIR("system status-", system_service.get_status(), " no support dual x mode to mode ", mode);
-      return PRINT_RESULT_SER_MODE_ERR_E;
-    }
+  if (mode_ > PRINT_AUTO_PARK_MODE) {
+    SERIAL_ECHOLNPAIR("system no support dual x mode to mode ", mode);
+    return PRINT_RESULT_SER_MODE_ERR_E;
   }
   mode_ = mode;
   return E_SUCCESS;

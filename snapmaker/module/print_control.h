@@ -17,7 +17,7 @@ typedef enum {
 } print_result_e;
 
 typedef enum : uint8_t{
-  PRINT_FULL_CONTROL_MODE,
+  PRINT_BACKUP_MODE,
   PRINT_AUTO_PARK_MODE,
   PRINT_DUPLICATION_MODE,
   PRINT_MIRRORED_MODE
@@ -39,7 +39,7 @@ class PrintControl {
     ErrCode stop();
     ErrCode set_mode(print_mode_e mode);
     void set_feedrate_percentage(float percentage);
-    bool is_auto_pack_mode();
+    bool is_backup_mode();
     bool filament_check();
     bool get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len);
     void loop();
@@ -48,7 +48,7 @@ class PrintControl {
     }
     void temperature_lock(uint8_t e, bool enable) {temperature_lock_status[e] = enable;}
   public:
-    print_mode_e mode_ = PRINT_FULL_CONTROL_MODE;
+    print_mode_e mode_ = PRINT_BACKUP_MODE;
     bool temperature_lock_status[EXTRUDERS] = {false, false};
 };
 

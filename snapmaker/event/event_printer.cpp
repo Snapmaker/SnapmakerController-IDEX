@@ -253,7 +253,7 @@ static ErrCode set_printer_mode(event_param_t& event) {
 }
 
 static ErrCode request_auto_pack_status(event_param_t& event) {
-  bool status = print_control.is_auto_pack_mode();
+  bool status = print_control.is_backup_mode();
   SERIAL_ECHOLNPAIR("SC req auto pack mode:", status);
   event.data[0] = E_SUCCESS;
   event.data[1] = status;
@@ -262,7 +262,7 @@ static ErrCode request_auto_pack_status(event_param_t& event) {
 }
 
 static ErrCode set_auto_pack_mode(event_param_t& event) {
-  print_mode_e mode = PRINT_FULL_CONTROL_MODE;
+  print_mode_e mode = PRINT_BACKUP_MODE;
   if (event.data[0])
     mode = PRINT_AUTO_PARK_MODE;
   SERIAL_ECHOLNPAIR("SC req auto pack mode:", mode);
