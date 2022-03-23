@@ -77,12 +77,12 @@ void PowerLoss::extrude_before_resume() {
     thermalManager.wait_for_hotend(e);
   }
     
-  int16_t move_dis = EXTRUDE_X_MOVE_DISTANCE;
+  int16_t move_distance = EXTRUDE_X_MOVE_DISTANCE;
   if (active_extruder) {
-    move_dis = -move_dis;
+    move_distance = -move_distance;
   }
   prepare_line_to_destination();
-  motion_control.move_x(move_dis, PRINT_TRAVEL_FEADRATE);
+  motion_control.move_x(move_distance, PRINT_TRAVEL_FEADRATE);
   motion_control.synchronize();
   motion_control.extrude_e(EXTRUDE_E_DISTANCE, PRINT_RETRACK_SPEED);
   motion_control.synchronize();
@@ -117,13 +117,14 @@ void PowerLoss::resume_print_env() {
   fast_move_feedrate = stash_data.travel_feadrate;
   gcode.axis_relative = stash_data.axis_relative;
   duplicate_extruder_x_offset = stash_data.duplicate_extruder_x_offset;
-  next_req = cur_line = line_number_sum = stash_data.file_position;
   print_control.mode_ = (print_mode_e)stash_data.print_mode;
   prepare_line_to_destination();
-  motion_control.move_to_xyz(stash_data.position, PRINT_TRAVEL_FEADRATE);
-  motion_control.synchronize();
+  motion_control.move_to_z(stash_data.position[Z_AXIS] + Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
+  motion_control.move_to_xy(stash_data.position[X_AXIS], stash_data.position[Y_AXIS], PRINT_TRAVEL_FEADRATE);
+  motion_control.move_to_z(stash_data.position[Z_AXIS], PRINT_TRAVEL_FEADRATE);
   current_position.e = stash_data.position.e;
   sync_plan_position();
+  next_req = cur_line = line_number_sum = stash_data.file_position;
 }
 
  /**
@@ -216,7 +217,7 @@ void PowerLoss::clear() {
   stash_data.state = PL_NO_DATE;
 }
 
-ErrCode PowerLoss::power_loss_status() {
+ErrCode PowerLoss::is_power_loss_data() {
   if (stash_data.state == PL_WAIT_RESUME) {
     return E_SUCCESS;
   }
@@ -301,11 +302,25 @@ bool PowerLoss::is_power_pin_trigger() {
 void PowerLoss::check() {
   if (is_inited && power_loss_en && system_service.is_working()) {
     if (is_power_pin_trigger()) {
-      stash_print_env();
-      write_flash();
-      wait_for_heatup = false;
-      stepper.quick_stop();
-      is_power_loss = true;
+      switch (power_loss_status) {
+        case POWER_LOSS_IDLE:
+          power_loss_status = POWER_LOSS_STOP_MOVE;
+          stepper.quick_stop();
+          break;
+        case POWER_LOSS_STOP_MOVE:
+          if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
+            current_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS);
+            set_current_from_steppers_for_axis(ALL_AXES_ENUM);
+            stash_print_env();
+          }
+          write_flash();
+          wait_for_heatup = false;
+          power_loss_status = POWER_LOSS_DONE;
+          
+          break;
+        default:
+          break;
+      }
     }
   }
 }

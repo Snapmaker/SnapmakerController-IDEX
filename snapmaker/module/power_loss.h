@@ -20,6 +20,12 @@
 #define EXTRUDE_X_MOVE_DISTANCE 8  // mm
 #define EXTRUDE_E_DISTANCE 30  // mm
 
+typedef enum {
+  POWER_LOSS_IDLE,
+  POWER_LOSS_STOP_MOVE,
+  POWER_LOSS_DONE,
+} power_loss_status_e;
+
 # pragma pack(4)
 typedef struct {
   uint16_t state;
@@ -52,7 +58,7 @@ typedef struct {
 class PowerLoss {
   public:
     void init();
-    ErrCode power_loss_status();
+    ErrCode is_power_loss_data();
     ErrCode power_loss_resume();
     bool change_head();
     void extrude_before_resume();
@@ -73,7 +79,7 @@ class PowerLoss {
     uint32_t line_number_sum = 0;
     uint32_t next_req = 0;
     bool power_loss_en = true;
-    bool is_power_loss = false;
+    power_loss_status_e power_loss_status = POWER_LOSS_IDLE;
     bool is_inited = false;
     power_loss_t stash_data;
 };
