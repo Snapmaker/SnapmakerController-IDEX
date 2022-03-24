@@ -5,9 +5,9 @@
 
 #define FILAMENT_SENSOR_COUNT 2
 #define FILAMENT_LOOP(i) for (uint8_t i = 0; i < FILAMENT_SENSOR_COUNT; i++)
-#define FILAMENT_CHECK_DISTANCE 5  // mm
-#define FILAMENT_THRESHOLD 3  // ADC diff value
-#define FILAMENT_CHECK_TIMES 1
+#define FILAMENT_CHECK_DISTANCE 3  // mm
+#define FILAMENT_THRESHOLD 5  // ADC diff value
+#define FILAMENT_CHECK_TIMES 2
 
 typedef struct {
   bool enabled[FILAMENT_SENSOR_COUNT];
