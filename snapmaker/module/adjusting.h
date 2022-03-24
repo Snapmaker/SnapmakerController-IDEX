@@ -10,6 +10,7 @@ typedef enum {
   ADJUST_MODE_BED,
   ADJUST_MODE_XY,
   ADJUST_MODE_NOZZLE,
+  ADJUST_MODE_EXIT,
 } adjust_mode_e;
 
 typedef enum {

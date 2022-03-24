@@ -6,6 +6,7 @@
 #include "src/module/stepper.h"
 #include "src/module/endstops.h"
 #include "src/module/tool_change.h"
+#include "../../Marlin/src/module/temperature.h"
 
 Adjusting adjusting;
 
@@ -281,9 +282,12 @@ ErrCode set_hotend_offset(uint8_t axis, float offset) {
 
 ErrCode Adjusting::exit() {
   SERIAL_ECHOLN("exit justing");
-  mode = ADJUST_MODE_IDLE;
+  mode = ADJUST_MODE_EXIT;
   status = ADJUST_STATE_IDLE;
   probe_offset = ADJUSTINT_ERR_CODE;
+  HOTEND_LOOP() {
+    thermalManager.setTargetHotend(0, e);
+  }
   return E_SUCCESS;
 }
 
@@ -295,6 +299,10 @@ void Adjusting::loop(void) {
     SERIAL_ECHOLNPAIR("probe offset:", probe_offset);
   } else if (mode == ADJUST_MODE_NOZZLE && status == ADJUST_STATE_BED_BEAD) {
     bed_probe(cur_pos, 1);
+  } else if (mode == ADJUST_MODE_EXIT) {
+    mode = ADJUST_MODE_IDLE;
+    motion_control.synchronize();
+    motion_control.move_to_z(100, PROBE_MOVE_Z_FEEDRATE);
   }
 }
 
