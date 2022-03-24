@@ -251,6 +251,7 @@ ErrCode PowerLoss::power_loss_resume() {
   }
   system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_PL);
   resume_print_env();
+  clear();
   system_service.set_status(SYSTEM_STATUE_PRINTING);
   return E_SUCCESS;
 }
