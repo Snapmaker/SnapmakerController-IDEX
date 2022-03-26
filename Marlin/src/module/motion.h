@@ -147,6 +147,8 @@ inline float home_bump_mm(const AxisEnum axis) {
 #if HAS_HOTEND_OFFSET
   extern xyz_pos_t hotend_offset[HOTENDS];
   void reset_hotend_offsets();
+  void set_hotend_offsets(uint8_t e, uint8_t axis, float offset);
+  void set_hotend_offsets(uint8_t e, xyz_pos_t offset);
 #elif HOTENDS
   constexpr xyz_pos_t hotend_offset[HOTENDS] = { { 0 } };
 #else

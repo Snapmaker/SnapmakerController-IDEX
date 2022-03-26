@@ -64,7 +64,14 @@ void Adjusting::bed_preapare(uint8_t extruder_index) {
 
 // Run to the specified calibration point
 ErrCode Adjusting::goto_position(uint8_t pos) {
+  xyz_pos_t offset0 = hotend_offset[0];
+  xyz_pos_t offset1 = hotend_offset[1];
+  reset_hotend_offsets();
+
   motion_control.move_to_xy(calibration_position_xy[pos][0], calibration_position_xy[pos][1], PROBE_MOVE_XY_FEEDRATE);
+
+  set_hotend_offsets(0, offset0);
+  set_hotend_offsets(1, offset1);
   return E_SUCCESS;
 }
 
@@ -218,6 +225,7 @@ ErrCode Adjusting::adjust_xy() {
     return E_ADJUST_XY;
   }
   extruder_duplication_enabled = false;
+  reset_hotend_offsets();
   HOTEND_LOOP() {
     bed_preapare(e);
     motion_control.logical_move_to_z(15 - build_plate_thickness);
@@ -226,7 +234,7 @@ ErrCode Adjusting::adjust_xy() {
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
       goto_position(ADJUST_POS_0);
       probe_value = probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
-      if (probe_value == -probe_distance) {
+      if (probe_value >= abs(probe_distance)-5) {
         ret =  E_ADJUST_XY;
         SERIAL_ECHOLNPAIR("e:", e, " axis:", axis, " probe 0 filed");
         break;
@@ -260,10 +268,21 @@ ErrCode Adjusting::adjust_xy() {
 
     hotend_offset[1].x = X2_MAX_POS - (xy_center[1][0] - xy_center[0][0]);
     hotend_offset[1].y = -(xy_center[1][1] - xy_center[0][1]);
+
+    set_hotend_offsets(1, X_AXIS, X2_MAX_POS - (xy_center[1][0] - xy_center[0][0]));
+    set_hotend_offsets(1, Y_AXIS, -(xy_center[1][1] - xy_center[0][1]));
     SERIAL_ECHOPAIR_F("JF-Extruder2 hotend offset:", hotend_offset[1].x);
     SERIAL_ECHOLNPAIR_F(" ", hotend_offset[1].y);
+
+    set_home_offset(X_AXIS, calibration_position_xy[0][0] - xy_center[0][0]);
+    set_home_offset(Y_AXIS, calibration_position_xy[0][1] - xy_center[0][1]);
+    SERIAL_ECHOPAIR_F("JF-Extruder1 hotend offset:", hotend_offset[0].x);
+    SERIAL_ECHOLNPAIR_F(" ", hotend_offset[0].y);
+
     // Store to eeprom
     settings.save();
+    motion_control.home_x();
+    motion_control.home_y();
     return ret;
   }
   else {

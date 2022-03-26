@@ -128,6 +128,35 @@ xyze_pos_t destination; // {0}
       hotend_offset[1].x = _MAX(X2_HOME_POS, X2_MAX_POS);
     #endif
   }
+
+  void set_hotend_offsets(uint8_t e, uint8_t axis, float offset) {
+    float diff = offset - hotend_offset[e][axis];
+    if (axis == X_AXIS) {
+      if (e == 1) {
+        if ((active_extruder) == 0) {
+          inactive_extruder_x += diff;
+        } else {
+          current_position[axis] += diff;
+        }
+      } else {
+        if ((active_extruder) == 0) {
+          current_position[axis] += diff;
+        } else {
+          inactive_extruder_x += diff;
+        }
+      }
+    } else {
+      current_position[axis] += diff;
+    }
+    hotend_offset[e][axis] = offset;
+    sync_plan_position();
+  }
+
+  void set_hotend_offsets(uint8_t e, xyz_pos_t offset) {
+    LOOP_LINEAR_AXES(a) {
+      set_hotend_offsets(e, a, offset[a]);
+    }
+  }
 #endif
 
 // The feedrate for the current move, often used as the default if
