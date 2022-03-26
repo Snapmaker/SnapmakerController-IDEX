@@ -27,13 +27,22 @@ static float build_plate_thickness = 5;
 // |                      |
 // | [2]             [3]  |
 // |______________________|  
+
+#define HALF_BED_X (X_BED_SIZE / 2)
+#define HALF_BED_Y (Y_BED_SIZE / 2)
+
+#define POS_X_L_DIFF 115
+#define POS_X_R_DIFF 115
+#define POS_Y_U_DIFF 86
+#define POS_Y_D_DIFF 94
+
 static float calibration_position_xy[6][2] = {
-  /*ADJUST_POS_0*/ {158, 103}, 
-  /*ADJUST_POS_1*/ {158, 188},
-  /*ADJUST_POS_2*/ {43.5, 9},
-  /*ADJUST_POS_3*/ {273.5, 9},
-  /*ADJUST_POS_4*/ {43.5, 188},
-  /*ADJUST_POS_5*/ {273.5, 188},
+  /*ADJUST_POS_0*/ {HALF_BED_X, HALF_BED_Y}, 
+  /*ADJUST_POS_1*/ {HALF_BED_X, HALF_BED_Y + POS_Y_U_DIFF},
+  /*ADJUST_POS_2*/ {HALF_BED_X - POS_X_L_DIFF, HALF_BED_Y - POS_Y_D_DIFF},
+  /*ADJUST_POS_3*/ {HALF_BED_X + POS_X_R_DIFF, HALF_BED_Y - POS_Y_D_DIFF},
+  /*ADJUST_POS_4*/ {HALF_BED_X - POS_X_L_DIFF, HALF_BED_Y + POS_Y_U_DIFF},
+  /*ADJUST_POS_5*/ {HALF_BED_X + POS_X_R_DIFF, HALF_BED_Y + POS_Y_U_DIFF},
 };
 
 void Adjusting::bed_preapare(uint8_t extruder_index) {
