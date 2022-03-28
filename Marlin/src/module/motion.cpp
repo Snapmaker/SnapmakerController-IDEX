@@ -131,22 +131,18 @@ xyze_pos_t destination; // {0}
 
   void set_hotend_offsets(uint8_t e, uint8_t axis, float offset) {
     float diff = offset - hotend_offset[e][axis];
-    if (axis == X_AXIS) {
-      if (e == 1) {
-        if ((active_extruder) == 0) {
-          inactive_extruder_x += diff;
-        } else {
+    if ((active_extruder) == 1) {
+      if (axis == X_AXIS) {
+        if (e == 1) {
           current_position[axis] += diff;
+        } else {
+          inactive_extruder_x += diff;
         }
       } else {
-        if ((active_extruder) == 0) {
-          current_position[axis] += diff;
-        } else {
-          inactive_extruder_x += diff;
-        }
+        current_position[axis] += diff;
       }
     } else {
-      current_position[axis] += diff;
+      // E0 is not in use and does not need adjustment
     }
     hotend_offset[e][axis] = offset;
     sync_plan_position();
