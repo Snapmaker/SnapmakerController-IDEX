@@ -71,14 +71,19 @@ void Adjusting::bed_preapare(uint8_t extruder_index) {
   }
 }
 
+static void set_hotend_offsets_to_default() {
+  xyz_pos_t hotend0_offset = {0, 0, 0};
+  xyz_pos_t hotend1_offset = {X2_MAX_POS - X2_MIN_POS, 0, 0};
+  set_hotend_offsets(0, hotend0_offset);
+  set_hotend_offsets(1, hotend1_offset);
+}
+
 // Run to the specified calibration point
 ErrCode Adjusting::goto_position(uint8_t pos) {
   xyz_pos_t offset0 = hotend_offset[0];
   xyz_pos_t offset1 = hotend_offset[1];
-  reset_hotend_offsets();
-
+  set_hotend_offsets_to_default();
   motion_control.move_to_xy(calibration_position_xy[pos][0], calibration_position_xy[pos][1], PROBE_MOVE_XY_FEEDRATE);
-
   set_hotend_offsets(0, offset0);
   set_hotend_offsets(1, offset1);
   return E_SUCCESS;
@@ -234,7 +239,7 @@ ErrCode Adjusting::adjust_xy() {
     return E_ADJUST_XY;
   }
   extruder_duplication_enabled = false;
-  reset_hotend_offsets();
+  set_hotend_offsets_to_default();
   HOTEND_LOOP() {
     bed_preapare(e);
     motion_control.logical_move_to_z(15 - build_plate_thickness);
