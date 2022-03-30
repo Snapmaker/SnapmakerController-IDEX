@@ -13,7 +13,7 @@ Adjusting adjusting;
 #define PROBE_Z_FEEDRATE 60
 #define PROBE_XY_FEEDRATE 200
 #define PROBE_MOVE_XY_FEEDRATE 5000
-#define PROBE_MOVE_Z_FEEDRATE 2000
+#define PROBE_MOVE_Z_FEEDRATE 600
 #define PROBE_LIFTINT_DISTANCE (3)  // mm
 #define Z_REMOVE_PLATE_THICKNESS(z) (z - build_plate_thickness)
 static float build_plate_thickness = 5;
