@@ -10,12 +10,14 @@
 
 Adjusting adjusting;
 
-#define PROBE_Z_FEEDRATE 60
+#define PROBE_Z_FEEDRATE 100
 #define PROBE_XY_FEEDRATE 200
 #define PROBE_MOVE_XY_FEEDRATE 5000
 #define PROBE_MOVE_Z_FEEDRATE 600
 #define PROBE_LIFTINT_DISTANCE (3)  // mm
 #define Z_REMOVE_PLATE_THICKNESS(z) (z - build_plate_thickness)
+
+static uint8_t probe_sg_reg[3] = {3, 7, 73};  // X Y Z
 static float build_plate_thickness = 5;
 
 #define Y_POS_DIFF 4
@@ -90,11 +92,13 @@ ErrCode Adjusting::goto_position(uint8_t pos) {
 }
 
 float Adjusting::probe(uint8_t axis, float distance, uint16_t feedrate) {
-    float pos_before_probe, pos_after_probe;
+  float ret = distance;
+  float pos_before_probe, pos_after_probe;
 
   switch_detect.enable_probe();
   pos_before_probe = current_position[axis];
 
+  motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis]);
   if(axis == X_AXIS) {
     motion_control.move_x(distance, feedrate);
   }
@@ -109,9 +113,14 @@ float Adjusting::probe(uint8_t axis, float distance, uint16_t feedrate) {
   pos_after_probe = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   current_position[axis] = pos_after_probe;
   sync_plan_position();
-
+  if (motion_control.is_sg_trigger()) {
+    SERIAL_ECHOLNPAIR("probe failed be stall guard!!!");
+  } else {
+    ret = (pos_before_probe - pos_after_probe);
+  }
+  motion_control.disable_stall_guard_all();
   switch_detect.disable_probe();
-  return (pos_before_probe - pos_after_probe);
+  return ret;
 }
 
 ErrCode Adjusting::probe_z_offset(adjust_position_e pos) {
@@ -185,6 +194,7 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
 }
 
 ErrCode Adjusting::bed_adjust_preapare(adjust_position_e pos, bool is_probe) {
+  ErrCode ret = E_SUCCESS;
   if (pos == ADJUST_POS_0 || pos >= ADJUST_POS_INVALID) {
     SERIAL_ECHOLNPAIR("Points not supported by hot bed calibration:", pos);
     return E_PARAM;
@@ -194,12 +204,12 @@ ErrCode Adjusting::bed_adjust_preapare(adjust_position_e pos, bool is_probe) {
   status = ADJUST_STATE_IDLE;
   motion_control.synchronize();
   if (is_probe) {
-    bed_probe(pos, 0, true);
+    ret = bed_probe(pos, 0, true);
   } else {
     bed_preapare(0);
     goto_position(pos);
   }
-  return E_SUCCESS;
+  return ret;
 }
 
 ErrCode Adjusting::bed_start_bead_mode() {
@@ -256,7 +266,7 @@ ErrCode Adjusting::adjust_xy() {
       float pos = current_position[axis];
       goto_position(ADJUST_POS_0);
       probe_value = probe(axis, probe_distance, PROBE_XY_FEEDRATE);
-      if (probe_value == probe_distance) {
+      if (probe_value >= abs(probe_distance)-5) {
         ret = E_ADJUST_XY;
         SERIAL_ECHOLNPAIR("e:", e, " axis:", axis, " probe 1 filed");
         break;

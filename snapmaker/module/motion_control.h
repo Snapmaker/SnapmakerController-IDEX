@@ -75,6 +75,17 @@ class MotionControl {
     void motor_enable(uint8_t axis, uint8_t index=0);
     void motor_disable(uint8_t axis, uint8_t index=0);
     bool is_motor_enable(uint8_t axis, uint8_t index=0);
+
+    void enable_stall_guard(uint8_t axis, uint8_t sg_value);
+    void enable_stall_guard_only_axis(uint8_t axis, uint8_t sg_value);
+    void disable_stall_guard(uint8_t axis);
+    void disable_stall_guard_all();
+    bool is_sg_trigger() {return sg_trigger;}
+    void set_sg_satats(bool status) {sg_trigger = status;}
+    void trigger_stall_guard_exit();
+  private:
+    bool sg_enable = false;
+    bool sg_trigger =false;
 };
 
 extern MotionControl motion_control;

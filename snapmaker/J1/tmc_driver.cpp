@@ -502,12 +502,12 @@ void TMCDriver::disable_stall_guard_interrupt() {
 }
 
 
-extern "C" {
-  void TMCStallGuardHandler() {
-    // TMCDriver::trigger_stall_guard();
-  }
-  void EXTI3_IRQHandler() {
-    TMCStallGuardHandler();
-    ExtiClearITPendingBit(TMC_STALL_GUARD_PIN);
-  }
-}
+// extern "C" {
+//   void TMCStallGuardHandler() {
+//     // TMCDriver::trigger_stall_guard();
+//   }
+//   void EXTI3_IRQHandler() {
+//     TMCStallGuardHandler();
+//     ExtiClearITPendingBit(TMC_STALL_GUARD_PIN);
+//   }
+// }

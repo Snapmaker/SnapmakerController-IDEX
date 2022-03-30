@@ -6,7 +6,9 @@
 #include "src/gcode/gcode.h"
 #include "src/module/tool_change.h"
 #include "src/module/stepper/indirection.h"
+#include "../../Marlin/src/feature/tmc_util.h"
 #include "system.h"
+#include "HAL.h"
 
 MotionControl motion_control;
 
@@ -228,4 +230,73 @@ bool MotionControl::is_motor_enable(uint8_t axis, uint8_t index) {
       else {ret = E1_ENABLE_READ();} break;
   }
   return ret;
+}
+
+void MotionControl::enable_stall_guard(uint8_t axis, uint8_t sg_value) {
+  #define ENABLE_SG(AXIS) stepper##AXIS.SGTHRS(sg_value); \
+                          stepper##AXIS.TPWMTHRS(1); \
+                          stepper##AXIS.TCOOLTHRS(0xFFFFF)
+  switch (axis) {
+    case X_AXIS:
+      ENABLE_SG(X);
+      ENABLE_SG(X2);
+      break;
+    case Y_AXIS:
+      ENABLE_SG(Y);
+      break;
+    case Z_AXIS:
+      ENABLE_SG(Z);
+      break;
+  }
+  ExtiInit(TMC_STALL_GUARD_PIN, EXTI_Falling);
+  EnableExtiInterrupt(TMC_STALL_GUARD_PIN);
+  sg_enable = true;
+  motion_control.set_sg_satats(false);
+}
+
+void MotionControl::disable_stall_guard(uint8_t axis) {
+  #define DISABLE_SG(AXIS) stepper##AXIS.SGTHRS(0); \
+                          stepper##AXIS.TPWMTHRS(1); \
+                          stepper##AXIS.TCOOLTHRS(0xFFFFF);
+
+  switch (axis) {
+    case X_AXIS:
+      DISABLE_SG(X);
+      DISABLE_SG(X2);
+      break;
+    case Y_AXIS:
+      DISABLE_SG(Y);
+      break;
+    case Z_AXIS:
+      DISABLE_SG(Z);
+      break;
+  }
+}
+
+void MotionControl::enable_stall_guard_only_axis(uint8_t axis, uint8_t sg_value) {
+  disable_stall_guard_all();
+  enable_stall_guard(axis, sg_value);
+}
+
+void MotionControl::disable_stall_guard_all() {
+  LOOP_LOGICAL_AXES(i) {
+    disable_stall_guard(i);
+  }
+  DisableExtiInterrupt(TMC_STALL_GUARD_PIN);
+  motion_control.set_sg_satats(false);
+  sg_enable = false;
+}
+
+void trigger_stall_guard_exit() {
+  if (planner.has_blocks_queued() || planner.cleaning_buffer_counter) {
+    planner.quick_stop();
+    motion_control.set_sg_satats(true);
+  }
+}
+
+extern "C" {
+  void __irq_exti3() {
+    trigger_stall_guard_exit();
+    ExtiClearITPendingBit(TMC_STALL_GUARD_PIN);
+  }
 }

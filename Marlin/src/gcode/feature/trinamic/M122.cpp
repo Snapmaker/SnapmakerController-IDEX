@@ -27,7 +27,7 @@
 #include "../../gcode.h"
 #include "../../../feature/tmc_util.h"
 #include "../../../module/stepper/indirection.h"
-
+#include "../../../../snapmaker/module/motion_control.h"
 /**
  * M122: Debug TMC drivers
  */
@@ -38,6 +38,25 @@ void GcodeSuite::M122() {
   LOOP_LOGICAL_AXES(i) if (parser.seen_test(axis_codes[i])) { print_axis[i] = true; print_all = false; }
 
   if (print_all) LOOP_LOGICAL_AXES(i) print_axis[i] = true;
+
+  if (parser.seenval('S')) {
+    uint8_t s = parser.value_byte();
+    uint32_t p = 0;
+    if (parser.seenval('P')) {
+      p = parser.value_int();
+    }
+    LOOP_LOGICAL_AXES(i) {
+      if (print_axis[i]) {
+        if (s) {
+          motion_control.enable_stall_guard(i, p);
+        } else {
+          motion_control.disable_stall_guard(i);
+        }
+      }
+    }
+    return;
+  }
+
 
   if (parser.boolval('I')) restore_stepper_drivers();
 
