@@ -14,7 +14,7 @@
 
 #define Z_DOWN_SAFE_DISTANCE 2  // mm
 #define PRINT_RETRACK_DISTANCE 1  // mm
-#define PRINT_RETRACK_SPEED 10*60  // mm/min
+#define CHANGE_FILAMENT_SPEED 200  // mm/min
 #define PRINT_TRAVEL_FEADRATE 6000
 
 #define EXTRUDE_X_MOVE_DISTANCE 8  // mm

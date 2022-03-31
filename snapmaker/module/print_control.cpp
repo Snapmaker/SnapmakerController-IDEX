@@ -200,7 +200,7 @@ ErrCode PrintControl::pause() {
     motion_control.move_to_z(Z_MAX_POS, PRINT_TRAVEL_FEADRATE);
   }
   motion_control.synchronize();
-  motion_control.retrack_e(PRINT_RETRACK_DISTANCE, PRINT_RETRACK_SPEED);
+  motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
   motion_control.home_x();
   motion_control.home_y();
   system_service.set_status(SYSTEM_STATUE_PAUSED);
@@ -219,7 +219,7 @@ ErrCode PrintControl::stop() {
     power_loss.clear();
     motion_control.quickstop();
     buffer_head = buffer_tail = 0;
-    motion_control.retrack_e(PRINT_RETRACK_DISTANCE, PRINT_RETRACK_SPEED);
+    motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
     motion_control.home();
     system_service.set_status(SYSTEM_STATUE_IDLE);
     mode_ = PRINT_BACKUP_MODE;

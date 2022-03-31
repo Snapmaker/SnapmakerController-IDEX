@@ -84,7 +84,7 @@ void PowerLoss::extrude_before_resume() {
   prepare_line_to_destination();
   motion_control.move_x(move_distance, PRINT_TRAVEL_FEADRATE);
   motion_control.synchronize();
-  motion_control.extrude_e(EXTRUDE_E_DISTANCE, PRINT_RETRACK_SPEED);
+  motion_control.extrude_e(EXTRUDE_E_DISTANCE, CHANGE_FILAMENT_SPEED);
   motion_control.synchronize();
 }
 
