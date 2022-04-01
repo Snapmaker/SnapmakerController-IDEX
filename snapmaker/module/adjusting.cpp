@@ -17,7 +17,7 @@ Adjusting adjusting;
 #define PROBE_LIFTINT_DISTANCE (3)  // mm
 #define Z_REMOVE_PLATE_THICKNESS(z) (z - build_plate_thickness)
 
-static uint8_t probe_sg_reg[3] = {3, 7, 73};  // X Y Z
+static uint8_t probe_sg_reg[3] = {1, 2, 73};  // X Y Z
 static float build_plate_thickness = 5;
 
 #define Y_POS_DIFF 4
