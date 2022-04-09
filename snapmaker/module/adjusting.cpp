@@ -203,6 +203,7 @@ ErrCode Adjusting::bed_adjust_preapare(adjust_position_e pos, bool is_probe) {
   mode = ADJUST_MODE_BED;
   status = ADJUST_STATE_IDLE;
   motion_control.synchronize();
+  motion_control.move_z(PROBE_LIFTINT_DISTANCE);
   if (is_probe) {
     ret = bed_probe(pos, 0, true);
   } else {
