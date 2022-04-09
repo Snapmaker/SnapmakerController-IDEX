@@ -1732,7 +1732,7 @@
 #define MIRRORED_MODE_X_OFFSET (X2_MAX_POS - X1_MIN_POS - HOMING_X_POX_TO_ENDSTOP)
 
 // Validate that endstops are triggered on homing moves
-#define VALIDATE_HOMING_ENDSTOPS
+// #define VALIDATE_HOMING_ENDSTOPS
 
 // @section calibrate
 
