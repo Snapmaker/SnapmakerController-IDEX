@@ -171,10 +171,10 @@ ErrCode PrintControl::start() {
     motion_control.home();
   }
   if (mode_ >= PRINT_DUPLICATION_MODE) {
-    motion_control.home_x();
     duplicate_extruder_x_offset = (dual_x_carriage_mode == DXC_DUPLICATION_MODE) ? \
                           DUPLICATION_MODE_X_OFFSET : MIRRORED_MODE_X_OFFSET;
     idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
+    motion_control.home_x();
   }
 
 
@@ -186,6 +186,7 @@ ErrCode PrintControl::start() {
     power_loss.power_loss_en = false;
     SERIAL_ECHOLNPAIR(" power-loss signal is abnormal, disable the power-loss function");
   }
+  filament_sensor.reset();
   system_service.set_status(SYSTEM_STATUE_PRINTING);
   return E_SUCCESS;
 }
@@ -234,10 +235,6 @@ ErrCode PrintControl::stop() {
 }
 
 ErrCode PrintControl::set_mode(print_mode_e mode) {
-  if (mode_ > PRINT_AUTO_PARK_MODE) {
-    SERIAL_ECHOLNPAIR("system no support dual x mode to mode ", mode);
-    return PRINT_RESULT_SER_MODE_ERR_E;
-  }
   mode_ = mode;
   return E_SUCCESS;
 }
