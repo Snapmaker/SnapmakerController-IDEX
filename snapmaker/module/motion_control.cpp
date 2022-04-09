@@ -215,6 +215,7 @@ void MotionControl::motor_disable(uint8_t axis, uint8_t index) {
       if (index == 0) DISABLE_STEPPER_E0();
       else DISABLE_STEPPER_E1(); break;
   }
+  set_all_unhomed();
 }
 
 bool MotionControl::is_motor_enable(uint8_t axis, uint8_t index) {
