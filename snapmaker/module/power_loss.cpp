@@ -41,7 +41,6 @@ void PowerLoss::stash_print_env() {
 
 void PowerLoss::extrude_before_resume() {
   HOTEND_LOOP() {
-    fdm_head.set_duplication_enabled(e, true);
     print_control.temperature_lock(e, stash_data.extruder_temperature_lock[e]);
   }
   if (stash_data.dual_x_carriage_mode >= DXC_DUPLICATION_MODE) {
@@ -59,6 +58,7 @@ void PowerLoss::extrude_before_resume() {
   thermalManager.setTargetBed(stash_data.bed_temp);
   HOTEND_LOOP() {
     uint16_t temp = 0;
+    fdm_head.set_duplication_enabled(e, stash_data.extruder_dual_enable[e]);
     if ((dual_x_carriage_mode == DXC_MIRRORED_MODE) || (e == stash_data.active_extruder)) {
       temp = stash_data.nozzle_temp[e] > PREHEAT_1_TEMP_HOTEND? \
               stash_data.nozzle_temp[e] : PREHEAT_1_TEMP_HOTEND;

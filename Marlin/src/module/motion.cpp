@@ -73,6 +73,7 @@
 #define DEBUG_OUT ENABLED(DEBUG_LEVELING_FEATURE)
 #include "../core/debug_out.h"
 #include "tool_change.h"
+#include "../../../snapmaker/module/fdm.h"
 // Relative Mode. Enable with G91, disable with G90.
 bool relative_mode; // = false;
 
@@ -1229,6 +1230,10 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
 
         case DXC_MIRRORED_MODE:
         case DXC_DUPLICATION_MODE:
+          if (!fdm_head.is_duplication_enabled(1)) {
+            idex_set_parked(false);           // No longer parked
+            return true;
+          }
           DualXMode dual_mode = dual_x_carriage_mode;
           xyze_pos_t destination_bak = destination;
           dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
@@ -1823,7 +1828,11 @@ void prepare_line_to_destination() {
         default: break;
       }
     #endif
-
+    bool x_enable_move = true;
+    if (axis == X_AXIS) {
+      x_enable_move = fdm_head.is_duplication_enabled(active_extruder);
+      fdm_head.set_duplication_enabled(active_extruder, true);
+    }
     //
     // Deploy BLTouch or tare the probe just before probing
     //
@@ -2074,8 +2083,10 @@ void prepare_line_to_destination() {
       sync_plan_position();
 
       destination[axis] = current_position[axis];
-      if (axis == X_AXIS)
+      if (axis == X_AXIS) {
         do_blocking_move_to_x(current_position[axis] + (axis_home_dir * -HOMING_X_POX_TO_ENDSTOP), homing_feedrate(axis));
+        fdm_head.set_duplication_enabled(active_extruder, x_enable_move);
+      }
       if (DEBUGGING(LEVELING)) DEBUG_POS("> AFTER set_axis_is_at_home", current_position);
 
     #endif

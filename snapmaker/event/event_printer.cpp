@@ -372,7 +372,9 @@ void pausing_status_deal() {
       break;
     case SYSTEM_STATUE_SCOURCE_STOP_EXTRUDE:
       SERIAL_ECHOLNPAIR("stop single extrude done and continue");
-      print_control.resume();
+      result = print_control.resume();
+      send_event(print_source, source_recever_id, SACP_ATTR_ACK,
+                  COMMAND_SET_PRINTER, PRINTER_ID_STOP_SINGLE_EXTRUDE, &result, 1, source_sequence);
       req_gcode_pack();
       break;
     
