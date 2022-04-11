@@ -57,7 +57,7 @@ void Adjusting::bed_preapare(uint8_t extruder_index) {
     motion_control.home();
     planner.synchronize();
   }
-  float x_need_move_to = !extruder_index ? X2_MAX_POS : X_MIN_POS;
+  float x_need_move_to = !extruder_index ? inactive_extruder_x : X_MIN_POS;
   float cur_other_x = !extruder_index ? x2_position() : x_position();
 
   if (x_need_move_to != cur_other_x) {
