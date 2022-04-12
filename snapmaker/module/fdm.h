@@ -7,6 +7,8 @@
 
 typedef struct {
   uint8_t index;
+  uint8_t filament_status;
+  uint8_t filament_enable_status;
   bool is_available;
   uint8_t type;
   float_to_int_t diameter;
@@ -22,7 +24,6 @@ typedef struct {
 
 typedef struct {
   uint8_t key;
-  uint8_t filament_status;
   uint8_t head_status;
   bool head_active;
   uint8_t extruder_count;

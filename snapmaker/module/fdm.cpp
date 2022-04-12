@@ -114,6 +114,8 @@ ErrCode FDM_Head::get_extruder_info(uint8_t e, extruder_info_t *info) {
   info->index = 0;
   info->is_available = 1;
   info->type = 0;
+  info->filament_status = filament_sensor.is_trigger(e);
+  info->filament_enable_status = filament_sensor.is_enable(e);
   info->diameter = FLOAT_TO_INT(0.3);
   info->cur_temp = FLOAT_TO_INT(thermalManager.degHotend(e));
   info->target_temp = FLOAT_TO_INT(thermalManager.degTargetHotend(e));
