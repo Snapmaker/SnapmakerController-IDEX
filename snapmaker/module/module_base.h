@@ -26,6 +26,8 @@ typedef enum {
   MODULE_BED               = 18, // 18
 } MODULE_TYPE;
 
+#define J_BED_MODULE 513
+
 #pragma pack(1)
 typedef struct {
   uint8_t key;  // Unique ID of the module after power on

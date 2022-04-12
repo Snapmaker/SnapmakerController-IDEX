@@ -19,7 +19,7 @@ ErrCode BedControl::get_info(bed_control_info_t &info) {
 
 ErrCode BedControl::get_module_info(module_info_t &info) {
   info.key = MODULE_KEY(MODULE_BED, 0);
-  info.module_id = MODULE_BED;
+  info.module_id = J_BED_MODULE;
   info.module_index = 0;
   info.module_state = 0;
   info.sn = 0;
