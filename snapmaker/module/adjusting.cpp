@@ -11,7 +11,7 @@
 Adjusting adjusting;
 
 #define PROBE_Z_FEEDRATE 100
-#define PROBE_XY_FEEDRATE 100
+#define PROBE_XY_FEEDRATE 50
 #define PROBE_MOVE_XY_FEEDRATE 5000
 #define PROBE_MOVE_Z_FEEDRATE 600
 #define PROBE_LIFTINT_DISTANCE (3)  // mm
@@ -263,6 +263,7 @@ ErrCode Adjusting::adjust_xy() {
   float xy_center[HOTENDS][XY];
   float probe_distance = 15;
   float probe_value = 0;
+  uint8_t probe_times = 3;
   uint8_t old_active_extruder = active_extruder;
   DualXMode dual_mode = dual_x_carriage_mode;
   if (home_offset[Z_AXIS] == 0) {
@@ -276,23 +277,27 @@ ErrCode Adjusting::adjust_xy() {
     goto_position(ADJUST_POS_0);
     motion_control.logical_move_to_z(-2 - build_plate_thickness);
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
-      goto_position(ADJUST_POS_0);
-      probe_value = probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
-      if (probe_value >= abs(probe_distance) - 5) {
-        ret =  E_ADJUST_XY;
-        SERIAL_ECHOLNPAIR("e:", e, " axis:", axis, " probe 0 filed");
-        break;
+      xy_center[e][axis] = 0;
+      for (uint8_t i = 0; i < probe_times && ret == E_SUCCESS; i++) {
+        goto_position(ADJUST_POS_0);
+        probe_value = probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
+        if (probe_value >= abs(probe_distance) - 5) {
+          ret =  E_ADJUST_XY;
+          SERIAL_ECHOLNPAIR("e:", e, " axis:", axis, " probe 0 filed");
+          break;
+        }
+        float pos = current_position[axis];
+        goto_position(ADJUST_POS_0);
+        probe_value = probe(axis, probe_distance, PROBE_XY_FEEDRATE);
+        if (probe_value >= abs(probe_distance) - 5) {
+          ret = E_ADJUST_XY;
+          SERIAL_ECHOLNPAIR("e:", e, " axis:", axis, " probe 1 filed");
+          break;
+        }
+        xy_center[e][axis] += (current_position[axis] + pos) / 2;
+        goto_position(ADJUST_POS_0);
       }
-      float pos = current_position[axis];
-      goto_position(ADJUST_POS_0);
-      probe_value = probe(axis, probe_distance, PROBE_XY_FEEDRATE);
-      if (probe_value >= abs(probe_distance) - 5) {
-        ret = E_ADJUST_XY;
-        SERIAL_ECHOLNPAIR("e:", e, " axis:", axis, " probe 1 filed");
-        break;
-      }
-      xy_center[e][axis] = (current_position[axis] + pos) / 2;
-      goto_position(ADJUST_POS_0);
+      xy_center[e][axis] /= probe_times;
     }
     if (ret != E_SUCCESS) {
       SERIAL_ECHOLNPAIR("adjust e[", e,"] xy filed");
