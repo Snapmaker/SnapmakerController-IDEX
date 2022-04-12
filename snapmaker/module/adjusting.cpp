@@ -57,7 +57,11 @@ void Adjusting::bed_preapare(uint8_t extruder_index) {
     motion_control.home();
     planner.synchronize();
   }
-  float x_need_move_to = !extruder_index ? inactive_extruder_x : X_MIN_POS;
+  if (dual_x_carriage_mode > DXC_FULL_CONTROL_MODE) {
+    dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+    motion_control.home_x();
+  }
+  float x_need_move_to = !extruder_index ? x_home_pos(1) : x_home_pos(0);
   float cur_other_x = !extruder_index ? x2_position() : x_position();
 
   if (x_need_move_to != cur_other_x) {
@@ -160,11 +164,10 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
   ErrCode ret = E_SUCCESS;
   float z_probe_distance;
   uint8_t last_active_extruder = active_extruder;
-  bool duplication_enabled = extruder_duplication_enabled;
   if (pos == ADJUST_POS_0 || pos >= ADJUST_POS_INVALID) {
     return E_PARAM;
   }
-  extruder_duplication_enabled = false;
+  DualXMode dual_mode = dual_x_carriage_mode;
   bed_preapare(extruder);
 
   float temp_z = 0;
@@ -185,7 +188,7 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
     }
   }
   motion_control.logical_move_to_z(Z_REMOVE_PLATE_THICKNESS(PROBE_LIFTINT_DISTANCE), PROBE_MOVE_Z_FEEDRATE);
-  extruder_duplication_enabled = duplication_enabled;
+  dual_x_carriage_mode = dual_mode;
   if (last_active_extruder != active_extruder) {
     tool_change(last_active_extruder, true);
   }
@@ -237,20 +240,36 @@ ErrCode Adjusting::nozzle_adjust_preapare(adjust_position_e pos) {
   return E_SUCCESS;
 }
 
+void Adjusting::reset_xy_adjust_env() {
+  set_hotend_offsets_to_default();
+  set_home_offset(X_AXIS, 0);
+  set_home_offset(Y_AXIS, 0);
+  dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+  if(homing_needed()) {
+    // Step1 home all axis
+    motion_control.home();
+    planner.synchronize();
+  } else {
+    if(current_position[Z_AXIS] < 30) {
+      motion_control.move_z(15, PROBE_MOVE_Z_FEEDRATE);
+    }
+    motion_control.home_x();
+    motion_control.home_y();
+  }
+}
+
 ErrCode Adjusting::adjust_xy() {
   ErrCode ret = E_SUCCESS;
   float xy_center[HOTENDS][XY];
   float probe_distance = 15;
   float probe_value = 0;
   uint8_t old_active_extruder = active_extruder;
-  bool duplication_enabled = extruder_duplication_enabled;
-
+  DualXMode dual_mode = dual_x_carriage_mode;
   if (home_offset[Z_AXIS] == 0) {
     SERIAL_ECHOLN("Calibrate XY after calibrating Z offset");
     return E_ADJUST_XY;
   }
-  extruder_duplication_enabled = false;
-  set_hotend_offsets_to_default();
+  reset_xy_adjust_env();
   HOTEND_LOOP() {
     bed_preapare(e);
     motion_control.logical_move_to_z(15 - build_plate_thickness);
@@ -259,7 +278,7 @@ ErrCode Adjusting::adjust_xy() {
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
       goto_position(ADJUST_POS_0);
       probe_value = probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
-      if (probe_value >= abs(probe_distance)-5) {
+      if (probe_value >= abs(probe_distance) - 5) {
         ret =  E_ADJUST_XY;
         SERIAL_ECHOLNPAIR("e:", e, " axis:", axis, " probe 0 filed");
         break;
@@ -267,7 +286,7 @@ ErrCode Adjusting::adjust_xy() {
       float pos = current_position[axis];
       goto_position(ADJUST_POS_0);
       probe_value = probe(axis, probe_distance, PROBE_XY_FEEDRATE);
-      if (probe_value >= abs(probe_distance)-5) {
+      if (probe_value >= abs(probe_distance) - 5) {
         ret = E_ADJUST_XY;
         SERIAL_ECHOLNPAIR("e:", e, " axis:", axis, " probe 1 filed");
         break;
@@ -283,16 +302,12 @@ ErrCode Adjusting::adjust_xy() {
   goto_position(ADJUST_POS_0);
   motion_control.move_z(100);
   tool_change(old_active_extruder, true);
-  extruder_duplication_enabled = duplication_enabled;
   if(ret == E_SUCCESS) {
     SERIAL_ECHOLN("JF-XY calibration: Success!");
     SERIAL_ECHOPAIR_F("JF-XY Extruder1:", xy_center[0][0]);
     SERIAL_ECHOLNPAIR_F(" ", xy_center[0][1]);
     SERIAL_ECHOPAIR_F("JF-XY Extruder2:", xy_center[1][0]);
     SERIAL_ECHOLNPAIR_F(" ", xy_center[1][1]);
-
-    hotend_offset[1].x = X2_MAX_POS - (xy_center[1][0] - xy_center[0][0]);
-    hotend_offset[1].y = -(xy_center[1][1] - xy_center[0][1]);
 
     set_hotend_offsets(1, X_AXIS, X2_MAX_POS - (xy_center[1][0] - xy_center[0][0]));
     set_hotend_offsets(1, Y_AXIS, -(xy_center[1][1] - xy_center[0][1]));
@@ -301,11 +316,12 @@ ErrCode Adjusting::adjust_xy() {
 
     set_home_offset(X_AXIS, calibration_position_xy[0][0] - xy_center[0][0]);
     set_home_offset(Y_AXIS, calibration_position_xy[0][1] - xy_center[0][1]);
-    SERIAL_ECHOPAIR_F("JF-Extruder1 hotend offset:", hotend_offset[0].x);
-    SERIAL_ECHOLNPAIR_F(" ", hotend_offset[0].y);
+    SERIAL_ECHOPAIR_F("JF-Extruder1 home offset:", home_offset[X_AXIS]);
+    SERIAL_ECHOLNPAIR_F(" ", home_offset[Y_AXIS]);
 
     // Store to eeprom
     settings.save();
+    dual_x_carriage_mode = dual_mode;
     motion_control.home_x();
     motion_control.home_y();
     return ret;

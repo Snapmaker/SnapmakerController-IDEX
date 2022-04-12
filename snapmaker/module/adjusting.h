@@ -59,7 +59,7 @@ class Adjusting {
 
   private:
     ErrCode probe_z_offset(adjust_position_e pos);
-
+    void reset_xy_adjust_env();
   public:
     adjust_position_e cur_pos;
     adjust_mode_e mode = ADJUST_MODE_IDLE;
