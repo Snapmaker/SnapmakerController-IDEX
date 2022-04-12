@@ -9,14 +9,17 @@
 typedef struct {
   uint8_t axis;
   float_to_int_t distance;
-  uint16_t feedrate;
+} axis_move_t;
+typedef struct {
+  uint8_t axis_count;
+  axis_move_t axis_move;  // axis_count
 }mobile_instruction_t;
 #pragma pack(0)
 class MotionControl {
   public:
     void blocking_move_to(float x, float y, float z, float feedrate=0);
-    ErrCode move_axis(mobile_instruction_t move);
-    ErrCode move_axis_to(mobile_instruction_t move);
+    ErrCode move_axis(mobile_instruction_t *move);
+    ErrCode move_axis_to(mobile_instruction_t *move);
     ErrCode home(AxisEnum axis);
     ErrCode home();
     ErrCode home_x();

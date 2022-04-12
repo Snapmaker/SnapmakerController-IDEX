@@ -97,16 +97,16 @@ static ErrCode set_origin(event_param_t& event) {
 }
 
 static ErrCode move_relative(event_param_t& event) {
-  mobile_instruction_t *move = (mobile_instruction_t *)(event.data + 1);
-  motion_control.move_axis(*move);
+  mobile_instruction_t *move = (mobile_instruction_t *)(event.data);
+  motion_control.move_axis(move);
   event.data[0] = E_SUCCESS;
   event.length = 1;
   return send_event(event);
 }
 
 static ErrCode move(event_param_t& event) {
-  mobile_instruction_t *move = (mobile_instruction_t *)(event.data + 1);
-  motion_control.move_axis_to(*move);
+  mobile_instruction_t *move = (mobile_instruction_t *)(event.data);
+  motion_control.move_axis_to(move);
   event.data[0] = E_SUCCESS;
   event.length = 1;
   return send_event(event);
