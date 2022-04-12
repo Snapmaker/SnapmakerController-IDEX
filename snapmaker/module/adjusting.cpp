@@ -17,7 +17,7 @@ Adjusting adjusting;
 #define PROBE_LIFTINT_DISTANCE (3)  // mm
 #define Z_REMOVE_PLATE_THICKNESS(z) (z - build_plate_thickness)
 
-static uint8_t probe_sg_reg[3] = {1, 2, 73};  // X Y Z
+// static uint8_t probe_sg_reg[3] = {1, 0, 73};  // X Y Z
 static float build_plate_thickness = 5;
 
 #define Y_POS_DIFF 4
@@ -102,7 +102,7 @@ float Adjusting::probe(uint8_t axis, float distance, uint16_t feedrate) {
   switch_detect.enable_probe();
   pos_before_probe = current_position[axis];
 
-  motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis]);
+  // motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis]);
   if(axis == X_AXIS) {
     motion_control.move_x(distance, feedrate);
   }
@@ -122,7 +122,7 @@ float Adjusting::probe(uint8_t axis, float distance, uint16_t feedrate) {
   } else {
     ret = (pos_before_probe - pos_after_probe);
   }
-  motion_control.disable_stall_guard_all();
+  // motion_control.disable_stall_guard_all();
   switch_detect.disable_probe();
   return ret;
 }
