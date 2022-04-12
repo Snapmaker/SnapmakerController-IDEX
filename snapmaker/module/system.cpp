@@ -65,3 +65,23 @@ void SystemService::set_status(system_status_e status, system_status_source_e so
     source_ = source;
   }
 }
+
+void SystemService::get_machine_size(machine_size_t *size) {
+  size->size_count = AXIS_COUNT;
+  size->size[0].axis = AXIS_X1;
+  size->size[0].position = FLOAT_TO_INT(X_MAX_POS - X_MIN_POS);
+  size->size[1].axis = AXIS_X2;
+  size->size[1].position = FLOAT_TO_INT(X2_MAX_POS - X2_MIN_POS);
+  size->size[2].axis = AXIS_Y1;
+  size->size[2].position = FLOAT_TO_INT(Y_MAX_POS - Y_MIN_POS);
+  size->size[3].axis = AXIS_Z1;
+  size->size[3].position = FLOAT_TO_INT(Z_MAX_POS - Z_MIN_POS);
+
+  size->home_offset_count = 3;
+  size->home_offset[0].axis = AXIS_X1;
+  size->home_offset[0].position = home_offset[X_AXIS];
+  size->home_offset[2].axis = AXIS_Y1;
+  size->home_offset[2].position = home_offset[Y_AXIS];
+  size->home_offset[3].axis = AXIS_Z1;
+  size->home_offset[3].position = home_offset[Z_AXIS];
+}

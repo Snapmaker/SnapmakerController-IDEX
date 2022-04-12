@@ -79,6 +79,16 @@ static ErrCode req_machine_info(event_param_t& event) {
   return E_SUCCESS;
 }
 
+static ErrCode req_machine_size(event_param_t& event) {
+  SERIAL_ECHOLN("SC req machine size");
+  event.data[0] = E_SUCCESS;
+  machine_size_t *machine_size = (machine_size_t *)(event.data + 1);
+  system_service.get_machine_size(machine_size);
+  event.length = sizeof(machine_size_t) + 1;
+  send_event(event);
+  return E_SUCCESS;
+}
+
 static ErrCode req_coordinate_system(event_param_t& event) {
   coordinate_system_t * info = (coordinate_system_t *)(event.data + 1);
   event.data[0] = E_SUCCESS;
@@ -188,6 +198,7 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_REPORT_LOG            , EVENT_CB_DIRECT_RUN, retport_log},
   {SYS_ID_REQ_MODULE_INFO       , EVENT_CB_DIRECT_RUN, req_module_info},
   {SYS_ID_REQ_MACHINE_INFO      , EVENT_CB_DIRECT_RUN, req_machine_info},
+  {SYS_ID_REQ_MACHINE_SIZE      , EVENT_CB_DIRECT_RUN, req_machine_size},
   {SYS_ID_REQ_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, req_coordinate_system},
   {SYS_ID_SET_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, set_coordinate_system},
   {SYS_ID_SET_ORIGIN            , EVENT_CB_DIRECT_RUN, set_origin},

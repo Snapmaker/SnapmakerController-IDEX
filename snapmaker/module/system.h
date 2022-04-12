@@ -39,7 +39,7 @@ typedef enum {
   SYSTEM_STATUE_SCOURCE_DONE,
 } system_status_source_e;
 
-#define AXIS_COUNT 4
+#define AXIS_COUNT 4  // x x1 y z
 
 #pragma pack(1)
 typedef struct {
@@ -65,11 +65,19 @@ typedef struct {
   coordinate_info_t origin_offset_info[AXIS_COUNT];
 } coordinate_system_t;
 
+typedef struct {
+  uint8_t size_count;
+  coordinate_info_t size[AXIS_COUNT];
+  uint8_t home_offset_count;
+  coordinate_info_t home_offset[XYZ];
+} machine_size_t;
+
 #pragma pack()
 class SystemService {
   public:
     void get_coordinate_system_info(coordinate_system_t * info);
     void get_machine_info(machine_info_t *info);
+    void get_machine_size(machine_size_t *size);
     ErrCode set_origin(coordinate_info_t axis);
     system_status_e get_status() {return status_;}
     system_status_source_e get_source() {return source_;}

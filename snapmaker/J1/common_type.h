@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include "MapleFreeRTOS1030.h"
 
-#define FLOAT_TO_INT(f) (int)(f * 1000)
-#define INT_TO_FLOAT(i) ((float)i / 1000)
+#define FLOAT_TO_INT(f) (int)((f) * 1000)
+#define INT_TO_FLOAT(i) ((float)(i) / 1000)
 typedef int float_to_int_t;  // float * 1000 to int
 
 #define MODULE_KEY(type, index) (type << 3 | index)
