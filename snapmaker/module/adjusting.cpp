@@ -378,7 +378,7 @@ void Adjusting::set_z_offset(float offset, bool is_moved) {
   if (!is_moved) {
     current_position[Z_AXIS] += diff;
   } else {
-    motion_control.move_z(diff, 5);
+    motion_control.move_z(diff, 600);
     current_position[Z_AXIS] = cur_z;
   }
   planner.synchronize();
