@@ -367,7 +367,9 @@ void Adjusting::loop(void) {
   } else if (mode == ADJUST_MODE_EXIT) {
     mode = ADJUST_MODE_IDLE;
     motion_control.synchronize();
-    motion_control.move_to_z(100, PROBE_MOVE_Z_FEEDRATE);
+    if (current_position[Z_AXIS] < 100) {
+      motion_control.move_to_z(100, PROBE_MOVE_Z_FEEDRATE);
+    }
   }
 }
 
