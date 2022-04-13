@@ -36,7 +36,7 @@ void SystemService::get_coordinate_system_info(coordinate_system_t * info) {
 }
 
 void SystemService::get_machine_info(machine_info_t *info) {
-  char *ver = (char *)DETAILED_BUILD_VERSION;
+  char *ver = (char *)J1_BUILD_VERSION;
   info->Ji_num = 4; // J1
   info->hw_version = 1;
   info->sn = 0;
