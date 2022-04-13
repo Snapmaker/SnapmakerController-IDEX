@@ -448,33 +448,33 @@ inline void manage_inactivity(const bool no_stepper_sleep=false) {
   }
 
   // M18 / M84 : Handle steppers inactive time timeout
-  if (gcode.stepper_inactive_time) {
+  // if (gcode.stepper_inactive_time) {
 
-    static bool already_shutdown_steppers; // = false
+  //   static bool already_shutdown_steppers; // = false
 
-    // Any moves in the planner? Resets both the M18/M84
-    // activity timeout and the M85 max 'kill' timeout
-    if (planner.has_blocks_queued())
-      gcode.reset_stepper_timeout(ms);
-    else if (!do_reset_timeout && gcode.stepper_inactive_timeout()) {
-      if (!already_shutdown_steppers) {
-        already_shutdown_steppers = true;  // L6470 SPI will consume 99% of free time without this
+  //   // Any moves in the planner? Resets both the M18/M84
+  //   // activity timeout and the M85 max 'kill' timeout
+  //   if (planner.has_blocks_queued())
+  //     gcode.reset_stepper_timeout(ms);
+  //   else if (!do_reset_timeout && gcode.stepper_inactive_timeout()) {
+  //     if (!already_shutdown_steppers) {
+  //       already_shutdown_steppers = true;  // L6470 SPI will consume 99% of free time without this
 
-        // Individual axes will be disabled if configured
-        if (ENABLED(DISABLE_INACTIVE_X)) DISABLE_AXIS_X();
-        if (ENABLED(DISABLE_INACTIVE_Y)) DISABLE_AXIS_Y();
-        if (ENABLED(DISABLE_INACTIVE_Z)) DISABLE_AXIS_Z();
-        if (ENABLED(DISABLE_INACTIVE_I)) DISABLE_AXIS_I();
-        if (ENABLED(DISABLE_INACTIVE_J)) DISABLE_AXIS_J();
-        if (ENABLED(DISABLE_INACTIVE_K)) DISABLE_AXIS_K();
-        if (ENABLED(DISABLE_INACTIVE_E)) disable_e_steppers();
+  //       // Individual axes will be disabled if configured
+  //       if (ENABLED(DISABLE_INACTIVE_X)) DISABLE_AXIS_X();
+  //       if (ENABLED(DISABLE_INACTIVE_Y)) DISABLE_AXIS_Y();
+  //       if (ENABLED(DISABLE_INACTIVE_Z)) DISABLE_AXIS_Z();
+  //       if (ENABLED(DISABLE_INACTIVE_I)) DISABLE_AXIS_I();
+  //       if (ENABLED(DISABLE_INACTIVE_J)) DISABLE_AXIS_J();
+  //       if (ENABLED(DISABLE_INACTIVE_K)) DISABLE_AXIS_K();
+  //       if (ENABLED(DISABLE_INACTIVE_E)) disable_e_steppers();
 
-        TERN_(AUTO_BED_LEVELING_UBL, ubl.steppers_were_disabled());
-      }
-    }
-    else
-      already_shutdown_steppers = false;
-  }
+  //       TERN_(AUTO_BED_LEVELING_UBL, ubl.steppers_were_disabled());
+  //     }
+  //   }
+  //   else
+  //     already_shutdown_steppers = false;
+  // }
 
   #if ENABLED(PHOTO_GCODE) && PIN_EXISTS(CHDK)
     // Check if CHDK should be set to LOW (after M240 set it HIGH)
