@@ -6,6 +6,7 @@
 #include "src/gcode/gcode.h"
 #include "src/module/stepper.h"
 #include "motion_control.h"
+#include "enclosure.h"
 #include "../../Marlin/src/module/temperature.h"
 #include "system.h"
 #include "fdm.h"
@@ -18,9 +19,14 @@ PowerLoss power_loss;
 extern feedRate_t fast_move_feedrate;
 
 void PowerLoss::stash_print_env() {
+  xyze_pos_t cur_position;
+  cur_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS);
+  cur_position[X_AXIS] = planner.get_axis_position_mm(X_AXIS);
+  cur_position[Y_AXIS] = planner.get_axis_position_mm(Y_AXIS);
+  cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
   uint32_t cur_line = print_control.get_cur_line();
   stash_data.file_position = cur_line ? cur_line - 1 : 0;  // The requested index starts at 0
-  stash_data.position = current_position;
+  stash_data.position = cur_position;
   stash_data.dual_x_carriage_mode = dual_x_carriage_mode;
   stash_data.bed_temp = thermalManager.degTargetBed();
   stash_data.print_feadrate = feedrate_mm_s;
@@ -77,6 +83,7 @@ void PowerLoss::extrude_before_resume() {
   HOTEND_LOOP() {
     thermalManager.wait_for_hotend(e);
   }
+  thermalManager.wait_for_bed();
     
   int16_t move_distance = EXTRUDE_X_MOVE_DISTANCE;
   if (active_extruder) {
@@ -112,7 +119,6 @@ void PowerLoss::resume_print_env() {
     }
 
   }
-  thermalManager.wait_for_bed();
 
   feedrate_mm_s = stash_data.print_feadrate;
   fast_move_feedrate = stash_data.travel_feadrate;
@@ -181,7 +187,8 @@ void PowerLoss::init() {
   uint8_t *ram_addr = (uint8_t *)&stash_data;
   uint32_t check_num = 0;
 
-  SET_INPUT_PULLUP(POWER_LOST_PIN);
+  SET_INPUT_PULLUP(POWER_LOST_24V_PIN);
+  SET_INPUT_PULLUP(POWER_LOST_220V_PIN);
 
   for (uint32_t i = 0; i < sizeof(power_loss_t); i++) {
     ram_addr[i] = flash_addr[i];
@@ -299,32 +306,61 @@ uint8_t * PowerLoss::get_file_md5(uint8_t &len) {
   return stash_data.gcode_file_md5;
 }
 
-bool PowerLoss::is_power_pin_trigger() {
-  return READ(POWER_LOST_PIN) == POWER_LOSS_TRIGGER_STATUS;
+bool PowerLoss::is_power_24v_pin_trigger() {
+  return READ(POWER_LOST_24V_PIN) == POWER_LOSS_24V_TRIGGER_STATUS;
 }
 
-void PowerLoss::check() {
+bool PowerLoss::is_power_220v_pin_trigger() {
+  return READ(POWER_LOST_220V_PIN) == POWER_LOSS_220V_TRIGGER_STATUS;
+}
+
+bool PowerLoss::is_power_pin_trigger() {
+  return is_power_24v_pin_trigger() || is_power_220v_pin_trigger();
+}
+
+bool PowerLoss::check() {
   if (is_inited && power_loss_en && system_service.is_working()) {
     if (is_power_pin_trigger()) {
       switch (power_loss_status) {
         case POWER_LOSS_IDLE:
-          power_loss_status = POWER_LOSS_STOP_MOVE;
-          stepper.quick_stop();
-          break;
-        case POWER_LOSS_STOP_MOVE:
-          if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
-            current_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS);
-            set_current_from_steppers_for_axis(ALL_AXES_ENUM);
-            stash_print_env();
-          }
-          write_flash();
+          close_peripheral_power();
           wait_for_heatup = false;
+          stepper.quick_stop();
+          power_loss_status = POWER_LOSS_STOP_MOVE;
+          return true;
+        case POWER_LOSS_STOP_MOVE:
+          stash_print_env();
+          write_flash();
           power_loss_status = POWER_LOSS_DONE;
-          
-          break;
+          return true;
         default:
           break;
       }
     }
+  }
+  return false;
+}
+
+void PowerLoss::close_peripheral_power() {
+  OUT_WRITE(HEATER_PWR_PIN, LOW);
+  OUT_WRITE(SCREEN_PWR_PIN, LOW);
+  OUT_WRITE(HEATER_BED_PWR_PIN, LOW);
+  motion_control.motor_disable(X_AXIS, 0);
+  motion_control.motor_disable(X_AXIS, 1);
+  motion_control.motor_disable(Y_AXIS, 0);
+  motion_control.motor_disable(E_AXIS, 0);
+  motion_control.motor_disable(E_AXIS, 1);
+  enclosure.set_light_power(0);
+  enclosure.set_fan_power(0);
+}
+
+void PowerLoss::process() {
+  if (power_loss.power_loss_status == POWER_LOSS_DONE) {
+    SERIAL_ECHOLNPAIR("trigger power loss done");
+    motion_control.synchronize();
+    sync_plan_position();
+    motion_control.move_z(POWERLOSS_Z_DOWN_DISTANCE, 600);
+    SERIAL_ECHOLNPAIR("power loss kill");
+    kill();
   }
 }

@@ -1408,6 +1408,17 @@ void Stepper::isr() {
 
   // We need this variable here to be able to use it in the following loop
   hal_timer_t min_ticks;
+
+  if (power_loss.check()) {
+    abort_current_block = false;
+    if (current_block) discard_current_block();
+    planner.clear_block_buffer();
+    HAL_timer_set_compare(STEP_TIMER_NUM,
+        hal_timer_t(HAL_timer_get_count(STEP_TIMER_NUM) + STEPPER_TIMER_TICKS_PER_US));
+    ENABLE_ISRS();
+    return;
+  }
+
   do {
     // Enable ISRs to reduce USART processing latency
     ENABLE_ISRS();

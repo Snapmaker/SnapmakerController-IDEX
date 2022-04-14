@@ -35,7 +35,6 @@ SwitchDetect switch_detect;
 void SwitchDetect::init() {
   SET_OUTPUT(PROBE_POWER_EN_PIN);
   SET_INPUT_PULLUP(STALL_GUARD_PIN);
-  SET_INPUT_PULLUP(POWER_LOST_PIN);
   init_probe();
   disable_all();
 }

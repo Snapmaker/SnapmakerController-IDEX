@@ -66,6 +66,7 @@
 #include "../snapmaker/J1/tmc_driver.h"
 #include "../snapmaker/J1/J1.h"
 #include "../snapmaker/module/adjusting.h"
+#include "../snapmaker/module/power_loss.h"
 #if HAS_TOUCH_BUTTONS
   #include "lcd/touch/touch_buttons.h"
 #endif
@@ -837,6 +838,7 @@ void idle(bool no_stepper_sleep/*=false*/) {
 
   IDLE_DONE:
   TERN_(MARLIN_DEV_MODE, idle_depth--);
+  power_loss.process();
   return;
 }
 

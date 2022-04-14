@@ -3,8 +3,6 @@
 #include "../J1/common_type.h"
 #include "src/core/types.h"
 
-#define POWER_LOSS_TRIGGER_STATUS 0
-
 #define GCODE_MD5_LENGTH 64
 #define GCODE_FILE_NAME_SIZE 128
 
@@ -16,6 +14,7 @@
 #define PRINT_RETRACK_DISTANCE 1  // mm
 #define CHANGE_FILAMENT_SPEED 200  // mm/min
 #define PRINT_TRAVEL_FEADRATE 6000
+#define POWERLOSS_Z_DOWN_DISTANCE 5  // mm
 
 #define EXTRUDE_X_MOVE_DISTANCE 8  // mm
 #define EXTRUDE_E_DISTANCE 30  // mm
@@ -71,8 +70,12 @@ class PowerLoss {
     uint8_t * get_file_md5(uint8_t &len);
     void clear();
     void show_power_loss_info();
-    void check();
+    bool check();
+    bool is_power_24v_pin_trigger();
+    bool is_power_220v_pin_trigger();
     bool is_power_pin_trigger();
+    void close_peripheral_power();
+    void process();
   private:
     void write_flash(void);
   public:

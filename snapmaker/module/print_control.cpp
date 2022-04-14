@@ -83,10 +83,7 @@ bool PrintControl::filament_check() {
 bool PrintControl::get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len) {
 
   if (power_loss.power_loss_status != POWER_LOSS_IDLE) {
-    SERIAL_ECHOLNPAIR("trigger power loss, will kill!!");
-    while(power_loss.power_loss_status == POWER_LOSS_STOP_MOVE);
-    motion_control.move_z(Z_DOWN_SAFE_DISTANCE);
-    kill();
+    return false;
   }
 
   if (system_service.get_status() != SYSTEM_STATUE_PRINTING) {
