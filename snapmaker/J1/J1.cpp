@@ -3,8 +3,10 @@
 #include "../event/subscribe.h"
 #include "../protocol/protocol_sacp.h"
 #include "switch_detect.h"
+#include "../module/update.h"
 
 void J1_setup() {
+  update_server.init();
   switch_detect.init();
   subscribe_init();
   event_init();

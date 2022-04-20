@@ -6,6 +6,7 @@
 #include "event_adjust.h"
 #include "event_printer.h"
 #include "event_enclouser.h"
+#include "event_update.h"
 
 EventHandler event_handler;
 static QueueHandle_t event_queue = NULL;
@@ -24,6 +25,8 @@ event_cb_info_t * get_event_info(uint8_t cmd_set, uint8_t cmd_id) {
       return get_evevt_info_by_id(cmd_id, printer_cb_info, PRINTER_ID_CB_COUNT);
     case COMMAND_SET_ENCLOUSER:
       return get_evevt_info_by_id(cmd_id, enclouser_cb_info, ENCLOUSER_ID_CB_COUNT);
+    case COMMAND_SET_UPDATE:
+      return get_evevt_info_by_id(cmd_id, update_cb_info, UPDATE_ID_CB_COUNT);
   }
   return NULL;
 }

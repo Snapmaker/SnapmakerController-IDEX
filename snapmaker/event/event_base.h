@@ -26,6 +26,8 @@ typedef std::function<int(void)> read_byte_f;
 #define COMMAND_SET_ADJUSTING 0xA0
 // print control
 #define COMMAND_SET_PRINTER 0xAC
+// update
+#define COMMAND_SET_UPDATE 0xAD
 
 // Event Source
 typedef enum {
