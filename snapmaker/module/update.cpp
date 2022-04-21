@@ -3,15 +3,7 @@
 #include "flash_stm32.h"
 #include HAL_PATH(src/HAL, HAL_watchdog_STM32F1.h)
 
-UpdateServer update_server;
-
-
-#define APP_FLASH_PAGE_SIZE  (2*1024)
-#define DATA_FLASH_PAGE_SIZE  (4*1024)  // after 512K
-
-#define FLASH_BASE (0x08000000)
-#define DATA_FLASH_START_ADDR (FLASH_BASE + (512 * 1024))
-#define FLASH_UPDATE_INFO_ADDR (FLASH_BASE + 1024*1012) 
+UpdateServer update_server; 
 
 uint32_t update_calc_checksum(uint8_t *buffer, uint32_t length) {
   uint32_t volatile checksum = 0;
@@ -80,15 +72,15 @@ ErrCode  UpdateServer::update_info_check(update_packet_info_t *head) {
 }
 
 void UpdateServer::set_update_status(uint16_t status) {
-  update_packet_info_t *flash_info = (update_packet_info_t *)FLASH_UPDATE_INFO_ADDR;
+  update_packet_info_t *flash_info = (update_packet_info_t *)UPDATE_DATA_FLASH_ADDR;
   update_packet_info_t info;
   memcpy((uint8_t *)&info, (uint8_t *)flash_info, sizeof(update_packet_info_t));
   info.status_flag = status;
   uint32_t checksum = update_packet_head_checksum(&info);
   info.pack_head_checknum = checksum;
 
-  erase_flash_page(FLASH_UPDATE_INFO_ADDR, 1);
-  write_to_flash(FLASH_UPDATE_INFO_ADDR, (uint8_t*)&info, sizeof(update_packet_info_t));
+  erase_flash_page(UPDATE_DATA_FLASH_ADDR, 1);
+  write_to_flash(UPDATE_DATA_FLASH_ADDR, (uint8_t*)&info, sizeof(update_packet_info_t));
 }
 
 void UpdateServer::save_update_info(update_packet_info_t * info, uint8_t usart_num, uint8_t receiver_id) {
@@ -97,8 +89,8 @@ void UpdateServer::save_update_info(update_packet_info_t * info, uint8_t usart_n
   info->receiver_id = receiver_id;
   uint32_t checksum = update_packet_head_checksum(info);
   info->pack_head_checknum = checksum;
-  erase_flash_page(FLASH_UPDATE_INFO_ADDR, 1);
-  write_to_flash(FLASH_UPDATE_INFO_ADDR, (uint8_t*)info, sizeof(update_packet_info_t));
+  erase_flash_page(UPDATE_DATA_FLASH_ADDR, 1);
+  write_to_flash(UPDATE_DATA_FLASH_ADDR, (uint8_t*)info, sizeof(update_packet_info_t));
 }
 
 ErrCode UpdateServer::is_allow_update(update_packet_info_t *head) {
@@ -111,7 +103,7 @@ void UpdateServer::just_to_boot() {
 }
 
 void UpdateServer::init() {
-  update_packet_info_t *update_info =  (update_packet_info_t *)FLASH_UPDATE_INFO_ADDR;
+  update_packet_info_t *update_info =  (update_packet_info_t *)UPDATE_DATA_FLASH_ADDR;
   if (update_info->status_flag != UPDATE_STATUS_APP_NORMAL) {
     set_update_status(UPDATE_STATUS_APP_NORMAL);
   }
