@@ -82,7 +82,7 @@ static ErrCode req_machine_info(event_param_t& event) {
   machine_info_t *machine_info = (machine_info_t *)(event.data + 1);
   event.data[0] = E_SUCCESS;
   system_service.get_machine_info(machine_info);
-  event.length = sizeof(machine_info_t) + 1;
+  event.length = sizeof(machine_info_t) + machine_info->version_length + 1;
   send_event(event);
   return E_SUCCESS;
 }

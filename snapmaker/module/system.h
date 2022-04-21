@@ -47,7 +47,7 @@ typedef struct {
   uint8_t hw_version; // J1 is 0
   uint32_t sn;
   uint16_t version_length;
-  uint8_t version[MODULE_VER_LEN];
+  uint8_t version[];
 } machine_info_t;
 
 typedef struct {
