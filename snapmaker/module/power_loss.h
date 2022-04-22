@@ -50,6 +50,7 @@ typedef struct {
   uint8_t print_mode;
   float nozzle_distance;
   uint8_t light_staus;
+  xyz_pos_t home_offset;
   uint32_t check_num;
 } power_loss_t;
 

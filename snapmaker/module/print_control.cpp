@@ -5,6 +5,7 @@
 #include "src/gcode/gcode.h"
 #include "motion_control.h"
 #include "../../Marlin/src/module/temperature.h"
+#include "../../Marlin/src/module/settings.h"
 #include "system.h"
 #include "fdm.h"
 #include "power_loss.h"
@@ -93,6 +94,10 @@ bool PrintControl::get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len) 
   }
 
   if (filament_check()) {
+    return false;
+  }
+
+  if(commands_lock_) {
     return false;
   }
 
@@ -231,6 +236,7 @@ ErrCode PrintControl::stop() {
     }
     thermalManager.setTargetBed(0);
   }
+  (void)settings.save();
   return E_SUCCESS;
 }
 

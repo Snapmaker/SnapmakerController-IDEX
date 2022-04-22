@@ -7,6 +7,7 @@
 #include "src/module/endstops.h"
 #include "src/module/tool_change.h"
 #include "../../Marlin/src/module/temperature.h"
+#include "print_control.h"
 
 Adjusting adjusting;
 
@@ -374,20 +375,21 @@ void Adjusting::loop(void) {
 }
 
 void Adjusting::set_z_offset(float offset, bool is_moved) {
-  planner.synchronize();
-  float cur_z = current_position[Z_AXIS];
+  print_control.commands_lock();
+  motion_control.synchronize();
+  xyze_pos_t lpos = current_position.asLogical();
+  float cur_z = lpos[Z_AXIS];
   float diff = offset - home_offset[Z_AXIS];
+  home_offset[Z_AXIS] = offset;
+  update_workspace_offset(Z_AXIS);
   if (!is_moved) {
     current_position[Z_AXIS] += diff;
   } else {
-    motion_control.move_z(diff, 600);
-    current_position[Z_AXIS] = cur_z;
+    SERIAL_ECHOLNPAIR("curZ: ",cur_z);
+    motion_control.logical_move_to_z(cur_z, 600);
   }
-  planner.synchronize();
-  home_offset[Z_AXIS] = offset;
-  sync_plan_position();
-
-  SERIAL_ECHOLNPAIR("Apply Z offset: ", live_z_offset);
+  print_control.commands_unlock();
+  SERIAL_ECHOLNPAIR("Apply Z offset: ", home_offset[Z_AXIS]);
 }
 
 float Adjusting::get_z_offset() {

@@ -42,6 +42,8 @@ class PrintControl {
     bool is_backup_mode();
     bool filament_check();
     bool get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len);
+    void commands_lock() {commands_lock_ = true;}
+    void commands_unlock() {commands_lock_ = false;}
     void loop();
     bool temperature_lock(uint8_t e) {
       return temperature_lock_status[e];
@@ -50,6 +52,7 @@ class PrintControl {
   public:
     print_mode_e mode_ = PRINT_BACKUP_MODE;
     bool temperature_lock_status[EXTRUDERS] = {false, false};
+    bool commands_lock_ = false;
 };
 
 extern PrintControl print_control;

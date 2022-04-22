@@ -124,7 +124,7 @@ static ErrCode adjust_report_xy_offset(event_param_t& event) {
 
 static ErrCode adjust_set_z_offset(event_param_t& event) {
   sc_set_z_offet_t * info = (sc_set_z_offet_t *)event.data;
-  float offset = INT_TO_FLOAT(info->info.offset);
+  float offset = -INT_TO_FLOAT(info->info.offset);
   SERIAL_ECHOLNPAIR_F("SC set z offet:", offset);
   adjusting.set_z_offset(offset, !system_service.is_adjusting());
   event.data[0] = E_SUCCESS;
@@ -135,7 +135,7 @@ static ErrCode adjust_set_z_offset(event_param_t& event) {
 static ErrCode adjust_get_z_offset(event_param_t& event) {
   uint8_t key = event.data[0];
   sc_get_z_offet_t * info = (sc_get_z_offet_t *)event.data;
-  float z_offset = adjusting.get_z_offset();
+  float z_offset = -adjusting.get_z_offset();
 
   SERIAL_ECHOLNPAIR_F("SC req z offset:", z_offset);
 
