@@ -15,7 +15,7 @@ static ErrCode bed_set_temperature(event_param_t& event) {
   bed_control.set_temperature(target);
   event.data[0] = E_SUCCESS;
   event.length = 1;
-  return E_SUCCESS;
+  return send_event(event);
 }
 
 event_cb_info_t bed_cb_info[BED_ID_CB_COUNT] = {
