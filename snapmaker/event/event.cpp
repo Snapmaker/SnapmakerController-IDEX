@@ -63,7 +63,9 @@ ErrCode EventHandler::parse(evevt_struct_t &data) {
   }
 
   parse_event_info(data, event);
-  // SERIAL_ECHOLNPAIR("event set:", data.info->command_set, " ,id:", data.info->command_id);
+  char debug_buf[60];
+  sprintf(debug_buf, "SC:event cmd_set: 0x%x ,cmd_id:0x%x", data.info->command_set, data.info->command_id);
+  SERIAL_ECHOLN(debug_buf);
   event_cb_info_t * cb_info = get_event_info(data.info->command_set, data.info->command_id);
   if (!cb_info) {
     event->block_status = EVENT_CACHT_STATUS_IDLE;
@@ -73,12 +75,10 @@ ErrCode EventHandler::parse(evevt_struct_t &data) {
 
   event->cb = cb_info->cb;
   if (cb_info->type == EVENT_CB_DIRECT_RUN) {
-    SERIAL_ECHOLN("run event cb");
     (event->cb)(event->param);
     event->block_status = EVENT_CACHT_STATUS_IDLE;
     return E_SUCCESS;
   } else {
-    SERIAL_ECHOLN("wait event cb");
     event->block_status = EVENT_CACHT_STATUS_WAIT;
     if (xQueueSend(event_queue, (void *)&event, (TickType_t)0) != pdPASS ) {
       SERIAL_ECHOLN("event cacne full!!!");

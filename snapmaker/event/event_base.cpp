@@ -61,8 +61,9 @@ ErrCode send_event(event_source_e source, SACP_head_base_t &sacp, uint8_t *data,
   send_lock = true;
   // Package the data and call write_byte to emit the information
   uint16_t pack_len = protocol_sacp.package(sacp, data, length, send_buf);
-  // SERIAL_ECHOLNPAIR("source:", source, " set:", sacp.command_set, " id:", sacp.command_id, " sequence:", sacp.sequence,
-  //                   " lenght:", length);
+  char debug_buf[100];
+  sprintf(debug_buf, "MC:source:0x%x ,cmd_set:0x%x,cmd_id:0x%x, sequence:%d, len:%d", source, sacp.command_set, sacp.command_id, sacp.sequence, length);
+  SERIAL_ECHOLN(debug_buf);
   send_data(source, send_buf, pack_len);
   send_lock = false;
   return E_SUCCESS;
