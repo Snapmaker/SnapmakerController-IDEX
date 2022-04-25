@@ -38,7 +38,10 @@ class PrintControl {
     ErrCode resume();
     ErrCode stop();
     ErrCode set_mode(print_mode_e mode);
-    void set_feedrate_percentage(float percentage);
+    void set_feedrate_percentage(int16_t percentage);
+    int16_t get_feedrate_percentage();
+    void set_work_flow_percentage(uint8_t e, int16_t percentage);
+    int16_t get_work_flow_percentage(uint8_t e);
     bool is_backup_mode();
     bool filament_check();
     bool get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len);

@@ -32,10 +32,15 @@ typedef struct {
 
 typedef struct {
   uint8_t key;
-  uint8_t e_index;
-  float_to_int_t percentage;
+  uint8_t e_count;
+  uint16_t percentage;
 } feedrate_percentage_t;
 
+typedef struct {
+  uint8_t key;
+  uint8_t e_index;
+  uint16_t percentage;
+} flow_percentage_t;
 
 #pragma pack()
 
@@ -279,21 +284,71 @@ static ErrCode request_cur_line(event_param_t& event) {
   return send_event(event);
 }
 
-static ErrCode request_temperature_lock(event_param_t& event) {
-  if (system_service.get_status() == SYSTEM_STATUE_IDLE) {
-    event.data[0] = 1;
-  }
+static ErrCode set_temperature_lock(event_param_t& event) {
+  uint8_t e = MODULE_INDEX(event.data[0]);
+  uint8_t lock = MODULE_INDEX(event.data[2]);
+  SERIAL_ECHOLNPAIR("SC set temp lock T:", e," statue:", lock);
+  print_control.temperature_lock(e, lock);
+  event.data[0] = E_SUCCESS;
   event.length = 1;
+  return send_event(event);
+}
+
+static ErrCode get_temperature_lock(event_param_t& event) {
+  uint8_t key = event.data[0];
+  uint8_t e = MODULE_INDEX(key);
+  uint8_t lock = print_control.temperature_lock(e);
+  uint8_t index = 0;
+  SERIAL_ECHOLNPAIR("SC get temp lock T:", e," statue:", lock);
+  event.data[index++] = E_SUCCESS;
+  event.data[index++] = key;
+  event.data[index++] = 1;  //  extruder count
+  event.data[index++] = lock;
+  event.length = index;
   return send_event(event);
 }
 
 static ErrCode set_work_feedrate_percentage(event_param_t& event) {
   feedrate_percentage_t *info = (feedrate_percentage_t *)event.data;
-  float percent = INT_TO_FLOAT(info->percentage);
-  SERIAL_ECHOLNPAIR_F("SC set feedrate percentage:", percent);
-  print_control.set_feedrate_percentage(percent);
+  SERIAL_ECHOLNPAIR("SC set feedrate percentage:", info->percentage);
+  print_control.set_feedrate_percentage(info->percentage);
   event.data[0] = E_SUCCESS;
   event.length = 1;
+  return send_event(event);
+}
+
+static ErrCode get_work_feedrate_percentage(event_param_t& event) {
+  uint8_t key = event.data[0];
+  feedrate_percentage_t *info = (feedrate_percentage_t *)(event.data + 1);
+  info->key = key;
+  info->e_count = 1;
+  info->percentage = print_control.get_feedrate_percentage();
+  SERIAL_ECHOLNPAIR("SC set feedrate percentage:", info->percentage);
+  event.data[0] = E_SUCCESS;
+  event.length = 1 + sizeof(feedrate_percentage_t);
+  return send_event(event);
+}
+
+static ErrCode set_work_flow_percentage(event_param_t& event) {
+  flow_percentage_t *info = (flow_percentage_t *)event.data;
+  uint8_t e = MODULE_INDEX(info->key);
+  SERIAL_ECHOLNPAIR("SC set T:", e, " flow percentage:", info->percentage);
+  print_control.set_work_flow_percentage(e, info->percentage);
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
+}
+
+static ErrCode get_work_flow_percentage(event_param_t& event) {
+  uint8_t key = event.data[0];
+  uint8_t e = MODULE_INDEX(key);
+  flow_percentage_t *info = (flow_percentage_t *)(event.data + 1);
+  info->key = key;
+  info->e_index = 1;  //  extruder count
+  info->percentage = print_control.get_work_flow_percentage(e);
+  SERIAL_ECHOLNPAIR("SC get T:", e, " flow percentage:", info->percentage);
+  event.data[0] = E_SUCCESS;
+  event.length = 1 + sizeof(flow_percentage_t);
   return send_event(event);
 }
 
@@ -312,8 +367,12 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_SET_AUTO_PARK_STATUS, EVENT_CB_TASK_RUN,   set_auto_pack_mode},
   {PRINTER_ID_STOP_SINGLE_EXTRUDE , EVENT_CB_DIRECT_RUN,   request_stop_single_extrude_work},
   {PRINTER_ID_SET_WORK_PERCENTAGE , EVENT_CB_DIRECT_RUN,   set_work_feedrate_percentage},
+  {PRINTER_ID_GET_WORK_PERCENTAGE , EVENT_CB_DIRECT_RUN,   get_work_feedrate_percentage},
+  {PRINTER_ID_SET_FLOW_PERCENTAGE , EVENT_CB_DIRECT_RUN, set_work_flow_percentage},
+  {PRINTER_ID_GET_FLOW_PERCENTAGE , EVENT_CB_DIRECT_RUN, get_work_flow_percentage},
+  {PRINTER_ID_SET_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, set_temperature_lock},
+  {PRINTER_ID_GET_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, get_temperature_lock},
   {PRINTER_ID_REQ_LINE            , EVENT_CB_DIRECT_RUN, request_cur_line},
-  {PRINTER_ID_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, request_temperature_lock},
 };
 
 static void req_gcode_pack() {

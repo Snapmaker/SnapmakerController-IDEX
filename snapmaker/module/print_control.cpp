@@ -230,8 +230,10 @@ ErrCode PrintControl::stop() {
     HOTEND_LOOP() {
       thermalManager.setTargetHotend(0, e);
       fdm_head.set_fan_speed(e, 0, 0);
+       set_work_flow_percentage(e, 100);
     }
     thermalManager.setTargetBed(0);
+    set_feedrate_percentage(100);
   }
   (void)settings.save();
   return E_SUCCESS;
@@ -242,6 +244,18 @@ ErrCode PrintControl::set_mode(print_mode_e mode) {
   return E_SUCCESS;
 }
 
-void PrintControl::set_feedrate_percentage(float percentage) {
+void PrintControl::set_feedrate_percentage(int16_t percentage) {
   feedrate_percentage = percentage;
+}
+
+int16_t PrintControl::get_feedrate_percentage() {
+  return feedrate_percentage;
+}
+
+int16_t PrintControl::get_work_flow_percentage(uint8_t e) {
+  return planner.flow_percentage[e];
+}
+
+void PrintControl::set_work_flow_percentage(uint8_t e, int16_t percentage) {
+  planner.set_flow(e, percentage);
 }
