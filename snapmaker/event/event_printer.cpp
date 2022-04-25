@@ -68,6 +68,7 @@ uint8_t source_recever_id = 0;
 uint16_t source_sequence = 0;
 gcode_req_status_e gcode_req_status = GCODE_PACK_REQ_IDLE;
 uint32_t gcode_req_timeout = 0;
+uint32_t gcode_req_timeout_times = 0;
 
 static void req_gcode_pack();
 
@@ -119,6 +120,7 @@ static ErrCode request_file_info(event_param_t& event) {
 static ErrCode gcode_pack_deal(event_param_t& event) {
   batch_gcode_t *gcode = (batch_gcode_t *)event.data;
   print_control.push_gcode(gcode->start_line, gcode->end_line, gcode->data, gcode->data_len);
+  gcode_req_timeout_times = 0;
   if (gcode->flag == PRINT_RESULT_GCODE_RECV_DONE_E) {
     gcode_req_status = GCODE_PACK_REQ_DONE;
     SERIAL_ECHOLN("SC gcoce pack recv done");
@@ -396,6 +398,10 @@ static void gcode_req_timeout_deal() {
   if (gcode_req_timeout < millis()) {
     SERIAL_ECHOLNPAIR("requst gcode pack timeout!");
     req_gcode_pack();
+    gcode_req_timeout_times ++;
+    if (gcode_req_timeout_times >= 5) {
+      print_control.error_and_stop();
+    }
   }
 }
 

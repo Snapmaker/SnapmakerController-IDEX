@@ -23,6 +23,10 @@ typedef enum : uint8_t{
   PRINT_MIRRORED_MODE
 } print_mode_e;
 
+typedef struct {
+  bool is_err;
+  uint32_t err_line;
+} print_err_info_t;
 
 class PrintControl {
   public:
@@ -52,10 +56,13 @@ class PrintControl {
       return temperature_lock_status[e];
     }
     void temperature_lock(uint8_t e, bool enable) {temperature_lock_status[e] = enable;}
+    void error_and_stop();
+
   public:
     print_mode_e mode_ = PRINT_BACKUP_MODE;
     bool temperature_lock_status[EXTRUDERS] = {false, false};
     bool commands_lock_ = false;
+    print_err_info_t print_err_info = {0};
 };
 
 extern PrintControl print_control;

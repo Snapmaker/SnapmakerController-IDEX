@@ -25,6 +25,8 @@
 #include "../../J1/tmc_driver.h"
 #include "../../module/filament_sensor.h"
 #include "../../module/fdm.h"
+#include "../../module/system.h"
+#include "../../module/print_control.h"
 
 /**
  *  S0
@@ -125,6 +127,14 @@ void GcodeSuite::M2020() {
         filament_sensor.debug();
       break;
 
+      case 8:
+        SERIAL_ECHOLNPAIR("system status:", system_service.get_status());
+        if (print_control.print_err_info.is_err == false) {
+          SERIAL_ECHOLN("Print work normal");
+        } else {
+          SERIAL_ECHOLNPAIR("Print work timeout, last line:", print_control.print_err_info.err_line);
+        }
+        break;
       case 9:
         if(parser.seen('E') && parser.seen('D') && parser.seen('C')) {
           filament_sensor.test_adc(parser.byteval('E'), parser.longval('D'), parser.longval('C'));

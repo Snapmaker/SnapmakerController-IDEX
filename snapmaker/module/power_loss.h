@@ -76,7 +76,6 @@ class PowerLoss {
     bool is_power_pin_trigger();
     void close_peripheral_power();
     void process();
-  private:
     void write_flash(void);
   public:
     uint32_t cur_line = 0;

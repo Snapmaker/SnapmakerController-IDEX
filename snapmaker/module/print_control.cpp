@@ -189,6 +189,7 @@ ErrCode PrintControl::start() {
     SERIAL_ECHOLNPAIR(" power-loss signal is abnormal, disable the power-loss function");
   }
   filament_sensor.reset();
+  memset(&print_err_info, 0, sizeof(print_err_info));
   system_service.set_status(SYSTEM_STATUE_PRINTING);
   return E_SUCCESS;
 }
@@ -258,4 +259,17 @@ int16_t PrintControl::get_work_flow_percentage(uint8_t e) {
 
 void PrintControl::set_work_flow_percentage(uint8_t e, int16_t percentage) {
   planner.set_flow(e, percentage);
+}
+
+void PrintControl::error_and_stop() {
+  print_err_info.is_err = true;
+  print_err_info.err_line = next_req_line();
+  buffer_head = buffer_tail = 0;
+  motion_control.quickstop();
+  power_loss.stash_print_env();
+  power_loss.write_flash();
+  motion_control.synchronize();
+  motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
+  motion_control.home();
+  system_service.set_status(SYSTEM_STATUE_IDLE);
 }
