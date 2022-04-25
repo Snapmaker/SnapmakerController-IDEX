@@ -7,6 +7,7 @@
 #include "src/module/stepper.h"
 #include "switch_detect.h"
 #include "../module/filament_sensor.h"
+#include "src/module/endstops.h"
 
 #define SW_FILAMNET0_BIT      0
 #define SW_FILAMNET1_BIT      1
@@ -37,6 +38,7 @@ void SwitchDetect::init() {
   SET_INPUT_PULLUP(STALL_GUARD_PIN);
   init_probe();
   disable_all();
+  endstops.enable_globally(true);
 }
 
 void SwitchDetect::init_probe() {
