@@ -50,34 +50,34 @@ ErrCode FDM_Head::change_tool(uint8_t e) {
 }
 
 ErrCode FDM_Head::set_fan_speed(uint8_t e, uint8_t fan_index, uint8_t speed) {
-  if (e) {
-    if (fan_index) {
-      thermalManager.set_fan_speed(3, speed);
+  if (e == 0) {
+    if (fan_index == 0) {
+      thermalManager.set_fan_speed(0, speed);
     } else {
       thermalManager.set_fan_speed(2, speed);
     }
   } else {
-    if (fan_index) {
+    if (fan_index == 0) {
       thermalManager.set_fan_speed(1, speed);
     } else {
-      thermalManager.set_fan_speed(0, speed);
+      thermalManager.set_fan_speed(3, speed);
     }
   }
   return E_SUCCESS;
 }
 
 ErrCode FDM_Head::get_fan_speed(uint8_t e, uint8_t fan_index, uint8_t &speed) {
-  if (e) {
-    if (fan_index) {
-      thermalManager.fanSpeed(3);
+  if (e == 0) {
+    if (fan_index == 0) {
+      thermalManager.fanSpeed(0);
     } else {
       thermalManager.fanSpeed(2);
     }
   } else {
-    if (fan_index) {
+    if (fan_index == 0) {
       thermalManager.fanSpeed(1);
     } else {
-      thermalManager.fanSpeed(0);
+      thermalManager.fanSpeed(3);
     }
   }
   return E_SUCCESS;
