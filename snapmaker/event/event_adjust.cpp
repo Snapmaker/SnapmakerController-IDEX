@@ -72,20 +72,23 @@ static ErrCode adjust_start_bed_probe(event_param_t& event) {
 }
 
 static ErrCode adjust_exit(event_param_t& event) {
-  event.data[0] = adjusting.exit();
+  SERIAL_ECHOLNPAIR("exit adjust and is save:", event.data[0]);
+  event.data[0] = adjusting.exit(event.data[0]);
   event.length = 1;
   SERIAL_ECHOLNPAIR("exit adjust");
   return send_event(event);
 }
 
-static ErrCode adjust_report_status(event_param_t& event) {
-  SERIAL_ECHOLNPAIR("adjust report ststus not support");
-  return E_SUCCESS;
+static ErrCode adjust_retrack_e(event_param_t& event) {
+  adjusting.retrack_e();
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
 }
 
 static ErrCode adjust_report_bed_offset(event_param_t& event) {
   report_probe_info_t * info = (report_probe_info_t *)event.data;
-  if (adjusting.probe_offset == ADJUSTINT_ERR_CODE) {
+  if (adjusting.probe_offset == ADJUSTING_ERR_CODE) {
     info->result = E_IN_PROGRESS;
   } else {
     info->result = E_SUCCESS;
@@ -153,7 +156,7 @@ event_cb_info_t adjust_cb_info[ADJUST_ID_CB_COUNT] = {
   {ADJUST_ID_MOVE_TO_POSITION , EVENT_CB_TASK_RUN, adjust_move_to_pos},
   {ADJUST_ID_START_BED_PROBE  , EVENT_CB_TASK_RUN, adjust_start_bed_probe},
   {ADJUST_ID_EXIT             , EVENT_CB_TASK_RUN, adjust_exit},
-  {ADJUST_ID_REPORT_STATUS    , EVENT_CB_TASK_RUN, adjust_report_status},
+  {ADJUST_ID_RETRACK_E        , EVENT_CB_TASK_RUN, adjust_retrack_e},
   {ADJUST_ID_REPORT_BED_OFFSET, EVENT_CB_TASK_RUN, adjust_report_bed_offset},
   {ADJUST_ID_MOVE_NOZZLE      , EVENT_CB_TASK_RUN, adjust_move_nozzle},
   {ADJUST_ID_SET_Z_OFFSET     , EVENT_CB_TASK_RUN, adjust_set_z_offset},

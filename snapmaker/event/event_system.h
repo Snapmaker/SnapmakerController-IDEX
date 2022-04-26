@@ -19,8 +19,10 @@ enum : uint8_t {
   SYS_ID_MOVE_RELATIVE          = 0x33,
   SYS_ID_MOVE                   = 0x34,
   SYS_ID_HOME                   = 0x35,
+  SYS_ID_HOME_END               = 0x36,
   SYS_ID_GET_MOTOR_ENABLE       = 0x37,
   SYS_ID_SET_MOTOR_ENABLE       = 0x38,
+  SYS_ID_MOVE_TO_RELATIVE_HOME  = 0x3C,
 };
 
 #define SYS_ID_CB_COUNT 18

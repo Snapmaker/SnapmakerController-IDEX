@@ -8,6 +8,7 @@ enum {
   ADJUST_ID_START_BED_PROBE     = 0x02,
   ADJUST_ID_EXIT                = 0x06,
   ADJUST_ID_REPORT_STATUS       = 0x07,
+  ADJUST_ID_RETRACK_E           = 0x08,
   ADJUST_ID_REPORT_BED_OFFSET   = 0xA0,
   ADJUST_ID_MOVE_NOZZLE         = 0x11,
   ADJUST_ID_SET_Z_OFFSET        = 0x15,

@@ -2,9 +2,12 @@
 #define ADJUSTINT_H
 
 #include "../J1/common_type.h"
+#include "src/inc/MarlinConfigPre.h"
+#include "src/core/types.h"
+#include "motion_control.h"
 
-#define ADJUSTINT_ERR_CODE (10000)
-
+#define ADJUSTING_ERR_CODE (10000)
+#define ADJUSTIN_RETRACK_E_MM 10
 typedef enum {
   ADJUST_MODE_IDLE,
   ADJUST_MODE_BED,
@@ -43,7 +46,7 @@ class Adjusting {
     ErrCode goto_position(uint8_t pos);
     void bed_preapare(uint8_t extruder_index=0);
     float probe(uint8_t axis, float distance, uint16_t feedrate);
-    ErrCode exit(void);
+    ErrCode exit(bool is_save=true);
     ErrCode bed_probe(adjust_position_e pos, uint8_t extruder=0, bool set_z_offset=false);
     ErrCode bed_adjust_preapare(adjust_position_e pos, bool is_probe=false);
     ErrCode bed_manual_adjust(adjust_position_e pos);
@@ -56,16 +59,21 @@ class Adjusting {
     void bed_level();
     void set_z_offset(float offset, bool is_moved=false);
     float get_z_offset();
-
+    void retrack_e();
+    void extrude_e(float distance, uint16_t feedrate=MOTION_EXTRUDE_E_FEEDRATE);
   private:
     ErrCode probe_z_offset(adjust_position_e pos);
     void reset_xy_adjust_env();
+    void backup_offset();
   public:
     adjust_position_e cur_pos;
     adjust_mode_e mode = ADJUST_MODE_IDLE;
     adjust_status_e status;
-    float probe_offset = ADJUSTINT_ERR_CODE;
+    float probe_offset = ADJUSTING_ERR_CODE;
     float live_z_offset = 0;
+    xyz_pos_t hotend_offset_backup[HOTENDS];
+    xyz_pos_t home_offset_backup;
+    bool need_extrude = false;
 };
 
 extern Adjusting adjusting;

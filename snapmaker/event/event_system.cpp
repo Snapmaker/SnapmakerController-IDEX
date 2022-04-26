@@ -106,6 +106,17 @@ static ErrCode set_origin(event_param_t& event) {
   return E_SUCCESS;
 }
 
+static ErrCode move_relative_home(event_param_t& event) {
+  axis_move_t *move = (axis_move_t *)(event.data);
+  float distance = INT_TO_FLOAT(move->distance);
+  uint16_t speed = *((uint16_t *)(event.data + sizeof(axis_move_t)));
+  SERIAL_ECHOLNPAIR("SC move x relative home to ", distance, " F:", speed);
+  motion_control.move_x_to_relative_home(distance, speed);
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
+}
+
 static ErrCode move_relative(event_param_t& event) {
   mobile_instruction_t *move = (mobile_instruction_t *)(event.data);
   motion_control.move_axis(move);
@@ -123,7 +134,12 @@ static ErrCode move(event_param_t& event) {
 }
 
 static ErrCode home(event_param_t& event) {
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  send_event(event);
   motion_control.home();
+  event.info.attribute = SACP_ATTR_REQ;
+  event.info.command_id = SYS_ID_HOME_END;
   event.data[0] = E_SUCCESS;
   event.length = 1;
   return send_event(event);
@@ -199,12 +215,12 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_REQ_MODULE_INFO       , EVENT_CB_DIRECT_RUN, req_module_info},
   {SYS_ID_REQ_MACHINE_INFO      , EVENT_CB_DIRECT_RUN, req_machine_info},
   {SYS_ID_REQ_MACHINE_SIZE      , EVENT_CB_DIRECT_RUN, req_machine_size},
-  {SYS_ID_REQ_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, req_coordinate_system},
   {SYS_ID_SET_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, set_coordinate_system},
   {SYS_ID_SET_ORIGIN            , EVENT_CB_DIRECT_RUN, set_origin},
   {SYS_ID_MOVE_RELATIVE         , EVENT_CB_TASK_RUN  , move_relative},
   {SYS_ID_MOVE                  , EVENT_CB_TASK_RUN  , move},
   {SYS_ID_HOME                  , EVENT_CB_TASK_RUN  , home},
-  {SYS_ID_GET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN  , get_motor_enable},
-  {SYS_ID_SET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN  , set_motor_enable},
+  {SYS_ID_GET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN, get_motor_enable},
+  {SYS_ID_SET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN, set_motor_enable},
+  {SYS_ID_MOVE_TO_RELATIVE_HOME , EVENT_CB_TASK_RUN  , move_relative_home},
 };

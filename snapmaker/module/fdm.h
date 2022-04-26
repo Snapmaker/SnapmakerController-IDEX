@@ -2,6 +2,7 @@
 #define FDM_H
 #include "../J1/common_type.h"
 #include "module_base.h"
+#include "system.h"
 
 #pragma pack(1)
 
@@ -54,7 +55,7 @@ class FDM_Head {
     ErrCode get_module_info(uint8_t e, module_info_t &info);
     uint8_t get_key(uint8_t e);
 
-    bool is_duplication_enabled(uint8_t e) {return duplication_enabled_move[e];}
+    bool is_duplication_enabled(uint8_t e) {return duplication_enabled_move[e] || !system_service.is_working();}
     // Double - head printing will not work after disable
     void set_duplication_enabled(uint8_t e, bool status) {duplication_enabled_move[e] = status;}
     bool is_duplicating();

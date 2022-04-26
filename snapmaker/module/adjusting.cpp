@@ -48,6 +48,28 @@ static float calibration_position_xy[6][2] = {
   /*ADJUST_POS_5*/ {HALF_BED_X + POS_X_R_DIFF, HALF_BED_Y + POS_Y_U_DIFF},
 };
 
+void Adjusting::backup_offset() {
+  HOTEND_LOOP() {
+    hotend_offset_backup[e] = hotend_offset[e];
+  }
+  home_offset_backup = home_offset;
+}
+
+void Adjusting::retrack_e() {
+  extrude_e(-ADJUSTIN_RETRACK_E_MM, MOTION_RETRACK_E_FEEDRATE);
+  need_extrude = true;
+}
+
+void Adjusting::extrude_e(float distance, uint16_t feedrate) {
+  tool_change(0, true);
+  dual_x_carriage_mode = DXC_DUPLICATION_MODE;
+  set_duplication_enabled(true);
+  motion_control.extrude_e(distance, feedrate);
+  planner.synchronize();
+  set_duplication_enabled(false);
+  dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+}
+
 void Adjusting::bed_preapare(uint8_t extruder_index) {
   // Store feedrate and feedrate scaling
   remember_feedrate_scaling_off();
@@ -133,7 +155,7 @@ ErrCode Adjusting::probe_z_offset(adjust_position_e pos) {
   float position = 0;
   float z_probe_distance = 25;
   float last_valid_zoffset = home_offset[Z_AXIS];
-
+  backup_offset();
   set_home_offset(Z_AXIS, 0);
   motion_control.move_to_z(15, PROBE_MOVE_Z_FEEDRATE);
   goto_position(pos);
@@ -155,8 +177,6 @@ ErrCode Adjusting::probe_z_offset(adjust_position_e pos) {
   } else {
     set_home_offset(Z_AXIS, -(position + build_plate_thickness));
     SERIAL_ECHOLNPAIR("Set z_offset to :", home_offset[Z_AXIS]);
-    // Store to eeprom
-    settings.save();
   }
   return E_SUCCESS;
 }
@@ -168,11 +188,11 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
   if (pos == ADJUST_POS_0 || pos >= ADJUST_POS_INVALID) {
     return E_PARAM;
   }
-  DualXMode dual_mode = dual_x_carriage_mode;
   bed_preapare(extruder);
 
   float temp_z = 0;
   if (set_z_offset) {
+    motion_control.home_x();
     ret = probe_z_offset(pos);
   } else {
     goto_position(pos);
@@ -181,7 +201,7 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
     temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
     if (temp_z == -z_probe_distance) {
       SERIAL_ECHOLN("failed to probe z !!!");
-      probe_offset = ADJUSTINT_ERR_CODE;
+      probe_offset = ADJUSTING_ERR_CODE;
       ret = E_ADJUST_PRIOBE;
     } else {
       probe_offset = current_position[Z_AXIS] + home_offset[Z_AXIS] + build_plate_thickness;
@@ -189,7 +209,6 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
     }
   }
   motion_control.logical_move_to_z(Z_REMOVE_PLATE_THICKNESS(PROBE_LIFTINT_DISTANCE), PROBE_MOVE_Z_FEEDRATE);
-  dual_x_carriage_mode = dual_mode;
   if (last_active_extruder != active_extruder) {
     tool_change(last_active_extruder, true);
   }
@@ -271,6 +290,7 @@ ErrCode Adjusting::adjust_xy() {
     SERIAL_ECHOLN("Calibrate XY after calibrating Z offset");
     return E_ADJUST_XY;
   }
+  backup_offset();
   reset_xy_adjust_env();
   HOTEND_LOOP() {
     bed_preapare(e);
@@ -346,14 +366,25 @@ ErrCode set_hotend_offset(uint8_t axis, float offset) {
   return E_SUCCESS;
 }
 
-ErrCode Adjusting::exit() {
+ErrCode Adjusting::exit(bool is_save) {
   SERIAL_ECHOLN("exit justing");
+  if (mode != ADJUST_MODE_IDLE) {
+    if (!is_save) {
+      HOTEND_LOOP() {
+        hotend_offset[e] = hotend_offset_backup[e];
+      }
+      home_offset = home_offset_backup;
+    }
+    if (mode == ADJUST_MODE_NOZZLE) {
+      set_home_offset(Z_AXIS, home_offset_backup[Z_AXIS]);
+    }
+    if (is_save) {
+      settings.save();
+    }
+  }
   mode = ADJUST_MODE_EXIT;
   status = ADJUST_STATE_IDLE;
-  probe_offset = ADJUSTINT_ERR_CODE;
-  HOTEND_LOOP() {
-    thermalManager.setTargetHotend(0, e);
-  }
+  probe_offset = ADJUSTING_ERR_CODE;
   return E_SUCCESS;
 }
 
@@ -366,11 +397,21 @@ void Adjusting::loop(void) {
   } else if (mode == ADJUST_MODE_NOZZLE && status == ADJUST_STATE_BED_BEAD) {
     bed_probe(cur_pos, 1);
   } else if (mode == ADJUST_MODE_EXIT) {
-    mode = ADJUST_MODE_IDLE;
     motion_control.synchronize();
     if (current_position[Z_AXIS] < 100) {
       motion_control.move_to_z(100, PROBE_MOVE_Z_FEEDRATE);
     }
+    motion_control.home_x();
+    motion_control.home_y();
+    if (need_extrude) {
+      need_extrude = false;
+      extrude_e(ADJUSTIN_RETRACK_E_MM);
+    }
+    HOTEND_LOOP() {
+      thermalManager.setTargetHotend(0, e);
+    }
+    thermalManager.setTargetBed(0);
+    mode = ADJUST_MODE_IDLE;
   }
 }
 

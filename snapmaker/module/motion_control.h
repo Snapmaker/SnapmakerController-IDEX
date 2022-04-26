@@ -5,6 +5,11 @@
 #include "src/core/types.h"
 #include "src/module/motion.h"
 
+#define MOTION_TRAVEL_FEADRATE 6000
+#define MOTION_EXTRUDE_E_DISTANCE 30
+#define MOTION_RETRACK_E_FEEDRATE 1800
+#define MOTION_EXTRUDE_E_FEEDRATE 100
+
 #pragma pack(1)
 typedef struct {
   uint8_t axis;
@@ -36,6 +41,7 @@ class MotionControl {
     void move_to_xyz(float x, float y, float z, uint16_t feedrate=0);
     void move_to_xyz(xyze_pos_t &pos, uint16_t feedrate=0);
     void move_to_xy(float x, float y, uint16_t feedrate);
+    void move_x_to_relative_home(float x, uint16_t feedrate=0);
 
     void logical_move_x(float x, uint16_t feedrate=0) {
       move_x(LOGICAL_TO_NATIVE(x, X_AXIS), feedrate);

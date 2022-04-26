@@ -215,6 +215,46 @@ void MotionControl::move_to_xy(float x, float y, uint16_t feedrate) {
 }
 
 
+void MotionControl::move_x_to_relative_home(float x, uint16_t feedrate) {
+  extruder_duplication_enabled = false;
+  dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+  if (axis_should_home(X_AXIS)) {
+    home_x();
+  }
+  float x1 = x_position();
+  float x2 = x2_position();
+  float x1_home = x_home_pos(0);
+  float x2_home = x_home_pos(1);
+  if ((x1 == x1_home) && (x2 == x2_home)) {
+    bool save_duplication_enabled = extruder_duplication_enabled;
+    bool save_idex_mirrored_mode = idex_mirrored_mode;
+    uint8_t save_active_extruder = active_extruder;
+    DualXMode save_dual_x_carriage_mode = dual_x_carriage_mode;
+    tool_change(0);
+    dual_x_carriage_mode = DXC_MIRRORED_MODE;
+    set_duplication_enabled(true);
+    idex_set_mirrored_mode(true);
+    move_to_x(x1_home + x, feedrate);
+    planner.synchronize();
+    inactive_extruder_x -= x;
+    idex_set_mirrored_mode(save_idex_mirrored_mode);
+    set_duplication_enabled(save_duplication_enabled);
+    dual_x_carriage_mode = save_dual_x_carriage_mode;
+    tool_change(save_active_extruder);
+  } else {
+    if (active_extruder == 1) {
+      x = -x;
+    }
+    if (feedrate == 0) {
+      feedrate = MOTION_TRAVEL_FEADRATE;
+    }
+    move_to_x(x_home_pos(active_extruder) + x, feedrate);
+    tool_change(!active_extruder);
+    move_to_x(x_home_pos(active_extruder) - x, feedrate);
+    tool_change(!active_extruder);
+  }
+}
+
 void MotionControl::retrack_e(float distance, uint16_t feedrate) {
   move_e(-distance, feedrate);
 }

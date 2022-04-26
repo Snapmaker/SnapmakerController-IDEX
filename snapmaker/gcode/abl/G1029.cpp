@@ -26,6 +26,8 @@
 #include "../../../Marlin/src/gcode/gcode.h"
 #include "../../J1/calibration.h"
 #include "../../module/adjusting.h"
+#include "../../module/motion_control.h"
+#include "../../module/fdm.h"
 
 
 enum {
@@ -75,5 +77,9 @@ void GcodeSuite::G1029() {
     adjusting.adjust_xy();
   } else if (parser.seen('E')) {
     adjusting.exit();
+  } else if (parser.seen('P')) {
+    fdm_head.set_temperature(0, 220);
+    fdm_head.set_temperature(1, 220);
+    motion_control.move_x_to_relative_home(50);
   }
 }
