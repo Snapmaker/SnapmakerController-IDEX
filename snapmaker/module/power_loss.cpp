@@ -41,8 +41,6 @@ void PowerLoss::stash_print_env() {
 }
 
 void PowerLoss::extrude_before_resume() {
-  home_offset = stash_data.home_offset;
-  update_workspace_offset(Z_AXIS);
   HOTEND_LOOP() {
     print_control.temperature_lock(e, stash_data.extruder_temperature_lock[e]);
   }
@@ -253,6 +251,8 @@ ErrCode PowerLoss::power_loss_resume() {
     return PRINT_RESULT_PL_RESUME_ERR_E;
   }
   system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_PL);
+  home_offset = stash_data.home_offset;
+  update_workspace_offset(Z_AXIS);
   resume_print_env();
   clear();
   system_service.set_status(SYSTEM_STATUE_PRINTING);
