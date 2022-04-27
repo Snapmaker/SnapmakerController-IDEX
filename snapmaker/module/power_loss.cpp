@@ -75,16 +75,17 @@ void PowerLoss::extrude_before_resume() {
       fdm_head.set_fan_speed(e, i, stash_data.fan[e][i]);
     }
   }
+  HOTEND_LOOP() {
+    thermalManager.wait_for_hotend(e);
+  }
+  thermalManager.wait_for_bed();
+
   if (homing_needed()) {
     motion_control.home();
   } else {
     motion_control.home_x();
   }
-  HOTEND_LOOP() {
-    thermalManager.wait_for_hotend(e);
-  }
-  thermalManager.wait_for_bed();
-    
+
   int16_t move_distance = EXTRUDE_X_MOVE_DISTANCE;
   if (active_extruder) {
     move_distance = -move_distance;
