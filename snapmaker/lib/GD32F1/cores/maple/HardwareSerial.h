@@ -138,12 +138,15 @@ public:
     virtual int read(void);
     int availableForWrite(void);
     virtual void flush(void);
+    size_t write_byte(uint8_t);
     virtual size_t write(uint8_t);
     inline size_t write(unsigned long n) { return write((uint8_t)n); }
     inline size_t write(long n) { return write((uint8_t)n); }
     inline size_t write(unsigned int n) { return write((uint8_t)n); }
     inline size_t write(int n) { return write((uint8_t)n); }
     using Print::write;
+    void enable_sacp(bool enable) {enable_sacp_ = enable; }
+    bool enable_sacp() {return enable_sacp_; }
 
     /* Pin accessors */
     int txPin(void) { return this->tx_pin; }
@@ -158,6 +161,7 @@ private:
     struct usart_dev *usart_device;
     uint8 tx_pin;
     uint8 rx_pin;
+    bool enable_sacp_ = false;
   protected:
 #if 0  
     volatile uint8_t * const _ubrrh;

@@ -1123,6 +1123,7 @@ private:
     static void M710();
   #endif
   static void M1999();
+  static void M2000();
   static void M2020();
   static void T(const int8_t tool_index);
 

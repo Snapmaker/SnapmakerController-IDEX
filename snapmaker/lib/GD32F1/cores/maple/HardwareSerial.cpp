@@ -130,7 +130,12 @@ int HardwareSerial::availableForWrite(void)
 }
 
 size_t HardwareSerial::write(unsigned char ch) {
-
+    if (!enable_sacp_) {
+        usart_putc(this->usart_device, ch);
+    }
+	return 1;
+}
+size_t HardwareSerial::write_byte(unsigned char ch) {
     usart_putc(this->usart_device, ch);
 	return 1;
 }

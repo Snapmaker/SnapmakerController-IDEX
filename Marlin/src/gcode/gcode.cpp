@@ -1014,6 +1014,7 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
       #endif
 
       case 1999: M1999(); break;                                  // M1999: Restart the machine
+      case 2000: M2000(); break;
       case 2020: M2020(); break;
 
       #if ENABLED(MAX7219_GCODE)

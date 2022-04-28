@@ -8,6 +8,7 @@
 #include "MapleFreeRTOS1030.h"
 
 typedef std::function<size_t(unsigned char ch)> write_byte_f;
+typedef std::function<int(void)> read_byte_f;
 
 // System control command
 #define COMMAND_SET_SYS 0x01
@@ -28,9 +29,8 @@ typedef std::function<size_t(unsigned char ch)> write_byte_f;
 
 // Event Source
 typedef enum {
-  EVENT_SOURCE_NONE,  // Self-triggered events, such as power failure, material failure
-  EVENT_SOURCE_HMI,
   EVENT_SOURCE_MARLIN,
+  EVENT_SOURCE_HMI,
   EVENT_SOURCE_ALL,
 } event_source_e;
 
@@ -65,6 +65,10 @@ typedef struct {
   uint8_t statue; // 0: success, Others: exception codes
 } event_result_t;
 #pragma pack(0)
+
+extern HardwareSerial *evevnt_serial[EVENT_SOURCE_ALL];
+extern write_byte_f event_write_byte[EVENT_SOURCE_ALL];
+extern read_byte_f event_read_byte[EVENT_SOURCE_ALL];
 
 // Find the corresponding event callback by id
 event_cb_info_t * get_evevt_info_by_id(uint8_t id, event_cb_info_t *array, uint8_t count);

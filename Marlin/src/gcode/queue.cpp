@@ -290,7 +290,12 @@ static bool serial_data_available(serial_index_t index) {
   }
 #endif
 
-inline int read_serial(const serial_index_t index) { return SERIAL_IMPL.read(); }
+inline int read_serial(const serial_index_t index) {
+  if (SERIAL_IMPL.enable_sacp()) {
+    return -1;
+  }
+  return SERIAL_IMPL.read(); 
+}
 
 void GCodeQueue::gcode_line_error(PGM_P const err, const serial_index_t serial_ind) {
   PORT_REDIRECT(SERIAL_PORTMASK(serial_ind)); // Reply to the serial port that sent the command

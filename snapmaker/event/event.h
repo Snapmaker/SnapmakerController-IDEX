@@ -1,6 +1,5 @@
 #ifndef EVEVT_H
 #define EVEVT_H
-#include <functional>
 #include "event_base.h"
 #include "../J1/common_type.h"
 #include "../protocol/protocol_sacp.h"
@@ -20,12 +19,11 @@ typedef struct {
   evevnt_cb_f cb;  // event callback
 } event_cache_node_t;
 
-
-// Parameters passed by the event source
 typedef struct {
-  SACP_struct_t *info;  // Full sacp protocol information
-  event_source_e onwer;  // Event source
-}evevt_struct_t;
+  bool enable;
+  SACP_param_t sacp_params;
+  event_source_e recv_source;  // Event source
+} recv_data_info_t;
 
 class EventHandler {
   public:
@@ -35,15 +33,19 @@ class EventHandler {
       }
     }
 
-    ErrCode parse(evevt_struct_t &data);
     void loop_task();
+    void recv_task();
+    void recv_enable(event_source_e source, bool enable);
+    bool recv_enable(event_source_e source);
 
   private:
-    void parse_event_info(evevt_struct_t &data, event_cache_node_t *event);
+    ErrCode parse(recv_data_info_t *recv_info);
+    void parse_event_info(recv_data_info_t *recv_info, event_cache_node_t *event);
     event_cache_node_t * get_event_cache();
 
   private:
     event_cache_node_t event_cache[EVENT_CACHE_COUNT];
+    recv_data_info_t recv_data_info[EVENT_SOURCE_ALL] = {0};
 };
 void event_init();
 

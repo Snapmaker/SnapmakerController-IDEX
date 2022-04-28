@@ -1,15 +1,17 @@
 #include "event_base.h"
 #include "../protocol/protocol_sacp.h"
 
-static write_byte_f event_write_cb[EVENT_SOURCE_ALL] = {NULL};
+HardwareSerial *evevnt_serial[EVENT_SOURCE_ALL] = {&MSerial1, &MSerial2};
 
-ErrCode write_fun_register(event_source_e source, write_byte_f cb) {
-  if (source < EVENT_SOURCE_ALL) {
-    event_write_cb[source] = cb;
-    return E_SUCCESS;
-  }
-  return E_PARAM;
-}
+write_byte_f event_write_byte[EVENT_SOURCE_ALL] = {
+  [](unsigned char ch)->size_t{return evevnt_serial[EVENT_SOURCE_MARLIN]->write_byte(ch);},
+  [](unsigned char ch)->size_t{return evevnt_serial[EVENT_SOURCE_HMI]->write_byte(ch);},
+};
+
+read_byte_f event_read_byte[EVENT_SOURCE_ALL] = {
+  []()->size_t{return evevnt_serial[EVENT_SOURCE_MARLIN]->read();},
+  []()->size_t{return evevnt_serial[EVENT_SOURCE_HMI]->read();},
+};
 
 event_cb_info_t * get_evevt_info_by_id(uint8_t id, event_cb_info_t *array, uint8_t count) {
   for (uint8_t i = 0; i < count; i++) {
@@ -36,10 +38,10 @@ static bool send_to(write_byte_f write, uint8_t *data, uint16_t len) {
 static bool send_data(event_source_e source, uint8_t *data, uint16_t len) {
   if (source == EVENT_SOURCE_ALL) {
     for (uint8_t s = 0; s < EVENT_SOURCE_ALL; s++) {
-      send_to(event_write_cb[s], data, len);
+      send_to(event_write_byte[s], data, len);
     }
   } else if (source < EVENT_SOURCE_ALL){
-    send_to(event_write_cb[source], data, len);
+    send_to(event_write_byte[source], data, len);
   }
   return false;
 }
