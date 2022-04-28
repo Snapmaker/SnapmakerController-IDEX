@@ -154,6 +154,24 @@ ErrCode MotionControl::home() {
   return E_SUCCESS;
 }
 
+void MotionControl::move(uint8_t axis, float distance, uint16_t feedrate) {
+  switch (axis) {
+    case X_AXIS:
+      move_x(distance, feedrate);
+      break;
+    case Y_AXIS:
+      move_y(distance, feedrate);
+      break;
+    case Z_AXIS:
+      move_z(distance, feedrate);
+      break;
+    case E_AXIS:
+      move_e(distance, feedrate);
+      break;
+  }
+}
+
+
 ErrCode MotionControl::move_e(float distance, uint16_t feedrate) {
   float save_feedrate = feedrate_mm_s;
   feedrate_mm_s = MMM_TO_MMS(feedrate);

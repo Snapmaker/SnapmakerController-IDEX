@@ -64,6 +64,7 @@ class Adjusting {
   private:
     ErrCode probe_z_offset(adjust_position_e pos);
     void reset_xy_adjust_env();
+    float xy_probe(uint8_t axis, int8_t dir, uint16_t freerate);
     void backup_offset();
   public:
     adjust_position_e cur_pos;
