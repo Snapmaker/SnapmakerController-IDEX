@@ -3,7 +3,7 @@
 
 
 static ErrCode req_start_update(event_param_t& event) {
-  update_packet_info_t * head = (update_packet_info_t *)(event.data);
+  update_packet_info_t * head = (update_packet_info_t *)(event.data+2);
 
   if (event.length < sizeof(update_packet_info_t)) {
     SERIAL_ECHOLNPAIR("update pack head len failed");
