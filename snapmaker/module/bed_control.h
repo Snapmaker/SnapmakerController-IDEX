@@ -17,9 +17,12 @@ typedef struct {
 #pragma pack()
 class BedControl {
   public:
+    bool self_check();
     ErrCode set_temperature(uint16_t temperature);
     ErrCode get_info(bed_control_info_t &info);
     ErrCode get_module_info(module_info_t &info);
+  public:
+    bool is_error = false;
 };
 extern BedControl bed_control;
 #endif

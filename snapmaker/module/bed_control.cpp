@@ -3,6 +3,33 @@
 
 BedControl bed_control;
 
+bool BedControl::self_check() {
+  uint32_t delay_time = 0;
+  is_error = false;
+  SET_INPUT(HEATER_BED_BACK_PIN);
+  OUT_WRITE(HEATER_BED_PIN, HIGH);
+  delay_time = millis() + 20;
+  while(delay_time > millis());
+  if (READ(HEATER_BED_BACK_PIN) == HIGH) {
+    is_error = true;
+    SERIAL_ECHOLN("BED open self check failed");
+  }
+
+  OUT_WRITE(HEATER_BED_PIN, LOW);
+  delay_time = millis() + 20;
+  while(delay_time > millis());
+  if (READ(HEATER_BED_BACK_PIN) == LOW) {
+    SERIAL_ECHOLN("BED close self check failed");
+    is_error = true;
+  }
+  if (is_error) {
+    OUT_WRITE(HEATER_BED_PWR_PIN, LOW);
+  } else {
+    SERIAL_ECHOLN("BED self check success");
+  }
+  return is_error;
+}
+
 ErrCode BedControl::set_temperature(uint16_t temperature) {
   thermalManager.setTargetBed(temperature);
   return E_SUCCESS;

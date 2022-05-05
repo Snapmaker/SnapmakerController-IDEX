@@ -67,6 +67,7 @@
 #include "../snapmaker/J1/J1.h"
 #include "../snapmaker/module/adjusting.h"
 #include "../snapmaker/module/power_loss.h"
+#include "../snapmaker/module/bed_control.h"
 #if HAS_TOUCH_BUTTONS
   #include "lcd/touch/touch_buttons.h"
 #endif
@@ -1322,7 +1323,7 @@ void setup() {
   TERN_(HAS_M206_COMMAND, current_position += home_offset); // Init current position based on home_offset
 
   sync_plan_position();               // Vital to init stepper/planner equivalent for current_position
-
+  bed_control.self_check();
   // tmc_driver.init();
   // tmc_driver.configure_axis();
   SETUP_RUN(thermalManager.init());   // Initialize temperature loop

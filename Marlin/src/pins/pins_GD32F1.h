@@ -98,6 +98,7 @@
 #define HEATER_0_PIN       PE14   // EXTRUDER 1
 #define HEATER_1_PIN       PE13   // EXTRUDER 2
 #define HEATER_BED_PIN     PA10   // BED
+#define HEATER_BED_BACK_PIN     PA12   // BED
 
 //
 // Temperature Sensors
