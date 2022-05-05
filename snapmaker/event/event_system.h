@@ -25,7 +25,7 @@ enum : uint8_t {
   SYS_ID_MOVE_TO_RELATIVE_HOME  = 0x3C,
 };
 
-#define SYS_ID_CB_COUNT 18
+#define SYS_ID_CB_COUNT 19
 
 extern event_cb_info_t system_cb_info[SYS_ID_CB_COUNT];
 

@@ -215,6 +215,7 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_REQ_MODULE_INFO       , EVENT_CB_DIRECT_RUN, req_module_info},
   {SYS_ID_REQ_MACHINE_INFO      , EVENT_CB_DIRECT_RUN, req_machine_info},
   {SYS_ID_REQ_MACHINE_SIZE      , EVENT_CB_DIRECT_RUN, req_machine_size},
+  {SYS_ID_REQ_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, req_coordinate_system},
   {SYS_ID_SET_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, set_coordinate_system},
   {SYS_ID_SET_ORIGIN            , EVENT_CB_DIRECT_RUN, set_origin},
   {SYS_ID_MOVE_RELATIVE         , EVENT_CB_TASK_RUN  , move_relative},
