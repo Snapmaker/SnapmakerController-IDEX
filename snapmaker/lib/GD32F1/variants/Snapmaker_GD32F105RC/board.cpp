@@ -102,10 +102,10 @@ extern const stm32_pin_info PIN_MAP[BOARD_NR_GPIO_PINS] = {
 	{&gpiob,   NULL, NULL,  3, 0, ADCx}, /* PB3  */ //JTDO, SPI3_SCK / I2S3_CK/
   {&gpiob,   NULL, NULL,  4, 0, ADCx}, /* PB4  */ //NJTRST, SPI3_MISO
   {&gpiob,   NULL, NULL,  5, 0, ADCx}, /* PB5 */ //I2C1_SMBA/ SPI3_MOSI
-  {&gpiob,   NULL, NULL,  6, 0, ADCx}, /* PB6 */ //I2C1_SCL(9)
-  {&gpiob,   NULL, NULL,  7, 0, ADCx}, /* PB7 */ //I2C1_SDA(9) / FSMC_NADV
-  {&gpiob,   NULL, NULL,  8, 0, ADCx}, /* PB8 */ //SDIO_D4
-  {&gpiob, &timer4, NULL,  9, 4, ADCx}, /* PB9 */ //SDIO_D5
+  {&gpiob,   &timer4, NULL,  6, 1, ADCx}, /* PB6 */
+  {&gpiob,   &timer4, NULL,  7, 2, ADCx}, /* PB7 */
+  {&gpiob,   &timer4, NULL,  8, 3, ADCx}, /* PB8 */
+  {&gpiob,   &timer4, NULL,  9, 4, ADCx}, /* PB9 */
   {&gpiob,   NULL, NULL, 10, 0, ADCx}, /* PB10 */ //I2C2_SCL/USART3_TX
   {&gpiob,   NULL, NULL, 11, 0, ADCx}, /* PB11 */ //I2C2_SDA/USART3_RX
   {&gpiob,   NULL, NULL, 12, 0, ADCx}, /* PB12 */ //SPI2_NSS/I2S2_WS/I2C2_SMBA/USART3_CK
