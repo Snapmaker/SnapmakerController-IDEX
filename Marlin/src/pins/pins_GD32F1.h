@@ -139,7 +139,7 @@
 #define FAN1_PIN PC7
 #define FAN2_PIN PA8
 #define FAN3_PIN PC8
-#define FAN4_PIN PC6
+#define ENCLOSURE_FAN_PIN PC6
 
 #define CASE_LIGHT_PIN PB8
 

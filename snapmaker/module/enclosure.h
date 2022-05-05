@@ -3,6 +3,10 @@
 #include "../J1/common_type.h"
 #include "module_base.h"
 
+typedef enum {
+  ENCLOSURE_FAN_OFF,
+  ENCLOSURE_FAN_ON,
+} enclosure_fan_status_e;
 
 class Enclosure {
   public:
@@ -13,7 +17,7 @@ class Enclosure {
     uint8_t get_fan_power();
     void set_fan_power(uint8_t power);
   private:
-
+    enclosure_fan_status_e fan_status = ENCLOSURE_FAN_OFF;
 };
 
 extern Enclosure enclosure;
