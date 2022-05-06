@@ -1259,19 +1259,6 @@ void Temperature::manage_heater() {
           }
         }
       #endif
-      #define COOLER0_FAN_INDEX 2
-      uint8_t coller_fan_index = COOLER0_FAN_INDEX + e;
-      if (coller_fan_index < FAN_COUNT) {
-        if (degHotend(e) > TEMP_AUTO_OPEN_COOL_FAN) {
-          if (!fan_speed[coller_fan_index]) {
-            set_fan_speed(2+e, 255);
-          }
-        } else {
-          if (fan_speed[coller_fan_index]) {
-            set_fan_speed(2+e, 0);
-          }
-        }
-      }
     } // HOTEND_LOOP
 
   #endif // HAS_HOTEND
