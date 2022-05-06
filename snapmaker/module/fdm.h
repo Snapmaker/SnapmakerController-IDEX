@@ -40,6 +40,20 @@ typedef enum {
   FILAMENT_CHANGE_RETRACK,
 } filamenter_change_status_e;
 
+typedef enum {
+  BRASS_NTC_E,
+  BRASS_PT100_E,
+  HARDENING_STEEL_PT100,
+  UNKNOWN_NOZZLE_TYPE = 0xFF,
+} nozzle_texture_type_e;
+
+typedef struct {
+  nozzle_texture_type_e  texture;
+  float caliber ;
+  uint16_t adc_min;
+  uint16_t adc_max;
+} nozzle_type_t;
+
 class FDM_Head {
   public:
     ErrCode set_temperature(uint8_t e, uint16_t temperature);
@@ -54,6 +68,7 @@ class FDM_Head {
     ErrCode get_extruder_info(uint8_t e, extruder_info_t *info);
     ErrCode get_module_info(uint8_t e, module_info_t &info);
     uint8_t get_key(uint8_t e);
+    uint16_t get_nozzle_type(uint8_t e, nozzle_texture_type_e *texture, float *caliber);
 
     bool is_duplication_enabled(uint8_t e) {return duplication_enabled_move[e] || !system_service.is_working();}
     // Double - head printing will not work after disable

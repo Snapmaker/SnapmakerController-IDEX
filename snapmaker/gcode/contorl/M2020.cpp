@@ -35,6 +35,8 @@
 void GcodeSuite::M2020() {
   uint32_t reg_value;
   uint32_t tmp_value;
+  uint8_t tmp_u8_value;
+  float tmp_float_value;
   uint8_t reg_addr = 0xff;
   uint8_t motor_index;
   uint8_t div;
@@ -76,6 +78,12 @@ void GcodeSuite::M2020() {
           SERIAL_ECHOLN("X1_CAL: LOW");
       break;
 
+      case 3:
+        reg_value = fdm_head.get_nozzle_type(0, (nozzle_texture_type_e*)&tmp_u8_value, &tmp_float_value);
+        SERIAL_ECHOLNPAIR("nozzle ", 0, " type:", tmp_u8_value, " caliber:", tmp_float_value, " adc:", reg_value);
+        reg_value = fdm_head.get_nozzle_type(1, (nozzle_texture_type_e*)&tmp_u8_value, &tmp_float_value);
+        SERIAL_ECHOLNPAIR("nozzle ", 1, " type:", tmp_u8_value, " caliber:", tmp_float_value, " adc:", reg_value);
+        break;
       case 4:
         tmc_driver.init();
       break;

@@ -19,6 +19,16 @@ enum {
   HEAD_STATUS_UPGRADE_FAILED,
 };
 
+#define MV_TO_ADC_VAL(mv) (mv * 4096 / 3300)
+nozzle_type_t nozzle_type[] = {
+  {BRASS_PT100_E, 0.4, MV_TO_ADC_VAL(0  ), MV_TO_ADC_VAL(400)},
+  {BRASS_PT100_E, 0.2, MV_TO_ADC_VAL(400), MV_TO_ADC_VAL(1200)},
+  {BRASS_PT100_E, 0.6, MV_TO_ADC_VAL(1200), MV_TO_ADC_VAL(1600)},
+  {BRASS_PT100_E, 0.8, MV_TO_ADC_VAL(1600), MV_TO_ADC_VAL(2200)},
+  {HARDENING_STEEL_PT100, 0.6, MV_TO_ADC_VAL(2200), MV_TO_ADC_VAL(3000)}
+};
+
+
 ErrCode FDM_Head::set_temperature(uint8_t e, uint16_t temperature) {
   thermalManager.setTargetHotend(temperature, e);
   return E_SUCCESS;
@@ -89,12 +99,15 @@ ErrCode FDM_Head::get_fdm_info(uint8_t e, FDM_info *fdm) {
 }
 
 ErrCode FDM_Head::get_extruder_info(uint8_t e, extruder_info_t *info) {
+  float diameter;
+  nozzle_texture_type_e type;
+  get_nozzle_type(e, &type, &diameter);
   info->index = 0;
   info->is_available = 1;
-  info->type = 0;
+  info->type = type;
   info->filament_status = filament_sensor.is_trigger(e);
   info->filament_enable_status = filament_sensor.is_enable(e);
-  info->diameter = FLOAT_TO_INT(0.3);
+  info->diameter = FLOAT_TO_INT(diameter);
   info->cur_temp = FLOAT_TO_INT(thermalManager.degHotend(e));
   info->target_temp = FLOAT_TO_INT(thermalManager.degTargetHotend(e));
   return E_SUCCESS;
@@ -117,4 +130,30 @@ ErrCode FDM_Head::get_module_info(uint8_t e, module_info_t &info) {
 
 bool FDM_Head::is_duplicating() {
   return idex_is_duplicating();
+}
+
+uint16_t FDM_Head::get_nozzle_type(uint8_t e, nozzle_texture_type_e *texture, float *caliber) {
+  uint16_t val = 0;
+  if (e == 0) {
+    pinMode(HEAD0_ID_PIN, INPUT_ANALOG);
+    val = analogRead(HEAD0_ID_PIN);
+  } else {
+    pinMode(HEAD1_ID_PIN, INPUT_ANALOG);
+    val = analogRead(HEAD1_ID_PIN);
+  }
+  uint8_t type_count = sizeof(nozzle_type) / sizeof(nozzle_type[0]);
+  uint8_t i = 0;
+  for (i = 0; i < type_count; i++) {
+    if (nozzle_type[i].adc_min <= val && nozzle_type[i].adc_max >= val) {
+      break;
+    }
+  }
+  if (i == type_count) {
+    *texture = UNKNOWN_NOZZLE_TYPE;
+    *caliber = nozzle_type[0].caliber;
+  } else {
+    *texture = nozzle_type[i].texture;
+    *caliber = nozzle_type[i].caliber;
+  }
+  return val;
 }

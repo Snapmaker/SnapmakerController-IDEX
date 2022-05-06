@@ -134,10 +134,6 @@
 #define TMC_SEL2_PIN     PD11
 #define TMC_STALL_GUARD_PIN PE3
 
-// Nozzle detector adc
-#define NOZZLE_ADC_0                        PA5
-#define NOZZLE_ADC_1                        PA6
-
 #define FAN_PIN  PC9
 #define FAN1_PIN PC7
 
@@ -154,6 +150,10 @@
 #define E1_HARDWARE_SERIAL MSerial3
 
 #define TMC_BAUD_RATE 56700
+
+#define HEAD0_ID_PIN PA5
+#define HEAD1_ID_PIN PA6
+
 //
 // LCD Pins
 //

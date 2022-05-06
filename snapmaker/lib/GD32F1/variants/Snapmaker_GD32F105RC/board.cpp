@@ -84,8 +84,8 @@ extern const stm32_pin_info PIN_MAP[BOARD_NR_GPIO_PINS] = {
   {&gpioa, &timer2, &adc1,  2, 3,    2}, /* PA2 */
   {&gpioa, &timer2, &adc1,  3, 4,    3}, /* PA3 */
   {&gpioa,   NULL, &adc1,  4, 0,    4}, /* PA4 */	
-  {&gpioa,   NULL, &adc1,  5, 0,    5}, /* PA5 */
-  {&gpioa, &timer3, &adc1,  6, 1,    6}, /* PA6 */
+  {&gpioa,   NULL, &adc2,  5, 0,    5}, /* PA5 */
+  {&gpioa, &timer3, &adc2,  6, 1,    6}, /* PA6 */
   {&gpioa, &timer3, &adc1,  7, 2,    7}, /* PA7 */
   {&gpioa, &timer1, NULL,  8, 1, ADCx}, /* PA8 */
   {&gpioa, &timer1, NULL,  9, 2, ADCx}, /* PA9 */
