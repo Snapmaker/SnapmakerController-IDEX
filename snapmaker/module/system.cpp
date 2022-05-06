@@ -1,6 +1,8 @@
 #include "system.h"
 #include "../../Marlin/src/inc/Version.h"
 #include "../../Marlin/src/module/motion.h"
+#include "../../Marlin/src/module/settings.h"
+#include "power_loss.h"
 SystemService system_service;
 
 void SystemService::get_coordinate_system_info(coordinate_system_t * info) {
@@ -84,4 +86,10 @@ void SystemService::get_machine_size(machine_size_t *size) {
   size->home_offset[2].position = home_offset[Y_AXIS];
   size->home_offset[3].axis = AXIS_Z1;
   size->home_offset[3].position = home_offset[Z_AXIS];
+}
+
+void SystemService::factory_reset() {
+  power_loss.clear();
+  settings.reset();
+  settings.save();
 }

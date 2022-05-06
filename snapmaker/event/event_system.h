@@ -8,6 +8,7 @@ enum : uint8_t {
   SYS_ID_SET_LOG_GRADE          = 0x10,
   SYS_ID_REQ_PROTOCOL_VER       = 0x11,
   SYS_ID_SET_DEBUG_MODE         = 0x12,
+  SYS_ID_FACTORY_RESET          = 0x13,
   SYS_ID_HEARTBEAT              = 0xA0,
   SYS_ID_REPORT_LOG             = 0xA1,
   SYS_ID_REQ_MODULE_INFO        = 0x20,
@@ -25,7 +26,7 @@ enum : uint8_t {
   SYS_ID_MOVE_TO_RELATIVE_HOME  = 0x3C,
 };
 
-#define SYS_ID_CB_COUNT 19
+#define SYS_ID_CB_COUNT 20
 
 extern event_cb_info_t system_cb_info[SYS_ID_CB_COUNT];
 

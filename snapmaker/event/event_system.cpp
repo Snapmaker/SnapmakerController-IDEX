@@ -40,6 +40,14 @@ static ErrCode set_debug_mode(event_param_t& event) {
   return E_SUCCESS;
 }
 
+static ErrCode factory_reset(event_param_t& event) {
+  SERIAL_ECHOLN("SC req factory reset");
+  system_service.factory_reset();
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
+}
+
 static ErrCode heart_event(event_param_t& event) {
   event.data[0] = E_SUCCESS;
   event.data[1] = system_service.get_status();
@@ -210,6 +218,7 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_SET_LOG_GRADE         , EVENT_CB_DIRECT_RUN, set_log_grade},
   {SYS_ID_REQ_PROTOCOL_VER      , EVENT_CB_DIRECT_RUN, req_protocol_ver},
   {SYS_ID_SET_DEBUG_MODE        , EVENT_CB_DIRECT_RUN, set_debug_mode},
+  {SYS_ID_FACTORY_RESET         , EVENT_CB_TASK_RUN  , factory_reset},
   {SYS_ID_HEARTBEAT             , EVENT_CB_DIRECT_RUN, heart_event},
   {SYS_ID_REPORT_LOG            , EVENT_CB_DIRECT_RUN, retport_log},
   {SYS_ID_REQ_MODULE_INFO       , EVENT_CB_DIRECT_RUN, req_module_info},

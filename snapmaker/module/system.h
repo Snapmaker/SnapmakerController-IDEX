@@ -85,6 +85,7 @@ class SystemService {
     bool is_adjusting() { return false;}
     bool is_working() {return (status_ >= SYSTEM_STATUE_STARTING) && (status_ <= SYSTEM_STATUE_RESUMING);}
     bool is_idle() {return status_ == SYSTEM_STATUE_IDLE;}
+    void factory_reset(void);
   private:
     system_status_e status_ = SYSTEM_STATUE_IDLE;
     system_status_source_e source_ = SYSTEM_STATUE_SCOURCE_NONE;
