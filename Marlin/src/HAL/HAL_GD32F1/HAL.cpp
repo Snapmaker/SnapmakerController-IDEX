@@ -317,7 +317,7 @@ void HAL_adc_start_conversion(const uint8_t adc_pin) {
       case FILAMENT1_ADC_PIN : pin_index = FILAMENT_1; break;
   }
   HAL_adc_result = HAL_adc_results[(int)pin_index] & 0xFFF;
-  if (adc_pin == TEMP_BED_PIN) {
+  if (adc_pin == TEMP_BED_PIN || adc_pin == TEMP_CHAMBER_PIN) {
     HAL_adc_result = HAL_adc_result >> 2;  // shift to get 10 bits only.
   }
 

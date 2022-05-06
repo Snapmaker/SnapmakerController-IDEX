@@ -99,6 +99,7 @@
 #define HEATER_1_PIN       PE13   // EXTRUDER 2
 #define HEATER_BED_PIN     PA10   // BED
 #define HEATER_BED_BACK_PIN     PA12   // BED
+#define HEATER_CHAMBER_PIN     PD3   // Empty pin, but needs to be defined
 
 //
 // Temperature Sensors
@@ -106,6 +107,7 @@
 #define TEMP_BED_PIN       PC0   // ANALOG NUMBERING
 #define TEMP_0_PIN         PA3   // ANALOG NUMBERING
 #define TEMP_1_PIN         PA1   // ANALOG NUMBERING
+#define TEMP_CHAMBER_PIN   PA2   // ANALOG NUMBERING
 
 
 //
@@ -138,9 +140,6 @@
 
 #define FAN_PIN  PC9
 #define FAN1_PIN PC7
-#define FAN2_PIN PA8
-#define FAN3_PIN PC8
-#define ENCLOSURE_FAN_PIN PC6
 
 #define CASE_LIGHT_PIN PB8
 

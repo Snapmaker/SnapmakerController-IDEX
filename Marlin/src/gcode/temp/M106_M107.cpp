@@ -27,7 +27,6 @@
 #include "../gcode.h"
 #include "../../module/motion.h"
 #include "../../module/temperature.h"
-#include "../../../../snapmaker/module/enclosure.h"
 
 #if ENABLED(LASER_SYNCHRONOUS_M106_M107)
   #include "../../module/planner.h"
@@ -61,7 +60,7 @@
  */
 void GcodeSuite::M106() {
   const uint8_t pfan = parser.byteval('P', _ALT_P);
-  if (pfan > _CNT_P) return;
+  if (pfan >= _CNT_P) return;
   #if REDUNDANT_PART_COOLING_FAN
     if (pfan == REDUNDANT_PART_COOLING_FAN) return;
   #endif
@@ -87,17 +86,13 @@ void GcodeSuite::M106() {
     speed = parser.value_ushort();
 
   TERN_(FOAMCUTTER_XYUV, speed *= 2.55); // Get command in % of max heat
-  if (pfan < _CNT_P) {
-    // Set speed, with constraint
-    thermalManager.set_fan_speed(pfan, speed);
+  // Set speed, with constraint
+  thermalManager.set_fan_speed(pfan, speed);
 
-    TERN_(LASER_SYNCHRONOUS_M106_M107, planner.buffer_sync_block(BLOCK_FLAG_SYNC_FANS));
+  TERN_(LASER_SYNCHRONOUS_M106_M107, planner.buffer_sync_block(BLOCK_FLAG_SYNC_FANS));
 
-    if (TERN0(DUAL_X_CARRIAGE, idex_is_duplicating()))  // pfan == 0 when duplicating
-      thermalManager.set_fan_speed(1 - pfan, speed);
-  } else {
-    enclosure.set_fan_power(speed);
-  }
+  if (TERN0(DUAL_X_CARRIAGE, idex_is_duplicating()))  // pfan == 0 when duplicating
+    thermalManager.set_fan_speed(1 - pfan, speed);
 }
 
 /**

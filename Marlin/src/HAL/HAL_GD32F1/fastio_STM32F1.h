@@ -49,7 +49,7 @@
 #define GET_OUTPUT(IO)        (_GET_MODE(IO) == GPIO_OUTPUT_PP)
 #define GET_TIMER(IO)         (PIN_MAP[IO].timer_device != NULL)
 
-#define digitalPinHasPWM(p)     (((p) >= PC6 && (p) <= PC9) || ((p) == PA8) || ((p) == PB8))
+#define digitalPinHasPWM(p)     (((p) > PC6 && (p) <= PC9) || ((p) == PA8) || ((p) == PB8))
 #define PWM_PIN(P)              digitalPinHasPWM(P)
 #define USEABLE_HARDWARE_PWM(P) PWM_PIN(P)
 

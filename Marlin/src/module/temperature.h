@@ -462,7 +462,7 @@ class Temperature {
         static chamber_watch_t watch_chamber;
       #endif
       TERN(PIDTEMPCHAMBER,,static millis_t next_chamber_check_ms);
-      static int32_t mintemp_raw_CHAMBER, maxtemp_raw_CHAMBER;
+      static int16_t mintemp_raw_CHAMBER, maxtemp_raw_CHAMBER;
     #endif
 
     #if HAS_COOLER

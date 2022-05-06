@@ -30,11 +30,4 @@ uint8_t Enclosure::get_fan_power() {
 }
 
 void Enclosure::set_fan_power(uint8_t power) {
-  if (power) {
-    OUT_WRITE(ENCLOSURE_FAN_PIN, ENCLOSURE_FAN_ON);
-    fan_status = ENCLOSURE_FAN_ON;
-  } else {
-    OUT_WRITE(ENCLOSURE_FAN_PIN, ENCLOSURE_FAN_OFF);
-    fan_status = ENCLOSURE_FAN_OFF;
-  }
 }
