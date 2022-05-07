@@ -166,18 +166,10 @@ ErrCode Adjusting::probe_z_offset(adjust_position_e pos) {
     set_home_offset(Z_AXIS, last_valid_zoffset);
     return E_ADJUST_PRIOBE;
   }
+  position = xyz_probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
+  set_home_offset(Z_AXIS, -(position + build_plate_thickness));
+  SERIAL_ECHOLNPAIR("Set z_offset to :", home_offset[Z_AXIS]);
   motion_control.move_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
-
-  temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
-  position = current_position[Z_AXIS];
-  if (temp_z == -z_probe_distance) {
-    SERIAL_ECHOLN("failed to probe z !!!");
-    set_home_offset(Z_AXIS, last_valid_zoffset);
-    return E_ADJUST_PRIOBE;
-  } else {
-    set_home_offset(Z_AXIS, -(position + build_plate_thickness));
-    SERIAL_ECHOLNPAIR("Set z_offset to :", home_offset[Z_AXIS]);
-  }
   return E_SUCCESS;
 }
 
@@ -278,9 +270,9 @@ void Adjusting::reset_xy_adjust_env() {
   }
 }
 
-float Adjusting::xy_probe(uint8_t axis, int8_t dir, uint16_t freerate) {
+float Adjusting::xyz_probe(uint8_t axis, int8_t dir, uint16_t freerate) {
   #define PROBE_TIMES 3
-  float probe_distance =  dir >= 0 ? 2 : -2;
+  float probe_distance =  dir >= 0 ? 1 : -1;
   float pos = 0;
   for (uint8_t i = 0; i < PROBE_TIMES; i++) {
     motion_control.move(axis, -probe_distance / 2, freerate);
@@ -316,7 +308,7 @@ ErrCode Adjusting::adjust_xy() {
         SERIAL_ECHOLNPAIR("e:", e, " axis:", axis, " probe 0 filed");
         break;
       }
-      float pos = xy_probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
+      float pos = xyz_probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
       goto_position(ADJUST_POS_0);
       probe_value = probe(axis, probe_distance, PROBE_XY_FEEDRATE);
       if (probe_value >= abs(probe_distance) - 5) {
@@ -324,7 +316,7 @@ ErrCode Adjusting::adjust_xy() {
         SERIAL_ECHOLNPAIR("e:", e, " axis:", axis, " probe 1 filed");
         break;
       }
-      float pos_1 = xy_probe(axis, probe_distance, PROBE_XY_FEEDRATE);
+      float pos_1 = xyz_probe(axis, probe_distance, PROBE_XY_FEEDRATE);
       xy_center[e][axis] += (pos_1 + pos) / 2;
       goto_position(ADJUST_POS_0);
     }
