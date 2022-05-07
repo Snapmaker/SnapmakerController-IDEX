@@ -12,7 +12,22 @@
 FilamentSensor filament_sensor;
 
 void FilamentSensor::init() {
+  pinMode(FILAMENT0_ADC_PIN, INPUT_ANALOG);
+  pinMode(FILAMENT1_ADC_PIN, INPUT_ANALOG);
   reset();
+}
+
+uint16_t FilamentSensor::get_adc_val(uint8_t e) {
+  uint32_t val = 0;
+  uint8_t times = 5;
+  for (uint8_t i = 0; i < times; i++) {
+    if (e == 0) {
+      val += analogRead(FILAMENT0_ADC_PIN);
+    } else {
+      val += analogRead(FILAMENT1_ADC_PIN);
+    }
+  }
+  return val / times;
 }
 
 void FilamentSensor::reset() {
@@ -53,7 +68,7 @@ void FilamentSensor::e1_step(uint8_t step) {
 
 void FilamentSensor::next_sample(uint8_t e) {
   e_step_count[e] = 0;
-  start_adc[e] = filament[e].get();
+  start_adc[e] = get_adc_val(e);
 }
 
 void FilamentSensor::check() {
@@ -67,7 +82,7 @@ void FilamentSensor::check() {
       continue;
     }
     if ((e_step_count[i] >= check_step_count[i]) || (e_step_count[i] <= -check_step_count[i])) {
-      int32_t diff = (filament[i].get() - start_adc[i]);
+      int32_t diff = (get_adc_val(i) - start_adc[i]);
       diff = diff > 0 ? diff : -diff;
       bool is_err = diff < filament_param.threshold;
       err_times[i] = err_times[i] << 1 | is_err;
@@ -83,7 +98,7 @@ void FilamentSensor::check() {
 
 void FilamentSensor::debug() {
   FILAMENT_LOOP(i) {
-    SERIAL_ECHOLNPAIR("s", i, " val:", filament[i].get());
+    SERIAL_ECHOLNPAIR("s", i, " val:", get_adc_val(i));
     SERIAL_ECHOLNPAIR("s", i, " enable:", is_enable(i));
     SERIAL_ECHOLNPAIR("s", i, " state:", is_trigger(i));
   }
@@ -95,14 +110,14 @@ void FilamentSensor::test_adc(uint8_t e, float step_mm, uint32_t count) {
   if (e >= FILAMENT_SENSOR_COUNT) {
     return;
   }
-  uint16_t last_adc = filament[e].get();
+  uint16_t last_adc = get_adc_val(e);
   SERIAL_ECHOLNPAIR("tast filament sensor ", e);
   for (uint32_t i = 0; i < count; i++) {
     motion_control.extrude_e(step_mm, 15 * 60);
     planner.synchronize();
     time = millis();
     while ((time + 8) > millis());
-    uint16_t adc = filament[e].get();
+    uint16_t adc = get_adc_val(e);
     int32_t diff = adc - last_adc;
     if (diff > 500 || diff < -500) {
       continue;

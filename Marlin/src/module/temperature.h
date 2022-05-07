@@ -97,9 +97,6 @@ enum ADCSensorState : char {
     PrepareTemp_BED, MeasureTemp_BED,
   #endif
 
-  PrepareFilament_0, MeasureFilament_0,
-  PrepareFilament_1, MeasureFilament_1,
-
   #if HAS_TEMP_ADC_CHAMBER
     PrepareTemp_CHAMBER, MeasureTemp_CHAMBER,
   #endif

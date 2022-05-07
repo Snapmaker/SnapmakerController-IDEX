@@ -1565,7 +1565,6 @@ void Stepper::isr() {
  * is to keep pulse timing as regular as possible.
  */
 void Stepper::pulse_phase_isr() {
-  filament_sensor.check();
   switch_detect.check();
   power_loss.check();
   // If we must abort the current block, do so!

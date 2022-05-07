@@ -68,6 +68,7 @@
 #include "../snapmaker/module/adjusting.h"
 #include "../snapmaker/module/power_loss.h"
 #include "../snapmaker/module/bed_control.h"
+#include "../snapmaker/module/filament_sensor.h"
 #if HAS_TOUCH_BUTTONS
   #include "lcd/touch/touch_buttons.h"
 #endif
@@ -840,6 +841,7 @@ void idle(bool no_stepper_sleep/*=false*/) {
   IDLE_DONE:
   TERN_(MARLIN_DEV_MODE, idle_depth--);
   power_loss.process();
+  filament_sensor.check();
   return;
 }
 

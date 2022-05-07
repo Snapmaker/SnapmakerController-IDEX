@@ -90,8 +90,8 @@ void GcodeSuite::M412() {
   SERIAL_ECHOLNPAIR("filament check param - diatance:", filament_sensor.filament_param.distance,
                     ", threshold:", filament_sensor.filament_param.threshold,
                     ", times:", filament_sensor.filament_param.check_times);
-  SERIAL_ECHOLNPAIR("filament sensor value T[0]:", filament_sensor.filament[0].get(),
-                    ", T[1]:", filament_sensor.filament[1].get());
+  SERIAL_ECHOLNPAIR("filament sensor value T[0]:", filament_sensor.get_adc_val(0),
+                    ", T[1]:", filament_sensor.get_adc_val(1));
 }
 
 // #endif // HAS_FILAMENT_SENSOR

@@ -6,7 +6,7 @@
 #define FILAMENT_SENSOR_COUNT 2
 #define FILAMENT_LOOP(i) for (uint8_t i = 0; i < FILAMENT_SENSOR_COUNT; i++)
 #define FILAMENT_CHECK_DISTANCE 3  // mm
-#define FILAMENT_THRESHOLD 5  // ADC diff value
+#define FILAMENT_THRESHOLD 30  // ADC diff value
 #define FILAMENT_CHECK_TIMES 2
 
 typedef struct {
@@ -16,22 +16,6 @@ typedef struct {
   uint16_t threshold;
 }filament_check_param_t;
 
-class FilamentSample {
-  public:
-    // Was temperature isr updated  
-    inline void sample(const uint32_t s) { raw += s; sample_num++;}
-    void ready() {
-      if (sample_num) {
-        value = raw / sample_num;
-      }
-      sample_num = raw = 0;
-    }
-    uint16_t get() {return value;}
-  private:
-    int32_t raw = 0;
-    uint16_t value;
-    uint8_t sample_num = 0;
-};
 
 class FilamentSensor
 {
@@ -40,11 +24,6 @@ class FilamentSensor
     void e0_step(uint8_t step);
     void e1_step(uint8_t step);
     void next_sample(uint8_t e);
-    void ready() {
-      FILAMENT_LOOP(i) {
-        filament[i].ready();
-      }
-    }
     void enable(uint8_t e) {
       filament_param.enabled[e] = true;
       triggered[e] = false;
@@ -80,8 +59,8 @@ class FilamentSensor
     void test_adc(uint8_t e, float step_mm, uint32_t count);
     void reset();
     void used_default_param();
+    uint16_t get_adc_val(uint8_t e);
   public:
-    FilamentSample filament[FILAMENT_SENSOR_COUNT];
     filament_check_param_t filament_param;
   private:
     uint8_t err_mask = 0x1;
