@@ -19,8 +19,8 @@ enum {
   HEAD_STATUS_UPGRADE_FAILED,
 };
 
-#define MV_TO_ADC_VAL(mv) (mv * 4096 / 3300)
-nozzle_type_t nozzle_type[] = {
+
+const nozzle_type_t nozzle_type[] = {
   {BRASS_PT100_E, 0.4, MV_TO_ADC_VAL(0  ), MV_TO_ADC_VAL(400)},
   {BRASS_PT100_E, 0.2, MV_TO_ADC_VAL(400), MV_TO_ADC_VAL(1200)},
   {BRASS_PT100_E, 0.6, MV_TO_ADC_VAL(1200), MV_TO_ADC_VAL(1600)},
@@ -141,7 +141,7 @@ uint16_t FDM_Head::get_nozzle_type(uint8_t e, nozzle_texture_type_e *texture, fl
     pinMode(HEAD1_ID_PIN, INPUT_ANALOG);
     val = analogRead(HEAD1_ID_PIN);
   }
-  uint8_t type_count = sizeof(nozzle_type) / sizeof(nozzle_type[0]);
+  uint8_t type_count = ARRAY_SIZE(nozzle_type);
   uint8_t i = 0;
   for (i = 0; i < type_count; i++) {
     if (nozzle_type[i].adc_min <= val && nozzle_type[i].adc_max >= val) {

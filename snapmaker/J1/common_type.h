@@ -10,6 +10,10 @@ typedef int float_to_int_t;  // float * 1000 to int
 #define MODULE_KEY(type, index) (type << 3 | index)
 #define MODULE_INDEX(key) (key & (0x7))
 
+#define MV_TO_ADC_VAL(mv) (mv * 4096 / 3300)
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+
 typedef enum : uint8_t {
   E_SUCCESS = 0,      /* non error */ 
   E_IN_PROGRESS,      /*Notification receives instructions and starts work*/
