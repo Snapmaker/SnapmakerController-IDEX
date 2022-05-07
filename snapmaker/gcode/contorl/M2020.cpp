@@ -173,8 +173,10 @@ void GcodeSuite::M2020() {
           reg_value = parser.value_ushort();
           tmc_driver.set_reg_value(0, R_TCOOLTHRS, reg_value);
         }
-      break;
-
+        break;
+      case 12:
+        tmp_u8_value = system_service.get_hw_version();
+        SERIAL_ECHOLNPAIR("hw version:", tmp_u8_value);
       default:
 
       break;

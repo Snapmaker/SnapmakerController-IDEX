@@ -5,6 +5,15 @@
 #include "power_loss.h"
 SystemService system_service;
 
+static const uint16_t hw_version_table[] = {
+    MV_TO_ADC_VAL(450 ),
+    MV_TO_ADC_VAL(700 ),
+    MV_TO_ADC_VAL(1400),
+    MV_TO_ADC_VAL(2000),
+    MV_TO_ADC_VAL(2700),
+    MV_TO_ADC_VAL(3200)
+  };
+
 void SystemService::get_coordinate_system_info(coordinate_system_t * info) {
   float x0 = x_position();
   float x1 = x2_position();
@@ -37,10 +46,23 @@ void SystemService::get_coordinate_system_info(coordinate_system_t * info) {
   info->origin_offset_info[3].position = 0;
 }
 
+uint8_t SystemService::get_hw_version() {
+  pinMode(HW_VERSION_PIN, INPUT_ANALOG);
+  uint16_t val = analogRead(HW_VERSION_PIN);
+  uint8_t ver_count = ARRAY_SIZE(hw_version_table);
+  uint8_t i = 1;
+  for (; i < ver_count; i++) {
+    if (hw_version_table[i - 1] < val && hw_version_table[i] > val) {
+      break;
+    }
+  }
+  return i;
+}
+
 void SystemService::get_machine_info(machine_info_t *info) {
   char *ver = (char *)J1_BUILD_VERSION;
   info->Ji_num = 4; // J1
-  info->hw_version = 1;
+  info->hw_version = get_hw_version();
   info->sn = 0;
   info->version_length = strlen(ver) + 1;
   for (uint16_t i = 0; i < info->version_length; i++) {

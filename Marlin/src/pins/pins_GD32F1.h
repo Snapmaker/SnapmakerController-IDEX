@@ -154,6 +154,8 @@
 #define HEAD0_ID_PIN PA5
 #define HEAD1_ID_PIN PA6
 
+#define HW_VERSION_PIN PB1
+
 //
 // LCD Pins
 //
