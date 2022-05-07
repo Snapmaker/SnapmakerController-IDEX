@@ -64,30 +64,31 @@ ErrCode FDM_Head::set_fan_speed(uint8_t e, uint8_t fan_index, uint8_t speed) {
     if (fan_index == 0) {
       thermalManager.set_fan_speed(0, speed);
     } else {
-      thermalManager.set_fan_speed(2, speed);
+      // thermalManager.set_fan_speed(2, speed);
     }
   } else {
     if (fan_index == 0) {
       thermalManager.set_fan_speed(1, speed);
     } else {
-      thermalManager.set_fan_speed(3, speed);
+      // thermalManager.set_fan_speed(3, speed);
     }
   }
   return E_SUCCESS;
 }
 
 ErrCode FDM_Head::get_fan_speed(uint8_t e, uint8_t fan_index, uint8_t &speed) {
+  speed = 0;
   if (e == 0) {
     if (fan_index == 0) {
-      thermalManager.fanSpeed(0);
+      speed = thermalManager.fanSpeed(0);
     } else {
-      thermalManager.fanSpeed(2);
+      // thermalManager.fanSpeed(2);
     }
   } else {
     if (fan_index == 0) {
-      thermalManager.fanSpeed(1);
+      speed = thermalManager.fanSpeed(1);
     } else {
-      thermalManager.fanSpeed(3);
+      // thermalManager.fanSpeed(3);
     }
   }
   return E_SUCCESS;
@@ -107,15 +108,15 @@ ErrCode FDM_Head::get_fdm_info(uint8_t e, FDM_info *fdm) {
   uint8_t index=0, speed=0;
   fdm->fan_count = 2;
   get_fan_speed(e, index, speed);
-  fdm->extruder_fan[e].index = index;
-  fdm->extruder_fan[e].type = FAN_TYPE_COLD_EXTRUDER;
-  fdm->extruder_fan[e].speed = speed;
+  fdm->extruder_fan[index].index = index;
+  fdm->extruder_fan[index].type = FAN_TYPE_COLD_EXTRUDER;
+  fdm->extruder_fan[index].speed = speed;
 
   index = 1;
   get_fan_speed(e, index, speed);
-  fdm->extruder_fan[e].index = index;
-  fdm->extruder_fan[e].type = FAN_TYPE_COLD_MODULE;
-  fdm->extruder_fan[e].speed = speed;
+  fdm->extruder_fan[index].index = index;
+  fdm->extruder_fan[index].type = FAN_TYPE_COLD_MODULE;
+  fdm->extruder_fan[index].speed = speed;
   
   return E_SUCCESS;
 }
