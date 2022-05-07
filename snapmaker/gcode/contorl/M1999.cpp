@@ -23,5 +23,9 @@
 
 void GcodeSuite::M1999() {
   SERIAL_ECHOLN("will reboot machine");
+  OUT_WRITE(MOTOR_PWR_PIN, LOW);
+  OUT_WRITE(HEATER_PWR_PIN, LOW);
+  OUT_WRITE(SCREEN_PWR_PIN, LOW);
+  OUT_WRITE(HEATER_BED_PWR_PIN, LOW);
   WatchDogInit();
 }
