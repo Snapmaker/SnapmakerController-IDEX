@@ -312,13 +312,13 @@ bool MotionControl::is_motor_enable(uint8_t axis, uint8_t index) {
   bool ret = false;
   switch (axis) {
     case X_AXIS:
-      if (index == 0) {ret = X_ENABLE_READ();}
-      else {ret = X2_ENABLE_READ();} break;
-    case Y_AXIS: ret = Y_ENABLE_READ(); break;
-    case Z_AXIS: ret = Z_ENABLE_READ(); break;
+      if (index == 0) {ret = (X_ENABLE_READ() == X_ENABLE_ON);}
+      else {ret = (X2_ENABLE_READ() == X_ENABLE_ON);} break;
+    case Y_AXIS: ret = (Y_ENABLE_READ() == Y_ENABLE_ON); break;
+    case Z_AXIS: ret = (Z_ENABLE_READ() == Z_ENABLE_ON); break;
     case E_AXIS: 
-      if (index == 0) {ret = E0_ENABLE_READ();}
-      else {ret = E1_ENABLE_READ();} break;
+      if (index == 0) {ret = (E0_ENABLE_READ() == E_ENABLE_ON);}
+      else {ret = (E1_ENABLE_READ() == E_ENABLE_ON);} break;
   }
   return ret;
 }

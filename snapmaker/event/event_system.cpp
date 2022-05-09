@@ -153,8 +153,8 @@ static ErrCode home(event_param_t& event) {
   return send_event(event);
 }
 
-static bool motor_remap_to_marlin(uint8_t sacp, uint8_t &marlin, uint8_t &index) {
-  switch (sacp) {
+static bool motor_remap_to_marlin(uint8_t sacp_axis, uint8_t &marlin, uint8_t &index) {
+  switch (sacp_axis) {
     case AXIS_X1: marlin = X_AXIS; index = 0; return true;
     case AXIS_Y1: marlin = Y_AXIS; index = 0; return true;
     case AXIS_Z1: marlin = Z_AXIS; index = 0; return true;
@@ -171,9 +171,9 @@ static ErrCode get_motor_enable(event_param_t& event) {
   uint8_t axis, index;
   motor_state_t *motor_state = (motor_state_t *)(event.data + 2);
 
-  #define GET_AXIS_STATE(AXIS) \
-    motor_remap_to_marlin(AXIS_ ## AXIS, axis, index); \
-    motor_state[axis_count].axis = AXIS_ ## AXIS; \
+  #define GET_AXIS_STATE(Axis) \
+    motor_remap_to_marlin(AXIS_ ## Axis, axis, index); \
+    motor_state[axis_count].axis = AXIS_##Axis; \
     motor_state[axis_count].state = motion_control.is_motor_enable(axis, index); \
     axis_count++;
 
