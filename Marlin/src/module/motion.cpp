@@ -1191,6 +1191,7 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
    */
   inline bool dual_x_carriage_unpark() {
     if (active_extruder_parked) {
+      endstops.enable_globally(false);  // The home position endStop will not move  
       switch (dual_x_carriage_mode) {
 
         case DXC_FULL_CONTROL_MODE: break;
@@ -1273,6 +1274,7 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
       }
       idex_set_parked(false);           // No longer parked
       update_software_endstops(X_AXIS, active_extruder);
+      endstops.enable_globally(true);
     }
     return false;
   }
