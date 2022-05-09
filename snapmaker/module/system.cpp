@@ -104,10 +104,10 @@ void SystemService::get_machine_size(machine_size_t *size) {
   size->home_offset_count = 3;
   size->home_offset[0].axis = AXIS_X1;
   size->home_offset[0].position = home_offset[X_AXIS];
-  size->home_offset[2].axis = AXIS_Y1;
-  size->home_offset[2].position = home_offset[Y_AXIS];
-  size->home_offset[3].axis = AXIS_Z1;
-  size->home_offset[3].position = home_offset[Z_AXIS];
+  size->home_offset[1].axis = AXIS_Y1;
+  size->home_offset[1].position = home_offset[Y_AXIS];
+  size->home_offset[2].axis = AXIS_Z1;
+  size->home_offset[2].position = home_offset[Z_AXIS];
 }
 
 void SystemService::factory_reset() {
