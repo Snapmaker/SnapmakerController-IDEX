@@ -56,7 +56,7 @@ ErrCode MotionControl::move_axis(mobile_instruction_t *move) {
         break;
     }
   }
-  uint16_t speed = *((uint16_t*)(move + 1 + (move->axis_count * sizeof(axis_move_t))));
+  uint16_t speed = *((uint16_t*)((uint8_t*)move + 1 + (move->axis_count * sizeof(axis_move_t))));
   SERIAL_ECHOLNPAIR(" f:", speed);
   feedrate_mm_s = speed ? MMM_TO_MMS(speed) : feedrate_mm_s;
   blocking_move_to(xyze.x, xyze.y, xyze.z, feedrate_mm_s);
@@ -94,7 +94,7 @@ ErrCode MotionControl::move_axis_to(mobile_instruction_t *move) {
         break;
     }
   }
-  uint16_t speed = *((uint16_t*)(move + 1 + (move->axis_count * sizeof(axis_move_t))));
+  uint16_t speed = *((uint16_t*)((uint8_t*)move + (1 + (move->axis_count * sizeof(axis_move_t)))));
   SERIAL_ECHOLNPAIR(" f:", speed);
   feedrate_mm_s = speed ? MMM_TO_MMS(speed) : feedrate_mm_s;
   blocking_move_to(xyze.x, xyze.y, xyze.z, feedrate_mm_s);
