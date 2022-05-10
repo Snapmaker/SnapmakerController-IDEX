@@ -21,7 +21,6 @@
  */
 
 #include "../../../Marlin/src/gcode/gcode.h"
-#include "../../J1/calibration.h"
 #include "../../J1/tmc_driver.h"
 #include "../../module/filament_sensor.h"
 #include "../../module/fdm.h"

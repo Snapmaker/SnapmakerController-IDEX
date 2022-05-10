@@ -24,43 +24,14 @@
  * G1029.cpp - Auto calibration
  */
 #include "../../../Marlin/src/gcode/gcode.h"
-#include "../../J1/calibration.h"
+// #include "../../J1/calibration.h"
 #include "../../module/adjusting.h"
 #include "../../module/motion_control.h"
 #include "../../module/fdm.h"
 
 
-enum {
-  CALIBRATION_Z_OFFSET, // 0
-  CALIBRATION_NOZZLE_HEIGHT, // 1
-  CALIBRATION_DED_LEVEL, // 2
-  CALIBRATION_XY, //3
-  CALIBRATION_PLATE_THICKNESS, // 4
-};
-
 void GcodeSuite::G1029() {
-  if(parser.seenval('S')) {
-    uint8_t set_item;
-    set_item = parser.value_byte();
-    switch(set_item) {
-      case CALIBRATION_Z_OFFSET:
-        calibration.calibrate_z_offset();
-        break;
-      case CALIBRATION_NOZZLE_HEIGHT:
-        calibration.calibrate_nozzle_height();
-        break;
-      case CALIBRATION_DED_LEVEL:
-        calibration.calibrate_platform();
-        break;
-      case CALIBRATION_XY:
-        calibration.calibrate_xy();
-      case CALIBRATION_PLATE_THICKNESS:
-        if(parser.seenval('F')) {
-          calibration.set_build_plate_thickness(parser.value_float());
-        }
-        break;
-    }
-  } else if(parser.seenval('I')) {
+  if(parser.seenval('I')) {
     uint8_t number = parser.value_byte();
     adjusting.goto_position(number);
   } else if (parser.seenval('B')) {
