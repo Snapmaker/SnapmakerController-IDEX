@@ -26,6 +26,7 @@
 #include "../../module/fdm.h"
 #include "../../module/system.h"
 #include "../../module/print_control.h"
+#include "../../module/exception.h"
 
 /**
  *  S0
@@ -176,6 +177,14 @@ void GcodeSuite::M2020() {
       case 12:
         tmp_u8_value = system_service.get_hw_version();
         SERIAL_ECHOLNPAIR("hw version:", tmp_u8_value);
+        break;
+      case 13:
+        if (parser.seen('E')) {
+          exception_server.trigger_exception((exception_type_e)parser.byteval('E'));
+        } else if (parser.seen('C')) {
+          exception_server.clean_exception((exception_type_e)parser.byteval('C'));
+        }
+        break;
       default:
 
       break;

@@ -1,5 +1,6 @@
 #ifndef EVENT_ENCLOUSER_H
 #define EVENT_ENCLOUSER_H
+#include "event_base.h"
 
 enum {
   ENCLOUSER_ID_REPORT_INFO       = 0x01,

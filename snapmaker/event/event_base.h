@@ -13,7 +13,7 @@ typedef std::function<int(void)> read_byte_f;
 // System control command
 #define COMMAND_SET_SYS 0x01
 // Exception notification command
-#define COMMAND_SET_INFORM 0x04
+#define COMMAND_SET_EXCEPTION 0x04
 // 3D printing head control
 #define COMMAND_SET_FDM 0x10
 // Linear control

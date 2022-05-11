@@ -13,6 +13,7 @@ typedef int float_to_int_t;  // float * 1000 to int
 #define MV_TO_ADC_VAL(mv) (mv * 4096 / 3300)
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+#define BIT(shift)   (1UL << (shift))
 
 typedef enum : uint8_t {
   E_SUCCESS = 0,      /* non error */ 

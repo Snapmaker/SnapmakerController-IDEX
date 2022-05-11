@@ -25,23 +25,20 @@ event_cb_info_t * get_evevt_info_by_id(uint8_t id, event_cb_info_t *array, uint8
 static bool send_lock = false;
 static uint8_t send_buf[PACK_PARSE_MAX_SIZE];
 
-static bool send_to(write_byte_f write, uint8_t *data, uint16_t len) {
-  if (write) {
-    for (int i = 0; i < len; i++) {
-      write(data[i]);
-    }
-    return true;
+static bool send_to(event_source_e source, uint8_t *data, uint16_t len) {
+  for (int i = 0; i < len; i++) {
+    event_write_byte[source](data[i]);
   }
-  return false;
+  return true;
 }
 
 static bool send_data(event_source_e source, uint8_t *data, uint16_t len) {
   if (source == EVENT_SOURCE_ALL) {
     for (uint8_t s = 0; s < EVENT_SOURCE_ALL; s++) {
-      send_to(event_write_byte[s], data, len);
+      send_to((event_source_e)s, data, len);
     }
   } else if (source < EVENT_SOURCE_ALL){
-    send_to(event_write_byte[source], data, len);
+    send_to(source, data, len);
   }
   return false;
 }
@@ -57,6 +54,9 @@ ErrCode send_event(event_param_t &event, uint8_t *data, uint16_t length) {
 }
 
 ErrCode send_event(event_source_e source, SACP_head_base_t &sacp, uint8_t *data, uint16_t length) {
+  if (!evevnt_serial[source]->enable_sacp()) {
+    return E_PARAM;
+  }
   while (send_lock) {
     vTaskDelay(2);
   }
