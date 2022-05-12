@@ -12,20 +12,20 @@ bool BedControl::self_check() {
   while(delay_time > millis());
   if (READ(HEATER_BED_BACK_PIN) == HIGH) {
     is_error = true;
-    SERIAL_ECHOLN("BED open self check failed");
+    LOG_E("BED open self check failed\n");
   }
 
   OUT_WRITE(HEATER_BED_PIN, LOW);
   delay_time = millis() + 20;
   while(delay_time > millis());
   if (READ(HEATER_BED_BACK_PIN) == LOW) {
-    SERIAL_ECHOLN("BED close self check failed");
+    LOG_E("BED close self check failed\n");
     is_error = true;
   }
   if (is_error) {
     OUT_WRITE(HEATER_BED_PWR_PIN, LOW);
   } else {
-    SERIAL_ECHOLN("BED self check success");
+    LOG_E("BED self check success\n");
   }
   return is_error;
 }

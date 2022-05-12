@@ -2,6 +2,7 @@
 #define COMMON_TYPE_H
 #include <stdint.h>
 #include "MapleFreeRTOS1030.h"
+#include "../debug/debug.h"
 
 #define FLOAT_TO_INT(f) (int)((f) * 1000)
 #define INT_TO_FLOAT(i) ((float)(i) / 1000)

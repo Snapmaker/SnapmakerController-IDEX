@@ -43,7 +43,7 @@ ErrCode FDM_Head::set_work_speed(float speed) {
 }
 
 ErrCode FDM_Head::change_filamenter(uint8_t e, float feedrate, filamenter_change_status_e status) {
-  SERIAL_ECHOLNPAIR("change head", e, " filament status:", status);
+  LOG_I("change head[%d] filament status:%d\n", e, status);
   change_filamenter_status[e] = status;
   motion_control.quickstop();
   if (is_change_filamenter()) {

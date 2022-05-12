@@ -6,7 +6,7 @@
 #include "../module/system.h"
 #include "../module/motion_control.h"
 #include "../module/enclosure.h"
-
+#include "../debug/debug.h"
 #pragma pack(1)
 
 typedef struct {
@@ -29,7 +29,10 @@ static ErrCode unsubscribe_event(event_param_t& event) {
 }
 
 static ErrCode set_log_grade(event_param_t& event) {
-  return E_SUCCESS;
+  SNAP_DEBUG_SET_LEVEL(event.data[0]);
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
 }
 
 static ErrCode req_protocol_ver(event_param_t& event) {

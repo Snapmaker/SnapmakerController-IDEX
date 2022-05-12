@@ -36,7 +36,7 @@
 #include <libmaple/gpio.h>
 #include <libmaple/timer.h>
 #include <libmaple/usart.h>
-
+#include "../../../../debug/debug.h"
 HardwareSerial::HardwareSerial(usart_dev *usart_device,
                                uint8 tx_pin,
                                uint8 rx_pin) {
@@ -44,6 +44,10 @@ HardwareSerial::HardwareSerial(usart_dev *usart_device,
     this->tx_pin = tx_pin;
     this->rx_pin = rx_pin;
 }
+
+#define LOG_BUF_SIZE 512
+static char log_buf[LOG_BUF_SIZE];
+static uint16_t log_buf_index = 0;
 
 /*
  * Set up/tear down
@@ -132,6 +136,18 @@ int HardwareSerial::availableForWrite(void)
 size_t HardwareSerial::write(unsigned char ch) {
     if (!enable_sacp_) {
         usart_putc(this->usart_device, ch);
+    } else {
+        log_buf[log_buf_index] = ch;
+        log_buf_index++;
+        if (ch == '\n') {
+            log_buf[log_buf_index] = '\0';
+            LOG_I(log_buf);
+            log_buf_index = 0;
+        }
+        if ((log_buf_index + 1) == LOG_BUF_SIZE) {
+            log_buf_index = 0;
+            LOG_E("marlin log buf full\n");
+        }
     }
 	return 1;
 }

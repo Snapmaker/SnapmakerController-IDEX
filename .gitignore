@@ -131,7 +131,6 @@ Configuration_Secure.h
 *.vcxproj.user
 *.vcxproj.filters
 Release/
-Debug/
 __vm/
 .vs/
 vc-fileutils.settings

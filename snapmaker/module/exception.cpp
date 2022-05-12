@@ -42,14 +42,14 @@ uint8_t Exception::get_level(exception_type_e e) {
 }
 
 void Exception::trigger_exception(exception_type_e e) {
-  SERIAL_ECHOLNPAIR("trigger exception:", e);
+  LOG_I("trigger exception:%d\n", e);
   EXCEPTION_TRIGGER(e);
   exception_behavior |= exception_behavior_map[e].behavior;
 }
 
 void Exception::clean_exception(exception_type_e e) {
   uint32_t exception = exception_status & (~BIT(e));
-  SERIAL_ECHOLNPAIR("clear exception:", e);
+  LOG_I("clear exception:%d\n", e);
   exception_status = exception_behavior = 0;
   for (uint8_t i = 0; i < EXCEPTION_TYPE_MAX_COUNT; i++) {
     if (exception & BIT(i)) {

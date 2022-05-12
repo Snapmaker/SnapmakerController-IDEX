@@ -30,34 +30,34 @@ void MotionControl::blocking_move_to(float x, float y, float z, float feedrate) 
 ErrCode MotionControl::move_axis(mobile_instruction_t *move) {
   xyze_pos_t xyze = current_position;
   float save_feedrate = feedrate_mm_s;
-  SERIAL_ECHOPAIR("sc req move to");
+  LOG_V("sc req move to");
   for (uint8_t i = 0; i < move->axis_count; i++) {
     axis_move_t *axis_move = &(&move->axis_move)[i];
     switch (axis_move->axis) {
       case AXIS_X1:
         if (active_extruder == 0) {
           xyze.x = INT_TO_FLOAT(axis_move->distance);
-          SERIAL_ECHOPAIR_F(" x:", xyze.x);
+          LOG_V(" x:%f", xyze.x);
         }
         break;
       case AXIS_X2:  // Support activities only one head movement
         if (active_extruder == 1) {
           xyze.x = INT_TO_FLOAT(axis_move->distance);
-          SERIAL_ECHOPAIR_F(" x2:", xyze.x);
+          LOG_V(" x2:%f", xyze.x);
         }
         break;
       case AXIS_Y1:
         xyze.y += INT_TO_FLOAT(axis_move->distance);
-        SERIAL_ECHOPAIR_F(" y:", xyze.y);
+        LOG_V(" y:%f", xyze.y);
         break;
       case AXIS_Z1:
         xyze.z += INT_TO_FLOAT(axis_move->distance);
-        SERIAL_ECHOPAIR_F(" z:", xyze.z);
+        LOG_V(" z:%f", xyze.z);
         break;
     }
   }
   uint16_t speed = *((uint16_t*)((uint8_t*)move + 1 + (move->axis_count * sizeof(axis_move_t))));
-  SERIAL_ECHOLNPAIR(" f:", speed);
+  LOG_V(" f:%d\n", speed);
   feedrate_mm_s = speed ? MMM_TO_MMS(speed) : feedrate_mm_s;
   blocking_move_to(xyze.x, xyze.y, xyze.z, feedrate_mm_s);
   feedrate_mm_s = save_feedrate;
@@ -79,22 +79,22 @@ ErrCode MotionControl::move_axis_to(mobile_instruction_t *move) {
       case AXIS_X1:
         if (active_extruder == 0) {
           xyze.x = INT_TO_FLOAT(axis_move->distance);
-          SERIAL_ECHOPAIR_F(" x:", xyze.x);
+          LOG_V(" x:%f", xyze.x);
         }
         break;
       case AXIS_X2:  // Support activities only one head movement
         if (active_extruder == 1) {
           xyze.x = INT_TO_FLOAT(axis_move->distance);
-          SERIAL_ECHOPAIR_F(" x2:", xyze.x);
+          LOG_V(" x2:%f", xyze.x);
         }
         break;
       case AXIS_Y1:
         xyze.y = INT_TO_FLOAT(axis_move->distance);
-        SERIAL_ECHOPAIR_F(" y:", xyze.y);
+        LOG_V(" y:%f", xyze.y);
         break;
       case AXIS_Z1:
         xyze.z = INT_TO_FLOAT(axis_move->distance);
-        SERIAL_ECHOPAIR_F(" z:", xyze.z);
+        LOG_V(" z:%f", xyze.z);
         break;
     }
   }
