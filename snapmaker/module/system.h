@@ -83,7 +83,7 @@ class SystemService {
     system_status_e get_status() {return status_;}
     system_status_source_e get_source() {return source_;}
     void set_status(system_status_e status, system_status_source_e source=SYSTEM_STATUE_SCOURCE_NONE);
-    bool is_adjusting() { return false;}
+    bool is_calibtration_status() { return false;}
     bool is_working() {return (status_ >= SYSTEM_STATUE_STARTING) && (status_ <= SYSTEM_STATUE_RESUMING);}
     bool is_idle() {return status_ == SYSTEM_STATUE_IDLE;}
     void factory_reset(void);

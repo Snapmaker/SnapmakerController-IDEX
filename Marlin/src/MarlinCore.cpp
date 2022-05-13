@@ -65,7 +65,7 @@
 #include "lcd/marlinui.h"
 #include "../snapmaker/J1/tmc_driver.h"
 #include "../snapmaker/J1/J1.h"
-#include "../snapmaker/module/adjusting.h"
+#include "../snapmaker/module/calibtration.h"
 #include "../snapmaker/module/power_loss.h"
 #include "../snapmaker/module/bed_control.h"
 #include "../snapmaker/module/filament_sensor.h"
@@ -1646,7 +1646,7 @@ void marlin_loop() {
 
     TERN_(HAS_TFT_LVGL_UI, printer_state_polling());
     // vTaskDelay(pdMS_TO_TICKS(1));
-    adjusting.loop();
+    calibtration.loop();
   }
 }
 

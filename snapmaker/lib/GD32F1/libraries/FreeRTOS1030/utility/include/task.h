@@ -2290,7 +2290,7 @@ void vTaskSetTimeOutState( TimeOut_t * const pxTimeOut ) PRIVILEGED_FUNCTION;
 		while( UART_bytes_in_rx_buffer( pxUARTInstance ) < uxWantedBytes )
 		{
 			// The buffer didn't contain enough data so this task is going to
-			// enter the Blocked state. Adjusting xTicksToWait to account for
+			// enter the Blocked state. Calibtration xTicksToWait to account for
 			// any time that has been spent in the Blocked state within this
 			// function so far to ensure the total amount of time spent in the
 			// Blocked state does not exceed MAX_TIME_TO_WAIT.

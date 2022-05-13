@@ -1,4 +1,4 @@
-#include "adjusting.h"
+#include "calibtration.h"
 #include "src/module/settings.h"
 #include "../J1/switch_detect.h"
 #include "src/module/motion.h"
@@ -9,7 +9,7 @@
 #include "../../Marlin/src/module/temperature.h"
 #include "print_control.h"
 
-Adjusting adjusting;
+Calibtration calibtration;
 
 #define PROBE_Z_FEEDRATE 100
 #define PROBE_XY_FEEDRATE 200
@@ -40,27 +40,27 @@ static float build_plate_thickness = 5;
 #define POS_Y_D_DIFF 94
 
 static float calibration_position_xy[6][2] = {
-  /*ADJUST_POS_0*/ {HALF_BED_X, HALF_BED_Y}, 
-  /*ADJUST_POS_1*/ {HALF_BED_X, HALF_BED_Y + POS_Y_U_DIFF},
-  /*ADJUST_POS_2*/ {HALF_BED_X - POS_X_L_DIFF, HALF_BED_Y - POS_Y_D_DIFF},
-  /*ADJUST_POS_3*/ {HALF_BED_X + POS_X_R_DIFF, HALF_BED_Y - POS_Y_D_DIFF},
-  /*ADJUST_POS_4*/ {HALF_BED_X - POS_X_L_DIFF, HALF_BED_Y + POS_Y_U_DIFF},
-  /*ADJUST_POS_5*/ {HALF_BED_X + POS_X_R_DIFF, HALF_BED_Y + POS_Y_U_DIFF},
+  /*CAlIBRATION_POS_0*/ {HALF_BED_X, HALF_BED_Y}, 
+  /*CAlIBRATION_POS_1*/ {HALF_BED_X, HALF_BED_Y + POS_Y_U_DIFF},
+  /*CAlIBRATION_POS_2*/ {HALF_BED_X - POS_X_L_DIFF, HALF_BED_Y - POS_Y_D_DIFF},
+  /*CAlIBRATION_POS_3*/ {HALF_BED_X + POS_X_R_DIFF, HALF_BED_Y - POS_Y_D_DIFF},
+  /*CAlIBRATION_POS_4*/ {HALF_BED_X - POS_X_L_DIFF, HALF_BED_Y + POS_Y_U_DIFF},
+  /*CAlIBRATION_POS_5*/ {HALF_BED_X + POS_X_R_DIFF, HALF_BED_Y + POS_Y_U_DIFF},
 };
 
-void Adjusting::backup_offset() {
+void Calibtration::backup_offset() {
   HOTEND_LOOP() {
     hotend_offset_backup[e] = hotend_offset[e];
   }
   home_offset_backup = home_offset;
 }
 
-void Adjusting::retrack_e() {
-  extrude_e(-ADJUSTIN_RETRACK_E_MM, MOTION_RETRACK_E_FEEDRATE);
+void Calibtration::retrack_e() {
+  extrude_e(-CAlIBRATIONIN_RETRACK_E_MM, MOTION_RETRACK_E_FEEDRATE);
   need_extrude = true;
 }
 
-void Adjusting::extrude_e(float distance, uint16_t feedrate) {
+void Calibtration::extrude_e(float distance, uint16_t feedrate) {
   tool_change(0, true);
   dual_x_carriage_mode = DXC_DUPLICATION_MODE;
   set_duplication_enabled(true);
@@ -70,7 +70,7 @@ void Adjusting::extrude_e(float distance, uint16_t feedrate) {
   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
 }
 
-void Adjusting::bed_preapare(uint8_t extruder_index) {
+void Calibtration::bed_preapare(uint8_t extruder_index) {
   // Store feedrate and feedrate scaling
   remember_feedrate_scaling_off();
   // Enable endstop
@@ -108,7 +108,7 @@ static void set_hotend_offsets_to_default() {
 }
 
 // Run to the specified calibration point
-ErrCode Adjusting::goto_position(uint8_t pos) {
+ErrCode Calibtration::goto_position(uint8_t pos) {
   xyz_pos_t offset0 = hotend_offset[0];
   xyz_pos_t offset1 = hotend_offset[1];
   set_hotend_offsets_to_default();
@@ -118,7 +118,7 @@ ErrCode Adjusting::goto_position(uint8_t pos) {
   return E_SUCCESS;
 }
 
-float Adjusting::probe(uint8_t axis, float distance, uint16_t feedrate) {
+float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
   float ret = distance;
   float pos_before_probe, pos_after_probe;
 
@@ -150,7 +150,7 @@ float Adjusting::probe(uint8_t axis, float distance, uint16_t feedrate) {
   return ret;
 }
 
-ErrCode Adjusting::probe_z_offset(adjust_position_e pos) {
+ErrCode Calibtration::probe_z_offset(calibtration_position_e pos) {
   float temp_z = 0;
   float position = 0;
   float z_probe_distance = 25;
@@ -164,7 +164,7 @@ ErrCode Adjusting::probe_z_offset(adjust_position_e pos) {
   if (temp_z == -z_probe_distance) {
     LOG_E("failed to probe z !!!\n");
     set_home_offset(Z_AXIS, last_valid_zoffset);
-    return E_ADJUST_PRIOBE;
+    return E_CAlIBRATION_PRIOBE;
   }
   position = xyz_probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
   set_home_offset(Z_AXIS, -(position + build_plate_thickness));
@@ -173,11 +173,11 @@ ErrCode Adjusting::probe_z_offset(adjust_position_e pos) {
   return E_SUCCESS;
 }
 
-ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z_offset) {
+ErrCode Calibtration::bed_probe(calibtration_position_e pos, uint8_t extruder, bool set_z_offset) {
   ErrCode ret = E_SUCCESS;
   float z_probe_distance;
   uint8_t last_active_extruder = active_extruder;
-  if (pos == ADJUST_POS_0 || pos >= ADJUST_POS_INVALID) {
+  if (pos == CAlIBRATION_POS_0 || pos >= CAlIBRATION_POS_INVALID) {
     return E_PARAM;
   }
   bed_preapare(extruder);
@@ -193,8 +193,8 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
     temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
     if (temp_z == -z_probe_distance) {
       LOG_E("failed to probe z !!!\n");
-      probe_offset = ADJUSTING_ERR_CODE;
-      ret = E_ADJUST_PRIOBE;
+      probe_offset = CAlIBRATIONING_ERR_CODE;
+      ret = E_CAlIBRATION_PRIOBE;
     } else {
       probe_offset = current_position[Z_AXIS] + home_offset[Z_AXIS] + build_plate_thickness;
       LOG_I("JF-Z offset height:%f\n", probe_offset);
@@ -208,15 +208,15 @@ ErrCode Adjusting::bed_probe(adjust_position_e pos, uint8_t extruder, bool set_z
   return ret;
 }
 
-ErrCode Adjusting::bed_adjust_preapare(adjust_position_e pos, bool is_probe) {
+ErrCode Calibtration::bed_calibtration_preapare(calibtration_position_e pos, bool is_probe) {
   ErrCode ret = E_SUCCESS;
-  if (pos == ADJUST_POS_0 || pos >= ADJUST_POS_INVALID) {
+  if (pos == CAlIBRATION_POS_0 || pos >= CAlIBRATION_POS_INVALID) {
     LOG_E("Points not supported by hot bed calibration: %d\n", pos);
     return E_PARAM;
   }
   cur_pos = pos;
-  mode = ADJUST_MODE_BED;
-  status = ADJUST_STATE_IDLE;
+  mode = CAlIBRATION_MODE_BED;
+  status = CAlIBRATION_STATE_IDLE;
   motion_control.synchronize();
   motion_control.move_z(PROBE_LIFTINT_DISTANCE);
   if (is_probe) {
@@ -228,31 +228,31 @@ ErrCode Adjusting::bed_adjust_preapare(adjust_position_e pos, bool is_probe) {
   return ret;
 }
 
-ErrCode Adjusting::bed_start_bead_mode() {
-  if (mode == ADJUST_MODE_BED) {
-    status = ADJUST_STATE_BED_BEAD;
+ErrCode Calibtration::bed_start_bead_mode() {
+  if (mode == CAlIBRATION_MODE_BED) {
+    status = CAlIBRATION_STATE_BED_BEAD;
     return E_SUCCESS;
-  } else if (mode == ADJUST_MODE_NOZZLE) {
-    status = ADJUST_STATE_BED_BEAD;
+  } else if (mode == CAlIBRATION_MODE_NOZZLE) {
+    status = CAlIBRATION_STATE_BED_BEAD;
     return E_SUCCESS;
   }
   return E_PARAM;
 }
 
-ErrCode Adjusting::nozzle_adjust_preapare(adjust_position_e pos) {
-  if (pos == ADJUST_POS_0 || pos >= ADJUST_POS_INVALID) {
+ErrCode Calibtration::nozzle_calibtration_preapare(calibtration_position_e pos) {
+  if (pos == CAlIBRATION_POS_0 || pos >= CAlIBRATION_POS_INVALID) {
     LOG_E("Points not supported by hot nozzle calibration:%d\n", pos);
     return E_PARAM;
   }
   cur_pos = pos;
-  mode = ADJUST_MODE_NOZZLE;
-  status = ADJUST_STATE_IDLE;
+  mode = CAlIBRATION_MODE_NOZZLE;
+  status = CAlIBRATION_STATE_IDLE;
   bed_probe(pos, 0, true);
 
   return E_SUCCESS;
 }
 
-void Adjusting::reset_xy_adjust_env() {
+void Calibtration::reset_xy_calibtration_env() {
   set_hotend_offsets_to_default();
   set_home_offset(X_AXIS, 0);
   set_home_offset(Y_AXIS, 0);
@@ -270,7 +270,7 @@ void Adjusting::reset_xy_adjust_env() {
   }
 }
 
-float Adjusting::xyz_probe(uint8_t axis, int8_t dir, uint16_t freerate) {
+float Calibtration::xyz_probe(uint8_t axis, int8_t dir, uint16_t freerate) {
   #define PROBE_TIMES 3
   float probe_distance =  dir >= 0 ? 1 : -1;
   float pos = 0;
@@ -282,7 +282,7 @@ float Adjusting::xyz_probe(uint8_t axis, int8_t dir, uint16_t freerate) {
   return pos / PROBE_TIMES;
 }
 
-ErrCode Adjusting::adjust_xy() {
+ErrCode Calibtration::calibtration_xy() {
   ErrCode ret = E_SUCCESS;
   float xy_center[HOTENDS][XY];
   float probe_distance = 15;
@@ -291,41 +291,41 @@ ErrCode Adjusting::adjust_xy() {
   DualXMode dual_mode = dual_x_carriage_mode;
   if (home_offset[Z_AXIS] == 0) {
     LOG_E("Calibrate XY after calibrating Z offset\n");
-    return E_ADJUST_XY;
+    return E_CAlIBRATION_XY;
   }
-  reset_xy_adjust_env();
+  reset_xy_calibtration_env();
   HOTEND_LOOP() {
     bed_preapare(e);
     motion_control.logical_move_to_z(15 - build_plate_thickness);
-    goto_position(ADJUST_POS_0);
+    goto_position(CAlIBRATION_POS_0);
     motion_control.logical_move_to_z(-2 - build_plate_thickness);
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
       xy_center[e][axis] = 0;
-      goto_position(ADJUST_POS_0);
+      goto_position(CAlIBRATION_POS_0);
       probe_value = probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
       if (probe_value >= abs(probe_distance) - 5) {
-        ret =  E_ADJUST_XY;
+        ret =  E_CAlIBRATION_XY;
         LOG_E("e:%d axis:%d probe 0 filedn\n", e, axis);
         break;
       }
       float pos = xyz_probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
-      goto_position(ADJUST_POS_0);
+      goto_position(CAlIBRATION_POS_0);
       probe_value = probe(axis, probe_distance, PROBE_XY_FEEDRATE);
       if (probe_value >= abs(probe_distance) - 5) {
-        ret = E_ADJUST_XY;
+        ret = E_CAlIBRATION_XY;
         LOG_E("e:%d axis:%d probe 1 filedn\n", e, axis);
         break;
       }
       float pos_1 = xyz_probe(axis, probe_distance, PROBE_XY_FEEDRATE);
       xy_center[e][axis] += (pos_1 + pos) / 2;
-      goto_position(ADJUST_POS_0);
+      goto_position(CAlIBRATION_POS_0);
     }
     if (ret != E_SUCCESS) {
-      LOG_E("adjust e[%e] xy filed\n", e);
+      LOG_E("calibtration e[%e] xy filed\n", e);
       break;
     }
   }
-  goto_position(ADJUST_POS_0);
+  goto_position(CAlIBRATION_POS_0);
   motion_control.move_z(100);
   tool_change(old_active_extruder, true);
   if(ret == E_SUCCESS) {
@@ -362,37 +362,37 @@ ErrCode set_hotend_offset(uint8_t axis, float offset) {
   return E_SUCCESS;
 }
 
-ErrCode Adjusting::exit(bool is_save) {
+ErrCode Calibtration::exit(bool is_save) {
   LOG_V("exit justing\n");
-  if (mode != ADJUST_MODE_IDLE) {
+  if (mode != CAlIBRATION_MODE_IDLE) {
     if (!is_save) {
       HOTEND_LOOP() {
         hotend_offset[e] = hotend_offset_backup[e];
       }
       home_offset = home_offset_backup;
     }
-    if (mode == ADJUST_MODE_NOZZLE) {
+    if (mode == CAlIBRATION_MODE_NOZZLE) {
       set_home_offset(Z_AXIS, home_offset_backup[Z_AXIS]);
     }
     if (is_save) {
       settings.save();
     }
   }
-  mode = ADJUST_MODE_EXIT;
-  status = ADJUST_STATE_IDLE;
-  probe_offset = ADJUSTING_ERR_CODE;
+  mode = CAlIBRATION_MODE_EXIT;
+  status = CAlIBRATION_STATE_IDLE;
+  probe_offset = CAlIBRATIONING_ERR_CODE;
   return E_SUCCESS;
 }
 
 // Jumping requires blocking tasks so put it in a loop to do
 // Probe once per loop
-void Adjusting::loop(void) {
-  if (mode == ADJUST_MODE_BED && status == ADJUST_STATE_BED_BEAD) {
+void Calibtration::loop(void) {
+  if (mode == CAlIBRATION_MODE_BED && status == CAlIBRATION_STATE_BED_BEAD) {
     bed_probe(cur_pos);
     LOG_V("probe offset:%d\n", probe_offset);
-  } else if (mode == ADJUST_MODE_NOZZLE && status == ADJUST_STATE_BED_BEAD) {
+  } else if (mode == CAlIBRATION_MODE_NOZZLE && status == CAlIBRATION_STATE_BED_BEAD) {
     bed_probe(cur_pos, 1);
-  } else if (mode == ADJUST_MODE_EXIT) {
+  } else if (mode == CAlIBRATION_MODE_EXIT) {
     motion_control.synchronize();
     if (current_position[Z_AXIS] < 100) {
       motion_control.move_to_z(100, PROBE_MOVE_Z_FEEDRATE);
@@ -401,17 +401,17 @@ void Adjusting::loop(void) {
     motion_control.home_y();
     if (need_extrude) {
       need_extrude = false;
-      extrude_e(ADJUSTIN_RETRACK_E_MM);
+      extrude_e(CAlIBRATIONIN_RETRACK_E_MM);
     }
     HOTEND_LOOP() {
       thermalManager.setTargetHotend(0, e);
     }
     thermalManager.setTargetBed(0);
-    mode = ADJUST_MODE_IDLE;
+    mode = CAlIBRATION_MODE_IDLE;
   }
 }
 
-void Adjusting::set_z_offset(float offset, bool is_moved) {
+void Calibtration::set_z_offset(float offset, bool is_moved) {
   print_control.commands_lock();
   motion_control.synchronize();
   xyze_pos_t lpos = current_position.asLogical();
@@ -429,6 +429,6 @@ void Adjusting::set_z_offset(float offset, bool is_moved) {
   LOG_I("Apply Z offset: %f\n", home_offset[Z_AXIS]);
 }
 
-float Adjusting::get_z_offset() {
+float Calibtration::get_z_offset() {
   return home_offset[Z_AXIS];
 }

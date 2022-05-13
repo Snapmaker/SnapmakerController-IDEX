@@ -3,7 +3,7 @@
 #include "event_system.h"
 #include "event_fdm.h"
 #include "event_bed.h"
-#include "event_adjust.h"
+#include "event_calibtration.h"
 #include "event_printer.h"
 #include "event_enclouser.h"
 #include "event_update.h"
@@ -20,8 +20,8 @@ event_cb_info_t * get_event_info(uint8_t cmd_set, uint8_t cmd_id) {
       return get_evevt_info_by_id(cmd_id, fdm_cb_info, FDM_ID_CB_COUNT);
     case COMMAND_SET_BED:
       return get_evevt_info_by_id(cmd_id, bed_cb_info, BED_ID_CB_COUNT);
-    case COMMAND_SET_ADJUSTING:
-      return get_evevt_info_by_id(cmd_id, adjust_cb_info, ADJUST_ID_CB_COUNT);
+    case COMMAND_SET_CAlIBRATION:
+      return get_evevt_info_by_id(cmd_id, calibtration_cb_info, CAlIBRATION_ID_CB_COUNT);
     case COMMAND_SET_PRINTER:
       return get_evevt_info_by_id(cmd_id, printer_cb_info, PRINTER_ID_CB_COUNT);
     case COMMAND_SET_ENCLOUSER:

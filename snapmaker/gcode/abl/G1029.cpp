@@ -25,7 +25,7 @@
  */
 #include "../../../Marlin/src/gcode/gcode.h"
 // #include "../../J1/calibration.h"
-#include "../../module/adjusting.h"
+#include "../../module/calibtration.h"
 #include "../../module/motion_control.h"
 #include "../../module/fdm.h"
 
@@ -33,21 +33,21 @@
 void GcodeSuite::G1029() {
   if(parser.seenval('I')) {
     uint8_t number = parser.value_byte();
-    adjusting.goto_position(number);
+    calibtration.goto_position(number);
   } else if (parser.seenval('B')) {
     uint8_t number = parser.value_byte();
-    adjusting.bed_adjust_preapare((adjust_position_e)number, number==ADJUST_POS_1);
-    if (number != ADJUST_POS_1) {
-      adjusting.bed_start_bead_mode();
+    calibtration.bed_calibtration_preapare((calibtration_position_e)number, number==CAlIBRATION_POS_1);
+    if (number != CAlIBRATION_POS_1) {
+      calibtration.bed_start_bead_mode();
     }
   } else if (parser.seenval('N')) {
     uint8_t number = parser.value_byte();
-    adjusting.nozzle_adjust_preapare((adjust_position_e)number);
-    adjusting.bed_start_bead_mode();
+    calibtration.nozzle_calibtration_preapare((calibtration_position_e)number);
+    calibtration.bed_start_bead_mode();
   } else if (parser.seen('A')) {
-    adjusting.adjust_xy();
+    calibtration.calibtration_xy();
   } else if (parser.seen('E')) {
-    adjusting.exit();
+    calibtration.exit();
   } else if (parser.seen('P')) {
     fdm_head.set_temperature(0, 220);
     fdm_head.set_temperature(1, 220);

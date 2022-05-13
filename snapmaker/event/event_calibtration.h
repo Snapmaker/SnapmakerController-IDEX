@@ -1,0 +1,24 @@
+#ifndef EVENT_CAlIBRATION_H
+#define EVENT_CAlIBRATION_H
+#include "event_base.h"
+
+enum {
+  CAlIBRATION_ID_SET_MODE            = 0x00,
+  CAlIBRATION_ID_MOVE_TO_POSITION    = 0x01,
+  CAlIBRATION_ID_START_BED_PROBE     = 0x02,
+  CAlIBRATION_ID_EXIT                = 0x06,
+  CAlIBRATION_ID_REPORT_STATUS       = 0x07,
+  CAlIBRATION_ID_RETRACK_E           = 0x08,
+  CAlIBRATION_ID_REPORT_BED_OFFSET   = 0xA0,
+  CAlIBRATION_ID_MOVE_NOZZLE         = 0x11,
+  CAlIBRATION_ID_SET_Z_OFFSET        = 0x15,
+  CAlIBRATION_ID_GET_Z_OFFSET        = 0x16,
+  CAlIBRATION_ID_START_XY            = 0x21,
+  CAlIBRATION_ID_SET_XY_OFFSET       = 0x22,
+  CAlIBRATION_ID_REPORT_XY_OFFSET    = 0x23,
+};
+
+#define CAlIBRATION_ID_CB_COUNT 12
+
+extern event_cb_info_t calibtration_cb_info[CAlIBRATION_ID_CB_COUNT];
+#endif

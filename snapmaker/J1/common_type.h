@@ -28,8 +28,8 @@ typedef enum : uint8_t {
   E_NO_MEM,           /* apply memory failed */
   E_SYSTEM_EXCEPTION = 14,
   E_COMMON_ERROR = 15,
-  E_ADJUST_PRIOBE = 200,
-  E_ADJUST_XY = 201,
+  E_CAlIBRATION_PRIOBE = 200,
+  E_CAlIBRATION_XY = 201,
 } ErrCode_e;
 
 typedef uint8_t ErrCode;

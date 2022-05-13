@@ -23,7 +23,7 @@ typedef std::function<int(void)> read_byte_f;
 // Enclouser control
 #define COMMAND_SET_ENCLOUSER 0x15
 // Machine calibration function
-#define COMMAND_SET_ADJUSTING 0xA0
+#define COMMAND_SET_CAlIBRATION 0xA0
 // print control
 #define COMMAND_SET_PRINTER 0xAC
 // update
