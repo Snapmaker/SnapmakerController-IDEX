@@ -33,15 +33,22 @@
 #include "io.h"
 #include <libmaple/adc.h>
 #include "boards.h"
+#include "MapleFreeRTOS1030.h"
 
 /* Unlike Wiring and Arduino, this assumes that the pin's mode is set
  * to INPUT_ANALOG. That's faster, but it does require some extra work
  * on the user's part. Not too much, we think ;). */
 uint16 analogRead(uint8 pin) {
+    static bool lock = false;
     adc_dev *dev = PIN_MAP[pin].adc_device;
     if (dev == NULL) {
         return 0;
     }
-
-    return adc_read(dev, PIN_MAP[pin].adc_channel);
+    while (lock) {
+        vTaskDelay(1);
+    }
+    lock = true;
+    uint16_t ret = adc_read(dev, PIN_MAP[pin].adc_channel);
+    lock = false;
+    return ret;
 }
