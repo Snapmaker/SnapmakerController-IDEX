@@ -95,6 +95,8 @@ static ErrCode exception_report_info(exception_type_e e, uint8_t trigger_or_clea
 void exception_event_loop(void) {
   static uint32_t last_exception = 0;
   uint32_t cur_exception = exception_server.get_exception();
+
+  // exception status changes are reported
   if (last_exception != cur_exception) {
     for (uint32_t i = 0; i < EXCEPTION_TYPE_MAX_COUNT; i++) {
       if ((last_exception & BIT(i)) != (cur_exception & BIT(i))) {
@@ -108,5 +110,11 @@ void exception_event_loop(void) {
       }
     }
     last_exception = cur_exception;
+  }
+
+  // Report an exception that causes an SACP event error
+  exception_type_e e = exception_server.get_wait_report_exception();
+  if (e != EXCEPTION_TYPE_NONE) {
+    exception_report_info(e, EXCEPTION_ID_TIRGGER_REPORT);
   }
 }

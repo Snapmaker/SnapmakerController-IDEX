@@ -54,8 +54,7 @@ static ErrCode fdm_set_temperature(event_param_t& event) {
   set_temperature_t *t = (set_temperature_t *)event.data;
   uint8_t e = MODULE_INDEX(t->key);
   SERIAL_ECHOLNPAIR("set temperature e:", e, " t:", t->temperature);
-  fdm_head.set_temperature(e, t->temperature);
-  event.data[0] = E_SUCCESS;
+  event.data[0] = fdm_head.set_temperature(e, t->temperature);;
   event.length = 1;
   return send_event(event);
 }

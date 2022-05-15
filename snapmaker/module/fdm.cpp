@@ -5,6 +5,8 @@
 #include "../../Marlin/src/module/motion.h"
 #include "../module/filament_sensor.h"
 #include "motion_control.h"
+#include "exception.h"
+
 FDM_Head fdm_head;
 
 enum {
@@ -30,6 +32,9 @@ const nozzle_type_t nozzle_type[] = {
 
 
 ErrCode FDM_Head::set_temperature(uint8_t e, uint16_t temperature) {
+  if (!exception_server.is_allow_heat_nozzle()) {
+    return E_SYSTEM_EXCEPTION;
+  }
   thermalManager.setTargetHotend(temperature, e);
   return E_SUCCESS;
 }
@@ -133,6 +138,11 @@ ErrCode FDM_Head::get_extruder_info(uint8_t e, extruder_info_t *info) {
   info->diameter = FLOAT_TO_INT(diameter);
   info->cur_temp = FLOAT_TO_INT(thermalManager.degHotend(e));
   info->target_temp = FLOAT_TO_INT(thermalManager.degTargetHotend(e));
+  if (type == UNKNOWN_NOZZLE_TYPE && (info->cur_temp >= FLOAT_TO_INT(350))) {
+    exception_server.trigger_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_LOSS + e));
+  } else {
+    exception_server.clean_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_LOSS + e));
+  }
   return E_SUCCESS;
 }
 

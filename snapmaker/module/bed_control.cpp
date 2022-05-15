@@ -1,5 +1,6 @@
 #include "bed_control.h"
 #include "src/module//temperature.h"
+#include "exception.h"
 
 BedControl bed_control;
 
@@ -21,6 +22,7 @@ bool BedControl::self_check() {
   if (READ(HEATER_BED_BACK_PIN) == LOW) {
     LOG_E("BED close self check failed\n");
     is_error = true;
+    exception_server.trigger_exception(EXCEPTION_TYPE_BED_SELF_CHECK);
   }
   if (is_error) {
     OUT_WRITE(HEATER_BED_PWR_PIN, LOW);
@@ -31,16 +33,25 @@ bool BedControl::self_check() {
 }
 
 ErrCode BedControl::set_temperature(uint16_t temperature) {
+  if (!exception_server.is_allow_heat_bed()) {
+    return E_SYSTEM_EXCEPTION;
+  }
   thermalManager.setTargetBed(temperature);
   return E_SUCCESS;
 }
 
 ErrCode BedControl::get_info(bed_control_info_t &info) {
+  float temperature = thermalManager.degBed();
   info.key = MODULE_KEY(MODULE_BED, 0);
   info.bed_count = 1;
   info.zone_index = 0;
-  info.cur_temp = FLOAT_TO_INT(thermalManager.degBed());
+  info.cur_temp = FLOAT_TO_INT(temperature);
   info.target_temp = (int16_t)thermalManager.degTargetBed();
+  if (temperature >= 300) {
+    exception_server.trigger_exception(EXCEPTION_TYPE_BED_NOT_FIND);
+  } else {
+    exception_server.clean_exception(EXCEPTION_TYPE_BED_NOT_FIND);
+  }
   return E_SUCCESS;
 }
 

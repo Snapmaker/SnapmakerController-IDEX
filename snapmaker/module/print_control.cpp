@@ -10,6 +10,7 @@
 #include "fdm.h"
 #include "power_loss.h"
 #include "../module/filament_sensor.h"
+#include "exception.h"
 
 
 PrintControl print_control;
@@ -157,6 +158,9 @@ ErrCode PrintControl::push_gcode(uint32_t start_line, uint32_t end_line, uint8_t
 }
 
 ErrCode PrintControl::start() {
+  if (!exception_server.is_allow_work()) {
+    return E_SYSTEM_EXCEPTION;
+  }
   if (system_service.get_status() != SYSTEM_STATUE_IDLE) {
     return PRINT_RESULT_START_ERR_E;
   }

@@ -31,6 +31,7 @@
 #include "../module/printcounter.h"
 #include "../libs/duration_t.h"
 #include "../gcode/gcode.h"
+#include "../../../snapmaker/module/exception.h"
 
 #if ENABLED(TMC_DEBUG)
   #include "../module/planner.h"
@@ -1342,7 +1343,10 @@ void test_tmc_connection(LOGICAL_AXIS_ARGS(const bool)) {
     #endif
   }
 
-  if (axis_connection) LCD_MESSAGEPGM(MSG_ERROR_TMC);
+  if (axis_connection) {
+    LCD_MESSAGEPGM(MSG_ERROR_TMC);
+    exception_server.trigger_exception(EXCEPTION_TYPE_TMC_FILED);
+  }
 }
 
 #endif // HAS_TRINAMIC_CONFIG
