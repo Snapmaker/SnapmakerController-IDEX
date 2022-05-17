@@ -169,6 +169,7 @@ ErrCode PrintControl::start() {
       dual_x_carriage_mode = (DualXMode)mode_;
       break;
   }
+  apply_print_offset();
   if (homing_needed()) {
     motion_control.home();
   }
@@ -235,13 +236,39 @@ ErrCode PrintControl::stop() {
     }
     thermalManager.setTargetBed(0);
     set_feedrate_percentage(100);
+    unapply_print_offset();
   }
-  (void)settings.save();
   return E_SUCCESS;
 }
 
 ErrCode PrintControl::set_mode(print_mode_e mode) {
   mode_ = mode;
+  return E_SUCCESS;
+}
+
+void PrintControl::apply_print_offset() {
+  LOOP_LINEAR_AXES(i) {
+    home_offset[i] -= xyz_offset[i];
+    update_workspace_offset((AxisEnum)i);
+  }
+}
+
+void PrintControl::unapply_print_offset() {
+  LOOP_LINEAR_AXES(i) {
+    home_offset[i] += xyz_offset[i];
+    update_workspace_offset((AxisEnum)i);
+  }
+  set_print_offset(0, 0, 0);
+}
+
+ErrCode PrintControl::set_print_offset(float x, float y, float z) {
+  if (system_service.is_working()) {
+    SERIAL_ECHOLNPAIR("set print offset filed !");
+    return E_COMMON_ERROR;
+  }
+  xyz_offset.x = x;
+  xyz_offset.y = y;
+  xyz_offset.z = z;
   return E_SUCCESS;
 }
 

@@ -24,7 +24,8 @@ typedef enum : uint8_t {
   E_PARAM,            /* got a invalid parameter */   
   E_MODULE_KEY,
   E_NO_MEM,           /* apply memory failed */
-
+  E_SYSTEM_EXCEPTION = 14,
+  E_COMMON_ERROR = 15,
   E_ADJUST_PRIOBE = 200,
   E_ADJUST_XY = 201,
 } ErrCode_e;

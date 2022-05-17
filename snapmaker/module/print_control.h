@@ -42,6 +42,7 @@ class PrintControl {
     ErrCode resume();
     ErrCode stop();
     ErrCode set_mode(print_mode_e mode);
+    ErrCode set_print_offset(float x, float y, float z);
     void set_feedrate_percentage(int16_t percentage);
     int16_t get_feedrate_percentage();
     void set_work_flow_percentage(uint8_t e, int16_t percentage);
@@ -58,11 +59,16 @@ class PrintControl {
     void temperature_lock(uint8_t e, bool enable) {temperature_lock_status[e] = enable;}
     void error_and_stop();
 
+  private:
+    void apply_print_offset();
+    void unapply_print_offset();
+
   public:
     print_mode_e mode_ = PRINT_BACKUP_MODE;
     bool temperature_lock_status[EXTRUDERS] = {false, false};
     bool commands_lock_ = false;
     print_err_info_t print_err_info = {0};
+    xyz_pos_t xyz_offset = {0, 0, 0};
 };
 
 extern PrintControl print_control;

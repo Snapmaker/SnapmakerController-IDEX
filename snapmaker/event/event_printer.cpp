@@ -268,12 +268,13 @@ static ErrCode request_auto_pack_status(event_param_t& event) {
   return send_event(event);
 }
 
-static ErrCode set_auto_pack_mode(event_param_t& event) {
-  print_mode_e mode = PRINT_BACKUP_MODE;
-  if (event.data[0])
-    mode = PRINT_AUTO_PARK_MODE;
-  SERIAL_ECHOLNPAIR("SC req auto pack mode:", mode);
-  event.data[0] = print_control.set_mode(mode);
+static ErrCode set_print_offset(event_param_t& event) {
+  float_to_int_t * val = (float_to_int_t *)event.data;
+  float x = INT_TO_FLOAT(val[0]);
+  float y = INT_TO_FLOAT(val[1]);
+  float z = INT_TO_FLOAT(val[2]);
+  SERIAL_ECHOLNPAIR("Sprint_controlC req print offset x:", x, " y:", y, " z:", z);
+  event.data[0] = print_control.set_print_offset(x, y, z);
   event.length = 1;
   return send_event(event);
 }
@@ -366,7 +367,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_CLEAN_PL_DATA       , EVENT_CB_TASK_RUN,   request_clear_power_loss},
   {PRINTER_ID_SET_MODE            , EVENT_CB_TASK_RUN,   set_printer_mode},
   {PRINTER_ID_REQ_AUTO_PARK_STATUS, EVENT_CB_DIRECT_RUN, request_auto_pack_status},
-  {PRINTER_ID_SET_AUTO_PARK_STATUS, EVENT_CB_TASK_RUN,   set_auto_pack_mode},
+  {PRINTER_ID_SET_PRINT_OFFSET    , EVENT_CB_TASK_RUN,   set_print_offset},
   {PRINTER_ID_STOP_SINGLE_EXTRUDE , EVENT_CB_DIRECT_RUN,   request_stop_single_extrude_work},
   {PRINTER_ID_SET_WORK_PERCENTAGE , EVENT_CB_DIRECT_RUN,   set_work_feedrate_percentage},
   {PRINTER_ID_GET_WORK_PERCENTAGE , EVENT_CB_DIRECT_RUN,   get_work_feedrate_percentage},
