@@ -14,7 +14,8 @@ static const uint16_t hw_version_table[] = {
     MV_TO_ADC_VAL(3200)
   };
 
-void SystemService::get_coordinate_system_info(coordinate_system_t * info) {
+void SystemService::get_coordinate_system_info(coordinate_system_t * info, bool is_logical) {
+  xyze_pos_t position = current_position;
   float x0 = x_position();
   float x1 = x2_position();
   info->homed = homing_needed();
@@ -22,6 +23,11 @@ void SystemService::get_coordinate_system_info(coordinate_system_t * info) {
   info->coordinate_system_id = 0;
   info->is_origin_offset = true;
 
+  if (is_logical) {
+    position = current_position.asLogical();
+    x0 = NATIVE_TO_LOGICAL(x0, X_AXIS);
+    x1 = NATIVE_TO_LOGICAL(x1, X_AXIS);
+  }
   info->coordinate_axis_count = AXIS_COUNT;
   info->coordinate_axis_info[0].axis = AXIS_X1;
   info->coordinate_axis_info[0].position = FLOAT_TO_INT(x0);
@@ -30,9 +36,9 @@ void SystemService::get_coordinate_system_info(coordinate_system_t * info) {
   info->coordinate_axis_info[1].position = FLOAT_TO_INT(x1);
 
   info->coordinate_axis_info[2].axis = AXIS_Y1;
-  info->coordinate_axis_info[2].position = FLOAT_TO_INT(current_position[Y_AXIS]);
+  info->coordinate_axis_info[2].position = FLOAT_TO_INT(position[Y_AXIS]);
   info->coordinate_axis_info[3].axis = AXIS_Z1;
-  info->coordinate_axis_info[3].position = FLOAT_TO_INT(current_position[Z_AXIS]);
+  info->coordinate_axis_info[3].position = FLOAT_TO_INT(position[Z_AXIS]);
 
   // No other coordinate system is supported, so fake data is used to complete the protocol
   info->origin_offset_count = AXIS_COUNT;

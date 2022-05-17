@@ -75,7 +75,7 @@ typedef struct {
 #pragma pack()
 class SystemService {
   public:
-    void get_coordinate_system_info(coordinate_system_t * info);
+    void get_coordinate_system_info(coordinate_system_t * info, bool is_logical=false);
     void get_machine_info(machine_info_t *info);
     void get_machine_size(machine_size_t *size);
     ErrCode set_origin(coordinate_info_t axis);

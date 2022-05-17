@@ -98,9 +98,10 @@ static ErrCode req_machine_size(event_param_t& event) {
 }
 
 static ErrCode req_coordinate_system(event_param_t& event) {
+  uint8_t mode = event.data[0];
   coordinate_system_t * info = (coordinate_system_t *)(event.data + 1);
   event.data[0] = E_SUCCESS;
-  system_service.get_coordinate_system_info(info);
+  system_service.get_coordinate_system_info(info, !mode);
   event.length = sizeof(coordinate_system_t) + 1;
   send_event(event);
   return E_SUCCESS;

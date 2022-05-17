@@ -67,8 +67,12 @@ ErrCode MotionControl::move_axis(mobile_instruction_t *move) {
 
 ErrCode MotionControl::move_axis_to(mobile_instruction_t *move) {
   xyze_pos_t xyze = current_position;
+  bool is_logical = !(*((uint8_t*)move + (3 + (move->axis_count * sizeof(axis_move_t)))));
   float save_feedrate = feedrate_mm_s;
   SERIAL_ECHOPAIR("sc req move");
+  if (is_logical) {
+    xyze = current_position.asLogical();
+  }
   for (uint8_t i = 0; i < move->axis_count; i++) {
     axis_move_t *axis_move = &(&move->axis_move)[i];
     switch (axis_move->axis) {
@@ -94,10 +98,17 @@ ErrCode MotionControl::move_axis_to(mobile_instruction_t *move) {
         break;
     }
   }
-  uint16_t speed = *((uint16_t*)((uint8_t*)move + (1 + (move->axis_count * sizeof(axis_move_t)))));
-  SERIAL_ECHOLNPAIR(" f:", speed);
-  feedrate_mm_s = speed ? MMM_TO_MMS(speed) : feedrate_mm_s;
-  blocking_move_to(xyze.x, xyze.y, xyze.z, feedrate_mm_s);
+  uint8_t *data = ((uint8_t*)move + (1 + (move->axis_count * sizeof(axis_move_t))));
+  uint16_t speed = *((uint16_t*)data);
+  SERIAL_ECHOPAIR(" f:", speed);
+  SERIAL_ECHOLNPAIR(" is_logical:", is_logical);
+
+  feedrate_mm_s = speed ? speed : feedrate_mm_s;
+  if (is_logical) {
+    logical_move_to_xyz(xyze.x, xyze.y, xyze.z, feedrate_mm_s);
+  } else {
+    move_to_xyz(xyze.x, xyze.y, xyze.z, feedrate_mm_s);
+  }
   feedrate_mm_s = save_feedrate;
   synchronize();
   return E_SUCCESS;
