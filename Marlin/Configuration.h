@@ -1341,7 +1341,7 @@
 // The size of the printable area
 
 #define X_BED_SIZE 324
-#define Y_BED_SIZE 202
+#define Y_BED_SIZE 200
 
 #define BAD_CENTER_X_POS 175
 #define BAD_CENTER_Y_POS 101
