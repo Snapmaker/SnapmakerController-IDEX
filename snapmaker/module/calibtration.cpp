@@ -325,6 +325,7 @@ ErrCode Calibtration::calibtration_xy() {
     LOG_E("Calibrate XY after calibrating Z offset\n");
     return E_CAlIBRATION_XY;
   }
+  backup_offset();  //  you can choose to restore offset when exit()
   reset_xy_calibtration_env();
   HOTEND_LOOP() {
     bed_preapare(e);
@@ -357,9 +358,11 @@ ErrCode Calibtration::calibtration_xy() {
       break;
     }
   }
-  goto_position(CAlIBRATION_POS_0);
   motion_control.move_z(100);
+  motion_control.home_x();
+  motion_control.home_y();
   tool_change(old_active_extruder, true);
+  dual_x_carriage_mode = dual_mode;
   if(ret == E_SUCCESS) {
     LOG_V("JF-XY calibration: Success!\n");
     LOG_V("JF-XY Extruder1:%f %f\n", xy_center[0][0], xy_center[0][1]);
@@ -375,9 +378,6 @@ ErrCode Calibtration::calibtration_xy() {
 
     // Store to eeprom
     settings.save();
-    dual_x_carriage_mode = dual_mode;
-    motion_control.home_x();
-    motion_control.home_y();
     return ret;
   }
   else {
