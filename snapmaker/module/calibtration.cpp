@@ -101,7 +101,7 @@ void Calibtration::bed_preapare(uint8_t extruder_index) {
       motion_control.move_z(15, PROBE_MOVE_Z_FEEDRATE);
     }
     tool_change(!extruder_index, true);
-    motion_control.move_to_x(x_need_move_to, PROBE_MOVE_XY_FEEDRATE);
+    motion_control.move_to_x(another_x_home_pos, MOTION_TRAVEL_FEADRATE);
   }
   if (active_extruder != extruder_index) {
     tool_change(extruder_index, true);
@@ -121,7 +121,7 @@ ErrCode Calibtration::goto_calibtration_position(uint8_t pos) {
   xyz_pos_t offset1 = hotend_offset[1];
   // Reset the Hotend Offsets; otherwise, the moving position will be affected
   set_hotend_offsets_to_default();
-  motion_control.move_to_xy(calibration_position_xy[pos][0], calibration_position_xy[pos][1], PROBE_MOVE_XY_FEEDRATE);
+  motion_control.move_to_xy(calibration_position_xy[pos][0], calibration_position_xy[pos][1], MOTION_TRAVEL_FEADRATE);
   // recover hotend_offsets
   set_hotend_offsets(0, offset0);
   set_hotend_offsets(1, offset1);
