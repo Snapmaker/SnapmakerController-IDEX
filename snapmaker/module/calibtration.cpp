@@ -172,6 +172,9 @@ ErrCode Calibtration::probe_z_offset(calibtration_position_e pos) {
   float position = 0;
   float z_probe_distance = 25;
   float last_valid_zoffset = home_offset[Z_AXIS];
+  if (pos == CAlIBRATION_POS_0) {
+    return E_PARAM;
+  }
   backup_offset();
   set_home_offset(Z_AXIS, 0);
   motion_control.move_to_z(15, PROBE_MOVE_Z_FEEDRATE);
