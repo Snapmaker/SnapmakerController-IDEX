@@ -15,7 +15,8 @@ Calibtration calibtration;
 #define PROBE_XY_FEEDRATE 200
 #define PROBE_MOVE_XY_FEEDRATE 5000
 #define PROBE_MOVE_Z_FEEDRATE 600
-#define PROBE_LIFTINT_DISTANCE (3)  // mm
+#define PROBE_LIFTINT_DISTANCE (1)  // mm
+#define PROBE_MOVE_XY_LIFTINT_DISTANCE (5)  // mm
 #define Z_REMOVE_PLATE_THICKNESS(z) (z - build_plate_thickness)
 
 // static uint8_t probe_sg_reg[3] = {1, 0, 73};  // X Y Z
@@ -218,7 +219,7 @@ ErrCode Calibtration::bed_calibtration_preapare(calibtration_position_e pos, boo
   mode = CAlIBRATION_MODE_BED;
   status = CAlIBRATION_STATE_IDLE;
   motion_control.synchronize();
-  motion_control.move_z(PROBE_LIFTINT_DISTANCE);
+  motion_control.move_z(PROBE_MOVE_XY_LIFTINT_DISTANCE);
   if (is_probe) {
     ret = bed_probe(pos, 0, true);
   } else {
@@ -389,7 +390,7 @@ ErrCode Calibtration::exit(bool is_save) {
 void Calibtration::loop(void) {
   if (mode == CAlIBRATION_MODE_BED && status == CAlIBRATION_STATE_BED_BEAD) {
     bed_probe(cur_pos);
-    LOG_V("probe offset:%d\n", probe_offset);
+    LOG_V("probe offset:%f\n", probe_offset);
   } else if (mode == CAlIBRATION_MODE_NOZZLE && status == CAlIBRATION_STATE_BED_BEAD) {
     bed_probe(cur_pos, 1);
   } else if (mode == CAlIBRATION_MODE_EXIT) {
