@@ -43,7 +43,7 @@ typedef enum {
 
 class Calibtration {
   public:
-    ErrCode goto_position(uint8_t pos);
+    ErrCode goto_calibtration_position(uint8_t pos);
     void bed_preapare(uint8_t extruder_index=0);
     float probe(uint8_t axis, float distance, uint16_t feedrate);
     ErrCode exit(bool is_save=true);
@@ -64,7 +64,7 @@ class Calibtration {
   private:
     ErrCode probe_z_offset(calibtration_position_e pos);
     void reset_xy_calibtration_env();
-    float xyz_probe(uint8_t axis, int8_t dir, uint16_t freerate);
+    float accurate_probe(uint8_t axis, int8_t dir, uint16_t freerate);
     void backup_offset();
   public:
     calibtration_position_e cur_pos;

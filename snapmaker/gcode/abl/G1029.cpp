@@ -33,7 +33,7 @@
 void GcodeSuite::G1029() {
   if(parser.seenval('I')) {
     uint8_t number = parser.value_byte();
-    calibtration.goto_position(number);
+    calibtration.goto_calibtration_position(number);
   } else if (parser.seenval('B')) {
     uint8_t number = parser.value_byte();
     calibtration.bed_calibtration_preapare((calibtration_position_e)number, number==CAlIBRATION_POS_1);

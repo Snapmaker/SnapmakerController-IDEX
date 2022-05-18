@@ -15,6 +15,7 @@ enum : uint8_t {
 };
 
 typedef enum : uint8_t {
+  // job contorl
   SYSTEM_STATUE_IDLE,
   SYSTEM_STATUE_STARTING,
   SYSTEM_STATUE_PRINTING,

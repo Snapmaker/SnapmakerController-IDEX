@@ -49,6 +49,11 @@ static float calibration_position_xy[6][2] = {
   /*CAlIBRATION_POS_5*/ {HALF_BED_X + POS_X_R_DIFF, HALF_BED_Y + POS_Y_U_DIFF},
 };
 
+
+/**
+ * @brief Backup offset data for recovery
+ * 
+ */
 void Calibtration::backup_offset() {
   HOTEND_LOOP() {
     hotend_offset_backup[e] = hotend_offset[e];
@@ -81,14 +86,16 @@ void Calibtration::bed_preapare(uint8_t extruder_index) {
     motion_control.home();
     planner.synchronize();
   }
+  // Switch to single-header mode
   if (dual_x_carriage_mode > DXC_FULL_CONTROL_MODE) {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
     motion_control.home_x();
   }
-  float x_need_move_to = !extruder_index ? x_home_pos(1) : x_home_pos(0);
-  float cur_other_x = !extruder_index ? x2_position() : x_position();
+  float another_x_home_pos = !extruder_index ? x_home_pos(1) : x_home_pos(0);
+  float another_x_pos = !extruder_index ? x2_position() : x_position();
 
-  if (x_need_move_to != cur_other_x) {
+  // Make sure the other head is in the home position  
+  if (another_x_home_pos != another_x_pos) {
     if(current_position[Z_AXIS] < 30) {
       // Avoid damage to hot bed
       motion_control.move_z(15, PROBE_MOVE_Z_FEEDRATE);
@@ -109,11 +116,13 @@ static void set_hotend_offsets_to_default() {
 }
 
 // Run to the specified calibration point
-ErrCode Calibtration::goto_position(uint8_t pos) {
+ErrCode Calibtration::goto_calibtration_position(uint8_t pos) {
   xyz_pos_t offset0 = hotend_offset[0];
   xyz_pos_t offset1 = hotend_offset[1];
+  // Reset the Hotend Offsets; otherwise, the moving position will be affected
   set_hotend_offsets_to_default();
   motion_control.move_to_xy(calibration_position_xy[pos][0], calibration_position_xy[pos][1], PROBE_MOVE_XY_FEEDRATE);
+  // recover hotend_offsets
   set_hotend_offsets(0, offset0);
   set_hotend_offsets(1, offset1);
   return E_SUCCESS;
@@ -151,6 +160,13 @@ float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
   return ret;
 }
 
+
+/**
+ * @brief Modified probe result to Z-offset
+ * 
+ * @param pos : The specified calibration point 1 - 5
+ * @return ErrCode 
+ */
 ErrCode Calibtration::probe_z_offset(calibtration_position_e pos) {
   float temp_z = 0;
   float position = 0;
@@ -159,15 +175,16 @@ ErrCode Calibtration::probe_z_offset(calibtration_position_e pos) {
   backup_offset();
   set_home_offset(Z_AXIS, 0);
   motion_control.move_to_z(15, PROBE_MOVE_Z_FEEDRATE);
-  goto_position(pos);
+  goto_calibtration_position(pos);
   z_probe_distance = 25;
+  // Try a probe
   temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
   if (temp_z == -z_probe_distance) {
     LOG_E("failed to probe z !!!\n");
     set_home_offset(Z_AXIS, last_valid_zoffset);
     return E_CAlIBRATION_PRIOBE;
   }
-  position = xyz_probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
+  position = accurate_probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
   set_home_offset(Z_AXIS, -(position + build_plate_thickness));
   LOG_I("Set z_offset to :%f\n", home_offset[Z_AXIS]);
   motion_control.move_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
@@ -188,7 +205,7 @@ ErrCode Calibtration::bed_probe(calibtration_position_e pos, uint8_t extruder, b
     motion_control.home_x();
     ret = probe_z_offset(pos);
   } else {
-    goto_position(pos);
+    goto_calibtration_position(pos);
     motion_control.logical_move_to_z(Z_REMOVE_PLATE_THICKNESS(PROBE_LIFTINT_DISTANCE), PROBE_MOVE_Z_FEEDRATE);
     z_probe_distance = 15;
     temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
@@ -224,7 +241,7 @@ ErrCode Calibtration::bed_calibtration_preapare(calibtration_position_e pos, boo
     ret = bed_probe(pos, 0, true);
   } else {
     bed_preapare(0);
-    goto_position(pos);
+    goto_calibtration_position(pos);
   }
   return ret;
 }
@@ -253,13 +270,16 @@ ErrCode Calibtration::nozzle_calibtration_preapare(calibtration_position_e pos) 
   return E_SUCCESS;
 }
 
+/**
+ * @brief reset home_offset、hotend_offsets and home
+ * 
+ */
 void Calibtration::reset_xy_calibtration_env() {
   set_hotend_offsets_to_default();
   set_home_offset(X_AXIS, 0);
   set_home_offset(Y_AXIS, 0);
   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
   if(homing_needed()) {
-    // Step1 home all axis
     motion_control.home();
     planner.synchronize();
   } else {
@@ -271,7 +291,15 @@ void Calibtration::reset_xy_calibtration_env() {
   }
 }
 
-float Calibtration::xyz_probe(uint8_t axis, int8_t dir, uint16_t freerate) {
+/**
+ * @brief The results of multiple probe, probe must be called once before calling accurate_probe
+ * 
+ * @param axis : X_AXIS Y_AXIS Z_AXIS
+ * @param dir : <0 - Inverted movement  >=0 - Forward movement
+ * @param freerate : mm/min
+ * @return float 
+ */
+float Calibtration::accurate_probe(uint8_t axis, int8_t dir, uint16_t freerate) {
   #define PROBE_TIMES 3
   float probe_distance =  dir >= 0 ? 1 : -1;
   float pos = 0;
@@ -298,28 +326,28 @@ ErrCode Calibtration::calibtration_xy() {
   HOTEND_LOOP() {
     bed_preapare(e);
     motion_control.logical_move_to_z(15 - build_plate_thickness);
-    goto_position(CAlIBRATION_POS_0);
+    goto_calibtration_position(CAlIBRATION_POS_0);
     motion_control.logical_move_to_z(-2 - build_plate_thickness);
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
       xy_center[e][axis] = 0;
-      goto_position(CAlIBRATION_POS_0);
+      goto_calibtration_position(CAlIBRATION_POS_0);
       probe_value = probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
       if (probe_value >= abs(probe_distance) - 5) {
         ret =  E_CAlIBRATION_XY;
-        LOG_E("e:%d axis:%d probe 0 filedn\n", e, axis);
+        LOG_E("e:%d axis:%d probe 0 filed\n", e, axis);
         break;
       }
-      float pos = xyz_probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
-      goto_position(CAlIBRATION_POS_0);
+      float pos = accurate_probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
+      goto_calibtration_position(CAlIBRATION_POS_0);
       probe_value = probe(axis, probe_distance, PROBE_XY_FEEDRATE);
       if (probe_value >= abs(probe_distance) - 5) {
         ret = E_CAlIBRATION_XY;
-        LOG_E("e:%d axis:%d probe 1 filedn\n", e, axis);
+        LOG_E("e:%d axis:%d probe 1 filed\n", e, axis);
         break;
       }
-      float pos_1 = xyz_probe(axis, probe_distance, PROBE_XY_FEEDRATE);
+      float pos_1 = accurate_probe(axis, probe_distance, PROBE_XY_FEEDRATE);
       xy_center[e][axis] += (pos_1 + pos) / 2;
-      goto_position(CAlIBRATION_POS_0);
+      goto_calibtration_position(CAlIBRATION_POS_0);
     }
     if (ret != E_SUCCESS) {
       LOG_E("calibtration e[%e] xy filed\n", e);
@@ -412,6 +440,14 @@ void Calibtration::loop(void) {
   }
 }
 
+
+/**
+ * @brief Change and apply z_offset  
+ * 
+ * @param offset Absolute z-offset value  
+ * @param is_moved : true - Change the coordinate system by adjusting the hot bed position
+ *                   false - Change the coordinate system value directly
+ */
 void Calibtration::set_z_offset(float offset, bool is_moved) {
   print_control.commands_lock();
   motion_control.synchronize();
