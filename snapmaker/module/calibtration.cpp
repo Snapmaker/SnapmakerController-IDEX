@@ -249,12 +249,12 @@ ErrCode Calibtration::bed_calibtration_preapare(calibtration_position_e pos, boo
   return ret;
 }
 
-ErrCode Calibtration::bed_start_bead_mode() {
+ErrCode Calibtration::bed_start_beat_mode() {
   if (mode == CAlIBRATION_MODE_BED) {
-    status = CAlIBRATION_STATE_BED_BEAD;
+    status = CAlIBRATION_STATE_BED_BEAT;
     return E_SUCCESS;
   } else if (mode == CAlIBRATION_MODE_NOZZLE) {
-    status = CAlIBRATION_STATE_BED_BEAD;
+    status = CAlIBRATION_STATE_BED_BEAT;
     return E_SUCCESS;
   }
   return E_PARAM;
@@ -419,12 +419,12 @@ ErrCode Calibtration::exit(bool is_save) {
 // Jumping requires blocking tasks so put it in a loop to do
 // Probe once per loop
 void Calibtration::loop(void) {
-  if (mode == CAlIBRATION_MODE_BED && status == CAlIBRATION_STATE_BED_BEAD) {
+  if (mode == CAlIBRATION_MODE_BED && status == CAlIBRATION_STATE_BED_BEAT) {
     if (bed_probe(cur_pos) != E_SUCCESS) {
       status = CAlIBRATION_STATE_IDLE;
     }
     LOG_V("probe offset:%f\n", probe_offset);
-  } else if (mode == CAlIBRATION_MODE_NOZZLE && status == CAlIBRATION_STATE_BED_BEAD) {
+  } else if (mode == CAlIBRATION_MODE_NOZZLE && status == CAlIBRATION_STATE_BED_BEAT) {
     if(bed_probe(cur_pos, 1) != E_SUCCESS) {
       status = CAlIBRATION_STATE_IDLE;
     }

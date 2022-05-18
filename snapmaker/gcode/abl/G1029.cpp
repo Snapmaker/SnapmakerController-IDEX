@@ -38,12 +38,12 @@ void GcodeSuite::G1029() {
     uint8_t number = parser.value_byte();
     calibtration.bed_calibtration_preapare((calibtration_position_e)number, number==CAlIBRATION_POS_1);
     if (number != CAlIBRATION_POS_1) {
-      calibtration.bed_start_bead_mode();
+      calibtration.bed_start_beat_mode();
     }
   } else if (parser.seenval('N')) {
     uint8_t number = parser.value_byte();
     calibtration.nozzle_calibtration_preapare((calibtration_position_e)number);
-    calibtration.bed_start_bead_mode();
+    calibtration.bed_start_beat_mode();
   } else if (parser.seen('A')) {
     calibtration.calibtration_xy();
   } else if (parser.seen('E')) {

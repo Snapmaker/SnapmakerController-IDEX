@@ -19,7 +19,7 @@ typedef enum {
 typedef enum {
   CAlIBRATION_STATE_IDLE,
   CAlIBRATION_STATE_PROBE_XY,
-  CAlIBRATION_STATE_BED_BEAD,
+  CAlIBRATION_STATE_BED_BEAT,
 } calibtration_status_e;
 
 
@@ -50,7 +50,7 @@ class Calibtration {
     ErrCode bed_probe(calibtration_position_e pos, uint8_t extruder=0, bool set_z_offset=false);
     ErrCode bed_calibtration_preapare(calibtration_position_e pos, bool is_probe=false);
     ErrCode bed_manual_calibtration(calibtration_position_e pos);
-    ErrCode bed_start_bead_mode();
+    ErrCode bed_start_beat_mode();
     ErrCode nozzle_calibtration_preapare(calibtration_position_e pos);
     ErrCode calibtration_xy();
     ErrCode set_hotend_offset(uint8_t axis, float offset);

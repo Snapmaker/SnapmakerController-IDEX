@@ -68,9 +68,9 @@ static ErrCode calibtration_move_to_pos(event_param_t& event) {
 }
 
 static ErrCode calibtration_start_bed_probe(event_param_t& event) {
-  event.data[0] = calibtration.bed_start_bead_mode();
+  event.data[0] = calibtration.bed_start_beat_mode();
   event.length = 1;
-  SERIAL_ECHOLNPAIR("start bed bead mode");
+  SERIAL_ECHOLNPAIR("start bed beat mode");
   return send_event(event);
 }
 
