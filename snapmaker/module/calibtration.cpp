@@ -8,6 +8,7 @@
 #include "src/module/tool_change.h"
 #include "../../Marlin/src/module/temperature.h"
 #include "print_control.h"
+#include "system.h"
 
 Calibtration calibtration;
 
@@ -201,6 +202,7 @@ ErrCode Calibtration::bed_probe(calibtration_position_e pos, uint8_t extruder, b
   if (pos == CAlIBRATION_POS_0 || pos >= CAlIBRATION_POS_INVALID) {
     return E_PARAM;
   }
+  system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
   bed_preapare(extruder);
 
   float temp_z = 0;
@@ -225,7 +227,7 @@ ErrCode Calibtration::bed_probe(calibtration_position_e pos, uint8_t extruder, b
   if (last_active_extruder != active_extruder) {
     tool_change(last_active_extruder, true);
   }
- 
+  system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
   return ret;
 }
 
@@ -239,6 +241,9 @@ ErrCode Calibtration::bed_calibtration_preapare(calibtration_position_e pos, boo
   mode = CAlIBRATION_MODE_BED;
   status = CAlIBRATION_STATE_IDLE;
   motion_control.synchronize();
+  while (system_service.get_status() > SYSTEM_STATUE_CAlIBRATION) {
+    vTaskDelay(10);
+  }
   motion_control.move_z(PROBE_MOVE_XY_LIFTINT_DISTANCE);
   if (is_probe) {
     ret = bed_probe(pos, 0, true);
@@ -269,7 +274,7 @@ ErrCode Calibtration::nozzle_calibtration_preapare(calibtration_position_e pos) 
   mode = CAlIBRATION_MODE_NOZZLE;
   status = CAlIBRATION_STATE_IDLE;
   bed_probe(pos, 0, true);
-
+  motion_control.move_z(PROBE_MOVE_XY_LIFTINT_DISTANCE);
   return E_SUCCESS;
 }
 
@@ -325,6 +330,7 @@ ErrCode Calibtration::calibtration_xy() {
     LOG_E("Calibrate XY after calibrating Z offset\n");
     return E_CAlIBRATION_XY;
   }
+  system_service.set_status(SYSTEM_STATUE_CAlIBRATION_XY_PROBING);
   backup_offset();  //  you can choose to restore offset when exit()
   reset_xy_calibtration_env();
   HOTEND_LOOP() {
@@ -363,6 +369,7 @@ ErrCode Calibtration::calibtration_xy() {
   motion_control.home_y();
   tool_change(old_active_extruder, true);
   dual_x_carriage_mode = dual_mode;
+  system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
   if(ret == E_SUCCESS) {
     LOG_V("JF-XY calibration: Success!\n");
     LOG_V("JF-XY Extruder1:%f %f\n", xy_center[0][0], xy_center[0][1]);
@@ -444,6 +451,7 @@ void Calibtration::loop(void) {
     }
     thermalManager.setTargetBed(0);
     mode = CAlIBRATION_MODE_IDLE;
+    system_service.set_status(SYSTEM_STATUE_IDLE);
   }
 }
 
