@@ -27,6 +27,9 @@ typedef enum : uint8_t {
   SYSTEM_STATUE_COMPLETED,
   SYSTEM_STATUE_RECOVERING,
   SYSTEM_STATUE_RESUMING,
+
+  // 3Dp calibtration
+  SYSTEM_STATUE_CAlIBRATION = 31,
 } system_status_e;
 
 typedef enum {
@@ -84,7 +87,7 @@ class SystemService {
     system_status_e get_status() {return status_;}
     system_status_source_e get_source() {return source_;}
     void set_status(system_status_e status, system_status_source_e source=SYSTEM_STATUE_SCOURCE_NONE);
-    bool is_calibtration_status() { return false;}
+    bool is_calibtration_status() { return status_ == SYSTEM_STATUE_CAlIBRATION;}
     bool is_working() {return (status_ >= SYSTEM_STATUE_STARTING) && (status_ <= SYSTEM_STATUE_RESUMING);}
     bool is_idle() {return status_ == SYSTEM_STATUE_IDLE;}
     void factory_reset(void);

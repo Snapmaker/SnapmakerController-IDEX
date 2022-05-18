@@ -50,6 +50,9 @@ static ErrCode calibtration_set_mode(event_param_t& event) {
     default:
       event.data[0] = E_PARAM;
   }
+  if (event.data[0] == E_SUCCESS) {
+    system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
+  }
   event.length = 1;
   return send_event(event);
 }
@@ -75,6 +78,7 @@ static ErrCode calibtration_exit(event_param_t& event) {
   SERIAL_ECHOLNPAIR("exit calibtration and is save:", event.data[0]);
   event.data[0] = calibtration.exit(event.data[0]);
   event.length = 1;
+  system_service.set_status(SYSTEM_STATUE_IDLE);
   SERIAL_ECHOLNPAIR("exit calibtration");
   return send_event(event);
 }
