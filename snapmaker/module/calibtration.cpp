@@ -420,10 +420,14 @@ ErrCode Calibtration::exit(bool is_save) {
 // Probe once per loop
 void Calibtration::loop(void) {
   if (mode == CAlIBRATION_MODE_BED && status == CAlIBRATION_STATE_BED_BEAD) {
-    bed_probe(cur_pos);
+    if (bed_probe(cur_pos) != E_SUCCESS) {
+      status = CAlIBRATION_STATE_IDLE;
+    }
     LOG_V("probe offset:%f\n", probe_offset);
   } else if (mode == CAlIBRATION_MODE_NOZZLE && status == CAlIBRATION_STATE_BED_BEAD) {
-    bed_probe(cur_pos, 1);
+    if(bed_probe(cur_pos, 1) != E_SUCCESS) {
+      status = CAlIBRATION_STATE_IDLE;
+    }
   } else if (mode == CAlIBRATION_MODE_EXIT) {
     motion_control.synchronize();
     if (current_position[Z_AXIS] < 100) {
