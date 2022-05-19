@@ -6,7 +6,7 @@ enum : uint8_t {
   SYS_ID_SUBSCRIBE              = 0x00,
   SYS_ID_UNSUBSCRIBE            = 0x01,
   SYS_ID_SET_LOG_GRADE          = 0x10,
-  SYS_ID_REQ_PROTOCOL_VER       = 0x11,
+  SYS_ID_PC_PORT_TO_GCODE       = 0x11,
   SYS_ID_SET_DEBUG_MODE         = 0x12,
   SYS_ID_FACTORY_RESET          = 0x13,
   SYS_ID_HEARTBEAT              = 0xA0,

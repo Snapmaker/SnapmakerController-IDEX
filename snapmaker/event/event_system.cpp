@@ -6,6 +6,7 @@
 #include "../module/system.h"
 #include "../module/motion_control.h"
 #include "../module/enclosure.h"
+#include "event.h"
 #include "../debug/debug.h"
 #pragma pack(1)
 
@@ -35,8 +36,11 @@ static ErrCode set_log_grade(event_param_t& event) {
   return send_event(event);
 }
 
-static ErrCode req_protocol_ver(event_param_t& event) {
-  return E_SUCCESS;
+static ErrCode req_pc_port_to_gcode(event_param_t& event) {
+  event_handler.recv_enable(EVENT_SOURCE_MARLIN, false);
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
 }
 
 static ErrCode set_debug_mode(event_param_t& event) {
@@ -220,7 +224,7 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_SUBSCRIBE             , EVENT_CB_DIRECT_RUN, subscribe_event},
   {SYS_ID_UNSUBSCRIBE           , EVENT_CB_DIRECT_RUN, unsubscribe_event},
   {SYS_ID_SET_LOG_GRADE         , EVENT_CB_DIRECT_RUN, set_log_grade},
-  {SYS_ID_REQ_PROTOCOL_VER      , EVENT_CB_DIRECT_RUN, req_protocol_ver},
+  {SYS_ID_PC_PORT_TO_GCODE      , EVENT_CB_DIRECT_RUN, req_pc_port_to_gcode},
   {SYS_ID_SET_DEBUG_MODE        , EVENT_CB_DIRECT_RUN, set_debug_mode},
   {SYS_ID_FACTORY_RESET         , EVENT_CB_TASK_RUN  , factory_reset},
   {SYS_ID_HEARTBEAT             , EVENT_CB_DIRECT_RUN, heart_event},

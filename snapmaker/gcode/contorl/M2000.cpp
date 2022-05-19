@@ -28,11 +28,10 @@
  */
 void GcodeSuite::M2000() {
   uint8_t s = (uint8_t)parser.byteval('S', (uint8_t)0xFF);
-  uint32_t p = (uint32_t)parser.ulongval('P', (uint32_t)0);
   switch (s) {
     case 5:
       { // set pc protocol
-        event_handler.recv_enable(EVENT_SOURCE_MARLIN, p);
+        event_handler.recv_enable(EVENT_SOURCE_MARLIN);
       }
       break;
     default:

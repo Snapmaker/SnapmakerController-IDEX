@@ -36,7 +36,7 @@ class EventHandler {
     void loop_task();
     void recv_task();
     void recv_enable(event_source_e source, bool enable);
-    bool recv_enable(event_source_e source);
+    void recv_enable(event_source_e source);
 
   private:
     ErrCode parse(recv_data_info_t *recv_info);

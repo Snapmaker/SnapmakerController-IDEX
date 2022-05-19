@@ -118,8 +118,8 @@ void EventHandler::recv_enable(event_source_e source, bool enable) {
   }
 }
 
-bool EventHandler::recv_enable(event_source_e source) {
-  return evevnt_serial[source]->enable_sacp();
+void EventHandler::recv_enable(event_source_e source) {
+  recv_enable(source, true);
 }
 
 void EventHandler::recv_task() {
