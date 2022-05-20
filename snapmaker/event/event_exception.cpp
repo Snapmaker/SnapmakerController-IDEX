@@ -75,7 +75,7 @@ event_cb_info_t exception_cb_info[EXCEPTION_ID_CB_COUNT] = {
 };
 
 
-static ErrCode exception_report_info(exception_type_e e, uint8_t trigger_or_clear) {
+static ErrCode exception_report_info(exception_type_e e) {
   uint8_t buf[40];
   exception_info_t * info = (exception_info_t *)buf;
   get_exception_info(e, info);
@@ -85,10 +85,28 @@ static ErrCode exception_report_info(exception_type_e e, uint8_t trigger_or_clea
   uint32_t lenght = sizeof(exception_info_t) + 1 + behavior_count;
 
   send_event(EVENT_SOURCE_HMI, SACP_ID_HMI, SACP_ATTR_REQ,
-      COMMAND_SET_EXCEPTION, trigger_or_clear, buf, lenght);
+      COMMAND_SET_EXCEPTION, EXCEPTION_ID_TIRGGER_REPORT, buf, lenght);
   // The SACP protocol cannot be send without enabling it
   send_event(EVENT_SOURCE_MARLIN, SACP_ID_PC, SACP_ATTR_REQ,
-    COMMAND_SET_EXCEPTION, trigger_or_clear, buf, lenght);
+    COMMAND_SET_EXCEPTION, EXCEPTION_ID_TIRGGER_REPORT, buf, lenght);
+  return E_SUCCESS;
+}
+
+static ErrCode exception_report_clear_info(exception_type_e e) {
+  uint8_t buf[40];
+  exception_info_t * info = (exception_info_t *)(buf+1);
+  get_exception_info(e, info);
+  buf[0] = 1;  // One clearance exception is reported at a time
+  uint8_t * behavior = (uint8_t *)(buf + sizeof(exception_info_t) + 1);
+  uint8_t behavior_count = get_exception_behavior_list(behavior);
+  buf[sizeof(exception_info_t)] = behavior_count;
+  uint32_t lenght = sizeof(exception_info_t) + 2 + behavior_count;
+
+  send_event(EVENT_SOURCE_HMI, SACP_ID_HMI, SACP_ATTR_REQ,
+      COMMAND_SET_EXCEPTION, EXCEPTION_ID_CLEAN_REPORT, buf, lenght);
+  // The SACP protocol cannot be send without enabling it
+  send_event(EVENT_SOURCE_MARLIN, SACP_ID_PC, SACP_ATTR_REQ,
+    COMMAND_SET_EXCEPTION, EXCEPTION_ID_CLEAN_REPORT, buf, lenght);
   return E_SUCCESS;
 }
 
@@ -102,10 +120,10 @@ void exception_event_loop(void) {
       if ((last_exception & BIT(i)) != (cur_exception & BIT(i))) {
         if (cur_exception & BIT(i)) {
           SERIAL_ECHOLNPAIR("Report trigger exception code[", i, "]");
-          exception_report_info((exception_type_e)i, EXCEPTION_ID_TIRGGER_REPORT);
+          exception_report_info((exception_type_e)i);
         } else {
           SERIAL_ECHOLNPAIR("Report clear exception code[", i, "]");
-          exception_report_info((exception_type_e)i, EXCEPTION_ID_CLEAN_REPORT);
+          exception_report_clear_info((exception_type_e)i);
         }
       }
     }
@@ -115,6 +133,6 @@ void exception_event_loop(void) {
   // Report an exception that causes an SACP event error
   exception_type_e e = exception_server.get_wait_report_exception();
   if (e != EXCEPTION_TYPE_NONE) {
-    exception_report_info(e, EXCEPTION_ID_TIRGGER_REPORT);
+    exception_report_info(e);
   }
 }
