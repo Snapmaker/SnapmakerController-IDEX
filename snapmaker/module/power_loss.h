@@ -86,6 +86,7 @@ class PowerLoss {
     power_loss_status_e power_loss_status = POWER_LOSS_IDLE;
     bool is_inited = false;
     power_loss_t stash_data;
+    bool last_status = 0;
 };
 
 extern PowerLoss power_loss;

@@ -358,6 +358,10 @@ void PowerLoss::close_peripheral_power() {
 }
 
 void PowerLoss::process() {
+  if (is_power_pin_trigger() && !last_status) {
+    SERIAL_ECHOLNPAIR("trigger power loss");
+    last_status = true;
+  }
   if (power_loss.power_loss_status == POWER_LOSS_DONE) {
     SERIAL_ECHOLNPAIR("trigger power loss done");
     motion_control.synchronize();

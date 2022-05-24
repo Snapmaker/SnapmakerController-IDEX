@@ -66,6 +66,7 @@ class SnapDebug {
     void Log(debug_level_e level, const char *fmt, ...);
     void set_level(debug_level_e l);
     debug_level_e get_level();
+    void show_all_status();
 };
 
 // interface for external use

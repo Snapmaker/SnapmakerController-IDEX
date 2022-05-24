@@ -22,6 +22,18 @@
 #include "debug.h"
 #include "../event/event_base.h"
 #include "../event/event_system.h"
+#include "../module/fdm.h"
+#include "../module/bed_control.h"
+#include "../module/filament_sensor.h"
+#include "../module/power_loss.h"
+#include "../module/exception.h"
+#include "../j1/switch_detect.h"
+#include "../module/enclosure.h"
+#include "../../Marlin/src/inc/Version.h"
+#include "../../Marlin/src/module/motion.h"
+#include "../../Marlin/src/module/settings.h"
+#include "../../Marlin/src/module/temperature.h"
+#include "../../Marlin/src/module/planner.h"
 
 #if (SNAP_DEBUG == 1)
 
@@ -92,6 +104,66 @@ void SnapDebug::set_level(debug_level_e l) {
 
 debug_level_e SnapDebug::get_level() {
   return debug_msg_level;
+}
+
+void SnapDebug::show_all_status() {
+
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "J1 version:%s\n", J1_BUILD_VERSION);
+  SERIAL_ECHO(log_buf);
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "active_extruder:%d\n", active_extruder);
+  SERIAL_ECHO(log_buf);
+
+  extruder_info_t extruder0_info, extruder1_info;
+  fdm_head.get_extruder_info(0, &extruder0_info);
+  fdm_head.get_extruder_info(1, &extruder1_info);
+
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "nozzle id T0:%d T1:%d\n", extruder0_info.type, extruder1_info.type);
+  SERIAL_ECHO(log_buf);
+
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "nozzle 0 temperature cur:%.2f target:%.2f\n", INT_TO_FLOAT(extruder0_info.cur_temp), INT_TO_FLOAT(extruder0_info.target_temp));
+  SERIAL_ECHO(log_buf);
+
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "nozzle 1 temperature cur:%.2f target:%.2f\n", INT_TO_FLOAT(extruder1_info.cur_temp), INT_TO_FLOAT(extruder1_info.target_temp));
+  SERIAL_ECHO(log_buf);
+
+  bed_control_info_t bed_info;
+  bed_control.get_info(bed_info);
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "bed temperature cur:%.2f target:%d\n", INT_TO_FLOAT(bed_info.cur_temp), bed_info.target_temp);
+  SERIAL_ECHO(log_buf);
+
+  SERIAL_ECHOLNPAIR("filament check enable T0:", filament_sensor.filament_param.enabled[0], ", T1:", filament_sensor.filament_param.enabled[1]);
+  SERIAL_ECHOLNPAIR("filament trigger status T0:", filament_sensor.is_trigger(0), ", T1:", filament_sensor.is_trigger(1));
+  SERIAL_ECHOLNPAIR("filament check param - diatance:", filament_sensor.filament_param.distance,
+                    ", threshold:", filament_sensor.filament_param.threshold,
+                    ", times:", filament_sensor.filament_param.check_times);
+  SERIAL_ECHOLNPAIR("filament sensor value T0:", filament_sensor.get_adc_val(0),
+                    ", T1:", filament_sensor.get_adc_val(1));
+  
+  SERIAL_ECHOLNPAIR("Homed X:", axis_was_homed(X_AXIS), " Y:", axis_was_homed(Y_AXIS), " Z:", axis_was_homed(Z_AXIS));
+  SERIAL_ECHOLNPAIR("X home pos T0:", x_home_pos(0), " T1: ", x_home_pos(1));
+
+  xyze_pos_t logical_position = current_position.asLogical();
+  SERIAL_ECHOLNPAIR("logical position X:", logical_position.x, " Y:", logical_position.y, " Z:", logical_position.z, " E:", logical_position.e);
+  SERIAL_ECHOLNPAIR("native position X:", current_position.x, " Y:", current_position.y, " Z:", current_position.z, " E:", current_position.e);
+  SERIAL_ECHOLNPAIR("inactive_extruder_x:", inactive_extruder_x);
+  SERIAL_ECHOLNPAIR("T1 hotend_offset X:", hotend_offset[1][X_AXIS], " Y:", hotend_offset[1][Y_AXIS], " Z:", hotend_offset[1][Z_AXIS]);
+  SERIAL_ECHOLNPAIR("dual_x_carriage_mode:", dual_x_carriage_mode);
+
+  SERIAL_ECHOLNPAIR("light status:", enclosure.get_light_power());
+  uint8_t t0_module_fan_speed, t1_module_fan_speed;
+  fdm_head.get_fan_speed(0, 0, t0_module_fan_speed);
+  fdm_head.get_fan_speed(1, 0, t1_module_fan_speed);
+  SERIAL_ECHOLNPAIR("module fan T0:", t0_module_fan_speed, " T1:", t1_module_fan_speed);
+  SERIAL_ECHOLNPAIR("nozzle fan T0:",READ(E0_AUTO_FAN_PIN), " T1:", READ(E1_AUTO_FAN_PIN));
+  SERIAL_ECHOLNPAIR("underframe temperature:", (float)thermalManager.degChamber()," fan:",READ(CHAMBER_AUTO_FAN_PIN));
+  SERIAL_ECHOLNPAIR("power loss status 220V:", power_loss.is_power_220v_pin_trigger()," 24V:",READ(CHAMBER_AUTO_FAN_PIN));
+  SERIAL_ECHOLNPAIR("synchronize status:", planner.has_blocks_queued());
+  SERIAL_ECHOLNPAIR("feedrate mm_s:", feedrate_mm_s, " mm_min:", feedrate_mm_s * 60);
+  SERIAL_ECHOLNPAIR("probe status T0:", switch_detect.read_e0_probe_status(), " T1:", switch_detect.read_e1_probe_status());
+  #define ENDSTOP_STATUS(S) (READ(S##_PIN) != S##_ENDSTOP_INVERTING)
+  SERIAL_ECHOLNPAIR("endstop x_min:", ENDSTOP_STATUS(X_MIN), " x_max:", ENDSTOP_STATUS(X_MAX), " y_min:", ENDSTOP_STATUS(X_MIN), " z_max:", ENDSTOP_STATUS(Z_MAX));
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "exception_status:0x%x behavior:0x%x\n", (unsigned int)exception_server.get_exception(), (unsigned int)exception_server.get_behavior());
+  SERIAL_ECHO(log_buf);
 }
 
 #endif // #if (SNAP_DEBUG == 1)

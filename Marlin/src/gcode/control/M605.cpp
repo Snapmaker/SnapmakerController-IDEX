@@ -128,7 +128,7 @@
         DEBUG_ECHOPAIR("\nActive Ext: ", active_extruder);
         if (!active_extruder_parked) DEBUG_ECHOPGM(" NOT ");
         DEBUG_ECHOPGM(" parked.");
-        DEBUG_ECHOPAIR("\nbackup moed enable status: ", print_control.is_backup_mode());
+        DEBUG_ECHOPAIR("\nbackup mode enable status: ", print_control.is_backup_mode());
         DEBUG_ECHOPAIR("\nactive_extruder_x_pos: ", current_position.x);
         DEBUG_ECHOPAIR("\ninactive_extruder_x: ", inactive_extruder_x);
         DEBUG_ECHOPAIR("\nextruder_duplication_enabled: ", extruder_duplication_enabled);
