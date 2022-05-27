@@ -209,9 +209,10 @@ ErrCode Calibtration::bed_probe(calibtration_position_e pos, uint8_t extruder, b
   if (set_z_offset) {
     motion_control.home_x();
     ret = probe_z_offset(pos);
+    last_probe_pos = current_position.z;
   } else {
     goto_calibtration_position(pos);
-    motion_control.logical_move_to_z(Z_REMOVE_PLATE_THICKNESS(PROBE_LIFTINT_DISTANCE), PROBE_MOVE_Z_FEEDRATE);
+    motion_control.move_to_z(last_probe_pos + PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
     z_probe_distance = 15;
     temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
     if (temp_z == -z_probe_distance) {
@@ -223,7 +224,8 @@ ErrCode Calibtration::bed_probe(calibtration_position_e pos, uint8_t extruder, b
       LOG_I("JF-Z offset height:%f\n", probe_offset);
     }
   }
-  motion_control.logical_move_to_z(Z_REMOVE_PLATE_THICKNESS(PROBE_LIFTINT_DISTANCE), PROBE_MOVE_Z_FEEDRATE);
+  last_probe_pos = current_position.z;
+  motion_control.move_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
   if (last_active_extruder != active_extruder) {
     tool_change(last_active_extruder, true);
   }

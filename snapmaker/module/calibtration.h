@@ -75,6 +75,8 @@ class Calibtration {
     xyz_pos_t hotend_offset_backup[HOTENDS];
     xyz_pos_t home_offset_backup;
     bool need_extrude = false;
+  private:
+    float last_probe_pos = 0;
 };
 
 extern Calibtration calibtration;
