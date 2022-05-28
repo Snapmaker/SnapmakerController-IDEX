@@ -69,9 +69,9 @@ ErrCode EventHandler::parse(recv_data_info_t *recv_info) {
   }
 
   parse_event_info(recv_info, event);
-  char debug_buf[60];
-  sprintf(debug_buf, "SC:event cmd_set: 0x%x ,cmd_id:0x%x", event->param.info.command_set, event->param.info.command_id);
-  SERIAL_ECHOLN(debug_buf);
+  // char debug_buf[60];
+  // sprintf(debug_buf, "SC:event cmd_set: 0x%x ,cmd_id:0x%x", event->param.info.command_set, event->param.info.command_id);
+  // SERIAL_ECHOLN(debug_buf);
   event_cb_info_t * cb_info = get_event_info(event->param.info.command_set, event->param.info.command_id);
   if (!cb_info) {
     event->block_status = EVENT_CACHT_STATUS_IDLE;
