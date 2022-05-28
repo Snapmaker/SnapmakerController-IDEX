@@ -66,6 +66,8 @@ class FilamentSensor
     uint8_t err_mask = 0x1;
     int32_t check_step_count[FILAMENT_SENSOR_COUNT];
     uint8_t err_times[FILAMENT_SENSOR_COUNT] = {0, 0};
+    uint8_t dir_chagne_times[FILAMENT_SENSOR_COUNT] = {0, 0};
+    uint8_t last_dir[FILAMENT_SENSOR_COUNT] = {0, 0};
     int32_t e_step_count[FILAMENT_SENSOR_COUNT] = {0, 0};
     bool triggered[FILAMENT_SENSOR_COUNT] = {false, false};
     uint16_t start_adc[FILAMENT_SENSOR_COUNT] = {0, 0};

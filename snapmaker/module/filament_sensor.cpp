@@ -53,21 +53,39 @@ void FilamentSensor::used_default_param() {
 void FilamentSensor::e0_step(uint8_t step) {
   if (step) {
     e_step_count[0]++;
+    if (last_dir[0] == 0) {
+      last_dir[0] = 1;
+      dir_chagne_times[0]++;
+    }
+    
   } else {
     e_step_count[0]--;
+    if (last_dir[0] == 1) {
+      last_dir[0] = 0;
+      dir_chagne_times[0]++;
+    }
   }
 }
 
 void FilamentSensor::e1_step(uint8_t step) {
   if (step) {
     e_step_count[1]++;
+    if (last_dir[1] == 0) {
+      last_dir[1] = 1;
+      dir_chagne_times[1]++;
+    }
   } else {
     e_step_count[1]--;
+    if (last_dir[1] == 1) {
+      last_dir[1] = 0;
+      dir_chagne_times[1]++;
+    }
   }
 }
 
 void FilamentSensor::next_sample(uint8_t e) {
   e_step_count[e] = 0;
+  dir_chagne_times[e] = 0;
   start_adc[e] = get_adc_val(e);
 }
 
@@ -84,7 +102,7 @@ void FilamentSensor::check() {
     if ((e_step_count[i] >= check_step_count[i]) || (e_step_count[i] <= -check_step_count[i])) {
       int32_t diff = (get_adc_val(i) - start_adc[i]);
       diff = diff > 0 ? diff : -diff;
-      bool is_err = diff < filament_param.threshold;
+      bool is_err = (diff < filament_param.threshold) && (dir_chagne_times[i] < 3);
       err_times[i] = err_times[i] << 1 | is_err;
       if ((err_times[i] & err_mask) == err_mask) {
         triggered[i] = true;
