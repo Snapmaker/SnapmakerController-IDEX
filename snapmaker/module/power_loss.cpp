@@ -81,6 +81,7 @@ void PowerLoss::extrude_before_resume() {
   }
   thermalManager.wait_for_bed();
 
+  SERIAL_ECHOLNPAIR("cur x:", current_position.x);
   if (homing_needed()) {
     motion_control.home();
   } else {
@@ -91,7 +92,7 @@ void PowerLoss::extrude_before_resume() {
   if (active_extruder) {
     move_distance = -move_distance;
   }
-  prepare_line_to_destination();
+  dual_x_carriage_unpark();
   motion_control.move_x(move_distance, PRINT_TRAVEL_FEADRATE);
   motion_control.synchronize();
   motion_control.extrude_e(EXTRUDE_E_DISTANCE, CHANGE_FILAMENT_SPEED);
@@ -127,7 +128,7 @@ void PowerLoss::resume_print_env() {
   gcode.axis_relative = stash_data.axis_relative;
   duplicate_extruder_x_offset = stash_data.duplicate_extruder_x_offset;
   print_control.mode_ = (print_mode_e)stash_data.print_mode;
-  prepare_line_to_destination();
+  dual_x_carriage_unpark();
   motion_control.move_to_z(stash_data.position[Z_AXIS] + Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
   motion_control.move_to_xy(stash_data.position[X_AXIS], stash_data.position[Y_AXIS], PRINT_TRAVEL_FEADRATE);
   motion_control.move_to_z(stash_data.position[Z_AXIS], PRINT_TRAVEL_FEADRATE);
