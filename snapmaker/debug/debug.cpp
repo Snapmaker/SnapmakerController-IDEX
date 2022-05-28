@@ -161,7 +161,7 @@ void SnapDebug::show_all_status() {
   SERIAL_ECHOLNPAIR("feedrate mm_s:", feedrate_mm_s, " mm_min:", feedrate_mm_s * 60);
   SERIAL_ECHOLNPAIR("probe status T0:", switch_detect.read_e0_probe_status(), " T1:", switch_detect.read_e1_probe_status());
   #define ENDSTOP_STATUS(S) (READ(S##_PIN) != S##_ENDSTOP_INVERTING)
-  SERIAL_ECHOLNPAIR("endstop x_min:", ENDSTOP_STATUS(X_MIN), " x_max:", ENDSTOP_STATUS(X_MAX), " y_min:", ENDSTOP_STATUS(X_MIN), " z_max:", ENDSTOP_STATUS(Z_MAX));
+  SERIAL_ECHOLNPAIR("endstop x_min:", ENDSTOP_STATUS(X_MIN), " x_max:", ENDSTOP_STATUS(X_MAX), " y_min:", ENDSTOP_STATUS(Y_MIN), " z_max:", ENDSTOP_STATUS(Z_MAX));
   snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "exception_status:0x%x behavior:0x%x\n", (unsigned int)exception_server.get_exception(), (unsigned int)exception_server.get_behavior());
   SERIAL_ECHO(log_buf);
 }
