@@ -3,6 +3,7 @@
 #include "subscribe.h"
 #include "../module/fdm.h"
 #include "../module/motion_control.h"
+#include "../module/filament_sensor.h"
 
 #pragma pack(1)
 typedef struct {
@@ -64,7 +65,13 @@ static ErrCode fdm_set_work_speed(event_param_t& event) {
 }
 
 static ErrCode fdm_enable_filament_sensor(event_param_t& event) {
-  return E_SUCCESS;
+  uint8_t e = MODULE_INDEX(event.data[0]);
+  uint8_t enable = event.data[2];
+  SERIAL_ECHOLNPAIR("SC set filament_sensor[", e, "]:", enable);
+  filament_sensor.filament_param.enabled[e] = enable;
+  event.length = 1;
+  event.data[0] = E_SUCCESS;
+  return send_event(event);
 }
 
 static ErrCode fdm_change_tool_head(event_param_t& event) {
