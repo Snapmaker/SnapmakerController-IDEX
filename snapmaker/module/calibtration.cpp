@@ -395,12 +395,16 @@ ErrCode Calibtration::calibtration_xy() {
   }
 }
 
-ErrCode set_hotend_offset(uint8_t axis, float offset) {
-  if (axis > Z_AXIS) {
+ErrCode Calibtration::set_hotend_offset(uint8_t axis, float offset) {
+  if (axis >= Z_AXIS) {
     return E_PARAM;
   }
-  hotend_offset[1][axis] = offset;
+  set_hotend_offsets(1, axis, offset);
   return E_SUCCESS;
+}
+
+float Calibtration::get_hotend_offset(uint8_t axis) {
+  return hotend_offset[1][axis];
 }
 
 ErrCode Calibtration::exit(bool is_save) {

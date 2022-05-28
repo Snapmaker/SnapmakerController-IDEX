@@ -28,6 +28,11 @@ typedef struct {
 } sc_set_z_offet_t;
 
 typedef struct {
+  uint8_t axis;
+  float_to_int_t offset;
+} xy_level_t;
+
+typedef struct {
   uint8_t result;
   uint8_t key;
   uint8_t extruder_count;  // 1
@@ -120,13 +125,34 @@ static ErrCode calibtration_start_xy(event_param_t& event) {
 }
 
 static ErrCode calibtration_set_xy_offset(event_param_t& event) {
-
-  return E_SUCCESS;
+  uint8_t axis_count = event.data[0];
+  SERIAL_ECHOLNPAIR("sc set xy offset, axis_count", axis_count);
+  xy_level_t * xy_offset = (xy_level_t *)(event.data + 1);
+  for (uint8_t i = 0; i < axis_count; i++) {
+    float offset = INT_TO_FLOAT(xy_offset[i].offset);
+    if (xy_offset[i].axis == 0) {
+      SERIAL_ECHOLNPAIR("sc set x offset:", offset);
+      calibtration.set_hotend_offset(X_AXIS, offset);
+    } else if (xy_offset[i].axis == 1) {
+      SERIAL_ECHOLNPAIR("sc set y offset:", offset);
+      calibtration.set_hotend_offset(Y_AXIS, offset);
+    }
+  }
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
 }
 
 static ErrCode calibtration_report_xy_offset(event_param_t& event) {
-
-  return E_SUCCESS;
+  xy_level_t * xy_offset = (xy_level_t *)(event.data + 2);
+  event.data[0] = E_SUCCESS;
+  event.data[1] = 2;
+  xy_offset[0].axis = 0;  // X
+  xy_offset[0].offset = FLOAT_TO_INT(calibtration.get_hotend_offset(X_AXIS));
+  xy_offset[1].axis = 1;  // Y
+  xy_offset[1].offset = FLOAT_TO_INT(calibtration.get_hotend_offset(Y_AXIS));
+  event.length = 2 + sizeof(xy_level_t)*2;
+  return send_event(event);
 }
 
 static ErrCode calibtration_set_z_offset(event_param_t& event) {

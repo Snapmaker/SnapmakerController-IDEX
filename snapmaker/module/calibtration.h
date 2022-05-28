@@ -54,6 +54,7 @@ class Calibtration {
     ErrCode nozzle_calibtration_preapare(calibtration_position_e pos);
     ErrCode calibtration_xy();
     ErrCode set_hotend_offset(uint8_t axis, float offset);
+    float get_hotend_offset(uint8_t axis);
     float get_probe_offset();
     void loop(void);
     void bed_level();

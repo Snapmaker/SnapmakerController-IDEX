@@ -45,7 +45,7 @@ void EventHandler::parse_event_info(recv_data_info_t *recv_info, event_cache_nod
   param->source = recv_info->recv_source;
   param->length = info->length;
   param->length -= 8;  // Effective data length
-  SERIAL_ECHOLNPAIR("event data len:", param->length);
+  // SERIAL_ECHOLNPAIR("event data len:", param->length);
   for (uint32_t i = 0; i < param->length; i++) {
     param->data[i] = info->data[i];
   }
