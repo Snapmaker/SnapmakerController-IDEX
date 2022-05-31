@@ -598,7 +598,7 @@ void reset_stepper_drivers();    // Called by settings.load / settings.reset
                                     } else { \
                                       E1_STEP_WRITE(V); \
                                       if (V == 0) { \
-                                        if(E0_DIR_READ()) { \
+                                        if(E1_DIR_READ()) { \
                                           filament_sensor.e1_step(0); \
                                         } else { \
                                           filament_sensor.e1_step(1); \
