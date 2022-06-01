@@ -335,7 +335,7 @@ bool PowerLoss::check() {
         case POWER_LOSS_STOP_MOVE:
           stash_print_env();
           write_flash();
-          power_loss_status = POWER_LOSS_DONE;
+          power_loss_status = POWER_LOSS_WAIT_Z_MOVE;
           return true;
         default:
           break;
@@ -363,7 +363,8 @@ void PowerLoss::process() {
     SERIAL_ECHOLNPAIR("trigger power loss");
     last_status = true;
   }
-  if (power_loss.power_loss_status == POWER_LOSS_DONE) {
+  if (power_loss.power_loss_status == POWER_LOSS_WAIT_Z_MOVE) {
+    power_loss.power_loss_status = POWER_LOSS_DONE;
     SERIAL_ECHOLNPAIR("trigger power loss done");
     motion_control.synchronize();
     sync_plan_position();

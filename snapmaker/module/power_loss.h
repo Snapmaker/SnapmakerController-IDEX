@@ -22,6 +22,7 @@
 typedef enum {
   POWER_LOSS_IDLE,
   POWER_LOSS_STOP_MOVE,
+  POWER_LOSS_WAIT_Z_MOVE,
   POWER_LOSS_DONE,
 } power_loss_status_e;
 
