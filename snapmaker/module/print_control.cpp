@@ -161,7 +161,7 @@ ErrCode PrintControl::start() {
   if (!exception_server.is_allow_work()) {
     return E_SYSTEM_EXCEPTION;
   }
-  if (system_service.get_status() != SYSTEM_STATUE_IDLE) {
+  if (system_service.is_working()) {
     return PRINT_RESULT_START_ERR_E;
   }
   switch (mode_) {
