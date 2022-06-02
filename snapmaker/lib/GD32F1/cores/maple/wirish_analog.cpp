@@ -48,7 +48,9 @@ uint16 analogRead(uint8 pin) {
         vTaskDelay(1);
     }
     lock = true;
+    taskENTER_CRITICAL();
     uint16_t ret = adc_read(dev, PIN_MAP[pin].adc_channel);
+    taskEXIT_CRITICAL();
     lock = false;
     return ret;
 }
