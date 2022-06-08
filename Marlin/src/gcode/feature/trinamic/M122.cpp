@@ -56,6 +56,15 @@ void GcodeSuite::M122() {
     }
     return;
   }
+  if (parser.seen('G')) {
+    LOOP_LOGICAL_AXES(i) {
+      if (print_axis[i]) {
+        report_sgthrs(i);
+        tmc_report_sg_result(i);
+      }
+    }
+    return;
+  }
 
 
   if (parser.boolval('I')) restore_stepper_drivers();

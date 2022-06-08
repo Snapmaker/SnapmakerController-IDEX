@@ -343,6 +343,11 @@ void test_tmc_connection(LOGICAL_AXIS_DECL(const bool, true));
   #endif
   void tmc_report_all(LOGICAL_AXIS_DECL(const bool, true));
   void tmc_get_registers(LOGICAL_AXIS_ARGS(const bool));
+  void tmc_report_sg_result(uint8_t axis);
+  void report_sgthrs(uint8_t axis);
+  void set_sgthrs(uint8_t axis, uint8_t val);
+  void set_tpwmthrs(uint8_t axis, uint32_t val);
+  void report_tpwmthrs(uint8_t axis);
 #endif
 
 /**

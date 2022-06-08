@@ -921,6 +921,135 @@
     SERIAL_EOL();
   }
 
+  void report_axis_tmc_status(uint8_t axis, TMC_drv_status_enum n) {
+    switch (axis) {
+      case X_AXIS:
+        SERIAL_ECHOPGM("x:");
+        _tmc_parse_drv_status(stepperX, n);
+        SERIAL_ECHOPGM("sg_result_x2:");
+        _tmc_parse_drv_status(stepperX2, n);
+        break;
+      case Y_AXIS:
+        SERIAL_ECHOPGM("y:");
+        _tmc_parse_drv_status(stepperY, n);
+        break;
+      case Z_AXIS:
+        SERIAL_ECHOPGM("z:");
+        _tmc_parse_drv_status(stepperZ, n);
+        break;
+      case E_AXIS:
+        SERIAL_ECHOPGM("e0:");
+        _tmc_parse_drv_status(stepperE0, n);
+        SERIAL_ECHOPGM("sg_result_e1:");
+        _tmc_parse_drv_status(stepperE1, n);
+        break;
+    }
+  }
+
+  void report_sgthrs(uint8_t axis) {
+    SERIAL_ECHOPGM("sgthrs_");
+    switch (axis) {
+      case X_AXIS:
+        SERIAL_ECHOPGM("x:");
+        SERIAL_ECHO(stepperX.SGTHRS());
+        SERIAL_ECHOPGM(" sgthrs_x2:");
+        SERIAL_ECHO(stepperX2.SGTHRS());
+        break;
+      case Y_AXIS:
+        SERIAL_ECHOPGM("y:");
+        SERIAL_ECHO(stepperY.SGTHRS());
+        break;
+      case Z_AXIS:
+        SERIAL_ECHOPGM("z:");
+        SERIAL_ECHO(stepperZ.SGTHRS());
+        break;
+      case E_AXIS:
+        SERIAL_ECHOPGM("e0:");
+        SERIAL_ECHO(stepperE0.SGTHRS());
+        SERIAL_ECHOPGM(" sgthrs_e1:");
+        SERIAL_ECHO(stepperE1.SGTHRS());
+        break;
+    }
+    SERIAL_ECHOPGM("\n");
+  }
+  void set_sgthrs(uint8_t axis, uint8_t val) {
+    switch (axis) {
+      case X_AXIS:
+        stepperX.SGTHRS(val);
+        stepperX2.SGTHRS(val);
+        break;
+      case Y_AXIS:
+        stepperY.SGTHRS(val);
+        break;
+      case Z_AXIS:
+        stepperZ.SGTHRS(val);
+        break;
+      case E_AXIS:
+        stepperE0.SGTHRS(val);
+        stepperE1.SGTHRS(val);
+        break;
+    }
+  }
+
+  void report_tpwmthrs(uint8_t axis) {
+    SERIAL_ECHOPGM("tpwmthrs_");
+    switch (axis) {
+      case X_AXIS:
+        SERIAL_ECHOPGM("x:");
+        SERIAL_ECHO(stepperX.TPWMTHRS());
+        SERIAL_ECHOPGM(" tpwmthrs_x2:");
+        SERIAL_ECHO(stepperX2.TPWMTHRS());
+        break;
+      case Y_AXIS:
+        SERIAL_ECHOPGM("y:");
+        SERIAL_ECHO(stepperY.TPWMTHRS());
+        break;
+      case Z_AXIS:
+        SERIAL_ECHOPGM("z:");
+        SERIAL_ECHO(stepperZ.TPWMTHRS());
+        break;
+      case E_AXIS:
+        SERIAL_ECHOPGM("e0:");
+        SERIAL_ECHO(stepperE0.TPWMTHRS());
+        SERIAL_ECHOPGM(" tpwmthrs_e1:");
+        SERIAL_ECHO(stepperE1.TPWMTHRS());
+        break;
+    }
+    SERIAL_ECHOPGM("\n");
+  }
+
+  void set_tpwmthrs(uint8_t axis, uint32_t val) {
+    switch (axis) {
+      case X_AXIS:
+        stepperX.TPWMTHRS(val);
+        stepperX2.TPWMTHRS(val);
+        stepperX.TCOOLTHRS(0xFFFFF);
+        stepperX2.TCOOLTHRS(0xFFFFF);
+        break;
+      case Y_AXIS:
+        stepperY.TPWMTHRS(val);
+        stepperY.TCOOLTHRS(0xFFFFF);
+        break;
+      case Z_AXIS:
+        stepperZ.TPWMTHRS(val);
+        stepperZ.TCOOLTHRS(0xFFFFF);
+        break;
+      case E_AXIS:
+        stepperE0.TPWMTHRS(val);
+        stepperE1.TPWMTHRS(val);
+        stepperE0.TCOOLTHRS(0xFFFFF);
+        stepperE1.TCOOLTHRS(0xFFFFF);
+        break;
+    }
+    // tmc_enable_stallguard(stepperZ);
+  }
+
+  void tmc_report_sg_result(uint8_t axis) {
+    SERIAL_ECHOPGM("sg_result_");
+    report_axis_tmc_status(axis, TMC_SG_RESULT);
+    SERIAL_ECHOPGM("\n");
+  }
+
   /**
    * M122 report functions
    */
