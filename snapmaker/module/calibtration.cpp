@@ -20,6 +20,8 @@ Calibtration calibtration;
 #define PROBE_MOVE_XY_LIFTINT_DISTANCE (5)  // mm
 #define Z_REMOVE_PLATE_THICKNESS(z) (z - build_plate_thickness)
 
+#define X2_MIN_HOTEND_OFFSET (X2_MAX_POS - X2_MIN_POS - 20)
+
 // static uint8_t probe_sg_reg[3] = {1, 0, 73};  // X Y Z
 static float build_plate_thickness = 5;
 
@@ -62,6 +64,13 @@ void Calibtration::backup_offset() {
   home_offset_backup = home_offset;
 }
 
+static void set_hotend_offsets_to_default() {
+  xyz_pos_t hotend0_offset = {0, 0, 0};
+  xyz_pos_t hotend1_offset = {X2_MAX_POS - X2_MIN_POS, 0, 0};
+  set_hotend_offsets(0, hotend0_offset);
+  set_hotend_offsets(1, hotend1_offset);
+}
+
 void Calibtration::retrack_e() {
   extrude_e(-CAlIBRATIONIN_RETRACK_E_MM, MOTION_RETRACK_E_FEEDRATE);
   need_extrude = true;
@@ -80,6 +89,10 @@ void Calibtration::extrude_e(float distance, uint16_t feedrate) {
 void Calibtration::bed_preapare(uint8_t extruder_index) {
   // Store feedrate and feedrate scaling
   remember_feedrate_scaling_off();
+  if (hotend_offset[1][X_AXIS] < X2_MIN_HOTEND_OFFSET) {
+    LOG_I("the hotend offset is too small, it will be reset\n");
+    set_hotend_offsets_to_default();
+  }
   // Enable endstop
   endstops.enable(true);
   if(homing_needed()) {
@@ -107,13 +120,6 @@ void Calibtration::bed_preapare(uint8_t extruder_index) {
   if (active_extruder != extruder_index) {
     tool_change(extruder_index, true);
   }
-}
-
-static void set_hotend_offsets_to_default() {
-  xyz_pos_t hotend0_offset = {0, 0, 0};
-  xyz_pos_t hotend1_offset = {X2_MAX_POS - X2_MIN_POS, 0, 0};
-  set_hotend_offsets(0, hotend0_offset);
-  set_hotend_offsets(1, hotend1_offset);
 }
 
 // Run to the specified calibration point
