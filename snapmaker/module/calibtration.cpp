@@ -12,8 +12,10 @@
 
 Calibtration calibtration;
 
+#define PROBE_FAST_Z_FEEDRATE 200
 #define PROBE_Z_FEEDRATE 100
-#define PROBE_XY_FEEDRATE 200
+#define PROBE_FAST_XY_FEEDRATE 800
+#define PROBE_XY_FEEDRATE 100
 #define PROBE_MOVE_XY_FEEDRATE 5000
 #define PROBE_MOVE_Z_FEEDRATE 600
 #define PROBE_LIFTINT_DISTANCE (1)  // mm
@@ -22,7 +24,7 @@ Calibtration calibtration;
 
 #define X2_MIN_HOTEND_OFFSET (X2_MAX_POS - X2_MIN_POS - 20)
 
-// static uint8_t probe_sg_reg[3] = {1, 0, 73};  // X Y Z
+static uint8_t probe_sg_reg[3] = {8, 8, 73};  // X Y Z
 static float build_plate_thickness = 5;
 
 #define Y_POS_DIFF 4
@@ -141,8 +143,10 @@ float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
 
   switch_detect.enable_probe();
   pos_before_probe = current_position[axis];
-
-  // motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis]);
+  if (((axis == Z_AXIS) && (feedrate == PROBE_FAST_Z_FEEDRATE)) || 
+      (!(axis == Z_AXIS) && (feedrate == PROBE_FAST_XY_FEEDRATE))) {
+    motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis]);
+  }
   if(axis == X_AXIS) {
     motion_control.move_x(distance, feedrate);
   }
@@ -162,7 +166,7 @@ float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
   } else {
     ret = (pos_before_probe - pos_after_probe);
   }
-  // motion_control.disable_stall_guard_all();
+  motion_control.disable_stall_guard_all();
   switch_detect.disable_probe();
   return ret;
 }
