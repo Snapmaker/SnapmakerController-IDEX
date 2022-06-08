@@ -24,7 +24,7 @@ Calibtration calibtration;
 
 #define X2_MIN_HOTEND_OFFSET (X2_MAX_POS - X2_MIN_POS - 20)
 
-static uint8_t probe_sg_reg[3] = {8, 8, 73};  // X Y Z
+static uint8_t probe_sg_reg[3] = {20, 30, 80};  // X Y Z
 static float build_plate_thickness = 5;
 
 #define Y_POS_DIFF 4
@@ -192,7 +192,7 @@ ErrCode Calibtration::probe_z_offset(calibtration_position_e pos) {
   goto_calibtration_position(pos);
   z_probe_distance = 25;
   // Try a probe
-  temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
+  temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_FAST_Z_FEEDRATE);
   if (temp_z == -z_probe_distance) {
     LOG_E("failed to probe z !!!\n");
     set_home_offset(Z_AXIS, last_valid_zoffset);
@@ -205,7 +205,7 @@ ErrCode Calibtration::probe_z_offset(calibtration_position_e pos) {
   return E_SUCCESS;
 }
 
-ErrCode Calibtration::bed_probe(calibtration_position_e pos, uint8_t extruder, bool set_z_offset) {
+ErrCode Calibtration::bed_probe(calibtration_position_e pos, uint8_t extruder, bool set_z_offset, bool is_sg) {
   ErrCode ret = E_SUCCESS;
   float z_probe_distance;
   uint8_t last_active_extruder = active_extruder;
@@ -224,7 +224,8 @@ ErrCode Calibtration::bed_probe(calibtration_position_e pos, uint8_t extruder, b
     goto_calibtration_position(pos);
     motion_control.move_to_z(last_probe_pos + PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
     z_probe_distance = 15;
-    temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
+    uint16_t speed = is_sg ? PROBE_FAST_Z_FEEDRATE: PROBE_Z_FEEDRATE;
+    temp_z = probe(Z_AXIS, -z_probe_distance, speed);
     if (temp_z == -z_probe_distance) {
       LOG_E("failed to probe z !!!\n");
       probe_offset = CAlIBRATIONING_ERR_CODE;
@@ -262,6 +263,7 @@ ErrCode Calibtration::bed_calibtration_preapare(calibtration_position_e pos, boo
   } else {
     bed_preapare(0);
     goto_calibtration_position(pos);
+    ret = bed_probe(pos, 0, false, true);
   }
   return ret;
 }
@@ -285,9 +287,9 @@ ErrCode Calibtration::nozzle_calibtration_preapare(calibtration_position_e pos) 
   cur_pos = pos;
   mode = CAlIBRATION_MODE_NOZZLE;
   status = CAlIBRATION_STATE_IDLE;
-  bed_probe(pos, 0, true);
+  ErrCode ret = bed_probe(pos, 0, true);
   motion_control.move_z(PROBE_MOVE_XY_LIFTINT_DISTANCE);
-  return E_SUCCESS;
+  return ret;
 }
 
 /**
@@ -353,17 +355,17 @@ ErrCode Calibtration::calibtration_xy() {
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
       xy_center[e][axis] = 0;
       goto_calibtration_position(CAlIBRATION_POS_0);
-      probe_value = probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
-      if (probe_value >= abs(probe_distance) - 5) {
-        ret =  E_CAlIBRATION_XY;
+      probe_value = probe(axis, -probe_distance, PROBE_FAST_XY_FEEDRATE);
+      if (abs(probe_value) >= abs(probe_distance) - 5) {
+        ret =  E_CAlIBRATION_PRIOBE;
         LOG_E("e:%d axis:%d probe 0 filed\n", e, axis);
         break;
       }
       float pos = accurate_probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
       goto_calibtration_position(CAlIBRATION_POS_0);
-      probe_value = probe(axis, probe_distance, PROBE_XY_FEEDRATE);
-      if (probe_value >= abs(probe_distance) - 5) {
-        ret = E_CAlIBRATION_XY;
+      probe_value = probe(axis, probe_distance, PROBE_FAST_XY_FEEDRATE);
+      if (abs(probe_value) >= abs(probe_distance) - 5) {
+        ret = E_CAlIBRATION_PRIOBE;
         LOG_E("e:%d axis:%d probe 1 filed\n", e, axis);
         break;
       }

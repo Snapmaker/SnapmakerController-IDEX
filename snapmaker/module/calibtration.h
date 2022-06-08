@@ -47,7 +47,7 @@ class Calibtration {
     void bed_preapare(uint8_t extruder_index=0);
     float probe(uint8_t axis, float distance, uint16_t feedrate);
     ErrCode exit(bool is_save=true);
-    ErrCode bed_probe(calibtration_position_e pos, uint8_t extruder=0, bool set_z_offset=false);
+    ErrCode bed_probe(calibtration_position_e pos, uint8_t extruder=0, bool set_z_offset=false, bool is_sg=false);
     ErrCode bed_calibtration_preapare(calibtration_position_e pos, bool is_probe=false);
     ErrCode bed_manual_calibtration(calibtration_position_e pos);
     ErrCode bed_start_beat_mode();

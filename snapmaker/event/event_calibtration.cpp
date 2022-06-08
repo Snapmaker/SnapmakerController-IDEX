@@ -110,8 +110,12 @@ static ErrCode calibtration_report_bed_offset(event_param_t& event) {
 
 static ErrCode calibtration_move_nozzle(event_param_t& event) {
   calibtration_position_e pos = (calibtration_position_e)event.data[0];
-  calibtration.nozzle_calibtration_preapare(pos);
-  event.data[0] = calibtration.bed_probe(pos, 1);
+  ErrCode ret = E_SUCCESS;
+  ret = calibtration.nozzle_calibtration_preapare(pos);
+  if (ret == E_SUCCESS) {
+    ret = calibtration.bed_probe(pos, 1, false, true);
+  }
+  event.data[0] = ret == E_SUCCESS ? ret : E_COMMON_ERROR;
   event.length = 1;
   return send_event(event);
 }
