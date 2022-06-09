@@ -114,6 +114,27 @@ static ErrCode req_coordinate_system(event_param_t& event) {
   return E_SUCCESS;
 }
 
+static ErrCode req_distance_relative_home(event_param_t& event) {
+  float home_pos[AXIS_COUNT];
+  float cur_pos[AXIS_COUNT];
+  motion_control.get_home_pos(home_pos);
+  motion_control.get_xyz_pos(cur_pos);
+  event.data[0] = E_SUCCESS;
+  event.data[1] = AXIS_COUNT;
+  LOG_I("SC req distance relative home:");
+  coordinate_info_t * info = (coordinate_info_t *)(event.data + 2);
+  uint8_t axis_code[AXIS_COUNT] = {AXIS_X1, AXIS_X2, AXIS_Y1, AXIS_Z1};
+  for (uint8_t i = 0; i < AXIS_COUNT; i++) {
+    info[i].axis = axis_code[i];
+    info[i].position = FLOAT_TO_INT(cur_pos[i] - home_pos[i]);
+    LOG_I(" %d:%.2f", info[i].axis, INT_TO_FLOAT(info[i].position));
+  }
+  LOG_I("\n");
+  event.length = sizeof(coordinate_info_t) * AXIS_COUNT + 2;
+  send_event(event);
+  return E_SUCCESS;
+}
+
 static ErrCode set_coordinate_system(event_param_t& event) {
   return E_SUCCESS;
 }
@@ -241,4 +262,5 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_GET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN, get_motor_enable},
   {SYS_ID_SET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN, set_motor_enable},
   {SYS_ID_MOVE_TO_RELATIVE_HOME , EVENT_CB_TASK_RUN  , move_relative_home},
+  {SYS_ID_GET_DISTANCE_RELATIVE_HOME , EVENT_CB_TASK_RUN  , req_distance_relative_home},
 };

@@ -65,6 +65,22 @@ ErrCode MotionControl::move_axis(mobile_instruction_t *move) {
   return E_SUCCESS;
 }
 
+// pos is float[4], 0-X1  1-X2  2-Y  3-Z
+void MotionControl::get_home_pos(float *pos) {  
+  pos[0] = x_home_pos(0);
+  pos[1] = x_home_pos(1);
+  pos[2] = Y_MIN_POS;
+  pos[3] = Z_MAX_POS;
+}
+
+// pos is float[4], 0-X1  1-X2  2-Y  3-Z
+void MotionControl::get_xyz_pos(float *pos) {
+  pos[0] = x_position();
+  pos[1] = x2_position();
+  pos[2] = current_position.y;
+  pos[3] = current_position.z;
+}
+
 ErrCode MotionControl::move_axis_to(mobile_instruction_t *move) {
   xyze_pos_t xyze = current_position;
   bool is_logical = !(*((uint8_t*)move + (3 + (move->axis_count * sizeof(axis_move_t)))));

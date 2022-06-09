@@ -30,6 +30,9 @@ class MotionControl {
     ErrCode home_x();
     ErrCode home_y();
     ErrCode home_z();
+    void get_home_pos(float *pos);  // pos is float[4], 0-X1  1-X2  2-Y  3-Z
+    void get_xyz_pos(float *pos);  // pos is float[4], 0-X1  1-X2  2-Y  3-Z
+
     void move(uint8_t axis, float distance, uint16_t feedrate);
     ErrCode move_e(float distance, uint16_t feedrate);
     void move_x(float x, uint16_t feedrate=0);
