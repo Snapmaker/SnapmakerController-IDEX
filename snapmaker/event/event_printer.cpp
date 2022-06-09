@@ -218,7 +218,7 @@ static ErrCode request_stop_single_extrude_work(event_param_t& event) {
 
 static ErrCode request_power_loss_status(event_param_t& event) {
   event.data[0] = power_loss.is_power_loss_data();
-  SERIAL_ECHOLNPAIR("SC req power loos status:", event.data[0]);
+  SERIAL_ECHOLNPAIR("SC req power loss status:", event.data[0]);
   if (event.data[0] == E_SUCCESS) {
     uint16_t ret_len = load_gcode_file_info(event.data+1);
     event.length = ret_len + 1;
