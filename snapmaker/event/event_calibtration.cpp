@@ -43,20 +43,24 @@ typedef struct {
 
 static ErrCode calibtration_set_mode(event_param_t& event) {
   uint8_t mode = event.data[0];
-  SERIAL_ECHOLNPAIR("set calibtration mode:", mode);
-  event.data[0] = E_SUCCESS;
-  switch (mode) {
-    case DED_AUTO_CAlIBRATION_MODE:
-    case BED_MANUAL_CAlIBRATION_MODE:
-    case NOZZLE_AUTO_CAlIBRATION_MODE:
-    case NOZZLE_MANUAL_CAlIBRATION_MODE:
-    case XY_AUTO_CAlIBRATION_MODE:
-      break;
-    default:
-      event.data[0] = E_PARAM;
-  }
-  if (event.data[0] == E_SUCCESS) {
-    system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
+  LOG_V("set calibtration mode:%d\n", mode);
+  if (system_service.is_calibtration_status()) {
+    event.data[0] = E_COMMON_ERROR;
+  } else {
+    switch (mode) {
+      case DED_AUTO_CAlIBRATION_MODE:
+      case BED_MANUAL_CAlIBRATION_MODE:
+      case NOZZLE_AUTO_CAlIBRATION_MODE:
+      case NOZZLE_MANUAL_CAlIBRATION_MODE:
+      case XY_AUTO_CAlIBRATION_MODE:
+        event.data[0] = E_SUCCESS;
+        break;
+      default:
+        event.data[0] = E_COMMON_ERROR;
+    }
+    if (event.data[0] == E_SUCCESS) {
+      system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
+    }
   }
   event.length = 1;
   return send_event(event);

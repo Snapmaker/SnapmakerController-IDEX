@@ -174,7 +174,7 @@ ErrCode MotionControl::home_z() {
 
 
 ErrCode MotionControl::home() {
-  quickstop_stepper();
+  planner.synchronize();
   home(Z_AXIS);
   home(X_AXIS);
   home(Y_AXIS);
@@ -271,10 +271,7 @@ void MotionControl::move_x_to_relative_home(float x, uint16_t feedrate) {
   float x1_home = x_home_pos(0);
   float x2_home = x_home_pos(1);
   if ((x1 == x1_home) && (x2 == x2_home)) {
-    bool save_duplication_enabled = extruder_duplication_enabled;
-    bool save_idex_mirrored_mode = idex_mirrored_mode;
     uint8_t save_active_extruder = active_extruder;
-    DualXMode save_dual_x_carriage_mode = dual_x_carriage_mode;
     tool_change(0);
     dual_x_carriage_mode = DXC_MIRRORED_MODE;
     set_duplication_enabled(true);
@@ -282,9 +279,8 @@ void MotionControl::move_x_to_relative_home(float x, uint16_t feedrate) {
     move_to_x(x1_home + x, feedrate);
     planner.synchronize();
     inactive_extruder_x -= x;
-    idex_set_mirrored_mode(save_idex_mirrored_mode);
-    set_duplication_enabled(save_duplication_enabled);
-    dual_x_carriage_mode = save_dual_x_carriage_mode;
+    idex_set_mirrored_mode(false);
+    set_duplication_enabled(false);
     tool_change(save_active_extruder);
   } else {
     if (active_extruder == 1) {

@@ -174,10 +174,11 @@ static ErrCode home(event_param_t& event) {
   event.data[0] = E_SUCCESS;
   event.length = 1;
   send_event(event);
+  motion_control.synchronize();
+  event.data[0] = E_SUCCESS;
   motion_control.home();
   event.info.attribute = SACP_ATTR_REQ;
   event.info.command_id = SYS_ID_HOME_END;
-  event.data[0] = E_SUCCESS;
   event.length = 1;
   return send_event(event);
 }
