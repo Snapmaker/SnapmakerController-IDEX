@@ -74,19 +74,19 @@ void SnapDebug::Log(debug_level_e level, const char *fmt, ...) {
     return;
 
   va_start(args, fmt);
-  char * data_data = log_buf + 2;
-  vsnprintf(data_data, SNAP_LOG_BUFFER_SIZE - 2, fmt, args);
+  char * data = log_buf + 2;
+  vsnprintf(data, SNAP_LOG_BUFFER_SIZE - 2, fmt, args);
   log_buf[0] = E_SUCCESS;
   log_buf[1] = level;
   va_end(args);
 
   SACP_head_base_t sacp = {SACP_ID_HMI, SACP_ATTR_ACK, 0, COMMAND_SET_SYS, SYS_ID_REPORT_LOG};
-  send_event(EVENT_SOURCE_HMI, sacp, (uint8_t*)log_buf, strlen(data_data) + 2);
+  send_event(EVENT_SOURCE_HMI, sacp, (uint8_t*)log_buf, strlen(data) + 2);
   if (!evevnt_serial[EVENT_SOURCE_MARLIN]->enable_sacp()) {
-    SERIAL_ECHO(data_data);
+    send_data(EVENT_SOURCE_MARLIN, (uint8_t *)data, strlen(data));
   } else {
     sacp.recever_id = SACP_ID_PC;
-    send_event(EVENT_SOURCE_MARLIN, sacp, (uint8_t*)log_buf, strlen(data_data) + 2);
+    send_event(EVENT_SOURCE_MARLIN, sacp, (uint8_t*)log_buf, strlen(data) + 2);
   }
 }
 
@@ -98,8 +98,9 @@ void SnapDebug::set_level(debug_level_e l) {
 
   if (l > SNAP_DEBUG_LEVEL_MAX)
     return;
- 
+
   debug_msg_level = l;
+  Log(SNAP_DEBUG_LEVEL_INFO, "new debug level: %d\n", debug_msg_level);
 }
 
 debug_level_e SnapDebug::get_level() {

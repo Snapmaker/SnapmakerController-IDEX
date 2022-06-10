@@ -82,4 +82,5 @@ ErrCode send_event(event_source_e source, uint8_t recever_id, uint8_t attribute,
                    uint8_t command_id, uint8_t *data, uint16_t length, uint16_t sequence=0);
 ErrCode send_result(event_param_t &event, ErrCode result);
 ErrCode write_fun_register(event_source_e source, write_byte_f cb);
+bool send_data(event_source_e source, uint8_t *data, uint16_t len);
 #endif // EVENT_BASE_H

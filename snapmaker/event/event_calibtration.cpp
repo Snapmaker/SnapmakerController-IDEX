@@ -69,7 +69,7 @@ static ErrCode calibtration_set_mode(event_param_t& event) {
 static ErrCode calibtration_move_to_pos(event_param_t& event) {
   calibtration_position_e pos = (calibtration_position_e)event.data[0];
   bool is_probe = event.data[1];
-  SERIAL_ECHOLNPAIR("move to calibtration pos:", pos, ", probe status:", is_probe);
+  LOG_V("move to calibtration pos:%d, probe status:%d\n", pos, is_probe);
   event.data[0] = calibtration.bed_calibtration_preapare(pos, is_probe);
   event.length = 1;
   send_event(event);
@@ -79,20 +79,21 @@ static ErrCode calibtration_move_to_pos(event_param_t& event) {
 static ErrCode calibtration_start_bed_probe(event_param_t& event) {
   event.data[0] = calibtration.bed_start_beat_mode();
   event.length = 1;
-  SERIAL_ECHOLNPAIR("start bed beat mode");
+  LOG_V("start bed beat mode\n");
   return send_event(event);
 }
 
 static ErrCode calibtration_exit(event_param_t& event) {
-  SERIAL_ECHOLNPAIR("exit calibtration and is save:", event.data[0]);
+  LOG_V("exit calibtration and is save:%d\n", event.data[0]);
   event.data[0] = calibtration.exit(event.data[0]);
   event.length = 1;
   system_service.set_status(SYSTEM_STATUE_IDLE);
-  SERIAL_ECHOLNPAIR("exit calibtration");
+  LOG_V("exit calibtration over\n");
   return send_event(event);
 }
 
 static ErrCode calibtration_retrack_e(event_param_t& event) {
+  LOG_V("SC req calibtration status retrack\n");
   calibtration.retrack_e();
   event.data[0] = E_SUCCESS;
   event.length = 1;
@@ -109,6 +110,7 @@ static ErrCode calibtration_report_bed_offset(event_param_t& event) {
   info->cur_pos = calibtration.cur_pos;
   info->offset = FLOAT_TO_INT(calibtration.probe_offset);
   event.length = sizeof(report_probe_info_t);
+  LOG_V("SC req calibtration bed pos:%d offset,:%d\n", info->cur_pos, info->offset);
   return send_event(event);
 }
 
@@ -121,28 +123,29 @@ static ErrCode calibtration_move_nozzle(event_param_t& event) {
   }
   event.data[0] = ret == E_SUCCESS ? ret : E_COMMON_ERROR;
   event.length = 1;
+  LOG_V("SC req move to calibtration pos %d, result:%d\n", pos, ret);
   return send_event(event);
 }
 
 static ErrCode calibtration_start_xy(event_param_t& event) {
-  SERIAL_ECHOLNPAIR("start calibtration xy");
+  LOG_V("start calibtration xy\n");
   event.data[0] = calibtration.calibtration_xy();
   event.length = 1;
-  SERIAL_ECHOLNPAIR("calibtration xy over");
+  LOG_I("calibtration xy result:%d\n", event.data[0]);
   return send_event(event);
 }
 
 static ErrCode calibtration_set_xy_offset(event_param_t& event) {
   uint8_t axis_count = event.data[0];
-  SERIAL_ECHOLNPAIR("sc set xy offset, axis_count", axis_count);
+  LOG_V("sc set xy offset, axis_count:%d\n", axis_count);
   xy_level_t * xy_offset = (xy_level_t *)(event.data + 1);
   for (uint8_t i = 0; i < axis_count; i++) {
     float offset = INT_TO_FLOAT(xy_offset[i].offset);
     if (xy_offset[i].axis == 0) {
-      SERIAL_ECHOLNPAIR("sc set x offset:", offset);
+      LOG_V("sc set x offset:%d\n", offset);
       calibtration.set_hotend_offset(X_AXIS, offset);
     } else if (xy_offset[i].axis == 1) {
-      SERIAL_ECHOLNPAIR("sc set y offset:", offset);
+      LOG_V("sc set y offset:%d\n", offset);
       calibtration.set_hotend_offset(Y_AXIS, offset);
     }
   }

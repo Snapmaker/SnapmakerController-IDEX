@@ -48,6 +48,6 @@ class EventHandler {
     recv_data_info_t recv_data_info[EVENT_SOURCE_ALL] = {0};
 };
 void event_init();
-
+void event_port_init();
 extern EventHandler event_handler;
 #endif

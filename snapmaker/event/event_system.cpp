@@ -37,6 +37,7 @@ static ErrCode set_log_grade(event_param_t& event) {
 }
 
 static ErrCode req_pc_port_to_gcode(event_param_t& event) {
+  LOG_V("SC set pc port to gcode\n");
   event_handler.recv_enable(EVENT_SOURCE_MARLIN, false);
   event.data[0] = E_SUCCESS;
   event.length = 1;
@@ -48,7 +49,7 @@ static ErrCode set_debug_mode(event_param_t& event) {
 }
 
 static ErrCode factory_reset(event_param_t& event) {
-  SERIAL_ECHOLN("SC req factory reset");
+  LOG_I("SC req factory reset\n");
   system_service.factory_reset();
   event.data[0] = E_SUCCESS;
   event.length = 1;

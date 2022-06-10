@@ -85,7 +85,6 @@ void Exception::trigger_behavior(exception_behavior_e e) {
 bool Exception::trigger_exception(exception_type_e e) {
   if (exception_status & BIT(e))
     return false;
-  LOG_I("trigger exception:%d\n", e);
   uint32_t behavior = exception_behavior_map[e].behavior;
   // Update the behavior corresponding to the exception
   for (uint8_t i = 0; behavior; i++, behavior >>= 1) {
@@ -96,6 +95,7 @@ bool Exception::trigger_exception(exception_type_e e) {
 
   EXCEPTION_TRIGGER(e);
   exception_behavior |= exception_behavior_map[e].behavior;
+  LOG_I("trigger exception:%d, cur exception code:0x%x,behavior code:0x%x\n", e, exception_status, exception_behavior);
   return true;
 }
 
@@ -120,7 +120,6 @@ void Exception::recover_behavior(exception_behavior_e e) {
 void Exception::clean_exception(exception_type_e e) {
   if (!(exception_status & (BIT(e))))
     return;
-  LOG_I("clear exception:%d\n", e);
 
   EXCEPTION_CLEAN(e);
   exception_behavior = 0;
@@ -138,6 +137,7 @@ void Exception::clean_exception(exception_type_e e) {
       recover_behavior((exception_behavior_e)i);
     }
   }
+  LOG_I("clear exception:%d, cur exception code:0x%x, behavior code:0x%x\n", e, exception_status, exception_behavior);
 }
 
 bool Exception::is_allow_work(bool is_err_report) {

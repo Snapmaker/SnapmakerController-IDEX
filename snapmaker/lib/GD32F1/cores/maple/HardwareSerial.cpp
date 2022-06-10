@@ -134,20 +134,16 @@ int HardwareSerial::availableForWrite(void)
 }
 
 size_t HardwareSerial::write(unsigned char ch) {
-    if (!enable_sacp_) {
-        usart_putc(this->usart_device, ch);
-    } else {
-        log_buf[log_buf_index] = ch;
-        log_buf_index++;
-        if (ch == '\n') {
-            log_buf[log_buf_index] = '\0';
-            LOG_I(log_buf);
-            log_buf_index = 0;
-        }
-        if ((log_buf_index + 1) == LOG_BUF_SIZE) {
-            log_buf_index = 0;
-            LOG_E("marlin log buf full\n");
-        }
+    log_buf[log_buf_index] = ch;
+    log_buf_index++;
+    if (ch == '\n') {
+        log_buf[log_buf_index] = '\0';
+        LOG_I(log_buf);
+        log_buf_index = 0;
+    }
+    if ((log_buf_index + 1) == LOG_BUF_SIZE) {
+        log_buf_index = 0;
+        LOG_E("marlin log buf full\n");
     }
 	return 1;
 }

@@ -1110,6 +1110,8 @@ void setup() {
   #define SETUP_RUN(C) do{ SETUP_LOG(STRINGIFY(C)); C; }while(0)
 
   MYSERIAL1.begin(BAUDRATE);
+  void event_port_init();
+  event_port_init();
   millis_t serial_connect_timeout = millis() + 1000UL;
   while (!MYSERIAL1 && PENDING(millis(), serial_connect_timeout)) { /*nada*/ }
 

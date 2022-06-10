@@ -32,7 +32,7 @@ static bool send_to(event_source_e source, uint8_t *data, uint16_t len) {
   return true;
 }
 
-static bool send_data(event_source_e source, uint8_t *data, uint16_t len) {
+bool send_data(event_source_e source, uint8_t *data, uint16_t len) {
   if (source == EVENT_SOURCE_ALL) {
     for (uint8_t s = 0; s < EVENT_SOURCE_ALL; s++) {
       send_to((event_source_e)s, data, len);

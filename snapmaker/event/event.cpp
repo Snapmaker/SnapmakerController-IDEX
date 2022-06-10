@@ -111,7 +111,6 @@ void EventHandler::loop_task() {
 }
 
 void EventHandler::recv_enable(event_source_e source, bool enable) {
-  SERIAL_ECHOLNPAIR("serial source[", source, "] enable:", enable, "\r\nok");
   evevnt_serial[source]->enable_sacp(enable);
   if (enable) {
     evevnt_serial[source]->begin(115200);
@@ -124,8 +123,6 @@ void EventHandler::recv_enable(event_source_e source) {
 
 void EventHandler::recv_task() {
   recv_data_info_t *recv_info;
-  recv_enable(EVENT_SOURCE_HMI, true);
-  recv_enable(EVENT_SOURCE_MARLIN, false);
   while (true) {
     bool need_wait = true;
     for (uint8_t i = 0; i < EVENT_SOURCE_ALL; i++) {
@@ -173,4 +170,9 @@ void event_init() {
   else {
     SERIAL_ECHO("Created event_recv_task task!\n");
   }
+}
+
+void event_port_init() {
+  event_handler.recv_enable(EVENT_SOURCE_HMI, true);
+  event_handler.recv_enable(EVENT_SOURCE_MARLIN, false);
 }
