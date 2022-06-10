@@ -72,6 +72,7 @@ void FilamentSensor::next_sample(uint8_t e) {
 }
 
 void FilamentSensor::check() {
+  static int32_t last_adc[FILAMENT_SENSOR_COUNT] = {0, 0};
   FILAMENT_LOOP(i) {
     if (!is_enable(i)) {
       continue;
@@ -82,9 +83,11 @@ void FilamentSensor::check() {
       continue;
     }
     if ((e_step_count[i] >= check_step_count[i]) || (e_step_count[i] <= -check_step_count[i])) {
-      int32_t diff = (get_adc_val(i) - start_adc[i]);
+      uint16_t adc = get_adc_val(i);
+      int32_t diff = (adc - start_adc[i]);
       diff = diff > 0 ? diff : -diff;
-      bool is_err = diff < filament_param.threshold;
+      bool is_err = (diff < filament_param.threshold) && (last_adc[i] < SENSOR_DEAD_SPACE);
+      last_adc[i] = adc;
       err_times[i] = err_times[i] << 1 | is_err;
       if ((err_times[i] & err_mask) == err_mask) {
         triggered[i] = true;

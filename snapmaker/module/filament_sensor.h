@@ -8,7 +8,7 @@
 #define FILAMENT_CHECK_DISTANCE 2  // mm
 #define FILAMENT_THRESHOLD 8  // ADC diff value
 #define FILAMENT_CHECK_TIMES 3
-
+#define SENSOR_DEAD_SPACE 2000
 typedef struct {
   bool enabled[FILAMENT_SENSOR_COUNT];
   float distance;  // Move this distance to detect abnormal sensing deviation
