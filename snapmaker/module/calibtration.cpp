@@ -84,8 +84,8 @@ void Calibtration::extrude_e(float distance, uint16_t feedrate) {
   set_duplication_enabled(true);
   motion_control.extrude_e(distance, feedrate);
   planner.synchronize();
-  set_duplication_enabled(false);
   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+  set_duplication_enabled(false);
 }
 
 void Calibtration::bed_preapare(uint8_t extruder_index) {
@@ -105,6 +105,7 @@ void Calibtration::bed_preapare(uint8_t extruder_index) {
   // Switch to single-header mode
   if (dual_x_carriage_mode > DXC_FULL_CONTROL_MODE) {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+    set_duplication_enabled(false);
     motion_control.home_x();
   }
   float another_x_home_pos = !extruder_index ? x_home_pos(1) : x_home_pos(0);
@@ -312,6 +313,7 @@ void Calibtration::reset_xy_calibtration_env() {
   set_home_offset(X_AXIS, 0);
   set_home_offset(Y_AXIS, 0);
   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+  set_duplication_enabled(false);
   if(homing_needed()) {
     motion_control.home();
     planner.synchronize();
@@ -350,7 +352,6 @@ ErrCode Calibtration::calibtration_xy() {
   float probe_distance = 15;
   float probe_value = 0;
   uint8_t old_active_extruder = active_extruder;
-  DualXMode dual_mode = dual_x_carriage_mode;
   if (home_offset[Z_AXIS] == 0) {
     LOG_E("Calibrate XY after calibrating Z offset\n");
     return E_CAlIBRATION_XY;
@@ -393,20 +394,19 @@ ErrCode Calibtration::calibtration_xy() {
   motion_control.home_x();
   motion_control.home_y();
   tool_change(old_active_extruder, true);
-  dual_x_carriage_mode = dual_mode;
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
   if(ret == E_SUCCESS) {
     LOG_V("JF-XY calibration: Success!\n");
     LOG_V("JF-XY Extruder1:%f %f\n", xy_center[0][0], xy_center[0][1]);
     LOG_V("JF-XY Extruder2:%f %f\n", xy_center[1][0], xy_center[1][1]);
 
-    set_hotend_offsets(1, X_AXIS, X2_MAX_POS - (xy_center[1][0] - xy_center[0][0]));
-    set_hotend_offsets(1, Y_AXIS, -(xy_center[1][1] - xy_center[0][1]));
-    LOG_I("JF-Extruder2 hotend offset:%f %f\n", hotend_offset[1].x, hotend_offset[1].y);
-
     set_home_offset(X_AXIS, calibration_position_xy[0][0] - xy_center[0][0]);
     set_home_offset(Y_AXIS, calibration_position_xy[0][1] - xy_center[0][1]);
     LOG_I("JF-Extruder1 home offset:%f %f\n", home_offset[X_AXIS], home_offset[Y_AXIS]);
+
+    set_hotend_offsets(1, X_AXIS, X2_MAX_POS - (xy_center[1][0] - xy_center[0][0]));
+    set_hotend_offsets(1, Y_AXIS, -(xy_center[1][1] - xy_center[0][1]));
+    LOG_I("JF-Extruder2 hotend offset:%f %f\n", hotend_offset[1].x, hotend_offset[1].y);
 
     // Store to eeprom
     settings.save();

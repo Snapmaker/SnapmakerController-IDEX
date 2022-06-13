@@ -7,7 +7,7 @@
 #include "motion_control.h"
 
 #define CAlIBRATIONING_ERR_CODE (10000)
-#define CAlIBRATIONIN_RETRACK_E_MM 10
+#define CAlIBRATIONIN_RETRACK_E_MM 5
 typedef enum {
   CAlIBRATION_MODE_IDLE,
   CAlIBRATION_MODE_BED,
@@ -20,6 +20,7 @@ typedef enum {
   CAlIBRATION_STATE_IDLE,
   CAlIBRATION_STATE_PROBE_XY,
   CAlIBRATION_STATE_BED_BEAT,
+  CAlIBRATION_STATE_BED_BEAT_WAIT_END,
 } calibtration_status_e;
 
 
@@ -51,6 +52,7 @@ class Calibtration {
     ErrCode bed_calibtration_preapare(calibtration_position_e pos, bool is_probe=false);
     ErrCode bed_manual_calibtration(calibtration_position_e pos);
     ErrCode bed_start_beat_mode();
+    ErrCode bed_end_beat_mode();
     ErrCode nozzle_calibtration_preapare(calibtration_position_e pos);
     ErrCode calibtration_xy();
     ErrCode set_hotend_offset(uint8_t axis, float offset);
@@ -61,7 +63,7 @@ class Calibtration {
     void set_z_offset(float offset, bool is_moved=false);
     float get_z_offset();
     void retrack_e();
-    void extrude_e(float distance, uint16_t feedrate=MOTION_EXTRUDE_E_FEEDRATE);
+    void extrude_e(float distance, uint16_t feedrate=MOTION_RETRACK_E_FEEDRATE);
   private:
     ErrCode probe_z_offset(calibtration_position_e pos);
     void reset_xy_calibtration_env();

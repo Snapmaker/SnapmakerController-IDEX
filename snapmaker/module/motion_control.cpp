@@ -175,6 +175,13 @@ ErrCode MotionControl::home_z() {
 
 ErrCode MotionControl::home() {
   planner.synchronize();
+  uint32_t calibtration_wait = millis() + 20000;
+  while (system_service.is_calibtration_status()) {
+    if (calibtration_wait < millis()) {
+      return E_COMMON_ERROR;
+    }
+    vTaskDelay(pdMS_TO_TICKS(1));
+  }
   home(Z_AXIS);
   home(X_AXIS);
   home(Y_AXIS);
@@ -263,6 +270,8 @@ void MotionControl::move_to_xy(float x, float y, uint16_t feedrate) {
 void MotionControl::move_x_to_relative_home(float x, uint16_t feedrate) {
   extruder_duplication_enabled = false;
   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+  idex_set_mirrored_mode(false);
+  set_duplication_enabled(false);
   if (axis_should_home(X_AXIS)) {
     home_x();
   }
