@@ -237,7 +237,7 @@ ErrCode PowerLoss::is_power_loss_data() {
 }
 
 bool PowerLoss::change_head() {
-  if (stash_data.print_mode != PRINT_AUTO_PARK_MODE) {
+  if (stash_data.print_mode != PRINT_BACKUP_MODE) {
     return false;
   }
 
