@@ -279,6 +279,17 @@ ErrCode Calibtration::bed_start_beat_mode() {
   return E_PARAM;
 }
 
+ErrCode Calibtration::bed_end_beat_mode() {
+  status = CAlIBRATION_STATE_BED_BEAT_WAIT_END;
+  uint32_t timeout = millis() + 5000;
+  while (status == CAlIBRATION_STATE_BED_BEAT_WAIT_END) {
+    if (timeout < millis())
+      return E_COMMON_ERROR;
+    vTaskDelay(pdMS_TO_TICKS(1));
+  }
+  return E_SUCCESS;
+}
+
 ErrCode Calibtration::nozzle_calibtration_preapare(calibtration_position_e pos) {
   if (pos == CAlIBRATION_POS_0 || pos >= CAlIBRATION_POS_INVALID) {
     LOG_E("Points not supported by hot nozzle calibration:%d\n", pos);
@@ -453,6 +464,8 @@ void Calibtration::loop(void) {
     if(bed_probe(cur_pos, 1) != E_SUCCESS) {
       status = CAlIBRATION_STATE_IDLE;
     }
+  } else if (status == CAlIBRATION_STATE_BED_BEAT_WAIT_END) {
+    status = CAlIBRATION_STATE_IDLE;
   } else if (mode == CAlIBRATION_MODE_EXIT) {
     motion_control.synchronize();
     if (current_position[Z_AXIS] < 100) {

@@ -77,9 +77,14 @@ static ErrCode calibtration_move_to_pos(event_param_t& event) {
 }
 
 static ErrCode calibtration_start_bed_probe(event_param_t& event) {
-  event.data[0] = calibtration.bed_start_beat_mode();
+  if (event.data[0]) {
+    LOG_V("SC req start bed beat mode\n");
+    event.data[0] = calibtration.bed_start_beat_mode();
+  } else {
+    LOG_V("SC req end bed beat mode\n");
+    event.data[0] = calibtration.bed_end_beat_mode();
+  }
   event.length = 1;
-  LOG_V("start bed beat mode\n");
   return send_event(event);
 }
 
