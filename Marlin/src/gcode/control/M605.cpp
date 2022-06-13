@@ -66,17 +66,24 @@
     planner.synchronize();
 
     if (parser.seen('S')) {
-      dual_x_carriage_mode = (DualXMode)parser.value_byte();
+      DualXMode dual_carriage_mode = (DualXMode)parser.value_byte();
       idex_set_mirrored_mode(false);
 
-      switch (dual_x_carriage_mode) {
+      switch (dual_carriage_mode) {
 
         case DXC_FULL_CONTROL_MODE:
         case DXC_AUTO_PARK_MODE:
+          dual_x_carriage_mode = dual_carriage_mode;
           break;
 
         case DXC_DUPLICATION_MODE:
         case DXC_MIRRORED_MODE:
+          // Always switch back to tool 0
+          if (active_extruder != 0) {
+            dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+            tool_change(0);
+          }
+          dual_x_carriage_mode = dual_carriage_mode;
           // Set the X offset, but no less than the safety gap
           if (parser.seen('X')) {
             duplicate_extruder_x_offset = _MAX(parser.value_linear_units(), (X2_MIN_POS) - (X1_MIN_POS));
@@ -87,8 +94,6 @@
           if (parser.seen('R')) {
             duplicate_extruder_temp_offset = parser.value_celsius_diff();
           }
-          // Always switch back to tool 0
-          if (active_extruder != 0) tool_change(0);
           idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
           break;
         default:
