@@ -17,8 +17,8 @@ typedef enum {
 } print_result_e;
 
 typedef enum : uint8_t{
+  PRINT_FULL_MODE,
   PRINT_BACKUP_MODE,
-  PRINT_AUTO_PARK_MODE,
   PRINT_DUPLICATION_MODE,
   PRINT_MIRRORED_MODE
 } print_mode_e;
@@ -64,7 +64,7 @@ class PrintControl {
     void unapply_print_offset();
 
   public:
-    print_mode_e mode_ = PRINT_BACKUP_MODE;
+    print_mode_e mode_ = PRINT_FULL_MODE;
     bool temperature_lock_status[EXTRUDERS] = {false, false};
     bool commands_lock_ = false;
     print_err_info_t print_err_info = {0};

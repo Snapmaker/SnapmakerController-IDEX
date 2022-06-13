@@ -113,9 +113,9 @@
 
     if (parser.seenval('B')) {
       if (parser.value_bool())
-        print_control.set_mode(PRINT_AUTO_PARK_MODE);
-      else
         print_control.set_mode(PRINT_BACKUP_MODE);
+      else
+        print_control.set_mode(PRINT_FULL_MODE);
 
     }
 

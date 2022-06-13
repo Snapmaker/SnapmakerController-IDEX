@@ -30,7 +30,7 @@ bool PrintControl::buffer_is_empty() {
 }
 
 bool PrintControl::is_backup_mode() {
-  return mode_ == PRINT_AUTO_PARK_MODE;
+  return mode_ == PRINT_BACKUP_MODE;
 }
 
 uint32_t PrintControl::get_buf_used() {
@@ -63,12 +63,12 @@ bool PrintControl::filament_check() {
 
   system_status_source_e source = SYSTEM_STATUE_SCOURCE_NONE;
   switch (mode_) {
-    case PRINT_BACKUP_MODE:
+    case PRINT_FULL_MODE:
     case PRINT_DUPLICATION_MODE:
     case PRINT_MIRRORED_MODE:
       source = SYSTEM_STATUE_SCOURCE_FILAMENT;
       break;
-    case PRINT_AUTO_PARK_MODE:
+    case PRINT_BACKUP_MODE:
       if (filament_sensor.is_trigger(!active_extruder)) {
         source = SYSTEM_STATUE_SCOURCE_FILAMENT;
       } else {
@@ -164,24 +164,22 @@ ErrCode PrintControl::start() {
   if (system_service.is_working()) {
     return PRINT_RESULT_START_ERR_E;
   }
-  switch (mode_) {
-    case PRINT_BACKUP_MODE:
-    case PRINT_AUTO_PARK_MODE:
-      dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-      break;
-    default:
-      dual_x_carriage_mode = (DualXMode)mode_;
-      break;
-  }
+
   apply_print_offset();
-  if (homing_needed()) {
-    motion_control.home();
-  }
+
   if (mode_ >= PRINT_DUPLICATION_MODE) {
+    dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+    tool_change(0);
     duplicate_extruder_x_offset = (dual_x_carriage_mode == DXC_DUPLICATION_MODE) ? \
                           DUPLICATION_MODE_X_OFFSET : MIRRORED_MODE_X_OFFSET;
     idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
+    dual_x_carriage_mode = (DualXMode)mode_;
     motion_control.home_x();
+  } else {
+    dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+  }
+  if (homing_needed()) {
+    motion_control.home();
   }
 
 
@@ -231,7 +229,7 @@ ErrCode PrintControl::stop() {
     motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
     motion_control.home();
     system_service.set_status(SYSTEM_STATUE_IDLE);
-    mode_ = PRINT_BACKUP_MODE;
+    mode_ = PRINT_FULL_MODE;
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
     HOTEND_LOOP() {
       thermalManager.setTargetHotend(0, e);
