@@ -145,7 +145,7 @@ xyze_pos_t destination; // {0}
     }
     hotend_offset[e][axis] = offset;
     sync_plan_position();
-    update_software_endstops((AxisEnum)axis);
+    update_software_endstops((AxisEnum)axis, active_extruder, e);
   }
 
   void set_hotend_offsets(uint8_t e, xyz_pos_t offset) {
