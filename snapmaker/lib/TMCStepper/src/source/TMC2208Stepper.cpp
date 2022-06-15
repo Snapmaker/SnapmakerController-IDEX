@@ -204,7 +204,7 @@ uint8_t TMC2208Stepper::serial_write(const uint8_t data) {
 		} else
 	#endif
 		if (HWSerial != nullptr) {
-			return HWSerial->write(data);
+			return HWSerial->write_byte(data);
 		}
 
 	return out;

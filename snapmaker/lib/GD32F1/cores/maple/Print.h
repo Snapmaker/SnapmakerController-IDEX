@@ -39,6 +39,7 @@ public:
     virtual size_t write(uint8 ch) = 0;
     virtual size_t write(const char *str);
     virtual size_t write(const void *buf, uint32 len);
+    virtual size_t write_byte(unsigned char ch);
 	
 	size_t print(const String &);
     size_t print(char);
