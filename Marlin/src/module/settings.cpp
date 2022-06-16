@@ -2215,8 +2215,9 @@ void MarlinSettings::postprocess() {
       // Case Light Brightness
       //
       #if CASELIGHT_USES_BRIGHTNESS
+        uint8_t temp_brightness;
         _FIELD_TEST(caselight_brightness);
-        EEPROM_READ(caselight.brightness);
+        EEPROM_READ(temp_brightness);
       #endif
 
       //
