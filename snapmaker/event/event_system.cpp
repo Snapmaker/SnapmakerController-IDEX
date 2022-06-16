@@ -157,16 +157,24 @@ static ErrCode move_relative_home(event_param_t& event) {
 
 static ErrCode move_relative(event_param_t& event) {
   mobile_instruction_t *move = (mobile_instruction_t *)(event.data);
-  motion_control.move_axis(move);
-  event.data[0] = E_SUCCESS;
+  if (fdm_head.is_change_filamenter()) {
+    event.data[0] = E_COMMON_ERROR;
+  } else {
+    motion_control.move_axis(move);
+    event.data[0] = E_SUCCESS;
+  }
   event.length = 1;
   return send_event(event);
 }
 
 static ErrCode move(event_param_t& event) {
   mobile_instruction_t *move = (mobile_instruction_t *)(event.data);
-  motion_control.move_axis_to(move);
-  event.data[0] = E_SUCCESS;
+  if (fdm_head.is_change_filamenter()) {
+    event.data[0] = E_COMMON_ERROR;
+  } else {
+    motion_control.move_axis_to(move);
+    event.data[0] = E_SUCCESS;
+  }
   event.length = 1;
   return send_event(event);
 }
@@ -175,9 +183,13 @@ static ErrCode home(event_param_t& event) {
   event.data[0] = E_SUCCESS;
   event.length = 1;
   send_event(event);
-  motion_control.synchronize();
-  event.data[0] = E_SUCCESS;
-  motion_control.home();
+  if (fdm_head.is_change_filamenter()) {
+    event.data[0] = E_COMMON_ERROR;
+  } else {
+    motion_control.synchronize();
+    event.data[0] = E_SUCCESS;
+    motion_control.home();
+  }
   event.info.attribute = SACP_ATTR_REQ;
   event.info.command_id = SYS_ID_HOME_END;
   event.length = 1;
