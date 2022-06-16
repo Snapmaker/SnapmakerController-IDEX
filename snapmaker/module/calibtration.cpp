@@ -108,6 +108,7 @@ void Calibtration::bed_preapare(uint8_t extruder_index) {
     set_duplication_enabled(false);
     motion_control.home_x();
   }
+  set_duplication_enabled(false);
   float another_x_home_pos = !extruder_index ? x_home_pos(1) : x_home_pos(0);
   float another_x_pos = !extruder_index ? x2_position() : x_position();
 
