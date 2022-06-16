@@ -590,9 +590,9 @@ void reset_stepper_drivers();    // Called by settings.load / settings.reset
     #define _E_STEP_WRITE(E,V) do{ if (E == 0) { E0_STEP_WRITE(V); \
                                       if (V == 0) { \
                                         if(E0_DIR_READ()) { \
-                                          filament_sensor.e0_step(0); \
-                                        } else { \
                                           filament_sensor.e0_step(1); \
+                                        } else { \
+                                          filament_sensor.e0_step(0); \
                                         } \
                                       } \
                                     } else { \
