@@ -268,10 +268,6 @@ void MotionControl::move_to_xy(float x, float y, uint16_t feedrate) {
 
 
 void MotionControl::move_x_to_relative_home(float x, uint16_t feedrate) {
-  extruder_duplication_enabled = false;
-  dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-  idex_set_mirrored_mode(false);
-  set_duplication_enabled(false);
   if (axis_should_home(X_AXIS)) {
     home_x();
   }
@@ -285,9 +281,11 @@ void MotionControl::move_x_to_relative_home(float x, uint16_t feedrate) {
     dual_x_carriage_mode = DXC_MIRRORED_MODE;
     set_duplication_enabled(true);
     idex_set_mirrored_mode(true);
+    update_software_endstops(X_AXIS, active_extruder);
     move_to_x(x1_home + x, feedrate);
     planner.synchronize();
     inactive_extruder_x -= x;
+    dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
     idex_set_mirrored_mode(false);
     set_duplication_enabled(false);
     tool_change(save_active_extruder);
@@ -298,6 +296,10 @@ void MotionControl::move_x_to_relative_home(float x, uint16_t feedrate) {
     if (feedrate == 0) {
       feedrate = MOTION_TRAVEL_FEADRATE;
     }
+    extruder_duplication_enabled = false;
+    dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+    idex_set_mirrored_mode(false);
+    set_duplication_enabled(false);
     move_to_x(x_home_pos(active_extruder) + x, feedrate);
     tool_change(!active_extruder);
     move_to_x(x_home_pos(active_extruder) - x, feedrate);
