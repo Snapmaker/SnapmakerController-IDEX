@@ -75,8 +75,7 @@ static ErrCode fdm_enable_filament_sensor(event_param_t& event) {
 }
 
 static ErrCode fdm_change_tool_head(event_param_t& event) {
-  fdm_head.change_tool(MODULE_INDEX(event.data[0]));
-  event.data[0] = E_SUCCESS;
+  event.data[0] = fdm_head.change_tool(MODULE_INDEX(event.data[0]));
   event.length = 1;
   return send_event(event);
 }

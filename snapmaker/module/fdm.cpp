@@ -59,6 +59,9 @@ ErrCode FDM_Head::change_filamenter(uint8_t e, float feedrate, filamenter_change
 }
 
 ErrCode FDM_Head::change_tool(uint8_t e) {
+  if (is_change_filamenter()) {
+    return E_COMMON_ERROR;
+  }
   gcode.reset_stepper_timeout();
   tool_change(e, false);
   return E_SUCCESS;
