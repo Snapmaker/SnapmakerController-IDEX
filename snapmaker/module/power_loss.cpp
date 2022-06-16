@@ -81,7 +81,6 @@ void PowerLoss::extrude_before_resume() {
   }
   thermalManager.wait_for_bed();
 
-  SERIAL_ECHOLNPAIR("cur x:", current_position.x);
   if (homing_needed()) {
     motion_control.home();
   } else {
@@ -333,7 +332,9 @@ bool PowerLoss::check() {
           power_loss_status = POWER_LOSS_STOP_MOVE;
           return true;
         case POWER_LOSS_STOP_MOVE:
-          stash_print_env();
+          if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
+            stash_print_env();
+          }
           write_flash();
           power_loss_status = POWER_LOSS_WAIT_Z_MOVE;
           return true;
