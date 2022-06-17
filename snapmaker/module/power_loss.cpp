@@ -190,7 +190,6 @@ void PowerLoss::init() {
   uint8_t *ram_addr = (uint8_t *)&stash_data;
   uint32_t check_num = 0;
 
-  SET_INPUT_PULLUP(POWER_LOST_24V_PIN);
   SET_INPUT_PULLUP(POWER_LOST_220V_PIN);
 
   for (uint32_t i = 0; i < sizeof(power_loss_t); i++) {
@@ -309,16 +308,12 @@ uint8_t * PowerLoss::get_file_md5(uint8_t &len) {
   return stash_data.gcode_file_md5;
 }
 
-bool PowerLoss::is_power_24v_pin_trigger() {
-  return READ(POWER_LOST_24V_PIN) == POWER_LOSS_24V_TRIGGER_STATUS;
-}
-
 bool PowerLoss::is_power_220v_pin_trigger() {
   return READ(POWER_LOST_220V_PIN) == POWER_LOSS_220V_TRIGGER_STATUS;
 }
 
 bool PowerLoss::is_power_pin_trigger() {
-  return is_power_24v_pin_trigger() || is_power_220v_pin_trigger();
+  return is_power_220v_pin_trigger();
 }
 
 bool PowerLoss::check() {

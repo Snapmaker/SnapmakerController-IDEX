@@ -73,7 +73,6 @@ class PowerLoss {
     void clear();
     void show_power_loss_info();
     bool check();
-    bool is_power_24v_pin_trigger();
     bool is_power_220v_pin_trigger();
     bool is_power_pin_trigger();
     void close_peripheral_power();

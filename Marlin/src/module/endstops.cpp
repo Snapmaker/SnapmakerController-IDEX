@@ -594,7 +594,6 @@ void _O2 Endstops::report_states() {
   
   print_es_state(filament_sensor.is_trigger(0), "filament_0");
   print_es_state(filament_sensor.is_trigger(1), "filament_1");
-  print_es_state(power_loss.is_power_24v_pin_trigger(), "24V_power_loss");
   print_es_state(power_loss.is_power_220v_pin_trigger(), "220V_power_loss");
   TERN_(BLTOUCH, bltouch._reset_SW_mode());
   TERN_(JOYSTICK_DEBUG, joystick.report());

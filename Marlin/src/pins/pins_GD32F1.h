@@ -113,8 +113,6 @@
 //
 // to detect power loss
 //
-#define POWER_LOST_24V_PIN PD15
-#define POWER_LOSS_24V_TRIGGER_STATUS LOW
 #define POWER_LOST_220V_PIN PC12
 #define POWER_LOSS_220V_TRIGGER_STATUS HIGH
 //
