@@ -21,6 +21,8 @@
 
 typedef enum {
   POWER_LOSS_IDLE,
+  POWER_LOSS_RECONFIRM,
+  POWER_LOSS_TRIGGER,
   POWER_LOSS_STOP_MOVE,
   POWER_LOSS_WAIT_Z_MOVE,
   POWER_LOSS_DONE,
@@ -74,7 +76,7 @@ class PowerLoss {
     void show_power_loss_info();
     bool check();
     bool is_power_220v_pin_trigger();
-    bool is_power_pin_trigger();
+    bool is_power_loss_trigger();
     void close_peripheral_power();
     void process();
     void write_flash(void);
@@ -84,9 +86,9 @@ class PowerLoss {
     uint32_t next_req = 0;
     bool power_loss_en = true;
     power_loss_status_e power_loss_status = POWER_LOSS_IDLE;
+    bool is_trigger = false;
     bool is_inited = false;
     power_loss_t stash_data;
-    bool last_status = 0;
 };
 
 extern PowerLoss power_loss;

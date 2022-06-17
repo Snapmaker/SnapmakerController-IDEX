@@ -312,15 +312,15 @@ bool PowerLoss::is_power_220v_pin_trigger() {
   return READ(POWER_LOST_220V_PIN) == POWER_LOSS_220V_TRIGGER_STATUS;
 }
 
-bool PowerLoss::is_power_pin_trigger() {
-  return is_power_220v_pin_trigger();
+bool PowerLoss::is_power_loss_trigger() {
+  return is_trigger;
 }
 
 bool PowerLoss::check() {
   if (is_inited && power_loss_en && system_service.is_working()) {
-    if (is_power_pin_trigger()) {
+    if (is_power_loss_trigger()) {
       switch (power_loss_status) {
-        case POWER_LOSS_IDLE:
+        case POWER_LOSS_TRIGGER:
           close_peripheral_power();
           wait_for_heatup = false;
           stepper.quick_stop();
@@ -355,11 +355,24 @@ void PowerLoss::close_peripheral_power() {
 }
 
 void PowerLoss::process() {
-  if (is_power_pin_trigger() && !last_status) {
-    SERIAL_ECHOLNPAIR("trigger power loss");
-    last_status = true;
-  }
-  if (power_loss.power_loss_status == POWER_LOSS_WAIT_Z_MOVE) {
+  static uint32_t trigger_wait_time = 0;
+  if (power_loss_status == POWER_LOSS_IDLE) {
+    if (is_power_220v_pin_trigger()) {
+      power_loss_status = POWER_LOSS_RECONFIRM;
+      trigger_wait_time = millis() + 10;
+    }
+  } else if (power_loss_status == POWER_LOSS_RECONFIRM) {
+      if (trigger_wait_time <= millis()) {
+        if (is_power_220v_pin_trigger()) {
+          power_loss_status = POWER_LOSS_TRIGGER;
+          is_trigger = true;
+          SERIAL_ECHOLNPAIR("trigger power loss");
+        } else {
+          power_loss_status = POWER_LOSS_IDLE;
+          is_trigger = false;
+        }
+      }
+  } else if (power_loss.power_loss_status == POWER_LOSS_WAIT_Z_MOVE) {
     power_loss.power_loss_status = POWER_LOSS_DONE;
     SERIAL_ECHOLNPAIR("trigger power loss done");
     motion_control.synchronize();
