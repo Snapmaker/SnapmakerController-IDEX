@@ -85,7 +85,8 @@ void FilamentSensor::check() {
     if (e_step_count[i] >= check_step_count[i]) {
       uint16_t adc = get_adc_val(i);
       int32_t diff = abs(adc - start_adc[i]);
-      if ((start_adc[i] > SENSOR_DEAD_SPACE_ADC) && (adc > SENSOR_DEAD_SPACE_ADC)) {
+      bool is_err = (diff < filament_param.threshold);
+      if (is_err && (start_adc[i] > SENSOR_DEAD_SPACE_ADC) && (adc > SENSOR_DEAD_SPACE_ADC)) {
         dead_space_times[i]++;
         if (dead_space_times[i] >= (filament_param.check_times + (SENSOR_DEAD_SPACE_DISTANCE / FILAMENT_CHECK_DISTANCE))) {
           dead_space_times[i] = 0;
@@ -93,7 +94,6 @@ void FilamentSensor::check() {
         }
       } else {
         dead_space_times[i] = 0;
-        bool is_err = (diff < filament_param.threshold);
         err_times[i] = err_times[i] << 1 | is_err;
       }
       if ((err_times[i] & err_mask) == err_mask) {
