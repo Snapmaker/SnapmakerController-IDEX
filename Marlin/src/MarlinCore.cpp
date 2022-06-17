@@ -1337,7 +1337,7 @@ void setup() {
   SETUP_RUN(endstops.init());         // Init endstops and pullups
 
   SETUP_RUN(stepper.init());          // Init stepper. This enables interrupts!
-
+  enable_all_steppers();
   #if HAS_SERVOS
     SETUP_RUN(servo_init());
   #endif
