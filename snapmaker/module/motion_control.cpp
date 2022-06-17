@@ -281,7 +281,8 @@ void MotionControl::move_x_to_relative_home(float x, uint16_t feedrate) {
     dual_x_carriage_mode = DXC_MIRRORED_MODE;
     set_duplication_enabled(true);
     idex_set_mirrored_mode(true);
-    update_software_endstops(X_AXIS, active_extruder);
+    idex_set_parked(false);
+    update_software_endstops(X_AXIS, 0, active_extruder);
     move_to_x(x1_home + x, feedrate);
     planner.synchronize();
     inactive_extruder_x -= x;

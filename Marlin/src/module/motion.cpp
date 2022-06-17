@@ -145,7 +145,7 @@ xyze_pos_t destination; // {0}
     }
     hotend_offset[e][axis] = offset;
     sync_plan_position();
-    update_software_endstops((AxisEnum)axis);
+    update_software_endstops((AxisEnum)axis, 0, active_extruder);
   }
 
   void set_hotend_offsets(uint8_t e, xyz_pos_t offset) {
@@ -1274,7 +1274,7 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
           break;
       }
       idex_set_parked(false);           // No longer parked
-      update_software_endstops(X_AXIS, active_extruder);
+      update_software_endstops(X_AXIS, 0, active_extruder);
       endstops.enable_globally(true);
     }
     return false;
