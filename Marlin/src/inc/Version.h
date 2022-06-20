@@ -21,7 +21,7 @@
  */
 #pragma once
 
-#define J1_BUILD_VERSION "1.1.26"
+#define J1_BUILD_VERSION "1.1.27"
 
 /**
  * Release version. Leave the Marlin version or apply a custom scheme.
