@@ -170,10 +170,10 @@ ErrCode PrintControl::start() {
   if (mode_ >= PRINT_DUPLICATION_MODE) {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
     tool_change(0);
+    dual_x_carriage_mode = (DualXMode)mode_;
     duplicate_extruder_x_offset = (dual_x_carriage_mode == DXC_DUPLICATION_MODE) ? \
                           DUPLICATION_MODE_X_OFFSET : MIRRORED_MODE_X_OFFSET;
     idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
-    dual_x_carriage_mode = (DualXMode)mode_;
     motion_control.home_x();
   } else {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
