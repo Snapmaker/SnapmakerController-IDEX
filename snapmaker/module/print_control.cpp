@@ -52,7 +52,7 @@ uint32_t PrintControl::next_req_line() {
 
 bool PrintControl::filament_check() {
   bool is_trigger = false;
-  if (mode_ < PRINT_DUPLICATION_MODE) {
+  if (dual_x_carriage_mode < DXC_DUPLICATION_MODE) {
     is_trigger = filament_sensor.is_trigger(active_extruder);
   } else {
     is_trigger = filament_sensor.is_trigger();
@@ -208,6 +208,8 @@ ErrCode PrintControl::pause() {
   }
   motion_control.synchronize();
   motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
+  dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+  set_duplication_enabled(false);
   motion_control.home_x();
   motion_control.home_y();
   system_service.set_status(SYSTEM_STATUE_PAUSED);
@@ -231,6 +233,7 @@ ErrCode PrintControl::stop() {
     system_service.set_status(SYSTEM_STATUE_IDLE);
     mode_ = PRINT_FULL_MODE;
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+    set_duplication_enabled(false);
     HOTEND_LOOP() {
       thermalManager.setTargetHotend(0, e);
       fdm_head.set_fan_speed(e, 0, 0);
