@@ -91,6 +91,14 @@ static ErrCode req_machine_info(event_param_t& event) {
   event.data[0] = E_SUCCESS;
   system_service.get_machine_info(machine_info);
   event.length = sizeof(machine_info_t) + machine_info->version_length + 1;
+  uint16_t *sn_lenght = (uint16_t*)&event.data[event.length];
+  uint8_t * sn_addr = &event.data[event.length+2];
+  const char *temp_sn = "snapmaker sn test";
+  *sn_lenght = strlen(temp_sn);  // sn lenght
+  for (uint16_t i = 0; i < *sn_lenght; i++) {
+    sn_addr[i+2] = temp_sn[i];
+  }
+  event.length += *sn_lenght + 2;
   send_event(event);
   return E_SUCCESS;
 }
