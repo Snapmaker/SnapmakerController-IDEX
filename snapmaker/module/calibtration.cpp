@@ -24,7 +24,7 @@ Calibtration calibtration;
 
 #define X2_MIN_HOTEND_OFFSET (X2_MAX_POS - X2_MIN_POS - 20)
 
-static uint8_t probe_sg_reg[3] = {20, 30, 80};  // X Y Z
+static uint8_t probe_sg_reg[3] = {20, 20, 80};  // X Y Z1
 static float build_plate_thickness = 5;
 
 #define Y_POS_DIFF 4
@@ -142,12 +142,13 @@ ErrCode Calibtration::goto_calibtration_position(uint8_t pos) {
 float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
   float ret = distance;
   float pos_before_probe, pos_after_probe;
-
+  bool sg_enable = false;
   switch_detect.enable_probe();
   pos_before_probe = current_position[axis];
   if (((axis == Z_AXIS) && (feedrate == PROBE_FAST_Z_FEEDRATE)) || 
       (!(axis == Z_AXIS) && (feedrate == PROBE_FAST_XY_FEEDRATE))) {
-    motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis]);
+    motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
+    sg_enable = true;
   }
   if(axis == X_AXIS) {
     motion_control.move_x(distance, feedrate);
@@ -163,7 +164,7 @@ float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
   pos_after_probe = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   current_position[axis] = pos_after_probe;
   sync_plan_position();
-  if (motion_control.is_sg_trigger()) {
+  if (sg_enable && motion_control.is_sg_stop()) {
     LOG_E("probe failed be stall guard!!!\n");
   } else {
     ret = (pos_before_probe - pos_after_probe);
@@ -387,7 +388,7 @@ ErrCode Calibtration::calibtration_xy() {
       goto_calibtration_position(CAlIBRATION_POS_0);
     }
     if (ret != E_SUCCESS) {
-      LOG_E("calibtration e[%e] xy filed\n", e);
+      LOG_E("calibtration e[%d] xy filed\n", e);
       break;
     }
   }

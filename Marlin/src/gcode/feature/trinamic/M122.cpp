@@ -42,13 +42,17 @@ void GcodeSuite::M122() {
   if (parser.seenval('S')) {
     uint8_t s = parser.value_byte();
     uint32_t p = 0;
+    uint32_t e = 2;
     if (parser.seenval('P')) {
       p = parser.value_int();
+    }
+    if (parser.seenval('I')) {
+      e = parser.value_int();
     }
     LOOP_LOGICAL_AXES(i) {
       if (print_axis[i]) {
         if (s) {
-          motion_control.enable_stall_guard(i, p);
+          motion_control.enable_stall_guard_only_axis(i, p, e);
         } else {
           motion_control.disable_stall_guard(i);
         }

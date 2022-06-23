@@ -89,16 +89,20 @@ class MotionControl {
     void motor_disable(uint8_t axis, uint8_t index=0);
     bool is_motor_enable(uint8_t axis, uint8_t index=0);
 
-    void enable_stall_guard(uint8_t axis, uint8_t sg_value);
-    void enable_stall_guard_only_axis(uint8_t axis, uint8_t sg_value);
+    void enable_stall_guard(uint8_t axis, uint8_t sg_value, uint8_t x_index=2);
+    void enable_stall_guard_only_axis(uint8_t axis, uint8_t sg_value, uint8_t x_index=2);
     void disable_stall_guard(uint8_t axis);
     void disable_stall_guard_all();
-    bool is_sg_trigger() {return sg_trigger;}
+    bool is_sg_trigger() {return sg_trigger && sg_enable;}
+    // whether the motion stops because of stall guard
+    bool is_sg_stop() {return sg_stop;}
     void set_sg_satats(bool status) {sg_trigger = status;}
+    void set_sg_stop(bool status) {sg_stop = status;}
     void trigger_stall_guard_exit();
   private:
     bool sg_enable = false;
     bool sg_trigger =false;
+    bool sg_stop = false;
 };
 
 extern MotionControl motion_control;

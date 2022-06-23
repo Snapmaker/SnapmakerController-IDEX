@@ -358,14 +358,16 @@ bool MotionControl::is_motor_enable(uint8_t axis, uint8_t index) {
   return ret;
 }
 
-void MotionControl::enable_stall_guard(uint8_t axis, uint8_t sg_value) {
+void MotionControl::enable_stall_guard(uint8_t axis, uint8_t sg_value, uint8_t x_index) {
   #define ENABLE_SG(AXIS) stepper##AXIS.SGTHRS(sg_value); \
                           stepper##AXIS.TPWMTHRS(1); \
                           stepper##AXIS.TCOOLTHRS(0xFFFFF)
   switch (axis) {
     case X_AXIS:
-      ENABLE_SG(X);
-      ENABLE_SG(X2);
+      if (x_index == 0 || x_index == 2)
+        ENABLE_SG(X);
+      if (x_index == 1 || x_index == 2)
+        ENABLE_SG(X2);
       break;
     case Y_AXIS:
       ENABLE_SG(Y);
@@ -378,6 +380,7 @@ void MotionControl::enable_stall_guard(uint8_t axis, uint8_t sg_value) {
   EnableExtiInterrupt(TMC_STALL_GUARD_PIN);
   sg_enable = true;
   motion_control.set_sg_satats(false);
+  set_sg_stop(false);
 }
 
 void MotionControl::disable_stall_guard(uint8_t axis) {
@@ -399,9 +402,9 @@ void MotionControl::disable_stall_guard(uint8_t axis) {
   }
 }
 
-void MotionControl::enable_stall_guard_only_axis(uint8_t axis, uint8_t sg_value) {
+void MotionControl::enable_stall_guard_only_axis(uint8_t axis, uint8_t sg_value, uint8_t x_index) {
   disable_stall_guard_all();
-  enable_stall_guard(axis, sg_value);
+  enable_stall_guard(axis, sg_value, x_index);
 }
 
 void MotionControl::disable_stall_guard_all() {
@@ -410,12 +413,12 @@ void MotionControl::disable_stall_guard_all() {
   }
   DisableExtiInterrupt(TMC_STALL_GUARD_PIN);
   motion_control.set_sg_satats(false);
+  set_sg_stop(false);
   sg_enable = false;
 }
 
 void trigger_stall_guard_exit() {
   if (planner.has_blocks_queued() || planner.cleaning_buffer_counter) {
-    planner.quick_stop();
     motion_control.set_sg_satats(true);
   }
 }

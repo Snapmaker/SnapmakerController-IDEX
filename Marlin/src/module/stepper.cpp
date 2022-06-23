@@ -100,6 +100,7 @@ Stepper stepper; // Singleton
 #include "../../../snapmaker/module/filament_sensor.h"
 #include "../../../snapmaker/module/power_loss.h"
 #include "../../../snapmaker/module/fdm.h"
+#include "../../../snapmaker/module/motion_control.h"
 
 #if ENABLED(INTEGRATED_BABYSTEPPING)
   #include "../feature/babystep.h"
@@ -1578,6 +1579,18 @@ void Stepper::pulse_phase_isr() {
 
   // If there is no current block, do nothing
   if (!current_block) return;
+
+  if (step_events_completed > 5) {
+    // The stall gread is detected only after the motor is moving
+    if (motion_control.is_sg_trigger()) {
+      motion_control.set_sg_satats(false);
+      discard_current_block();
+      motion_control.set_sg_stop(true);
+      return;
+    }
+  } else {
+    motion_control.set_sg_satats(false);
+  }
 
   // Skipping step processing causes motion to freeze
   if (TERN0(HAS_FREEZE_PIN, frozen)) return;

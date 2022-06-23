@@ -926,7 +926,7 @@
       case X_AXIS:
         SERIAL_ECHOPGM("x:");
         _tmc_parse_drv_status(stepperX, n);
-        SERIAL_ECHOPGM("sg_result_x2:");
+        SERIAL_ECHOPGM("  sg_result_x2:");
         _tmc_parse_drv_status(stepperX2, n);
         break;
       case Y_AXIS:
