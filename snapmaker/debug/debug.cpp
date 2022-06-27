@@ -74,19 +74,21 @@ void SnapDebug::Log(debug_level_e level, const char *fmt, ...) {
     return;
 
   va_start(args, fmt);
-  char * data = log_buf + 2;
-  vsnprintf(data, SNAP_LOG_BUFFER_SIZE - 2, fmt, args);
+  char * data = log_buf + 4;
+  vsnprintf(data, SNAP_LOG_BUFFER_SIZE - 4, fmt, args);
   log_buf[0] = E_SUCCESS;
   log_buf[1] = level;
+  uint16_t *data_len = ((uint16_t *)(&log_buf[2]));
+  *data_len = strlen(data);
   va_end(args);
 
   SACP_head_base_t sacp = {SACP_ID_HMI, SACP_ATTR_ACK, 0, COMMAND_SET_SYS, SYS_ID_REPORT_LOG};
-  send_event(EVENT_SOURCE_HMI, sacp, (uint8_t*)log_buf, strlen(data) + 2);
+  send_event(EVENT_SOURCE_HMI, sacp, (uint8_t*)log_buf, *data_len + 4);
   if (!evevnt_serial[EVENT_SOURCE_MARLIN]->enable_sacp()) {
-    send_data(EVENT_SOURCE_MARLIN, (uint8_t *)data, strlen(data));
+    send_data(EVENT_SOURCE_MARLIN, (uint8_t *)data, *data_len);
   } else {
     sacp.recever_id = SACP_ID_PC;
-    send_event(EVENT_SOURCE_MARLIN, sacp, (uint8_t*)log_buf, strlen(data) + 2);
+    send_event(EVENT_SOURCE_MARLIN, sacp, (uint8_t*)log_buf, *data_len + 4);
   }
 }
 
