@@ -24,9 +24,10 @@ enum {
   PRINTER_ID_SET_TEMPERATURE_LOCK = 0x12,
   PRINTER_ID_GET_TEMPERATURE_LOCK = 0x13,
   PRINTER_ID_REQ_LINE             = 0xA0,
+  PRINTER_ID_SUBSCRIBE_AUTO_PARK_STATUS = 0xA1,
 };
 
-#define PRINTER_ID_CB_COUNT 20
+#define PRINTER_ID_CB_COUNT 21
 
 extern event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT];
 void printer_event_init(void);

@@ -376,6 +376,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_SET_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, set_temperature_lock},
   {PRINTER_ID_GET_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, get_temperature_lock},
   {PRINTER_ID_REQ_LINE            , EVENT_CB_DIRECT_RUN, request_cur_line},
+  {PRINTER_ID_SUBSCRIBE_AUTO_PARK_STATUS            , EVENT_CB_DIRECT_RUN, request_auto_pack_status},
 };
 
 static void req_gcode_pack() {
