@@ -90,10 +90,21 @@ static ErrCode calibtration_start_bed_probe(event_param_t& event) {
 
 static ErrCode calibtration_exit(event_param_t& event) {
   LOG_V("exit calibtration and is save:%d\n", event.data[0]);
-  event.data[0] = calibtration.exit(event.data[0]);
-  event.length = 1;
-  system_service.set_status(SYSTEM_STATUE_IDLE);
+  calibtration.exit(event.data[0]);
+  
+  uint32_t wait_timeout = millis() + 50000;
+  ErrCode ret = E_SUCCESS;
+  while (system_service.get_status() != SYSTEM_STATUE_IDLE) {
+    if (wait_timeout < millis()) {
+      ret = E_COMMON_ERROR;
+      LOG_E("exit calibtration failed\n");
+      break;
+    }
+    vTaskDelay(100);
+  }
   LOG_V("exit calibtration over\n");
+  event.data[0] = ret;
+  event.length = 1;
   return send_event(event);
 }
 
