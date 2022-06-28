@@ -285,4 +285,5 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_SET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN, set_motor_enable},
   {SYS_ID_MOVE_TO_RELATIVE_HOME , EVENT_CB_TASK_RUN  , move_relative_home},
   {SYS_ID_GET_DISTANCE_RELATIVE_HOME , EVENT_CB_TASK_RUN  , req_distance_relative_home},
+  {SYS_ID_SUBSCRIBE_MOTOR_ENABLE_STATUS , EVENT_CB_DIRECT_RUN  , get_motor_enable},
 };
