@@ -71,6 +71,7 @@ uint32_t gcode_req_timeout = 0;
 uint32_t gcode_req_timeout_times = 0;
 
 static void req_gcode_pack();
+static void report_status_info(ErrCode status);
 
 static void save_event_suorce_info(event_param_t& event) {
   print_source = event.source;
@@ -230,15 +231,28 @@ static ErrCode request_power_loss_status(event_param_t& event) {
 
 static ErrCode request_power_loss_resume(event_param_t& event) {
   SERIAL_ECHOLNPAIR("SC req power loss resume");
-  event.data[0] = power_loss.power_loss_resume();
+  ErrCode ret = power_loss.power_loss_resume();
   event.data[0] = E_SUCCESS;
   event.length = 1;
   send_event(event);
-  if (event.data[0] == E_SUCCESS) {
+  if (ret == E_SUCCESS) {
     SERIAL_ECHOLNPAIR("power loss resume success");
+    event.data[0] = E_SUCCESS;
+    event.length = 1;
+    send_event(event);
     save_event_suorce_info(event);
     req_gcode_pack();
+  } else if (ret == E_SYSTEM_EXCEPTION) {
+    SERIAL_ECHOLNPAIR("power loss resume success but lilament trigger");
+    event.data[0] = E_SUCCESS;
+    event.length = 1;
+    send_event(event);
+    save_event_suorce_info(event);
+    report_status_info(STATUS_PAUSE_BE_FILAMENT);
   } else {
+    event.data[0] = ret;
+    event.length = 1;
+    send_event(event);
     SERIAL_ECHOLNPAIR("power loss resume failed");
   }
   return E_SUCCESS;
@@ -434,15 +448,26 @@ void pausing_status_deal() {
     case SYSTEM_STATUE_SCOURCE_TOOL_CHANGE:
       SERIAL_ECHOLNPAIR("change tool head continue");
       power_loss.change_head();
-      print_control.resume();
-      req_gcode_pack();
+      if (print_control.resume() != E_SUCCESS) {
+        report_status_info(STATUS_PAUSE_BE_FILAMENT);
+        SERIAL_ECHOLNPAIR("lilament puase done");
+      } else {
+        req_gcode_pack();
+      }
       break;
     case SYSTEM_STATUE_SCOURCE_STOP_EXTRUDE:
       SERIAL_ECHOLNPAIR("stop single extrude done and continue");
       result = print_control.resume();
-      send_event(print_source, source_recever_id, SACP_ATTR_ACK,
-                  COMMAND_SET_PRINTER, PRINTER_ID_STOP_SINGLE_EXTRUDE, &result, 1, source_sequence);
-      req_gcode_pack();
+      if (result == E_SUCCESS) {
+        send_event(print_source, source_recever_id, SACP_ATTR_ACK,
+                    COMMAND_SET_PRINTER, PRINTER_ID_STOP_SINGLE_EXTRUDE, &result, 1, source_sequence);
+        req_gcode_pack();
+      } else {
+        result = E_SUCCESS;
+        send_event(print_source, source_recever_id, SACP_ATTR_ACK,
+                    COMMAND_SET_PRINTER, PRINTER_ID_STOP_SINGLE_EXTRUDE, &result, 1, source_sequence);
+       report_status_info(STATUS_PAUSE_BE_FILAMENT); 
+      }
       break;
     
     default:
@@ -488,7 +513,12 @@ void resuming_status_deal() {
   info->line_number = print_control.next_req_line();
   send_event(print_source, source_recever_id, SACP_ATTR_ACK,
     COMMAND_SET_PRINTER, PRINTER_ID_RESUME_WORK, data, 7, source_sequence);
-  req_gcode_pack();
+  if (result == E_SUCCESS) {
+    req_gcode_pack();
+  } else {
+    report_status_info(STATUS_PAUSE_BE_FILAMENT);
+    SERIAL_ECHOLNPAIR("resume be lilament puase");
+  }
 }
 
 void stopping_status_deal() {

@@ -69,11 +69,8 @@ bool PrintControl::filament_check() {
       source = SYSTEM_STATUE_SCOURCE_FILAMENT;
       break;
     case PRINT_BACKUP_MODE:
-      if (filament_sensor.is_trigger(!active_extruder)) {
-        source = SYSTEM_STATUE_SCOURCE_FILAMENT;
-      } else {
-        source = SYSTEM_STATUE_SCOURCE_TOOL_CHANGE;
-      }
+      filament_sensor.reset();
+      source = SYSTEM_STATUE_SCOURCE_TOOL_CHANGE;
       break;
   }
   SERIAL_ECHOLNPAIR("lilament trigger and source:", source);
@@ -218,9 +215,15 @@ ErrCode PrintControl::pause() {
 
 ErrCode PrintControl::resume() {
   buffer_head = buffer_tail = 0;
-  power_loss.resume_print_env();
-  system_service.set_status(SYSTEM_STATUE_PRINTING);
-  return E_SUCCESS;
+  // The print needs to be extruded before resuming
+  if (power_loss.extrude_before_resume() == E_SUCCESS) {
+    power_loss.resume_print_env();
+    system_service.set_status(SYSTEM_STATUE_PRINTING);
+    return E_SUCCESS;
+  } else {
+    system_service.set_status(SYSTEM_STATUE_PAUSED);
+    return E_SYSTEM_EXCEPTION;
+  }
 }
 
 ErrCode PrintControl::stop() {

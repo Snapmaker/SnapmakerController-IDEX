@@ -9,6 +9,7 @@
 #include "enclosure.h"
 #include "../../Marlin/src/module/temperature.h"
 #include "system.h"
+#include "filament_sensor.h"
 #include "fdm.h"
 #include "HAL.h"
 #include <EEPROM.h>
@@ -47,7 +48,8 @@ void PowerLoss::stash_print_env() {
   }
 }
 
-void PowerLoss::extrude_before_resume() {
+ErrCode PowerLoss::extrude_before_resume() {
+  filament_sensor.reset();
   HOTEND_LOOP() {
     print_control.temperature_lock(e, stash_data.extruder_temperature_lock[e]);
   }
@@ -96,18 +98,23 @@ void PowerLoss::extrude_before_resume() {
   motion_control.synchronize();
   motion_control.extrude_e(EXTRUDE_E_DISTANCE, CHANGE_FILAMENT_SPEED);
   motion_control.synchronize();
+  ErrCode ret = E_SUCCESS;
+  if (filament_sensor.is_trigger()) {
+    dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+    idex_set_mirrored_mode(false);
+    ret = E_COMMON_ERROR;
+  } else {
+    // resume dual_x_carriage_mode
+    dual_x_carriage_mode = (DualXMode)stash_data.dual_x_carriage_mode;
+    idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
+  }
+  next_req = cur_line = line_number_sum = stash_data.file_position;
+  motion_control.home_x();
+  motion_control.home_y();
+  return ret;
 }
 
 void PowerLoss::resume_print_env() {
-  // The print needs to be extruded before resuming
-  extrude_before_resume();
-  // resume dual_x_carriage_mode
-  dual_x_carriage_mode = (DualXMode)stash_data.dual_x_carriage_mode;
-  idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
-
-  motion_control.home_x();
-  motion_control.home_y();
-
   thermalManager.setTargetBed(stash_data.bed_temp);
   HOTEND_LOOP() {
     fdm_head.set_duplication_enabled(e, stash_data.extruder_dual_enable[e]);
@@ -134,7 +141,6 @@ void PowerLoss::resume_print_env() {
   current_position.e = stash_data.position.e;
   print_control.xyz_offset = stash_data.print_offset;
   sync_plan_position();
-  next_req = cur_line = line_number_sum = stash_data.file_position;
 }
 
  /**
@@ -262,9 +268,15 @@ ErrCode PowerLoss::power_loss_resume() {
   system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_PL);
   home_offset = stash_data.home_offset;
   update_workspace_offset(Z_AXIS);
-  resume_print_env();
   clear();
-  system_service.set_status(SYSTEM_STATUE_PRINTING);
+  // The print needs to be extruded before resuming
+  if (extrude_before_resume() != E_SUCCESS) {
+    system_service.set_status(SYSTEM_STATUE_PAUSED);
+    return E_SYSTEM_EXCEPTION;
+  } else {
+    resume_print_env();
+    system_service.set_status(SYSTEM_STATUE_PRINTING);
+  }
   return E_SUCCESS;
 }
 
