@@ -94,13 +94,15 @@ static ErrCode exception_report_info(exception_type_e e) {
 
 static ErrCode exception_report_clear_info(exception_type_e e) {
   uint8_t buf[40];
-  exception_info_t * info = (exception_info_t *)(buf+1);
+  uint8_t * exception_count = buf;
+  *exception_count = 1;  // One clearance exception is reported at a time
+  exception_info_t * info = (exception_info_t *)(exception_count+1);
   get_exception_info(e, info);
-  buf[0] = 1;  // One clearance exception is reported at a time
-  uint8_t * behavior = (uint8_t *)(buf + sizeof(exception_info_t) + 1);
-  uint8_t behavior_count = get_exception_behavior_list(behavior);
-  buf[sizeof(exception_info_t)] = behavior_count;
-  uint32_t lenght = sizeof(exception_info_t) + 2 + behavior_count;
+
+  uint8_t * behavior_count = (uint8_t *)((uint8_t *)info + sizeof(exception_info_t));
+  uint8_t * behavior = behavior_count + 1;
+  *behavior_count = get_exception_behavior_list(behavior);
+  uint32_t lenght = sizeof(exception_info_t) + 2 + (*behavior_count);
 
   send_event(EVENT_SOURCE_HMI, SACP_ID_HMI, SACP_ATTR_REQ,
       COMMAND_SET_EXCEPTION, EXCEPTION_ID_CLEAN_REPORT, buf, lenght);
