@@ -198,6 +198,7 @@ ErrCode PrintControl::pause() {
   buffer_head = buffer_tail = 0;
   motion_control.quickstop();
   power_loss.stash_print_env();
+  idex_set_parked(false);
   if (current_position.z + Z_DOWN_SAFE_DISTANCE < Z_MAX_POS) {
     motion_control.move_z(Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
   } else {
