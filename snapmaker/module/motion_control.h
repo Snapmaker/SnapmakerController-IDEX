@@ -99,10 +99,13 @@ class MotionControl {
     void set_sg_satats(bool status) {sg_trigger = status;}
     void set_sg_stop(bool status) {sg_stop = status;}
     void trigger_stall_guard_exit();
+    void update_feedrate(uint16_t fr) {feedrate = fr;}
+    uint16_t get_feedrate() {return feedrate;}
   private:
     bool sg_enable = false;
     bool sg_trigger =false;
     bool sg_stop = false;
+    uint16_t feedrate = 0;
 };
 
 extern MotionControl motion_control;

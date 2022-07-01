@@ -4,6 +4,7 @@
 #include "../module/filament_sensor.h"
 #include "../module/system.h"
 #include "../module/fdm.h"
+#include "../module/motion_control.h"
 
 #define GCODE_MAX_PACK_SIZE 450
 #define GCODE_REQ_TIMEOUT_MS 2000
@@ -325,6 +326,15 @@ static ErrCode get_temperature_lock(event_param_t& event) {
   return send_event(event);
 }
 
+static ErrCode get_work_feedrate(event_param_t& event) {
+  event.data[0] = E_SUCCESS;
+  uint16_t *fr = (uint16_t *)&event.data[1];
+  *fr = motion_control.get_feedrate();
+  event.length = 3;
+  LOG_V("SC get feedrate:%d\n", *fr);
+  return send_event(event);
+}
+
 static ErrCode set_work_feedrate_percentage(event_param_t& event) {
   feedrate_percentage_t *info = (feedrate_percentage_t *)event.data;
   SERIAL_ECHOLNPAIR("SC set feedrate percentage:", info->percentage);
@@ -391,6 +401,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_GET_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, get_temperature_lock},
   {PRINTER_ID_REQ_LINE            , EVENT_CB_DIRECT_RUN, request_cur_line},
   {PRINTER_ID_SUBSCRIBE_AUTO_PARK_STATUS            , EVENT_CB_DIRECT_RUN, request_auto_pack_status},
+  {PRINTER_ID_GET_WORK_FEEDRATE    , EVENT_CB_DIRECT_RUN, get_work_feedrate},
 };
 
 static void req_gcode_pack() {

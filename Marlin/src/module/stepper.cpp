@@ -2242,6 +2242,7 @@ uint32_t Stepper::block_phase_isr() {
       accelerate_until = current_block->accelerate_until << oversampling;
       decelerate_after = current_block->decelerate_after << oversampling;
       power_loss.cur_line = current_block->file_position;
+      motion_control.update_feedrate((uint16_t)current_block->nominal_speed);
       TERN_(MIXING_EXTRUDER, mixer.stepper_setup(current_block->b_color))
 
       TERN_(HAS_MULTI_EXTRUDER, stepper_extruder = current_block->extruder);
@@ -2336,6 +2337,8 @@ uint32_t Stepper::block_phase_isr() {
 
       // Calculate the initial timer interval
       interval = calc_timer_interval(current_block->initial_rate, &steps_per_isr);
+    } else {
+      motion_control.update_feedrate(0);
     }
     #if ENABLED(LASER_POWER_INLINE_CONTINUOUS)
       else { // No new block found; so apply inline laser parameters

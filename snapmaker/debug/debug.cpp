@@ -27,6 +27,7 @@
 #include "../module/filament_sensor.h"
 #include "../module/power_loss.h"
 #include "../module/exception.h"
+#include "../module/motion_control.h"
 #include "../j1/switch_detect.h"
 #include "../module/enclosure.h"
 #include "../../Marlin/src/inc/Version.h"
@@ -113,6 +114,8 @@ void SnapDebug::show_all_status() {
 
   snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "J1 version:%s\n", J1_BUILD_VERSION);
   SERIAL_ECHO(log_buf);
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "HW version:%d\n", system_service.get_hw_version());
+  SERIAL_ECHO(log_buf);
   snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "active_extruder:%d\n", active_extruder);
   SERIAL_ECHO(log_buf);
 
@@ -161,7 +164,7 @@ void SnapDebug::show_all_status() {
   SERIAL_ECHOLNPAIR("underframe temperature:", (float)thermalManager.degChamber()," fan:",READ(CHAMBER_AUTO_FAN_PIN));
   SERIAL_ECHOLNPAIR("power loss status 220V:", power_loss.is_power_220v_pin_trigger()," 24V:",READ(CHAMBER_AUTO_FAN_PIN));
   SERIAL_ECHOLNPAIR("synchronize status:", planner.has_blocks_queued());
-  SERIAL_ECHOLNPAIR("feedrate mm_s:", feedrate_mm_s, " mm_min:", feedrate_mm_s * 60);
+  SERIAL_ECHOLNPAIR("feedrate mm_s:", feedrate_mm_s, " mm_min:", feedrate_mm_s * 60, " reality mm_s:", motion_control.get_feedrate());
   SERIAL_ECHOLNPAIR("probe status T0:", switch_detect.read_e0_probe_status(), " T1:", switch_detect.read_e1_probe_status());
   #define ENDSTOP_STATUS(S) (READ(S##_PIN) != S##_ENDSTOP_INVERTING)
   SERIAL_ECHOLNPAIR("endstop x_min:", ENDSTOP_STATUS(X_MIN), " x_max:", ENDSTOP_STATUS(X_MAX), " y_min:", ENDSTOP_STATUS(Y_MIN), " z_max:", ENDSTOP_STATUS(Z_MAX));
