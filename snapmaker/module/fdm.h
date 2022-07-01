@@ -6,6 +6,11 @@
 
 #pragma pack(1)
 
+enum {
+  FAN_TYPE_COLD_MODULE = 0,
+  FAN_TYPE_COLD_EXTRUDER = 2,
+};
+
 typedef struct {
   uint8_t index;
   uint8_t filament_status;

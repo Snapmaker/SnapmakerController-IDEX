@@ -51,6 +51,23 @@ static ErrCode fdm_get_info(event_param_t& event) {
   return E_SUCCESS;
 }
 
+static ErrCode fdm_report_fan_info(event_param_t& event) {
+  event.data[0] = E_SUCCESS;
+  event.data[2] = 1;  // fan count
+  extruder_fan_info_t *info = (extruder_fan_info_t *)(event.data + 3);
+  HOTEND_LOOP() {
+    event.data[1] = fdm_head.get_key(e);
+    uint8_t speed;
+    fdm_head.get_fan_speed(e, 0, speed);
+    info->index = 0;
+    info->type = FAN_TYPE_COLD_MODULE;
+    info->speed = speed;
+    event.length = sizeof(extruder_info_t) + 3;
+    send_event(event);
+  }
+  return E_SUCCESS;
+}
+
 static ErrCode fdm_set_temperature(event_param_t& event) {
   set_temperature_t *t = (set_temperature_t *)event.data;
   uint8_t e = MODULE_INDEX(t->key);
@@ -169,4 +186,5 @@ event_cb_info_t fdm_cb_info[FDM_ID_CB_COUNT] = {
   {FDM_ID_EXTRUSION_CONTROL     , EVENT_CB_DIRECT_RUN, fdm_extrusion_control},
   {FDM_ID_EXTRUSION_UNTIL       , EVENT_CB_DIRECT_RUN, fdm_extrusion_until},
   {FDM_ID_REPORT_SUBSCRIBE_INFO , EVENT_CB_DIRECT_RUN, fdm_report_subscribe_info},
+  {FDM_ID_SUBSCRIBE_FAN_INFO    , EVENT_CB_DIRECT_RUN, fdm_report_fan_info},
 };

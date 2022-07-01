@@ -10,11 +10,6 @@
 FDM_Head fdm_head;
 
 enum {
-  FAN_TYPE_COLD_MODULE = 0,
-  FAN_TYPE_COLD_EXTRUDER = 2,
-};
-
-enum {
   HEAD_STATUS_OK = 0,
   HEAD_STATUS_UPGRADE,
   HEAD_STATUS_INVALID,

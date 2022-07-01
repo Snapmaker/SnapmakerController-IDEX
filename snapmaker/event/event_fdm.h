@@ -14,9 +14,10 @@ enum : uint8_t {
   FDM_ID_EXTRUSION_CONTROL       = 0x09,
   FDM_ID_EXTRUSION_UNTIL         = 0x0A,
   FDM_ID_REPORT_SUBSCRIBE_INFO   = 0xA0,
+  FDM_ID_SUBSCRIBE_FAN_INFO      = 0xA3,
 };
 
-#define FDM_ID_CB_COUNT 11
+#define FDM_ID_CB_COUNT 12
 
 extern event_cb_info_t fdm_cb_info[FDM_ID_CB_COUNT];
 
