@@ -114,18 +114,12 @@ ErrCode FDM_Head::get_fdm_info(uint8_t e, FDM_info *fdm) {
   get_extruder_info(e, &fdm->extruder_info);
   
   uint8_t index=0, speed=0;
-  fdm->fan_count = 2;
-  get_fan_speed(e, index, speed);
-  fdm->extruder_fan[index].index = index;
-  fdm->extruder_fan[index].type = FAN_TYPE_COLD_EXTRUDER;
-  fdm->extruder_fan[index].speed = speed;
-
-  index = 1;
+  fdm->fan_count = 1;
   get_fan_speed(e, index, speed);
   fdm->extruder_fan[index].index = index;
   fdm->extruder_fan[index].type = FAN_TYPE_COLD_MODULE;
   fdm->extruder_fan[index].speed = speed;
-  
+
   return E_SUCCESS;
 }
 

@@ -30,7 +30,7 @@ typedef struct {
   uint8_t extruder_count;
   extruder_info_t extruder_info;
   uint8_t fan_count;
-  extruder_fan_info_t extruder_fan[2];
+  extruder_fan_info_t extruder_fan[1];
 }FDM_info;
 #pragma pack()
 
