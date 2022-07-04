@@ -268,9 +268,18 @@ static ErrCode request_clear_power_loss(event_param_t& event) {
 }
 
 static ErrCode set_printer_mode(event_param_t& event) {
-  SERIAL_ECHOLNPAIR("SC set print mode:", event.data[0]);
+  LOG_I("SC set print mode:%d\n", event.data[0]);
   event.data[0] = print_control.set_mode((print_mode_e)event.data[0]);
   event.length = 1;
+  return send_event(event);
+}
+
+static ErrCode subscribe_backup_mode_status(event_param_t& event) {
+  bool status = print_control.is_backup_mode();
+  LOG_V("SC subscribe backup mode:%d\n", status);
+  event.data[0] = E_SUCCESS;
+  event.data[1] = status;
+  event.length = 2;
   return send_event(event);
 }
 
@@ -400,7 +409,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_SET_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, set_temperature_lock},
   {PRINTER_ID_GET_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, get_temperature_lock},
   {PRINTER_ID_REQ_LINE            , EVENT_CB_DIRECT_RUN, request_cur_line},
-  {PRINTER_ID_SUBSCRIBE_AUTO_PARK_STATUS            , EVENT_CB_DIRECT_RUN, request_auto_pack_status},
+  {PRINTER_ID_SUBSCRIBE_AUTO_PARK_STATUS            , EVENT_CB_DIRECT_RUN, subscribe_backup_mode_status},
   {PRINTER_ID_GET_WORK_FEEDRATE    , EVENT_CB_DIRECT_RUN, get_work_feedrate},
 };
 
@@ -415,7 +424,7 @@ static void req_gcode_pack() {
         COMMAND_SET_PRINTER, PRINTER_ID_REQ_GCODE, (uint8_t *)&info, sizeof(info));
     gcode_req_status = GCODE_PACK_REQ_WAIT_RECV;
     gcode_req_timeout = millis() + GCODE_REQ_TIMEOUT_MS;
-    SERIAL_ECHOLNPAIR("gcode requst start line:", info.line_number, ",size:", info.buf_max_size);
+    LOG_V("gcode requst start line:%u ,size:%u\n", info.buf_max_size, info.line_number);
   } else {
     gcode_req_status = GCODE_PACK_REQ_WAIT_CACHE;
   }
@@ -423,7 +432,7 @@ static void req_gcode_pack() {
 
 static void gcode_req_timeout_deal() {
   if (gcode_req_timeout < millis()) {
-    SERIAL_ECHOLNPAIR("requst gcode pack timeout!");
+    LOG_E("requst gcode pack timeout!\n");
     req_gcode_pack();
     gcode_req_timeout_times ++;
     if (gcode_req_timeout_times >= 5) {
