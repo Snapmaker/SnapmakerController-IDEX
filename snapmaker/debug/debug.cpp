@@ -51,7 +51,7 @@ SnapDebug debug;
   #error "Snap debug only support GNU compiler for now"
 #endif
 
-static debug_level_e  debug_msg_level = SNAP_DEBUG_LEVEL_VERBOSE;
+static debug_level_e  debug_msg_level = SNAP_DEBUG_LEVEL_INFO;
 static char log_buf[SNAP_LOG_BUFFER_SIZE + 2];
 
 const char *snap_debug_str[SNAP_DEBUG_LEVEL_MAX] = {
