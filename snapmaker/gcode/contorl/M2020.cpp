@@ -185,6 +185,23 @@ void GcodeSuite::M2020() {
           exception_server.clean_exception((exception_type_e)parser.byteval('C'));
         }
         break;
+      case 14:
+        if (parser.seen('T')) {
+          SNAP_DEBUG_SET_LEVEL(SNAP_DEBUG_LEVEL_TRACE);
+        } else if (parser.seen('V')) {
+          SNAP_DEBUG_SET_LEVEL(SNAP_DEBUG_LEVEL_VERBOSE);
+        } else if (parser.seen('I')) {
+          SNAP_DEBUG_SET_LEVEL(SNAP_DEBUG_LEVEL_INFO);
+        } else if (parser.seen('W')) {
+          SNAP_DEBUG_SET_LEVEL(SNAP_DEBUG_LEVEL_WARNING);
+        } else if (parser.seen('E')) {
+          SNAP_DEBUG_SET_LEVEL(SNAP_DEBUG_LEVEL_ERROR);
+        } else if (parser.seen('F')) {
+          SNAP_DEBUG_SET_LEVEL(SNAP_DEBUG_LEVEL_FATAL);
+        } else {
+          SERIAL_ECHOLNPAIR("debug level : ", snap_debug_str[debug.get_level()]);
+        }
+        break;
       default:
 
       break;

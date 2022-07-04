@@ -55,12 +55,13 @@ enum GcodeState : uint8_t {
 // log buffer size, max length for one debug massage
 #define SNAP_LOG_BUFFER_SIZE 256
 
-#define SNAP_TRACE_STR    "SNAP_TRACE: "
-#define SNAP_INFO_STR     "SNAP_INFO: "
-#define SNAP_WARNING_STR  "SNAP_WARN: "
-#define SNAP_ERROR_STR    "SNAP_ERR: "
-#define SNAP_FATAL_STR    "SANP_FATAL: "
-
+#define SNAP_TRACE_STR    "TRACE"
+#define SNAP_VERBOS_STR   "VERBOS"
+#define SNAP_INFO_STR     "INFO"
+#define SNAP_WARNING_STR  "WARN"
+#define SNAP_ERROR_STR    "ERR"
+#define SNAP_FATAL_STR    "FATAL"
+extern const char *snap_debug_str[SNAP_DEBUG_LEVEL_MAX];
 class SnapDebug {
   public:
     void Log(debug_level_e level, const char *fmt, ...);

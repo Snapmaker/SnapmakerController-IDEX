@@ -56,6 +56,7 @@ static char log_buf[SNAP_LOG_BUFFER_SIZE + 2];
 
 const char *snap_debug_str[SNAP_DEBUG_LEVEL_MAX] = {
   SNAP_TRACE_STR,
+  SNAP_VERBOS_STR,
   SNAP_INFO_STR,
   SNAP_WARNING_STR,
   SNAP_ERROR_STR,
