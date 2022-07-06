@@ -31,6 +31,7 @@ ErrCode Subscribe::enable(event_param_t &event) {
   for (; index < sub_count; index++) {
     if (sub[index].info.command_set == cmd_set &&
         (sub[index].info.command_id == cmd_id) &&
+        (sub[index].info.recever_id == event.info.recever_id) &&
         (sub[index].source == event.source)) {
       break;
     }
@@ -66,6 +67,7 @@ ErrCode Subscribe::disable(event_param_t &event) {
   for (; index < sub_count; index++) {
     if (sub[index].info.command_set == cmd_set &&
         (sub[index].info.command_id == cmd_id) &&
+        (sub[index].info.recever_id == event.info.recever_id) &&
         (sub[index].source == event.source)) {
       sub[index].is_available = false;
       SERIAL_ECHOLN(" success");
