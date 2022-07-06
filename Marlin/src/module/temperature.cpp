@@ -2087,7 +2087,7 @@ void Temperature::updateTemperaturesFromRawValues() {
 #if ENABLED(FAN_SOFT_PWM)
   #define _INIT_FAN_PIN(P) _INIT_SOFT_FAN(P)
 #else
-  #define _INIT_FAN_PIN(P) do{ if (PWM_PIN(P)) SET_PWM(P); else _INIT_SOFT_FAN(P); }while(0)
+  #define _INIT_FAN_PIN(P) do{ if (PWM_PIN(P)) pwmInit(P, 255, 20000); else _INIT_SOFT_FAN(P); }while(0)
 #endif
 #if ENABLED(FAST_PWM_FAN)
   #define SET_FAST_PWM_FREQ(P) set_pwm_frequency(P, FAST_PWM_FAN_FREQUENCY)

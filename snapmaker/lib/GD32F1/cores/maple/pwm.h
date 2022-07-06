@@ -34,6 +34,8 @@
 
 #include <libmaple/libmaple_types.h>
 
+void pwmInit(uint8 pin, uint16 duty_cycle, uint32_t frequency);
+
 /**
  * Set the PWM duty on the given pin.
  *

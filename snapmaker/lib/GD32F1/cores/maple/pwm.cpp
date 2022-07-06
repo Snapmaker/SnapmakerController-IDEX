@@ -38,6 +38,14 @@
 #include "boards.h"
 #include "io.h"
 
+void pwmInit(uint8 pin, uint16 duty_cycle, uint32_t frequency) {
+    pinMode(pin,PWM);
+    timer_dev *dev = PIN_MAP[pin].timer_device;
+    timer_set_prescaler(dev, F_CPU / (frequency * duty_cycle)-1);
+    timer_set_reload(dev, duty_cycle);
+}
+    
+
 void pwmWrite(uint8 pin, uint16 duty_cycle) {
     if (pin >= BOARD_NR_GPIO_PINS) {
         return;
