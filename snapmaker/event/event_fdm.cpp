@@ -159,7 +159,7 @@ static ErrCode fdm_extrusion_control(event_param_t& event) {
   return send_event(event);
 }
 
-static ErrCode fdm_report_subscribe_info(event_param_t& event) {
+static ErrCode fdm_subscribe_extruder_info(event_param_t& event) {
   event.data[0] = E_SUCCESS;
   event.data[2] = 1;  // extruder count
   extruder_info_t *info = (extruder_info_t *)(event.data + 3);
@@ -172,6 +172,19 @@ static ErrCode fdm_report_subscribe_info(event_param_t& event) {
   return E_SUCCESS;
 }
 
+static ErrCode fdm_subscribe_extrusion_status(event_param_t& event) {
+  event.data[0] = E_SUCCESS;
+  event.data[1] = 2;  // extruder count
+  extruder_move_status_t *info = (extruder_move_status_t *)(event.data + 2);
+  HOTEND_LOOP() {
+    info[e].key = fdm_head.get_key(e);
+    info[e].index = 0;
+    info[e].status = fdm_head.get_change_filamenter_status(e);
+  }
+  event.length = sizeof(extruder_move_status_t) * event.data[1] + 2;
+  send_event(event);
+  return E_SUCCESS;
+}
 
 
 event_cb_info_t fdm_cb_info[FDM_ID_CB_COUNT] = {
@@ -185,6 +198,7 @@ event_cb_info_t fdm_cb_info[FDM_ID_CB_COUNT] = {
   {FDM_ID_GET_NOZZLE_SPACING    , EVENT_CB_DIRECT_RUN, fdm_get_nozzle_spacing},
   {FDM_ID_EXTRUSION_CONTROL     , EVENT_CB_DIRECT_RUN, fdm_extrusion_control},
   {FDM_ID_EXTRUSION_UNTIL       , EVENT_CB_DIRECT_RUN, fdm_extrusion_until},
-  {FDM_ID_REPORT_SUBSCRIBE_INFO , EVENT_CB_DIRECT_RUN, fdm_report_subscribe_info},
+  {FDM_ID_SUBSCRIBE_EXTRUDER_INFO , EVENT_CB_DIRECT_RUN, fdm_subscribe_extruder_info},
+  {FDM_ID_SUBSCRIBE_EXTRUSION_STATUS , EVENT_CB_DIRECT_RUN, fdm_subscribe_extrusion_status},
   {FDM_ID_SUBSCRIBE_FAN_INFO    , EVENT_CB_DIRECT_RUN, fdm_report_fan_info},
 };

@@ -11,6 +11,19 @@ enum {
   FAN_TYPE_COLD_EXTRUDER = 2,
 };
 
+typedef enum {
+  FILAMENT_CHANGE_STOP,
+  FILAMENT_CHANGE_EXTRUDER,
+  FILAMENT_CHANGE_RETRACK,
+} filamenter_change_status_e;
+
+typedef enum {
+  BRASS_NTC_E,
+  BRASS_PT100_E,
+  HARDENING_STEEL_PT100,
+  UNKNOWN_NOZZLE_TYPE = 0xFF,
+} nozzle_texture_type_e;
+
 typedef struct {
   uint8_t index;
   uint8_t filament_status;
@@ -37,20 +50,14 @@ typedef struct {
   uint8_t fan_count;
   extruder_fan_info_t extruder_fan[1];
 }FDM_info;
+
+typedef struct {
+  uint8_t key;
+  uint8_t index;
+  filamenter_change_status_e status;
+}extruder_move_status_t;
+
 #pragma pack()
-
-typedef enum {
-  FILAMENT_CHANGE_STOP,
-  FILAMENT_CHANGE_EXTRUDER,
-  FILAMENT_CHANGE_RETRACK,
-} filamenter_change_status_e;
-
-typedef enum {
-  BRASS_NTC_E,
-  BRASS_PT100_E,
-  HARDENING_STEEL_PT100,
-  UNKNOWN_NOZZLE_TYPE = 0xFF,
-} nozzle_texture_type_e;
 
 typedef struct {
   nozzle_texture_type_e  texture;
@@ -79,7 +86,9 @@ class FDM_Head {
     // Double - head printing will not work after disable
     void set_duplication_enabled(uint8_t e, bool status) {duplication_enabled_move[e] = status;}
     bool is_duplicating();
- 
+    filamenter_change_status_e get_change_filamenter_status(uint8_t e) {
+      return (change_filamenter_status[e]);
+    }
     bool is_change_filamenter(uint8_t e) {
       return (change_filamenter_status[e] != FILAMENT_CHANGE_STOP );
     }
