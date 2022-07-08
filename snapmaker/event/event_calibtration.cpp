@@ -193,11 +193,11 @@ static ErrCode calibtration_set_z_offset(event_param_t& event) {
 }
 
 static ErrCode calibtration_get_z_offset(event_param_t& event) {
-  uint8_t key = event.data[0];
+  uint8_t key = MODULE_KEY(MODULE_PRINT, 0);
   sc_get_z_offet_t * info = (sc_get_z_offet_t *)event.data;
   float z_offset = -calibtration.get_z_offset();
 
-  SERIAL_ECHOLNPAIR_F("SC req z offset:", z_offset);
+  LOG_V("SC req z offset:%f\n", z_offset);
 
   info->result = E_SUCCESS;
   info->key = key;
@@ -209,16 +209,17 @@ static ErrCode calibtration_get_z_offset(event_param_t& event) {
 }
 
 event_cb_info_t calibtration_cb_info[CAlIBRATION_ID_CB_COUNT] = {
-  {CAlIBRATION_ID_SET_MODE         , EVENT_CB_TASK_RUN, calibtration_set_mode},
+  {CAlIBRATION_ID_SET_MODE         , EVENT_CB_DIRECT_RUN, calibtration_set_mode},
   {CAlIBRATION_ID_MOVE_TO_POSITION , EVENT_CB_TASK_RUN, calibtration_move_to_pos},
   {CAlIBRATION_ID_START_BED_PROBE  , EVENT_CB_TASK_RUN, calibtration_start_bed_probe},
   {CAlIBRATION_ID_EXIT             , EVENT_CB_TASK_RUN, calibtration_exit},
   {CAlIBRATION_ID_RETRACK_E        , EVENT_CB_TASK_RUN, calibtration_retrack_e},
-  {CAlIBRATION_ID_REPORT_BED_OFFSET, EVENT_CB_TASK_RUN, calibtration_report_bed_offset},
+  {CAlIBRATION_ID_REPORT_BED_OFFSET, EVENT_CB_DIRECT_RUN, calibtration_report_bed_offset},
   {CAlIBRATION_ID_MOVE_NOZZLE      , EVENT_CB_TASK_RUN, calibtration_move_nozzle},
   {CAlIBRATION_ID_SET_Z_OFFSET     , EVENT_CB_TASK_RUN, calibtration_set_z_offset},
-  {CAlIBRATION_ID_GET_Z_OFFSET     , EVENT_CB_TASK_RUN, calibtration_get_z_offset},
+  {CAlIBRATION_ID_GET_Z_OFFSET     , EVENT_CB_DIRECT_RUN, calibtration_get_z_offset},
   {CAlIBRATION_ID_START_XY         , EVENT_CB_TASK_RUN, calibtration_start_xy},
   {CAlIBRATION_ID_SET_XY_OFFSET    , EVENT_CB_TASK_RUN, calibtration_set_xy_offset},
-  {CAlIBRATION_ID_REPORT_XY_OFFSET , EVENT_CB_TASK_RUN, calibtration_report_xy_offset},
+  {CAlIBRATION_ID_REPORT_XY_OFFSET , EVENT_CB_DIRECT_RUN, calibtration_report_xy_offset},
+  {CAlIBRATION_ID_SUBSCRIBE_Z_OFFSET , EVENT_CB_DIRECT_RUN, calibtration_get_z_offset},
 };
