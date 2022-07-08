@@ -15,6 +15,12 @@ typedef struct {
   uint8 fan_power;
 } enclouser_info_t;
 
+typedef struct {
+  uint8 result;
+  uint8_t key;
+  uint8_t light_power;
+} enclouser_subscribe_info_t;
+
 #pragma pack()
 
 static ErrCode enclouser_report_info(event_param_t& event) {
@@ -43,9 +49,18 @@ static ErrCode enclouser_set_fan(event_param_t& event) {
   return send_event(event);
 }
 
+static ErrCode enclouser_subscribe_info(event_param_t& event) {
+  enclouser_subscribe_info_t * info = (enclouser_subscribe_info_t *)event.data;
+  info->result = E_SUCCESS;
+  info->key = enclosure.get_key();
+  info->light_power = enclosure.get_light_power();
+  event.length = sizeof(enclouser_subscribe_info_t);
+  return send_event(event);
+}
+
 event_cb_info_t enclouser_cb_info[ENCLOUSER_ID_CB_COUNT] = {
   {ENCLOUSER_ID_REPORT_INFO   , EVENT_CB_DIRECT_RUN, enclouser_report_info},
   {ENCLOUSER_ID_SET_LIGHT     , EVENT_CB_DIRECT_RUN, enclouser_set_light},
   {ENCLOUSER_ID_SET_FAN       , EVENT_CB_DIRECT_RUN, enclouser_set_fan},
-  {ENCLOUSER_ID_SUBSCRIBE_INFO, EVENT_CB_DIRECT_RUN, enclouser_report_info},
+  {ENCLOUSER_ID_SUBSCRIBE_INFO, EVENT_CB_DIRECT_RUN, enclouser_subscribe_info},
 };
