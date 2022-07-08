@@ -186,6 +186,16 @@ static ErrCode fdm_subscribe_extrusion_status(event_param_t& event) {
   return E_SUCCESS;
 }
 
+static ErrCode subscribe_fdm_info(event_param_t& event) {
+  HOTEND_LOOP() {
+    event.data[0] = E_SUCCESS;
+    FDM_info * info = (FDM_info *)(event.data + 1);
+    fdm_head.get_fdm_info(e, info);
+    event.length = sizeof(FDM_info) + 1;
+    send_event(event);
+  }
+  return E_SUCCESS;
+}
 
 event_cb_info_t fdm_cb_info[FDM_ID_CB_COUNT] = {
   {FDM_ID_GET_INFO              , EVENT_CB_DIRECT_RUN, fdm_get_info},
@@ -201,4 +211,5 @@ event_cb_info_t fdm_cb_info[FDM_ID_CB_COUNT] = {
   {FDM_ID_SUBSCRIBE_EXTRUDER_INFO , EVENT_CB_DIRECT_RUN, fdm_subscribe_extruder_info},
   {FDM_ID_SUBSCRIBE_EXTRUSION_STATUS , EVENT_CB_DIRECT_RUN, fdm_subscribe_extrusion_status},
   {FDM_ID_SUBSCRIBE_FAN_INFO    , EVENT_CB_DIRECT_RUN, fdm_report_fan_info},
+  {FDM_ID_SUBSCRIBE_MODULE_INFO    , EVENT_CB_DIRECT_RUN, subscribe_fdm_info},
 };
