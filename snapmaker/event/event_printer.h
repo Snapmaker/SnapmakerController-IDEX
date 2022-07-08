@@ -26,9 +26,10 @@ enum {
   PRINTER_ID_REQ_LINE             = 0xA0,
   PRINTER_ID_SUBSCRIBE_AUTO_PARK_STATUS = 0xA1,
   PRINTER_ID_GET_WORK_FEEDRATE    = 0xA2,
+  PRINTER_ID_SUBSCRIBE_FLOW_PERCENTAGE  = 0xA3,
 };
 
-#define PRINTER_ID_CB_COUNT 22
+#define PRINTER_ID_CB_COUNT 23
 
 extern event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT];
 void printer_event_init(void);

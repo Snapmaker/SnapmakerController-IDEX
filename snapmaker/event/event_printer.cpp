@@ -388,6 +388,20 @@ static ErrCode get_work_flow_percentage(event_param_t& event) {
   return send_event(event);
 }
 
+static ErrCode subscribe_flow_percentage(event_param_t& event) {
+  HOTEND_LOOP() {
+    flow_percentage_t *info = (flow_percentage_t *)(event.data + 1);
+    info->key = fdm_head.get_key(e);
+    info->e_index = 1;  //  extruder count
+    info->percentage = print_control.get_work_flow_percentage(e);
+    LOG_V("report T:%d flow percentage:%d\n", e , info->percentage);
+    event.data[0] = E_SUCCESS;
+    event.length = 1 + sizeof(flow_percentage_t);
+    send_event(event);
+  }
+  return E_SUCCESS;
+}
+
 event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_REQ_FILE_INFO       , EVENT_CB_DIRECT_RUN, request_file_info},
   {PRINTER_ID_REQ_GCODE           , EVENT_CB_TASK_RUN,   gcode_pack_deal},
@@ -411,6 +425,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_REQ_LINE            , EVENT_CB_DIRECT_RUN, request_cur_line},
   {PRINTER_ID_SUBSCRIBE_AUTO_PARK_STATUS            , EVENT_CB_DIRECT_RUN, subscribe_backup_mode_status},
   {PRINTER_ID_GET_WORK_FEEDRATE    , EVENT_CB_DIRECT_RUN, get_work_feedrate},
+  {PRINTER_ID_SUBSCRIBE_FLOW_PERCENTAGE    , EVENT_CB_DIRECT_RUN, subscribe_flow_percentage},
 };
 
 static void req_gcode_pack() {
