@@ -62,7 +62,7 @@ static ErrCode fdm_report_fan_info(event_param_t& event) {
     info->index = 0;
     info->type = FAN_TYPE_COLD_MODULE;
     info->speed = speed;
-    event.length = sizeof(extruder_info_t) + 3;
+    event.length = sizeof(extruder_fan_info_t) + 3;
     send_event(event);
   }
   return E_SUCCESS;
