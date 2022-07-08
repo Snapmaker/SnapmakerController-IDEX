@@ -130,15 +130,15 @@ static ErrCode req_distance_relative_home(event_param_t& event) {
   motion_control.get_xyz_pos(cur_pos);
   event.data[0] = E_SUCCESS;
   event.data[1] = AXIS_COUNT;
-  LOG_I("SC req distance relative home:");
+  LOG_V("SC req distance relative home:");
   coordinate_info_t * info = (coordinate_info_t *)(event.data + 2);
   uint8_t axis_code[AXIS_COUNT] = {AXIS_X1, AXIS_X2, AXIS_Y1, AXIS_Z1};
   for (uint8_t i = 0; i < AXIS_COUNT; i++) {
     info[i].axis = axis_code[i];
     info[i].position = FLOAT_TO_INT(cur_pos[i] - home_pos[i]);
-    LOG_I(" %d:%.2f", info[i].axis, INT_TO_FLOAT(info[i].position));
+    LOG_V(" %d:%.2f", info[i].axis, INT_TO_FLOAT(info[i].position));
   }
-  LOG_I("\n");
+  LOG_V("\n");
   event.length = sizeof(coordinate_info_t) * AXIS_COUNT + 2;
   send_event(event);
   return E_SUCCESS;
