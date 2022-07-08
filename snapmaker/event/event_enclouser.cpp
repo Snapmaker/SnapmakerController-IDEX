@@ -10,9 +10,9 @@ typedef struct {
   uint8_t key;
   uint8 module_status;  // Fixed 2, normal
   uint8_t light_power;
-  bool  is_door_enabled;  // J1 not support
+  uint8_t test_status; // Fixed 0
   bool  is_door_open;  // J1 not support
-  uint8 fan_power;
+  uint8 fan_power;  // J1 not support
 } enclouser_info_t;
 
 typedef struct {
@@ -25,9 +25,12 @@ typedef struct {
 
 static ErrCode enclouser_report_info(event_param_t& event) {
   enclouser_info_t * info = (enclouser_info_t *)event.data;
+  memset(info, 0, sizeof(enclouser_info_t));
   info->result = E_SUCCESS;
   info->key = enclosure.get_key();
-
+  info->module_status = 2;
+  info->light_power = enclosure.get_light_power();
+  event.length = sizeof(enclouser_info_t);
   return send_event(event);
 }
 
