@@ -66,14 +66,15 @@
     planner.synchronize();
 
     if (parser.seen('S')) {
-      DualXMode dual_carriage_mode = (DualXMode)parser.value_byte();
+      uint8_t dual_carriage_mode = parser.value_byte();
       idex_set_mirrored_mode(false);
 
       switch (dual_carriage_mode) {
 
         case DXC_FULL_CONTROL_MODE:
         case DXC_AUTO_PARK_MODE:
-          dual_x_carriage_mode = dual_carriage_mode;
+          dual_x_carriage_mode = (DualXMode)dual_carriage_mode;
+          print_control.set_mode(PRINT_FULL_MODE);
           break;
 
         case DXC_DUPLICATION_MODE:
@@ -83,7 +84,7 @@
             dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
             tool_change(0);
           }
-          dual_x_carriage_mode = dual_carriage_mode;
+          dual_x_carriage_mode = (DualXMode)dual_carriage_mode;
           // Set the X offset, but no less than the safety gap
           if (parser.seen('X')) {
             duplicate_extruder_x_offset = _MAX(parser.value_linear_units(), (X2_MIN_POS) - (X1_MIN_POS));
@@ -95,9 +96,11 @@
             duplicate_extruder_temp_offset = parser.value_celsius_diff();
           }
           idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
+          print_control.set_mode((print_mode_e)dual_x_carriage_mode);
           break;
         default:
           dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
+          print_control.set_mode(PRINT_BACKUP_MODE);
           break;
       }
 
@@ -108,15 +111,9 @@
         gcode.process_subcommands_now_P(PSTR(EVENT_GCODE_IDEX_AFTER_MODECHANGE));
       #endif
     }
-    else if (!parser.seen('W'))  // if no S or W parameter, the DXC mode gets reset to the user's default
+    else if (!parser.seen('W')) {  // if no S or W parameter, the DXC mode gets reset to the user's default
       dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
-
-    if (parser.seenval('B')) {
-      if (parser.value_bool())
-        print_control.set_mode(PRINT_BACKUP_MODE);
-      else
-        print_control.set_mode(PRINT_FULL_MODE);
-
+      print_control.set_mode(PRINT_FULL_MODE);
     }
 
     #ifdef DEBUG_DXC_MODE
