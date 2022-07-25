@@ -175,7 +175,7 @@ void GcodeSuite::M2020() {
         }
         break;
       case 12:
-        tmp_u8_value = system_service.get_hw_version();
+        tmp_u8_value = system_service.get_hw_version(true);
         SERIAL_ECHOLNPAIR("hw version:", tmp_u8_value);
         break;
       case 13:

@@ -93,10 +93,11 @@ class SystemService {
     bool is_working() {return (status_ >= SYSTEM_STATUE_STARTING) && (status_ <= SYSTEM_STATUE_RESUMING);}
     bool is_idle() {return status_ == SYSTEM_STATUE_IDLE;}
     void factory_reset(void);
-    uint8_t get_hw_version();
+    uint8_t get_hw_version(bool is_refresh = false);
   private:
     system_status_e status_ = SYSTEM_STATUE_IDLE;
     system_status_source_e source_ = SYSTEM_STATUE_SCOURCE_NONE;
+    uint8_t hw_version = 0xff;
 };
 
 extern SystemService system_service;

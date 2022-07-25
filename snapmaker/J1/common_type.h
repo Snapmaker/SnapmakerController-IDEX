@@ -16,6 +16,8 @@ typedef int float_to_int_t;  // float * 1000 to int
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #define BIT(shift)   (1UL << (shift))
 
+#define HW_1_2(p1, p2) (system_service.get_hw_version() == 0 ? (p1) : (p2))
+
 typedef enum : uint8_t {
   E_SUCCESS = 0,      /* non error */ 
   E_IN_PROGRESS,      /*Notification receives instructions and starts work*/

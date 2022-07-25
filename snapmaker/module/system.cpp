@@ -52,17 +52,20 @@ void SystemService::get_coordinate_system_info(coordinate_system_t * info, bool 
   info->origin_offset_info[3].position = 0;
 }
 
-uint8_t SystemService::get_hw_version() {
-  pinMode(HW_VERSION_PIN, INPUT_ANALOG);
-  uint16_t val = analogRead(HW_VERSION_PIN);
-  uint8_t ver_count = ARRAY_SIZE(hw_version_table);
-  uint8_t i = 1;
-  for (; i < ver_count; i++) {
-    if (hw_version_table[i - 1] < val && hw_version_table[i] > val) {
-      break;
+uint8_t SystemService::get_hw_version(bool is_refresh) {
+  if (hw_version == 0xff || is_refresh) {
+    pinMode(HW_VERSION_PIN, INPUT_ANALOG);
+    uint16_t val = analogRead(HW_VERSION_PIN);
+    uint8_t ver_count = ARRAY_SIZE(hw_version_table);
+    uint8_t i = 1;
+    for (; i < ver_count; i++) {
+      if (hw_version_table[i - 1] < val && hw_version_table[i] > val) {
+        break;
+      }
     }
+    hw_version = i;
   }
-  return i;
+  return hw_version;
 }
 
 void SystemService::get_machine_info(machine_info_t *info) {
