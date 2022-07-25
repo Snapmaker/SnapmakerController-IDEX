@@ -4,6 +4,7 @@
 #include "../module/fdm.h"
 #include "../module/motion_control.h"
 #include "../module/filament_sensor.h"
+#include "../Marlin/src/module/settings.h"
 
 #pragma pack(1)
 typedef struct {
@@ -86,6 +87,7 @@ static ErrCode fdm_enable_filament_sensor(event_param_t& event) {
   uint8_t enable = event.data[2];
   SERIAL_ECHOLNPAIR("SC set filament_sensor[", e, "]:", enable);
   filament_sensor.filament_param.enabled[e] = enable;
+  (void)settings.save();
   event.length = 1;
   event.data[0] = E_SUCCESS;
   return send_event(event);
