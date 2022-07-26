@@ -450,7 +450,7 @@ static void gcode_req_timeout_deal() {
     LOG_E("requst gcode pack timeout!\n");
     req_gcode_pack();
     gcode_req_timeout_times ++;
-    if (gcode_req_timeout_times >= 5) {
+    if (gcode_req_timeout_times >= 30) {
       print_control.error_and_stop();
     }
   }
