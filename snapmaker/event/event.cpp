@@ -75,7 +75,7 @@ ErrCode EventHandler::parse(recv_data_info_t *recv_info) {
   event_cb_info_t * cb_info = get_event_info(event->param.info.command_set, event->param.info.command_id);
   if (!cb_info) {
     event->block_status = EVENT_CACHT_STATUS_IDLE;
-    SERIAL_ECHOLN("ERROR: find no event cb");
+    LOG_E("ERROR: find no event cb: cmd_set[0x%x] cmd_id[0x%x]\n", event->param.info.command_set, event->param.info.command_id);
     return E_PARAM;
   }
 
