@@ -299,8 +299,10 @@ void PrintControl::set_work_flow_percentage(uint8_t e, int16_t percentage) {
 }
 
 void PrintControl::error_and_stop() {
+  LOG_E("Print timeout will automatically stop working\n");
   print_err_info.is_err = true;
   print_err_info.err_line = next_req_line();
+  LOG_E("timeout line:%d\n", print_err_info.err_line);
   buffer_head = buffer_tail = 0;
   motion_control.quickstop();
   power_loss.stash_print_env();
