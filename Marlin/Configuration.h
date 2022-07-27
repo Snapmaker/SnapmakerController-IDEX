@@ -1723,7 +1723,7 @@
 // Homing speeds (mm/min)
 #define HOMING_FEEDRATE_MM_M { (50*60), (50*60), (10*60) }
 
-#define DUPLICATION_SWITCH_FEEDRATE 50  // MM/S
+#define DUPLICATION_SWITCH_FEEDRATE planner.settings.max_feedrate_mm_s[X_AXIS]  // MM/S
 
 #define HOMING_X_POX_TO_ENDSTOP (0)  // mm
 #define DUPLICATION_MODE_X_OFFSET 162
