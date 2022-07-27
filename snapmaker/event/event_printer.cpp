@@ -359,7 +359,7 @@ static ErrCode get_work_feedrate_percentage(event_param_t& event) {
   info->key = key;
   info->e_count = 1;
   info->percentage = print_control.get_feedrate_percentage();
-  SERIAL_ECHOLNPAIR("SC set feedrate percentage:", info->percentage);
+  SERIAL_ECHOLNPAIR("SC get feedrate percentage:", info->percentage);
   event.data[0] = E_SUCCESS;
   event.length = 1 + sizeof(feedrate_percentage_t);
   return send_event(event);
@@ -402,6 +402,16 @@ static ErrCode subscribe_flow_percentage(event_param_t& event) {
   return E_SUCCESS;
 }
 
+static ErrCode subscribe_work_feedrate_percentage(event_param_t& event) {
+  event.data[0] = E_SUCCESS;
+  event.data[1] = 1;
+  int16_t * percentage = (int16_t *)&event.data[2];
+  *percentage = print_control.get_feedrate_percentage();
+  LOG_V("SC get feedrate percentage:%d\n", *percentage);
+  event.length = 4;
+  return send_event(event);
+}
+
 event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_REQ_FILE_INFO       , EVENT_CB_DIRECT_RUN, request_file_info},
   {PRINTER_ID_REQ_GCODE           , EVENT_CB_TASK_RUN,   gcode_pack_deal},
@@ -426,6 +436,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_SUBSCRIBE_AUTO_PARK_STATUS            , EVENT_CB_DIRECT_RUN, subscribe_backup_mode_status},
   {PRINTER_ID_GET_WORK_FEEDRATE    , EVENT_CB_DIRECT_RUN, get_work_feedrate},
   {PRINTER_ID_SUBSCRIBE_FLOW_PERCENTAGE    , EVENT_CB_DIRECT_RUN, subscribe_flow_percentage},
+  {PRINTER_ID_SUBSCRIBE_WORK_PERCENTAGE    , EVENT_CB_DIRECT_RUN, subscribe_work_feedrate_percentage},
 };
 
 static void req_gcode_pack() {
