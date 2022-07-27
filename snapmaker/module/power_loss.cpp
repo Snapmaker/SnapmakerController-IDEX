@@ -48,6 +48,30 @@ void PowerLoss::stash_print_env() {
   }
 }
 
+bool PowerLoss::wait_temp_resume() {
+  uint8_t temp_target_count = 0;
+  LOG_I("wait for the temperature to recover\n");
+  thermalManager.print_heater_states(active_extruder);
+  SERIAL_EOL();
+  while (true) {
+    if (thermalManager.degHotend(0) >= stash_data.nozzle_temp[0] &&
+        thermalManager.degHotend(1) >= stash_data.nozzle_temp[1] &&
+        thermalManager.degBed() >= stash_data.bed_temp) {
+        break;
+    }
+    vTaskDelay(pdMS_TO_TICKS(200));
+    temp_target_count++;
+    if (temp_target_count % 50 == 0) {
+      thermalManager.print_heater_states(active_extruder);
+      SERIAL_EOL();
+    }
+  }
+  thermalManager.print_heater_states(active_extruder);
+  SERIAL_EOL();
+  LOG_I("Temperature recovery End\n");
+  return true;
+}
+
 ErrCode PowerLoss::extrude_before_resume() {
   filament_sensor.reset();
   HOTEND_LOOP() {
@@ -67,21 +91,18 @@ ErrCode PowerLoss::extrude_before_resume() {
 
   thermalManager.setTargetBed(stash_data.bed_temp);
   HOTEND_LOOP() {
-    uint16_t temp = 0;
     fdm_head.set_duplication_enabled(e, stash_data.extruder_dual_enable[e]);
     if ((dual_x_carriage_mode == DXC_MIRRORED_MODE) || (e == stash_data.active_extruder)) {
-      temp = stash_data.nozzle_temp[e] > PREHEAT_1_TEMP_HOTEND? \
+      stash_data.nozzle_temp[e] = stash_data.nozzle_temp[e] > PREHEAT_1_TEMP_HOTEND? \
               stash_data.nozzle_temp[e] : PREHEAT_1_TEMP_HOTEND;
     }
-    thermalManager.setTargetHotend(temp, e);
+    thermalManager.setTargetHotend(stash_data.nozzle_temp[e], e);
     for (uint8_t i = 0; i < 2; i++) {
       fdm_head.set_fan_speed(e, i, stash_data.fan[e][i]);
     }
   }
-  HOTEND_LOOP() {
-    thermalManager.wait_for_hotend(e);
-  }
-  thermalManager.wait_for_bed();
+
+  wait_temp_resume();
 
   if (homing_needed()) {
     motion_control.home();
