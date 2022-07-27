@@ -274,11 +274,11 @@ static ErrCode set_printer_mode(event_param_t& event) {
   return send_event(event);
 }
 
-static ErrCode subscribe_backup_mode_status(event_param_t& event) {
-  bool status = print_control.is_backup_mode();
-  LOG_V("SC subscribe backup mode:%d\n", status);
+static ErrCode subscribe_print_mode(event_param_t& event) {
+  uint8_t  mode = print_control.get_mode();
+  LOG_V("SC subscribe print mode:%d\n", mode);
   event.data[0] = E_SUCCESS;
-  event.data[1] = status;
+  event.data[1] = mode;
   event.length = 2;
   return send_event(event);
 }
@@ -433,7 +433,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_SET_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, set_temperature_lock},
   {PRINTER_ID_GET_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, get_temperature_lock},
   {PRINTER_ID_REQ_LINE            , EVENT_CB_DIRECT_RUN, request_cur_line},
-  {PRINTER_ID_SUBSCRIBE_AUTO_PARK_STATUS            , EVENT_CB_DIRECT_RUN, subscribe_backup_mode_status},
+  {PRINTER_ID_SUBSCRIBE_PRINT_MODE, EVENT_CB_DIRECT_RUN, subscribe_print_mode},
   {PRINTER_ID_GET_WORK_FEEDRATE    , EVENT_CB_DIRECT_RUN, get_work_feedrate},
   {PRINTER_ID_SUBSCRIBE_FLOW_PERCENTAGE    , EVENT_CB_DIRECT_RUN, subscribe_flow_percentage},
   {PRINTER_ID_SUBSCRIBE_WORK_PERCENTAGE    , EVENT_CB_DIRECT_RUN, subscribe_work_feedrate_percentage},

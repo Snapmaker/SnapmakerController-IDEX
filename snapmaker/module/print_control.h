@@ -42,6 +42,7 @@ class PrintControl {
     ErrCode resume();
     ErrCode stop();
     ErrCode set_mode(print_mode_e mode);
+    print_mode_e get_mode() {return mode_;}
     ErrCode set_print_offset(float x, float y, float z);
     void set_feedrate_percentage(int16_t percentage);
     int16_t get_feedrate_percentage();
