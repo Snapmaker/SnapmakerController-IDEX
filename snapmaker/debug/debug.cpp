@@ -115,7 +115,7 @@ void SnapDebug::show_all_status() {
 
   snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "J1 version:%s\n", J1_BUILD_VERSION);
   SERIAL_ECHO(log_buf);
-  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "HW version:%d\n", system_service.get_hw_version(true));
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "HW version:%d, adc:%d\n", system_service.get_hw_version(true), analogRead(HW_VERSION_PIN));
   SERIAL_ECHO(log_buf);
   snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "active_extruder:%d\n", active_extruder);
   SERIAL_ECHO(log_buf);

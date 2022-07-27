@@ -6,6 +6,7 @@
 SystemService system_service;
 
 static const uint16_t hw_version_table[] = {
+    MV_TO_ADC_VAL(0 ),
     MV_TO_ADC_VAL(450 ),
     MV_TO_ADC_VAL(700 ),
     MV_TO_ADC_VAL(1400),
@@ -59,7 +60,7 @@ uint8_t SystemService::get_hw_version(bool is_refresh) {
     uint8_t ver_count = ARRAY_SIZE(hw_version_table);
     uint8_t i = 1;
     for (; i < ver_count; i++) {
-      if (hw_version_table[i - 1] < val && hw_version_table[i] > val) {
+      if (hw_version_table[i - 1] <= val && hw_version_table[i] > val) {
         break;
       }
     }
