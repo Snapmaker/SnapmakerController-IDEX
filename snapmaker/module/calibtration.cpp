@@ -143,8 +143,22 @@ float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
   float ret = distance;
   float pos_before_probe, pos_after_probe;
   bool sg_enable = false;
-  switch_detect.enable_probe();
+  bool probe_status = false;
+
   pos_before_probe = current_position[axis];
+
+  if (active_extruder == 0) {
+    probe_status = switch_detect.read_e0_probe_status();
+  } else {
+    probe_status = switch_detect.read_e1_probe_status();
+  }
+  if (probe_status) {
+    LOG_E("Probe has triggered !\n");
+    return ret;
+  }
+
+  switch_detect.enable_probe();
+
   if (((axis == Z_AXIS) && (feedrate == PROBE_FAST_Z_FEEDRATE)) ||
       (!(axis == Z_AXIS) && (feedrate == PROBE_FAST_XY_FEEDRATE))) {
     motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
