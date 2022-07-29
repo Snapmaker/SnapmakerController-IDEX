@@ -83,6 +83,7 @@ extern SnapDebug debug;
 #define LOG_T(...) debug.Log(SNAP_DEBUG_LEVEL_TRACE, __VA_ARGS__)
 
 #define SNAP_DEBUG_SET_LEVEL(l)        debug.set_level((debug_level_e)(l));
+#define SNAP_DEBUG_IF_LEVEL(l)        (debug.get_level() <= (debug_level_e)(l))
 
 #else
 

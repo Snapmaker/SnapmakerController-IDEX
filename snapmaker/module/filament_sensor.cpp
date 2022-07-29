@@ -8,6 +8,7 @@
 #include "filament_sensor.h"
 #include "system.h"
 #include "motion_control.h"
+#include "../debug/debug.h"
 
 FilamentSensor filament_sensor;
 
@@ -87,6 +88,7 @@ void FilamentSensor::check() {
       int32_t diff = abs(adc - start_adc[i]);
       uint32_t dead_space = HW_1_2(SENSOR_DEAD_SPACE_ADC, SENSOR_DEAD_SPACE_ADC_HW2);
       filament_param.threshold = HW_1_2(FILAMENT_THRESHOLD, FILAMENT_THRESHOLD_HW2);
+      LOG_V("T%d adc:%d diff:%d TH:%d DS:%d\n", i, adc, diff, filament_param.threshold, dead_space);
       bool is_err = (diff < filament_param.threshold);
       if (is_err && (start_adc[i] > dead_space) && (adc > dead_space)) {
         dead_space_times[i]++;
@@ -105,14 +107,6 @@ void FilamentSensor::check() {
       }
       next_sample(i);
     }
-  }
-}
-
-void FilamentSensor::debug() {
-  FILAMENT_LOOP(i) {
-    SERIAL_ECHOLNPAIR("s", i, " val:", get_adc_val(i));
-    SERIAL_ECHOLNPAIR("s", i, " enable:", is_enable(i));
-    SERIAL_ECHOLNPAIR("s", i, " state:", is_trigger(i));
   }
 }
 

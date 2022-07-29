@@ -124,16 +124,7 @@ void GcodeSuite::M2020() {
       break;
 
       case 7:
-        if(parser.seen('O')) {
-          bool level = parser.byteval('O');
-          if (level) {
-            filament_sensor.enable_all();
-          } else {
-            filament_sensor.disable_all();
-          }
-        }
-        filament_sensor.debug();
-      break;
+        break;
 
       case 8:
         SERIAL_ECHOLNPAIR("system status:", system_service.get_status());
