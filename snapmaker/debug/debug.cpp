@@ -145,7 +145,7 @@ void SnapDebug::show_all_status() {
                     ", times:", filament_sensor.filament_param.check_times);
   SERIAL_ECHOLNPAIR("filament sensor value T0:", filament_sensor.get_adc_val(0),
                     ", T1:", filament_sensor.get_adc_val(1));
-  
+
   SERIAL_ECHOLNPAIR("Homed X:", axis_was_homed(X_AXIS), " Y:", axis_was_homed(Y_AXIS), " Z:", axis_was_homed(Z_AXIS));
   SERIAL_ECHOLNPAIR("X home pos T0:", x_home_pos(0), " T1: ", x_home_pos(1));
 

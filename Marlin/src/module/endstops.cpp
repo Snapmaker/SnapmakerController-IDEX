@@ -34,6 +34,7 @@
 #include "../../../snapmaker/module/filament_sensor.h"
 #include "../../../snapmaker/module/power_loss.h"
 #include "../../../snapmaker/module/fdm.h"
+#include "../../../snapmaker/module/motion_control.h"
 
 #if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
   #include HAL_PATH(../HAL, endstop_interrupts.h)
@@ -421,6 +422,20 @@ void Endstops::resync() {
 
 void Endstops::event_handler() {
   static endstop_mask_t prev_hit_state; // = 0
+  static uint8_t prev_sg_trigger_state; // = 0
+
+  if (prev_sg_trigger_state != motion_control.sg_trigger_status) {
+    prev_sg_trigger_state = motion_control.sg_trigger_status;
+    SERIAL_ECHO("trigger stall guard ");
+    if (system_service.get_hw_version() > HW_VER_1) {
+      if (motion_control.is_sg_trigger(SG_X)) SERIAL_ECHO(" X ");
+      if (motion_control.is_sg_trigger(SG_X2)) SERIAL_ECHO(" X2 ");
+      if (motion_control.is_sg_trigger(SG_Y)) SERIAL_ECHO(" Y ");
+      if (motion_control.is_sg_trigger(SG_Z)) SERIAL_ECHO(" Z ");
+    }
+    SERIAL_ECHO("\n");
+  }
+
   if (hit_state == prev_hit_state) return;
   prev_hit_state = hit_state;
   if (hit_state) {

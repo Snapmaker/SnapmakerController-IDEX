@@ -10,6 +10,13 @@
 #define MOTION_RETRACK_E_FEEDRATE 1800
 #define MOTION_EXTRUDE_E_FEEDRATE 100
 
+typedef enum {
+  SG_X,
+  SG_X2,
+  SG_Y,
+  SG_Z,
+} sg_axis_e;
+
 #pragma pack(1)
 typedef struct {
   uint8_t axis;
@@ -22,6 +29,7 @@ typedef struct {
 #pragma pack(0)
 class MotionControl {
   public:
+    void init_stall_guard();
     void blocking_move_to(float x, float y, float z, float feedrate=0);
     ErrCode move_axis(mobile_instruction_t *move);
     ErrCode move_axis_to(mobile_instruction_t *move);
@@ -93,19 +101,23 @@ class MotionControl {
     void enable_stall_guard_only_axis(uint8_t axis, uint8_t sg_value, uint8_t x_index=2);
     void disable_stall_guard(uint8_t axis);
     void disable_stall_guard_all();
-    bool is_sg_trigger() {return sg_trigger && sg_enable;}
-    // whether the motion stops because of stall guard
-    bool is_sg_stop() {return sg_stop;}
-    void set_sg_satats(bool status) {sg_trigger = status;}
-    void set_sg_stop(bool status) {sg_stop = status;}
-    void trigger_stall_guard_exit();
     void update_feedrate(uint16_t fr) {feedrate = fr;}
     uint16_t get_feedrate() {return feedrate;}
-  private:
-    bool sg_enable = false;
-    bool sg_trigger =false;
-    bool sg_stop = false;
+    bool stepper_isr_sg_check(uint8_t axis);
+    void set_sg_trigger(sg_axis_e axis, bool status) {SET_BIT(sg_trigger_status, axis, status);}
+    void set_sg_trigger(uint8_t status) {sg_trigger_status = status;}
+    bool is_sg_trigger(sg_axis_e axis) {return GET_BIT(sg_trigger_status, axis) && GET_BIT(sg_enable_status, axis);}
+    bool is_sg_trigger() {return sg_trigger_status;}
+    void set_sg_exti_status(sg_axis_e axis, bool status) {SET_BIT(sg_exti_status, axis, status);}
+    void set_sg_enable(sg_axis_e axis, bool status) {SET_BIT(sg_enable_status, axis, status);}
+    bool is_sg_enable(sg_axis_e axis) {return GET_BIT(sg_enable_status, axis);}
+    bool is_sg_exti(sg_axis_e axis) {return GET_BIT(sg_exti_status, axis);}
+    void clear_sg_exit() {sg_exti_status = 0;}
+  public:
     uint16_t feedrate = 0;
+    uint8_t sg_exti_status = 0;
+    uint8_t sg_enable_status = 0;
+    uint8_t sg_trigger_status = 0;
 };
 
 extern MotionControl motion_control;

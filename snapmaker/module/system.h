@@ -5,6 +5,16 @@
 #include "../J1/common_type.h"
 #include "module_base.h"
 
+enum {
+  HW_VER_1 = 1,
+  HW_VER_2,
+  HW_VER_3,
+  HW_VER_4,
+  HW_VER_5,
+  HW_VER_6,
+  HW_VER_ERR,
+};
+
 enum : uint8_t {
   AXIS_X1 = 0,
   AXIS_Y1 = 1,

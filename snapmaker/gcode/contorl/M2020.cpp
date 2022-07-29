@@ -115,7 +115,7 @@ void GcodeSuite::M2020() {
           hold = parser.value_byte();
         }
         reg_value = (5 << 16) | (div << 8) | (hold);
-        
+
         tmc_driver.set_reg_value(motor_index, R_GCONF, 0x141);
         tmc_driver.set_reg_value(motor_index, R_IHOLD_IRUN, reg_value);
         tmc_driver.comm_test(1, 0x00, &tmp_value);

@@ -42,7 +42,7 @@
 #define Y_MAX_PIN         -1
 #define Z_MAX_PIN         PE7
 
-#define Z_MIN_PROBE_PIN   -1 
+#define Z_MIN_PROBE_PIN   -1
 
 //
 // Steppers
@@ -131,6 +131,10 @@
 #define TMC_SEL1_PIN     PD10
 #define TMC_SEL2_PIN     PD11
 #define TMC_STALL_GUARD_PIN PE3
+#define TMC_STALL_GUARD_X_PIN PD12
+#define TMC_STALL_GUARD_X2_PIN PE3
+#define TMC_STALL_GUARD_Y_PIN PB5
+#define TMC_STALL_GUARD_Z_PIN PE9
 
 #define FAN_PIN  PC9
 #define FAN1_PIN PC7

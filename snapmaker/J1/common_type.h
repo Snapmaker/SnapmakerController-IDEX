@@ -15,17 +15,20 @@ typedef int float_to_int_t;  // float * 1000 to int
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #define BIT(shift)   (1UL << (shift))
+#define SET_BIT(a, b, v) if (v) a |= BIT(b); else a &= ~BIT(b)
+#define GET_BIT(a, b)  (!!(a & BIT(b)))
 
-#define HW_1_2(p1, p2) (system_service.get_hw_version() == 1 ? (p1) : (p2))
+
+#define HW_1_2(p1, p2) (system_service.get_hw_version() == HW_VER_1 ? (p1) : (p2))
 
 typedef enum : uint8_t {
-  E_SUCCESS = 0,      /* non error */ 
+  E_SUCCESS = 0,      /* non error */
   E_IN_PROGRESS,      /*Notification receives instructions and starts work*/
   E_RESEND_FAILED,
   E_EXECUTE_FAILED,
   E_COMMAND_SET,
   E_COMMAND_ID,
-  E_PARAM,            /* got a invalid parameter */   
+  E_PARAM,            /* got a invalid parameter */
   E_MODULE_KEY,
   E_NO_MEM,           /* apply memory failed */
   E_SYSTEM_EXCEPTION = 14,

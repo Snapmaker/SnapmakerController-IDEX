@@ -52,7 +52,7 @@ void GcodeSuite::M122() {
     LOOP_LOGICAL_AXES(i) {
       if (print_axis[i]) {
         if (s) {
-          motion_control.enable_stall_guard_only_axis(i, p, e);
+          motion_control.enable_stall_guard(i, p, e);
         } else {
           motion_control.disable_stall_guard(i);
         }

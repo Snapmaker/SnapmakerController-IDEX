@@ -8,6 +8,7 @@
 #include "switch_detect.h"
 #include "../module/filament_sensor.h"
 #include "src/module/endstops.h"
+#include "../module/motion_control.h"
 
 #define SW_FILAMNET0_BIT      0
 #define SW_FILAMNET1_BIT      1
@@ -39,6 +40,7 @@ void SwitchDetect::init() {
   init_probe();
   disable_all();
   endstops.enable_globally(true);
+  motion_control.init_stall_guard();
 }
 
 void SwitchDetect::init_probe() {
@@ -71,7 +73,7 @@ void SwitchDetect::check() {
     else
       UPDATE_STATUS(X1_CAL_PIN, HIGH, tmp_status_bits, SW_PROBE1_BIT);
   }while(0);
-  
+
   if(trigged == true)
     stepper.quick_stop();
   status_bits = tmp_status_bits;

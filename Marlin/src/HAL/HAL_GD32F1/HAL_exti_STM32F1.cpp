@@ -12,10 +12,10 @@
 EXTITrigger_TypeDef Edge[] = {EXTI_Trigger_Falling, EXTI_Trigger_Rising, EXTI_Trigger_Rising_Falling};
 
 const uint8_t PortSource[] = {
-  GPIO_PortSourceGPIOA, 
-  GPIO_PortSourceGPIOB, 
-  GPIO_PortSourceGPIOC, 
-  GPIO_PortSourceGPIOD, 
+  GPIO_PortSourceGPIOA,
+  GPIO_PortSourceGPIOB,
+  GPIO_PortSourceGPIOC,
+  GPIO_PortSourceGPIOD,
   GPIO_PortSourceGPIOE,
   GPIO_PortSourceGPIOF,
   GPIO_PortSourceGPIOG
@@ -56,7 +56,7 @@ uint32_t PortAddress[] = {
 * para PinIndex:0-15
 * para RisingFallingEdge:0-3,0:Falling, 1:Rising, 2:Rising and falling
 */
-void ExtiInit(uint8_t PortIndex, uint8_t PinIndex, uint8_t RisingFallingEdge) 
+void ExtiInit(uint8_t PortIndex, uint8_t PinIndex, uint8_t RisingFallingEdge)
 {
   GPIO_TypeDef *Port;
   EXTI_InitTypeDef EXTI_InitStruct;
@@ -68,7 +68,7 @@ void ExtiInit(uint8_t PortIndex, uint8_t PinIndex, uint8_t RisingFallingEdge)
   GPIO_InitStruct.GPIO_Pin = 1 << PinIndex;
   GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(Port, &GPIO_InitStruct);
-  
+
   EXTI_InitStruct.EXTI_Trigger = Edge[RisingFallingEdge];
   EXTI_InitStruct.EXTI_Line = (1 << PinIndex);
   EXTI_InitStruct.EXTI_Mode = EXTI_Mode_Interrupt;
@@ -78,8 +78,8 @@ void ExtiInit(uint8_t PortIndex, uint8_t PinIndex, uint8_t RisingFallingEdge)
   GPIO_EXTILineConfig(PortIndex, PinIndex);
 
   NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 2;
-  NVIC_InitStruct.NVIC_IRQChannelSubPriority = 2;
+  NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 0;
+  NVIC_InitStruct.NVIC_IRQChannelSubPriority = 0;
   NVIC_InitStruct.NVIC_IRQChannel = EXTI_IRQN[PinIndex];
   NVIC_Init(&NVIC_InitStruct);
 }
@@ -99,6 +99,23 @@ void DisableExtiInterrupt(uint8_t pin) {
   uint32_t exti_Line = (1 << (pin%16));
   EXTI->IMR &= ~exti_Line;
   EXTI->PR |= exti_Line;
+}
+
+bool ExitGetITStatus(uint8_t pin) {
+  uint32_t exti_Line = (1 << (pin%16));
+  ITStatus bitstatus = RESET;
+  uint32_t enablestatus = 0;
+
+  enablestatus =  EXTI->IMR & exti_Line;
+  if (((EXTI->PR & exti_Line) != (uint32_t)RESET) && (enablestatus != (uint32_t)RESET))
+  {
+    bitstatus = SET;
+  }
+  else
+  {
+    bitstatus = RESET;
+  }
+  return bitstatus;
 }
 
 void ExtiClearITPendingBit(uint8_t pin) {

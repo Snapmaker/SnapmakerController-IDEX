@@ -74,6 +74,7 @@
 #include "../core/debug_out.h"
 #include "tool_change.h"
 #include "../../../snapmaker/module/fdm.h"
+#include "../../../snapmaker/module/motion_control.h"
 // Relative Mode. Enable with G91, disable with G90.
 bool relative_mode; // = false;
 
@@ -2089,7 +2090,25 @@ void prepare_line_to_destination() {
         fdm_head.set_duplication_enabled(active_extruder, x_enable_move);
       }
       if (DEBUGGING(LEVELING)) DEBUG_POS("> AFTER set_axis_is_at_home", current_position);
-
+      if (system_service.get_hw_version() == HW_VER_1) {
+        motion_control.set_sg_trigger(0);
+      } else {
+        switch (axis) {
+          case X_AXIS:
+            if (active_extruder == 0)
+              motion_control.set_sg_trigger(SG_X, false);
+            else
+              motion_control.set_sg_trigger(SG_X2, false);
+            break;
+          case Y_AXIS:
+              motion_control.set_sg_trigger(SG_Y, false);
+              break;
+          case Z_AXIS:
+              motion_control.set_sg_trigger(SG_Z, false);
+              break;
+          default: break;
+        }
+      }
     #endif
 
     // Put away the Z probe

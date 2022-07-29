@@ -145,7 +145,7 @@ float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
   bool sg_enable = false;
   switch_detect.enable_probe();
   pos_before_probe = current_position[axis];
-  if (((axis == Z_AXIS) && (feedrate == PROBE_FAST_Z_FEEDRATE)) || 
+  if (((axis == Z_AXIS) && (feedrate == PROBE_FAST_Z_FEEDRATE)) ||
       (!(axis == Z_AXIS) && (feedrate == PROBE_FAST_XY_FEEDRATE))) {
     motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
     sg_enable = true;
@@ -164,7 +164,7 @@ float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
   pos_after_probe = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   current_position[axis] = pos_after_probe;
   sync_plan_position();
-  if (sg_enable && motion_control.is_sg_stop()) {
+  if (sg_enable && motion_control.is_sg_trigger()) {
     LOG_E("probe failed be stall guard!!!\n");
   } else {
     ret = (pos_before_probe - pos_after_probe);
@@ -177,9 +177,9 @@ float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
 
 /**
  * @brief Modified probe result to Z-offset
- * 
+ *
  * @param pos : The specified calibration point 1 - 5
- * @return ErrCode 
+ * @return ErrCode
  */
 ErrCode Calibtration::probe_z_offset(calibtration_position_e pos) {
   float temp_z = 0;

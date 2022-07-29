@@ -462,6 +462,7 @@ class Stepper {
 
     // The last movement direction was not null on the specified axis. Note that motor direction is not necessarily the same.
     FORCE_INLINE static bool axis_is_moving(const AxisEnum axis) { return TEST(axis_did_move, axis); }
+    FORCE_INLINE static bool axis_is_moving() { return step_events_completed > 5; }
 
     // Handle a triggered endstop
     static void endstop_triggered(const AxisEnum axis);
