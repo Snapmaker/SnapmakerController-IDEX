@@ -335,6 +335,16 @@ static ErrCode get_temperature_lock(event_param_t& event) {
   return send_event(event);
 }
 
+static ErrCode get_fdm_enable(event_param_t& event) {
+  uint8_t index = 0;
+  event.data[index++] = E_SUCCESS;
+  event.data[index++] = fdm_head.is_duplication_enabled(0);
+  event.data[index++] = fdm_head.is_duplication_enabled(0);
+  LOG_I("SC get fdm enable: T0-%d T1-%d", event.data[1], event.data[2]);
+  event.length = index;
+  return send_event(event);
+}
+
 static ErrCode get_work_feedrate(event_param_t& event) {
   event.data[0] = E_SUCCESS;
   uint16_t *fr = (uint16_t *)&event.data[1];
@@ -432,6 +442,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_GET_FLOW_PERCENTAGE , EVENT_CB_DIRECT_RUN, get_work_flow_percentage},
   {PRINTER_ID_SET_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, set_temperature_lock},
   {PRINTER_ID_GET_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, get_temperature_lock},
+  {PRINTER_ID_GET_FDM_ENABLE      , EVENT_CB_DIRECT_RUN, get_fdm_enable},
   {PRINTER_ID_REQ_LINE            , EVENT_CB_DIRECT_RUN, request_cur_line},
   {PRINTER_ID_SUBSCRIBE_PRINT_MODE, EVENT_CB_DIRECT_RUN, subscribe_print_mode},
   {PRINTER_ID_GET_WORK_FEEDRATE    , EVENT_CB_DIRECT_RUN, get_work_feedrate},
