@@ -200,7 +200,7 @@ void PowerLoss::show_power_loss_info() {
     SERIAL_ECHO("\n");
   }
   SERIAL_ECHOLNPAIR("Bed temp:", stash_data.bed_temp);
-  SERIAL_ECHOLNPAIR("position x:", stash_data.position.x,  
+  SERIAL_ECHOLNPAIR("position x:", stash_data.position.x,
                            " y:", stash_data.position.y,
                            " z:", stash_data.position.z,
                            " e:", stash_data.position.e);
@@ -217,7 +217,7 @@ void PowerLoss::init() {
   uint8_t *ram_addr = (uint8_t *)&stash_data;
   uint32_t check_num = 0;
 
-  SET_INPUT_PULLUP(POWER_LOST_220V_PIN);
+  SET_INPUT_PULLUP(HW_1_2(POWER_LOST_220V_HW1_PIN, POWER_LOST_220V_HW2_PIN));
 
   for (uint32_t i = 0; i < sizeof(power_loss_t); i++) {
     ram_addr[i] = flash_addr[i];
@@ -232,7 +232,7 @@ void PowerLoss::init() {
     } else {
       stash_data.state = PL_NO_DATE;
       SERIAL_ECHOLNPAIR("PL: Unavailable data!, checknum:", check_num, "-", stash_data.check_num);
-    }  
+    }
   } else {
     SERIAL_ECHOLNPAIR("PL: No data!");
   }
@@ -342,7 +342,7 @@ uint8_t * PowerLoss::get_file_md5(uint8_t &len) {
 }
 
 bool PowerLoss::is_power_220v_pin_trigger() {
-  return READ(POWER_LOST_220V_PIN) == POWER_LOSS_220V_TRIGGER_STATUS;
+  return READ(HW_1_2(POWER_LOST_220V_HW1_PIN, POWER_LOST_220V_HW2_PIN)) == POWER_LOSS_220V_TRIGGER_STATUS;
 }
 
 bool PowerLoss::is_power_loss_trigger() {
