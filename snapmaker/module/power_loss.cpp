@@ -96,6 +96,9 @@ ErrCode PowerLoss::extrude_before_resume() {
       stash_data.nozzle_temp[e] = stash_data.nozzle_temp[e] > PREHEAT_1_TEMP_HOTEND? \
               stash_data.nozzle_temp[e] : PREHEAT_1_TEMP_HOTEND;
     }
+    if (!stash_data.extruder_dual_enable[e]) {
+      stash_data.nozzle_temp[e] = 0;
+    }
     thermalManager.setTargetHotend(stash_data.nozzle_temp[e], e);
     for (uint8_t i = 0; i < 2; i++) {
       fdm_head.set_fan_speed(e, i, stash_data.fan[e][i]);
