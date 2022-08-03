@@ -60,6 +60,7 @@ typedef enum {
   STATUS_STALL_GUARD,
   STATUS_TEMPERATURE_ERR,
   STATUS_GCODE_LINES_ERR,
+  STATUS_PAUSE_BE_EXCEPTION = 20,
 } report_status_e;
 
 
@@ -523,10 +524,13 @@ void pausing_status_deal() {
         result = E_SUCCESS;
         send_event(print_source, source_recever_id, SACP_ATTR_ACK,
                     COMMAND_SET_PRINTER, PRINTER_ID_STOP_SINGLE_EXTRUDE, &result, 1, source_sequence);
-       report_status_info(STATUS_PAUSE_BE_FILAMENT); 
+       report_status_info(STATUS_PAUSE_BE_FILAMENT);
       }
       break;
-    
+    case SYSTEM_STATUE_SCOURCE_EXCEPTION:
+      report_status_info(STATUS_PAUSE_BE_EXCEPTION);
+      SERIAL_ECHOLNPAIR("exception puase done");
+      break;
     default:
       send_event(print_source, source_recever_id, SACP_ATTR_ACK,
                   COMMAND_SET_PRINTER, PRINTER_ID_PAUSE_WORK, &result, 1, source_sequence);
