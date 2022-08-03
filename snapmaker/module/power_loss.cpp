@@ -54,9 +54,9 @@ bool PowerLoss::wait_temp_resume() {
   thermalManager.print_heater_states(active_extruder);
   SERIAL_EOL();
   while (true) {
-    if (thermalManager.degHotend(0) >= stash_data.nozzle_temp[0] &&
-        thermalManager.degHotend(1) >= stash_data.nozzle_temp[1] &&
-        thermalManager.degBed() >= stash_data.bed_temp) {
+    if (thermalManager.degHotend(0) >= thermalManager.degTargetHotend(0) &&
+        thermalManager.degHotend(1) >= thermalManager.degTargetHotend(1) &&
+        thermalManager.degBed() >= thermalManager.degTargetBed()) {
         break;
     }
     vTaskDelay(pdMS_TO_TICKS(200));
