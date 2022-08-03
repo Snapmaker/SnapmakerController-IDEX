@@ -35,6 +35,7 @@
 #define DEBUG_OUT ENABLED(DEBUG_DXC_MODE)
 #include "../../core/debug_out.h"
 #include "../../../../snapmaker/module/print_control.h"
+#include "../../../../snapmaker/module/system.h"
 
 #if ENABLED(DUAL_X_CARRIAGE)
 
@@ -65,7 +66,7 @@
   void GcodeSuite::M605() {
     planner.synchronize();
 
-    if (parser.seen('S')) {
+    if (parser.seen('S') && !system_service.is_working()) {
       uint8_t dual_carriage_mode = parser.value_byte();
       idex_set_mirrored_mode(false);
 
