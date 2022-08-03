@@ -33,7 +33,7 @@ uint16_t FilamentSensor::get_adc_val(uint8_t e) {
 
 void FilamentSensor::reset() {
   FILAMENT_LOOP(i) {
-    next_sample(i);
+    start_adc[i] = 0;
     triggered[i] = false;
     err_times[i] = 0;
     check_step_count[i] = filament_param.distance * planner.settings.axis_steps_per_mm[E_AXIS_N(i)];
