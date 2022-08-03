@@ -1,6 +1,7 @@
 #include "bed_control.h"
 #include "src/module//temperature.h"
 #include "exception.h"
+#include "./power_loss.h"
 
 BedControl bed_control;
 
@@ -36,6 +37,7 @@ ErrCode BedControl::set_temperature(uint16_t temperature) {
   if (!exception_server.is_allow_heat_bed()) {
     return E_SYSTEM_EXCEPTION;
   }
+  power_loss.stash_data.bed_temp = temperature;
   thermalManager.setTargetBed(temperature);
   return E_SUCCESS;
 }

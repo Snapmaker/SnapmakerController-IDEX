@@ -31,6 +31,7 @@ void PowerLoss::stash_print_env() {
   stash_data.dual_x_carriage_mode = dual_x_carriage_mode;
   stash_data.bed_temp = thermalManager.degTargetBed();
   stash_data.print_feadrate = feedrate_mm_s;
+  stash_data.feedrate_percentage = feedrate_percentage;
   stash_data.active_extruder = active_extruder;
   stash_data.travel_feadrate = fast_move_feedrate;
   stash_data.axis_relative = gcode.axis_relative;
@@ -45,6 +46,7 @@ void PowerLoss::stash_print_env() {
     for (uint8_t i = 0; i < 2; i++) {
       fdm_head.get_fan_speed(e, i, stash_data.fan[e][i]);
     }
+    stash_data.flow_percentage[e] = planner.flow_percentage[e];
   }
 }
 
@@ -150,7 +152,7 @@ void PowerLoss::resume_print_env() {
       thermalManager.setTargetHotend(0, e);
       fdm_head.set_fan_speed(e, 0, 0);
     }
-
+    planner.set_flow(e, stash_data.flow_percentage[e]);
   }
 
   feedrate_mm_s = stash_data.print_feadrate;
@@ -164,6 +166,7 @@ void PowerLoss::resume_print_env() {
   motion_control.move_to_z(stash_data.position[Z_AXIS], PRINT_TRAVEL_FEADRATE);
   current_position.e = stash_data.position.e;
   print_control.xyz_offset = stash_data.print_offset;
+  feedrate_percentage = stash_data.feedrate_percentage;
   sync_plan_position();
 }
 

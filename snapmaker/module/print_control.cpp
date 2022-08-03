@@ -284,6 +284,7 @@ ErrCode PrintControl::set_print_offset(float x, float y, float z) {
 
 void PrintControl::set_feedrate_percentage(int16_t percentage) {
   feedrate_percentage = percentage;
+  power_loss.stash_data.feedrate_percentage = percentage;
 }
 
 int16_t PrintControl::get_feedrate_percentage() {
@@ -295,6 +296,7 @@ int16_t PrintControl::get_work_flow_percentage(uint8_t e) {
 }
 
 void PrintControl::set_work_flow_percentage(uint8_t e, int16_t percentage) {
+  power_loss.stash_data.flow_percentage[e] = percentage;
   planner.set_flow(e, percentage);
 }
 

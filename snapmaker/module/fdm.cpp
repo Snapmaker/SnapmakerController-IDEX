@@ -4,6 +4,7 @@
 #include "../../Marlin/src/module/temperature.h"
 #include "../../Marlin/src/module/motion.h"
 #include "../module/filament_sensor.h"
+#include "../module/power_loss.h"
 #include "motion_control.h"
 #include "exception.h"
 
@@ -30,6 +31,7 @@ ErrCode FDM_Head::set_temperature(uint8_t e, uint16_t temperature) {
   if (!exception_server.is_allow_heat_nozzle()) {
     return E_SYSTEM_EXCEPTION;
   }
+  power_loss.stash_data.nozzle_temp[e] = temperature;
   thermalManager.setTargetHotend(temperature, e);
   return E_SUCCESS;
 }
@@ -65,12 +67,14 @@ ErrCode FDM_Head::change_tool(uint8_t e) {
 ErrCode FDM_Head::set_fan_speed(uint8_t e, uint8_t fan_index, uint8_t speed) {
   if (e == 0) {
     if (fan_index == 0) {
+      power_loss.stash_data.fan[e][0] = speed;
       thermalManager.set_fan_speed(0, speed);
     } else {
       // thermalManager.set_fan_speed(2, speed);
     }
   } else {
     if (fan_index == 0) {
+      power_loss.stash_data.fan[e][0] = speed;
       thermalManager.set_fan_speed(1, speed);
     } else {
       // thermalManager.set_fan_speed(3, speed);

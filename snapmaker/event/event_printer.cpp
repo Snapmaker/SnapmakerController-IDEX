@@ -428,7 +428,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_START_WORK          , EVENT_CB_TASK_RUN,   request_start_work},
   {PRINTER_ID_PAUSE_WORK          , EVENT_CB_DIRECT_RUN,   request_pause_work},
   {PRINTER_ID_RESUME_WORK         , EVENT_CB_DIRECT_RUN,   request_resume_work},
-  {PRINTER_ID_STOP_WORK           , EVENT_CB_TASK_RUN,   request_stop_work},
+  {PRINTER_ID_STOP_WORK           , EVENT_CB_DIRECT_RUN,   request_stop_work},
   {PRINTER_ID_REQ_PL_STATUS       , EVENT_CB_DIRECT_RUN, request_power_loss_status},
   {PRINTER_ID_PL_RESUME           , EVENT_CB_TASK_RUN,   request_power_loss_resume},
   {PRINTER_ID_CLEAN_PL_DATA       , EVENT_CB_TASK_RUN,   request_clear_power_loss},

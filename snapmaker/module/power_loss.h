@@ -35,6 +35,8 @@ typedef struct {
   uint32_t file_position;
   float print_feadrate;
   float travel_feadrate;
+  int16_t feedrate_percentage;
+  int16_t flow_percentage[EXTRUDERS];
   uint8_t fan[EXTRUDERS][2];
   xyze_pos_t position;
   uint32_t accumulator;
