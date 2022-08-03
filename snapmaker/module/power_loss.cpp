@@ -55,7 +55,7 @@ bool PowerLoss::wait_temp_resume() {
   LOG_I("wait for the temperature to recover\n");
   thermalManager.print_heater_states(active_extruder);
   SERIAL_EOL();
-  while (true) {
+  while (system_service.get_status() == SYSTEM_STATUE_RESUMING) {
     if (thermalManager.degHotend(0) >= thermalManager.degTargetHotend(0) &&
         thermalManager.degHotend(1) >= thermalManager.degTargetHotend(1) &&
         thermalManager.degBed() >= thermalManager.degTargetBed()) {

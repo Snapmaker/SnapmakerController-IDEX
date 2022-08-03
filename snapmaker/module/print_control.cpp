@@ -219,7 +219,9 @@ ErrCode PrintControl::resume() {
   // The print needs to be extruded before resuming
   if (power_loss.extrude_before_resume() == E_SUCCESS) {
     power_loss.resume_print_env();
-    system_service.set_status(SYSTEM_STATUE_PRINTING);
+    if (SYSTEM_STATUE_RESUMING == system_service.get_status()) {
+      system_service.set_status(SYSTEM_STATUE_PRINTING);
+    }
     return E_SUCCESS;
   } else {
     system_service.set_status(SYSTEM_STATUE_PAUSED);
