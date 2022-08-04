@@ -97,6 +97,7 @@ class SystemService {
     void get_machine_size(machine_size_t *size);
     ErrCode set_origin(coordinate_info_t axis);
     system_status_e get_status() {return status_;}
+    uint8_t *get_sn_addr(uint16_t *sn_len);
     system_status_source_e get_source() {return source_;}
     void set_status(system_status_e status, system_status_source_e source=SYSTEM_STATUE_SCOURCE_NONE);
     bool is_calibtration_status() { return (status_ >= SYSTEM_STATUE_CAlIBRATION) && (status_ <= SYSTEM_STATUE_CAlIBRATION_XY_PROBING);}

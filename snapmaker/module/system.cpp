@@ -5,6 +5,23 @@
 #include "power_loss.h"
 SystemService system_service;
 
+#define SN_LENGHT 30
+#define SN_BACKUP_COUNT 2
+#define FLASH_SN_SIZE (sizeof(fastory_sn_t) * SN_BACKUP_COUNT)
+#define FLASH_PAGE_SN_ADDR  (APP_FLASH_PAGE_SIZE - FLASH_SN_SIZE)
+#define FLASH_SN_ADDR (FLASH_BASE + 1024 * 10 - APP_FLASH_PAGE_SIZE + FLASH_PAGE_SN_ADDR)
+
+#pragma pack(1)
+
+typedef struct {
+    uint16_t check_num;
+    uint8_t sn[SN_LENGHT];
+} fastory_sn_t;
+
+#pragma pack()
+
+const char *default_sn_str = "SN not found";
+
 static const uint16_t hw_version_table[] = {
     MV_TO_ADC_VAL(0 ),
     MV_TO_ADC_VAL(450 ),
@@ -14,6 +31,61 @@ static const uint16_t hw_version_table[] = {
     MV_TO_ADC_VAL(2700),
     MV_TO_ADC_VAL(3200)
   };
+
+static uint16_t calc_checksum(uint8_t *buffer, uint16_t length) {
+  uint32_t volatile checksum = 0;
+
+  if (!length || !buffer)
+    return 0;
+
+  for (int j = 0; j < (length - 1); j = j + 2)
+    checksum += (uint32_t)(buffer[j] << 8 | buffer[j + 1]);
+
+  if (length % 2)
+    checksum += buffer[length - 1];
+
+  while (checksum > 0xffff)
+    checksum = ((checksum >> 16) & 0xffff) + (checksum & 0xffff);
+
+  checksum = ~checksum;
+
+  return (uint16_t)checksum;
+}
+
+static bool flash_is_erase() {
+  uint8_t * addr = (uint8_t *)FLASH_SN_ADDR;
+  for (uint16_t i = 0; i < FLASH_SN_SIZE; i++) {
+    if (addr[i] != 0xff) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static bool is_has_sn(uint8_t &index) {
+  fastory_sn_t * sn = (fastory_sn_t *)FLASH_SN_ADDR;
+  for (uint8_t i = 0; i < SN_BACKUP_COUNT; i++) {
+    uint16_t check = calc_checksum(sn[i].sn, SN_LENGHT);
+    if (sn[i].check_num == check) {
+      index = i;
+      return true;
+    }
+  }
+  return false;
+}
+
+uint8_t *SystemService::get_sn_addr(uint16_t *sn_len) {
+  fastory_sn_t * sn = (fastory_sn_t *)FLASH_SN_ADDR;
+  uint8_t index = 0;
+
+  if (!flash_is_erase() && is_has_sn(index)) {
+    *sn_len = SN_LENGHT;
+    return sn[index].sn;
+  } else {
+    *sn_len = strlen((char *)default_sn_str);
+    return (uint8_t *)default_sn_str;
+  }
+}
 
 void SystemService::get_coordinate_system_info(coordinate_system_t * info, bool is_logical) {
   xyze_pos_t position = current_position;
