@@ -217,6 +217,7 @@ ErrCode PrintControl::pause() {
 ErrCode PrintControl::resume() {
   buffer_head = buffer_tail = 0;
   // The print needs to be extruded before resuming
+  system_service.set_status(SYSTEM_STATUE_RESUMING);
   if (power_loss.extrude_before_resume() == E_SUCCESS) {
     power_loss.resume_print_env();
     if (SYSTEM_STATUE_RESUMING == system_service.get_status()) {

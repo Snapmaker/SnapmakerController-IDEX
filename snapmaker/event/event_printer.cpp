@@ -568,8 +568,10 @@ void resuming_status_deal() {
   uint8_t data[7];
   batch_gcode_req_info_t *info = (batch_gcode_req_info_t *)(data + 1);
   ErrCode result = print_control.resume();
-  if (system_service.get_status() == SYSTEM_STATUE_STOPPING)
+  if (system_service.get_status() == SYSTEM_STATUE_STOPPING) {
+    LOG_E("system status is stopping resunimg failed\n");
     return;
+  }
   SERIAL_ECHOLNPAIR("resume work success, ret:", result);
   data[0] = result;
   info->buf_max_size = GCODE_MAX_PACK_SIZE;
