@@ -66,7 +66,10 @@
   void GcodeSuite::M605() {
     planner.synchronize();
 
-    if (parser.seen('S') && !system_service.is_working()) {
+    if (parser.seen('S')) {
+      if (system_service.is_working() && (print_control.get_mode() != 0)) {
+        return;
+      }
       uint8_t dual_carriage_mode = parser.value_byte();
       idex_set_mirrored_mode(false);
 
@@ -111,10 +114,6 @@
       #ifdef EVENT_GCODE_IDEX_AFTER_MODECHANGE
         gcode.process_subcommands_now_P(PSTR(EVENT_GCODE_IDEX_AFTER_MODECHANGE));
       #endif
-    }
-    else if (!parser.seen('W')) {  // if no S or W parameter, the DXC mode gets reset to the user's default
-      dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
-      print_control.set_mode(PRINT_FULL_MODE);
     }
 
     #ifdef DEBUG_DXC_MODE
