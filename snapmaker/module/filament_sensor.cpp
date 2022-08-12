@@ -87,10 +87,12 @@ void FilamentSensor::check() {
       uint16_t adc = get_adc_val(i);
       int32_t diff = abs(adc - start_adc[i]);
       uint32_t dead_space = HW_1_2(SENSOR_DEAD_SPACE_ADC, SENSOR_DEAD_SPACE_ADC_HW2);
+      uint32_t dead_space_min = HW_1_2(0, SENSOR_DEAD_SPACE_ADC_MIN_HW2);
       filament_param.threshold = HW_1_2(FILAMENT_THRESHOLD, FILAMENT_THRESHOLD_HW2);
       LOG_V("T%d adc:%d diff:%d TH:%d DS:%d\n", i, adc, diff, filament_param.threshold, dead_space);
       bool is_err = (diff < filament_param.threshold);
-      if (is_err && (start_adc[i] > dead_space) && (adc > dead_space)) {
+      if (is_err && ((start_adc[i] > dead_space) || (start_adc[i] < dead_space_min)) &&
+                    ((adc > dead_space) || (adc < dead_space_min))) {
         dead_space_times[i]++;
         if (dead_space_times[i] >= (filament_param.check_times + (SENSOR_DEAD_SPACE_DISTANCE / FILAMENT_CHECK_DISTANCE))) {
           dead_space_times[i] = 0;
