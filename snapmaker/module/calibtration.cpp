@@ -21,6 +21,7 @@ Calibtration calibtration;
 #define PROBE_LIFTINT_DISTANCE (1)  // mm
 #define PROBE_MOVE_XY_LIFTINT_DISTANCE (5)  // mm
 #define Z_REMOVE_PLATE_THICKNESS(z) (z - build_plate_thickness)
+#define Z_PROBE_TRY_TO_MOVE_DISTANCE (10)  // mm
 
 #define X2_MIN_HOTEND_OFFSET (X2_MAX_POS - X2_MIN_POS - 20)
 
@@ -112,7 +113,7 @@ void Calibtration::bed_preapare(uint8_t extruder_index) {
   float another_x_home_pos = !extruder_index ? x_home_pos(1) : x_home_pos(0);
   float another_x_pos = !extruder_index ? x2_position() : x_position();
 
-  // Make sure the other head is in the home position  
+  // Make sure the other head is in the home position
   if (another_x_home_pos != another_x_pos) {
     if(current_position[Z_AXIS] < 30) {
       // Avoid damage to hot bed
@@ -139,31 +140,8 @@ ErrCode Calibtration::goto_calibtration_position(uint8_t pos) {
   return E_SUCCESS;
 }
 
-float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
-  float ret = distance;
-  float pos_before_probe, pos_after_probe;
-  bool sg_enable = false;
-  bool probe_status = false;
+void probe_axis_move(uint8_t axis, float distance, uint16_t feedrate) {
 
-  pos_before_probe = current_position[axis];
-
-  if (active_extruder == 0) {
-    probe_status = switch_detect.read_e0_probe_status();
-  } else {
-    probe_status = switch_detect.read_e1_probe_status();
-  }
-  if (probe_status) {
-    LOG_E("Probe has triggered !\n");
-    return ret;
-  }
-
-  switch_detect.enable_probe();
-
-  if (((axis == Z_AXIS) && (feedrate == PROBE_FAST_Z_FEEDRATE)) ||
-      (!(axis == Z_AXIS) && (feedrate == PROBE_FAST_XY_FEEDRATE))) {
-    motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
-    sg_enable = true;
-  }
   if(axis == X_AXIS) {
     motion_control.move_x(distance, feedrate);
   }
@@ -174,6 +152,48 @@ float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
     motion_control.move_z(distance, feedrate);
   }
   motion_control.synchronize();
+}
+
+float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
+  float ret = distance;
+  float pos_before_probe, pos_after_probe;
+  bool sg_enable = false;
+  bool probe_status = false;
+
+  pos_before_probe = current_position[axis];
+
+  // If the sensor has been triggered, try to detect it at a distance
+  probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
+  if (probe_status) {
+    float try_dir = distance >= 0 ? -1 : 1;
+    float try_distance = 0;
+    do {
+      try_distance += try_dir;
+      LOG_I("The Probe sensor is tigger and try move %f mm\n", try_dir);
+      probe_axis_move(axis, try_dir, feedrate);
+      probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
+      if (probe_status) {
+        current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
+        sync_plan_position();
+      }
+      else {
+        break;
+      }
+    } while(abs(try_distance) < Z_PROBE_TRY_TO_MOVE_DISTANCE);
+    if (probe_status) {
+        LOG_E("The Probe sensor is not working !\n");
+        return ret;
+    }
+  }
+
+  switch_detect.enable_probe();
+
+  if (((axis == Z_AXIS) && (feedrate == PROBE_FAST_Z_FEEDRATE)) ||
+      (!(axis == Z_AXIS) && (feedrate == PROBE_FAST_XY_FEEDRATE))) {
+    motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
+    sg_enable = true;
+  }
+  probe_axis_move(axis, distance, feedrate);
 
   pos_after_probe = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   current_position[axis] = pos_after_probe;
