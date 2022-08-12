@@ -2551,6 +2551,7 @@ void MarlinSettings::reset() {
     scara_home_offset.reset();
   #elif HAS_HOME_OFFSET
     home_offset.reset();
+    home_offset.z = DEFAULT_HOME_OFFSET_Z;
   #endif
 
   TERN_(HAS_HOTEND_OFFSET, reset_hotend_offsets());

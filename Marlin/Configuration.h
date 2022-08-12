@@ -1360,6 +1360,8 @@
 //#define K_MIN_POS 0
 //#define K_MAX_POS 50
 
+#define DEFAULT_HOME_OFFSET_Z -30
+
 /**
  * Software Endstops
  *
