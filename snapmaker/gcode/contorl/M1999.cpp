@@ -18,14 +18,22 @@
 
 #include "src/inc/MarlinConfig.h"
 #include "src/gcode/gcode.h"
+#include "src/MarlinCore.h"
 #include HAL_PATH(src/HAL, HAL_watchdog_STM32F1.h)
 
 
 void GcodeSuite::M1999() {
-  SERIAL_ECHOLN("will reboot machine");
-  OUT_WRITE(MOTOR_PWR_PIN, LOW);
-  OUT_WRITE(HEATER_PWR_PIN, LOW);
-  OUT_WRITE(SCREEN_PWR_PIN, LOW);
-  OUT_WRITE(HEATER_BED_PWR_PIN, LOW);
-  WatchDogInit();
+  if (parser.seen("S")) {
+    SERIAL_ECHOLN("will reboot screen");
+    OUT_WRITE(SCREEN_PWR_PIN, LOW);
+    vTaskDelay(pdMS_TO_TICKS(500));
+    OUT_WRITE(SCREEN_PWR_PIN, HIGH);
+  } else if (parser.seen("C")) {
+    SERIAL_ECHOLN("will reboot machine");
+    WatchDogInit();
+  } else {
+    SERIAL_ECHOLN("will reboot machine and screen");
+    OUT_WRITE(SCREEN_PWR_PIN, LOW);
+    WatchDogInit();
+  }
 }
