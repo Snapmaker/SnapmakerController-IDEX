@@ -747,11 +747,14 @@ void restore_feedrate_and_scaling() {
         else if (idex_is_duplicating()) {
           // In Duplication Mode, T0 can move as far left as X1_MIN_POS
           // but not so far to the right that T1 would move past the end
-          soft_endstop.min.x = X1_MIN_POS;
           if (dual_x_carriage_mode == DXC_DUPLICATION_MODE) {
+            soft_endstop.min.x = X1_MIN_POS;
             soft_endstop.max.x = _MIN(X1_MAX_POS, dual_max_x - duplicate_extruder_x_offset);
           } else {
-            soft_endstop.max.x = _MIN(X1_MAX_POS, (X1_MIN_POS + dual_max_x - EXTRUDERS_MIN_DISTANCE) / 2 );
+            float logical_center = LOGICAL_TO_NATIVE((X_BED_SIZE)/ 2, X_AXIS);
+            float x2_to_center = hotend_offset[1].x - logical_center;
+            soft_endstop.max.x = _MIN(X1_MAX_POS, LOGICAL_TO_NATIVE((X_BED_SIZE - EXTRUDERS_MIN_DISTANCE)/ 2, X_AXIS));
+            soft_endstop.min.x = _MAX(logical_center - x2_to_center, X1_MIN_POS);
           }
         }
         else {
@@ -1243,39 +1246,46 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
             tool_change(0);
           }
           // Restore planner to parked head (T1) X position
-          xyze_pos_t pos_now = current_position;
+          float pos_now_x = current_position.x;
           // pos_now.x = inactive_extruder_x;
-          planner.set_position_mm(pos_now);
-
+          xyze_pos_t head0_pos = current_position;
           // Keep the same X or add the duplication X offset
-          xyze_pos_t new_pos = pos_now;
-          if (dual_mode == DXC_DUPLICATION_MODE)
-            new_pos.x += duplicate_extruder_x_offset;
-          else
-            new_pos.x += duplicate_extruder_x_offset - (new_pos.x - X1_MIN_POS);
-
+          if (dual_mode == DXC_DUPLICATION_MODE) {
+            tool_change(1);
+            pos_now_x += duplicate_extruder_x_offset;
+          }
+          else {
+            pos_now_x = LOGICAL_TO_NATIVE(X_BED_SIZE - head0_pos.asLogical().x, X_AXIS);
+            if (pos_now_x > hotend_offset[1].x) {
+              pos_now_x = current_position.x + (pos_now_x - hotend_offset[1].x);
+            } else {
+              tool_change(1);
+            }
+          }
+          xyze_pos_t new_pos = current_position;
+          new_pos.x = pos_now_x;
           // Move duplicate extruder into the correct position
           if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Set planner X", inactive_extruder_x, " ... Line to X", new_pos.x);
-          tool_change(1);
-          if (!planner.buffer_line(new_pos, DUPLICATION_SWITCH_FEEDRATE, 1)) {
+          if (!planner.buffer_line(new_pos, DUPLICATION_SWITCH_FEEDRATE, active_extruder)) {
             tool_change(0);
             dual_x_carriage_mode = dual_mode;
             destination = destination_bak;
             break;
           }
           planner.synchronize();
-          tool_change(0);
-
+          current_position = new_pos;
           sync_plan_position();             // Extra sync for good measure
+          tool_change(0);
           dual_x_carriage_mode = dual_mode;
           set_duplication_enabled(true);    // Enable Duplication
-          
+
           destination = destination_bak;
           if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("set_duplication_enabled(true)\nidex_set_parked(false)");
           break;
       }
       idex_set_parked(false);           // No longer parked
       update_software_endstops(X_AXIS, 0, active_extruder);
+      apply_motion_limits(destination);
       endstops.enable_globally(true);
     }
     return false;
