@@ -60,10 +60,6 @@ class PrintControl {
     void temperature_lock(uint8_t e, bool enable) {temperature_lock_status[e] = enable;}
     void error_and_stop();
 
-  private:
-    void apply_print_offset();
-    void unapply_print_offset();
-
   public:
     print_mode_e mode_ = PRINT_FULL_MODE;
     bool temperature_lock_status[EXTRUDERS] = {false, false};

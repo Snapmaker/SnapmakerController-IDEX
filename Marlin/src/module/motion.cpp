@@ -75,6 +75,8 @@
 #include "tool_change.h"
 #include "../../../snapmaker/module/fdm.h"
 #include "../../../snapmaker/module/motion_control.h"
+#include "../../../snapmaker/module/print_control.h"
+#include "../../../snapmaker/module/system.h"
 // Relative Mode. Enable with G91, disable with G90.
 bool relative_mode; // = false;
 

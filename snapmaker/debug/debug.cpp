@@ -28,6 +28,7 @@
 #include "../module/power_loss.h"
 #include "../module/exception.h"
 #include "../module/motion_control.h"
+#include "../module/print_control.h"
 #include "../j1/switch_detect.h"
 #include "../module/enclosure.h"
 #include "../../Marlin/src/inc/Version.h"
@@ -117,6 +118,8 @@ void SnapDebug::show_all_status() {
   SERIAL_ECHO(log_buf);
   snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "HW version:%d, adc:%d\n", system_service.get_hw_version(true), analogRead(HW_VERSION_PIN));
   SERIAL_ECHO(log_buf);
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "system status:%d\n", system_service.get_status());
+  SERIAL_ECHO(log_buf);
   snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "active_extruder:%d\n", active_extruder);
   SERIAL_ECHO(log_buf);
 
@@ -148,7 +151,8 @@ void SnapDebug::show_all_status() {
 
   SERIAL_ECHOLNPAIR("Homed X:", axis_was_homed(X_AXIS), " Y:", axis_was_homed(Y_AXIS), " Z:", axis_was_homed(Z_AXIS));
   SERIAL_ECHOLNPAIR("X home pos T0:", x_home_pos(0), " T1: ", x_home_pos(1));
-
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "print offset X:%f Y:%f Z:%f\n", print_control.xyz_offset.x, print_control.xyz_offset.y, print_control.xyz_offset.z);
+  SERIAL_ECHO(log_buf);
   xyze_pos_t logical_position = current_position.asLogical();
   SERIAL_ECHOLNPAIR("logical position X:", logical_position.x, " Y:", logical_position.y, " Z:", logical_position.z, " E:", logical_position.e);
   SERIAL_ECHOLNPAIR("native position X:", current_position.x, " Y:", current_position.y, " Z:", current_position.z, " E:", current_position.e);

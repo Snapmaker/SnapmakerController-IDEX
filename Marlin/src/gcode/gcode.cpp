@@ -66,6 +66,8 @@ GcodeSuite gcode;
 #endif
 
 #include "../MarlinCore.h" // for idle, kill
+#include "../../../snapmaker/module/system.h"
+#include "../../../snapmaker/module/print_control.h"
 
 // Inactivity shutdown
 millis_t GcodeSuite::previous_move_ms = 0,
@@ -159,6 +161,9 @@ void GcodeSuite::get_destination_from_command() {
         destination[i] = current_position[i];
       else
         destination[i] = axis_is_relative(AxisEnum(i)) ? current_position[i] + v : LOGICAL_TO_NATIVE(v, i);
+      if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
+        destination[i] += print_control.xyz_offset[i];
+      }
     }
     else
       destination[i] = current_position[i];

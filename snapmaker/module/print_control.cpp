@@ -162,7 +162,6 @@ ErrCode PrintControl::start() {
     return PRINT_RESULT_START_ERR_E;
   }
 
-  apply_print_offset();
 
   if (mode_ >= PRINT_DUPLICATION_MODE) {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
@@ -249,7 +248,7 @@ ErrCode PrintControl::stop() {
     }
     thermalManager.setTargetBed(0);
     set_feedrate_percentage(100);
-    unapply_print_offset();
+    set_print_offset(0, 0, 0);
   }
   return E_SUCCESS;
 }
@@ -257,21 +256,6 @@ ErrCode PrintControl::stop() {
 ErrCode PrintControl::set_mode(print_mode_e mode) {
   mode_ = mode;
   return E_SUCCESS;
-}
-
-void PrintControl::apply_print_offset() {
-  LOOP_LINEAR_AXES(i) {
-    home_offset[i] -= xyz_offset[i];
-    update_workspace_offset((AxisEnum)i);
-  }
-}
-
-void PrintControl::unapply_print_offset() {
-  LOOP_LINEAR_AXES(i) {
-    home_offset[i] += xyz_offset[i];
-    update_workspace_offset((AxisEnum)i);
-  }
-  set_print_offset(0, 0, 0);
 }
 
 ErrCode PrintControl::set_print_offset(float x, float y, float z) {
