@@ -31,6 +31,7 @@
  */
 
 #include "../MarlinCore.h"
+#include "shaper/TimeDouble.h"
 
 #if ENABLED(JD_HANDLE_SMALL_SEGMENTS)
   // Enable this option for perfect accuracy but maximum
@@ -150,6 +151,26 @@ enum BlockFlag : char {
 
 #endif
 
+typedef struct shaper_data_t {
+    float block_time;
+    bool is_create_move;
+    bool is_start = false;
+    bool is_end = false;
+    time_double_t last_print_time;
+    uint8_t move_start = 0;
+    uint8_t move_end = 0;
+
+    void init() {
+        is_create_move = false;
+        block_time = 0;
+        is_start = false;
+        is_end = false;
+        last_print_time = 0;
+    }
+
+} shaper_data_t;
+
+
 /**
  * struct block_t
  *
@@ -170,6 +191,9 @@ typedef struct block_t {
         max_entry_speed_sqr,                // Maximum allowable junction entry speed in (mm/sec)^2
         millimeters,                        // The total travel of this block in mm
         acceleration;                       // acceleration mm/sec^2
+
+  float axis_r[AXIS_SIZE];
+  shaper_data_t shaper_data;
 
   union {
     abce_ulong_t steps;                     // Step count along each axis
@@ -326,6 +350,7 @@ class Planner {
     static volatile uint8_t block_buffer_head,      // Index of the next block to be pushed
                             block_buffer_nonbusy,   // Index of the first non busy block
                             block_buffer_planned,   // Index of the optimally planned block
+                            block_buffer_shaped,
                             block_buffer_tail;      // Index of the busy block, if any
     static uint16_t cleaning_buffer_counter;        // A counter to disable queuing of blocks
     static uint8_t delay_before_delivering;         // This counter delays delivery of blocks when queue becomes empty to allow the opportunity of merging blocks
@@ -430,6 +455,8 @@ class Planner {
         refresh_frequency_limit();
       }
     #endif
+
+    static void shaped_loop();
 
   private:
 
@@ -672,7 +699,7 @@ class Planner {
     FORCE_INLINE static uint8_t nonbusy_movesplanned() { return BLOCK_MOD(block_buffer_head - block_buffer_nonbusy); }
 
     // Remove all blocks from the buffer
-    FORCE_INLINE static void clear_block_buffer() { block_buffer_nonbusy = block_buffer_planned = block_buffer_head = block_buffer_tail = 0; }
+    FORCE_INLINE static void clear_block_buffer() { block_buffer_nonbusy = block_buffer_planned = block_buffer_head = block_buffer_shaped = block_buffer_tail = 0; }
 
     // Check if movement queue is full
     FORCE_INLINE static bool is_full() { return block_buffer_tail == next_block_index(block_buffer_head); }
@@ -694,7 +721,9 @@ class Planner {
 
       // Return the first available block
       next_buffer_head = next_block_index(block_buffer_head);
-      return &block_buffer[block_buffer_head];
+      block_t *res = &block_buffer[block_buffer_head];
+      res->shaper_data.init();
+      return res;
     }
 
     /**
@@ -907,22 +936,6 @@ class Planner {
       }
     #endif
 
-  private:
-
-    #if ENABLED(AUTOTEMP)
-      #if ENABLED(AUTOTEMP_PROPORTIONAL)
-        static void _autotemp_update_from_hotend();
-      #else
-        static inline void _autotemp_update_from_hotend() {}
-      #endif
-    #endif
-
-    /**
-     * Get the index of the next / previous block in the ring buffer
-     */
-    static constexpr uint8_t next_block_index(const uint8_t block_index) { return BLOCK_MOD(block_index + 1); }
-    static constexpr uint8_t prev_block_index(const uint8_t block_index) { return BLOCK_MOD(block_index - 1); }
-
     /**
      * Calculate the distance (not time) it takes to accelerate
      * from initial_rate to target_rate using the given acceleration:
@@ -944,6 +957,22 @@ class Planner {
       if (accel == 0) return 0; // accel was 0, set intersection distance to 0
       return (accel * 2 * distance - sq(initial_rate) + sq(final_rate)) / (accel * 4);
     }
+
+  private:
+
+    #if ENABLED(AUTOTEMP)
+      #if ENABLED(AUTOTEMP_PROPORTIONAL)
+        static void _autotemp_update_from_hotend();
+      #else
+        static inline void _autotemp_update_from_hotend() {}
+      #endif
+    #endif
+
+    /**
+     * Get the index of the next / previous block in the ring buffer
+     */
+    static constexpr uint8_t next_block_index(const uint8_t block_index) { return BLOCK_MOD(block_index + 1); }
+    static constexpr uint8_t prev_block_index(const uint8_t block_index) { return BLOCK_MOD(block_index - 1); }
 
     /**
      * Calculate the maximum allowable speed squared at this point, in order

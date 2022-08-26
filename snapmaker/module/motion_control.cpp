@@ -490,5 +490,7 @@ extern "C" {
       }
       ExtiClearITPendingBit(TMC_STALL_GUARD_X_PIN);
     }
+    // trigger_stall_guard_exit();
+    ExtiClearITPendingBit(TMC_STALL_GUARD_PIN);
   }
 }

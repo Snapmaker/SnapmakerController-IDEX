@@ -68,6 +68,7 @@
 #include "temperature.h"
 #include "../lcd/marlinui.h"
 #include "../gcode/parser.h"
+#include "AxisManager.h"
 
 #include "../MarlinCore.h"
 
@@ -126,6 +127,7 @@ block_t Planner::block_buffer[BLOCK_BUFFER_SIZE];
 volatile uint8_t Planner::block_buffer_head,    // Index of the next block to be pushed
                  Planner::block_buffer_nonbusy, // Index of the first non-busy block
                  Planner::block_buffer_planned, // Index of the optimally planned block
+                 Planner::block_buffer_shaped,
                  Planner::block_buffer_tail;    // Index of the busy block, if any
 uint16_t Planner::cleaning_buffer_counter;      // A counter to disable queuing of blocks
 uint8_t Planner::delay_before_delivering;       // This counter delays delivery of blocks when queue becomes empty to allow the opportunity of merging blocks
@@ -257,6 +259,7 @@ void Planner::init() {
     last_page_step_rate = 0;
     last_page_dir.reset();
   #endif
+  Axis a = axisManager.axis[0];
 }
 
 #if ENABLED(S_CURVE_ACCELERATION)
@@ -1246,6 +1249,86 @@ void Planner::recalculate() {
     forward_pass();
   }
   recalculate_trapezoids();
+}
+
+void Planner::shaped_loop() {
+    const uint8_t nr_moves = movesplanned();
+
+    if (!nr_moves) {
+        return;
+    }
+
+    float remaining_consume_time = axisManager.getRemainingConsumeTime();
+    if (remaining_consume_time > SHAPED_WAITING_MIN_TIME) {
+      return;
+    }
+
+    if (remaining_consume_time == 0 && nr_moves < 3 && delay_before_delivering > SHAPED_WAITING_MIN_TIME) {
+        return;
+    }
+
+    uint8_t tail_index = block_buffer_tail;
+    uint8_t shaped_index = block_buffer_shaped;
+    uint8_t planned_index = block_buffer_planned;
+    uint8_t head_index = block_buffer_head;
+    block_t *block;
+    uint8_t index = shaped_index;
+
+    if (moveQueue.is_start) {
+        axisManager.addEmptyMove();
+        moveQueue.is_start = false;
+    }
+
+    float planed_time = axisManager.getRemainingConsumeTime();
+    while (index != planned_index) {
+        if (!block_buffer[index].shaper_data.is_create_move) {
+            moveQueue.calculateMoves(block_buffer[index]);
+            block_buffer[index].shaper_data.is_create_move = true;
+        }
+        planed_time += block_buffer[index].shaper_data.block_time;
+        index = next_block_index(index);
+    }
+
+    float need_shaped_time = SHAPED_WAITING_MIN_TIME + axisManager.shaped_right_delta;
+
+    if (index != head_index && planed_time + remaining_consume_time < need_shaped_time) {
+        while (index != head_index) {
+            if (!block_buffer[index].shaper_data.is_create_move) {
+                moveQueue.calculateMoves(block_buffer[index]);
+                block_buffer[index].shaper_data.is_create_move = true;
+            }
+            planed_time += block_buffer[index].shaper_data.block_time;
+            index = next_block_index(index);
+
+            if (planed_time + remaining_consume_time >= need_shaped_time) {
+                break;
+            }
+        }
+
+        if (planed_time + remaining_consume_time < need_shaped_time) {
+            axisManager.addEmptyMove();
+            block_buffer[prev_block_index(index)].shaper_data.last_print_time += axisManager.shaped_right_delta;
+        }
+    }
+
+    block_buffer_planned = index;
+
+    shaped_index = block_buffer_shaped;
+    planned_index = block_buffer_planned;
+
+    while (shaped_index != planned_index) {
+        block = &block_buffer[shaped_index];
+
+        if (!axisManager.generateAllAxisFuncParams(shaped_index, *block)) {
+            break;
+        }
+
+        uint8_t move_index = moveQueue.calculateMoveStart(block->shaper_data.move_end, axisManager.shaped_delta);
+
+        shaped_index = next_block_index(shaped_index);
+    }
+
+    block_buffer_shaped = shaped_index;
 }
 
 #if HAS_FAN && DISABLED(LASER_SYNCHRONOUS_M106_M107)
