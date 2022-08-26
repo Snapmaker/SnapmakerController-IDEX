@@ -1400,81 +1400,27 @@ static bool test_connection(TMC &st) {
 }
 
 void test_tmc_connection(LOGICAL_AXIS_ARGS(const bool)) {
+
+  #define _TEST_TMC_CONNECT(axis, step, exception) if (axis) { \
+                                  if (test_connection(step)) { \
+                                    exception_server.trigger_exception(exception); \
+                                    axis_connection++; \
+                                  } else { \
+                                    exception_server.clean_exception(exception); \
+                                  }\
+                                }
+
   uint8_t axis_connection = 0;
-
-  if (x) {
-    #if AXIS_IS_TMC(X)
-      axis_connection += test_connection(stepperX);
-    #endif
-    #if AXIS_IS_TMC(X2)
-      axis_connection += test_connection(stepperX2);
-    #endif
-  }
-
-  if (TERN0(HAS_Y_AXIS, y)) {
-    #if AXIS_IS_TMC(Y)
-      axis_connection += test_connection(stepperY);
-    #endif
-    #if AXIS_IS_TMC(Y2)
-      axis_connection += test_connection(stepperY2);
-    #endif
-  }
-
-  if (TERN0(HAS_Z_AXIS, z)) {
-    #if AXIS_IS_TMC(Z)
-      axis_connection += test_connection(stepperZ);
-    #endif
-    #if AXIS_IS_TMC(Z2)
-      axis_connection += test_connection(stepperZ2);
-    #endif
-    #if AXIS_IS_TMC(Z3)
-      axis_connection += test_connection(stepperZ3);
-    #endif
-    #if AXIS_IS_TMC(Z4)
-      axis_connection += test_connection(stepperZ4);
-    #endif
-  }
-
-  #if AXIS_IS_TMC(I)
-    if (i) axis_connection += test_connection(stepperI);
-  #endif
-  #if AXIS_IS_TMC(J)
-    if (j) axis_connection += test_connection(stepperJ);
-  #endif
-  #if AXIS_IS_TMC(K)
-    if (k) axis_connection += test_connection(stepperK);
-  #endif
-
-  if (TERN0(HAS_EXTRUDERS, e)) {
-    #if AXIS_IS_TMC(E0)
-      axis_connection += test_connection(stepperE0);
-    #endif
-    #if AXIS_IS_TMC(E1)
-      axis_connection += test_connection(stepperE1);
-    #endif
-    #if AXIS_IS_TMC(E2)
-      axis_connection += test_connection(stepperE2);
-    #endif
-    #if AXIS_IS_TMC(E3)
-      axis_connection += test_connection(stepperE3);
-    #endif
-    #if AXIS_IS_TMC(E4)
-      axis_connection += test_connection(stepperE4);
-    #endif
-    #if AXIS_IS_TMC(E5)
-      axis_connection += test_connection(stepperE5);
-    #endif
-    #if AXIS_IS_TMC(E6)
-      axis_connection += test_connection(stepperE6);
-    #endif
-    #if AXIS_IS_TMC(E7)
-      axis_connection += test_connection(stepperE7);
-    #endif
-  }
-
-  if (axis_connection) {
-    LCD_MESSAGEPGM(MSG_ERROR_TMC);
-    exception_server.trigger_exception(EXCEPTION_TYPE_TMC_FILED);
+  _TEST_TMC_CONNECT(x, stepperX, EXCEPTION_TYPE_X1_TMC_FILED);
+  _TEST_TMC_CONNECT(x, stepperX2, EXCEPTION_TYPE_X2_TMC_FILED);
+  _TEST_TMC_CONNECT(y, stepperY, EXCEPTION_TYPE_Y_TMC_FILED);
+  _TEST_TMC_CONNECT(z, stepperZ, EXCEPTION_TYPE_Z_TMC_FILED);
+  _TEST_TMC_CONNECT(e, stepperE0, EXCEPTION_TYPE_E0_TMC_FILED);
+  _TEST_TMC_CONNECT(e, stepperE1, EXCEPTION_TYPE_E1_TMC_FILED);
+  if (axis_connection >= 6) {
+    exception_server.trigger_exception(EXCEPTION_TYPE_ALL_TMC_FILED);
+  } else {
+    exception_server.clean_exception(EXCEPTION_TYPE_ALL_TMC_FILED);
   }
 }
 
