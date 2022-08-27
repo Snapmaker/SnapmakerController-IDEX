@@ -745,7 +745,7 @@ block_t* Planner::get_current_block() {
     if (delay_before_delivering) {
       // TODO TEST
       // if (delay_before_delivering > 1) {
-        // --delay_before_delivering;
+        --delay_before_delivering;
       // }
       // If the number of movements queued is less than 3, and there is still time
       //  to wait, do not deliver anything
