@@ -118,33 +118,32 @@ time_double_t* FuncManager::getNextPosTime(float delta_pos,int8_t* dir) {
 
     FuncParams *func_params = &funcParams[func_params_use];
 
-    int prev_type = func_params->type;
     float next_pos;
-    bool func_params_move = false;
     while (func_params_use != func_params_head) {
         if (func_params->type == 0) {
         } else if (func_params->type > 0) {
             if (prev_type == -1) {
-                next_pos = func_params_move ? print_pos : print_pos + delta_pos;
+                next_pos = print_pos;
             } else {
                 next_pos = print_pos + delta_pos;
             }
             if (next_pos <= func_params->right_pos + EPSILON) {
+                prev_type = 1;
                 *dir = 1;
                 break;
             }
         } else {
             if (prev_type == 1) {
-                next_pos = func_params_move ? print_pos : print_pos - delta_pos;
+                next_pos = print_pos;
             } else {
                 next_pos = print_pos - delta_pos;
             }
             if (next_pos >= func_params->right_pos - EPSILON) {
+                prev_type = -1;
                 *dir = -1;
                 break;
             }
         }
-        func_params_move = true;
         func_params_use = nextFuncParamsIndex(func_params_use);
         func_params = &funcParams[func_params_use];
     }

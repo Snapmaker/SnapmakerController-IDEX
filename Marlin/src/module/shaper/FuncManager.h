@@ -53,6 +53,7 @@ class FuncManager {
     time_double_t last_time = 0;
     float print_pos = 0;
     float last_pos = 0;
+    int prev_type = 0;
 
     static FuncParams FUNC_PARAMS_X[FUNC_PARAMS_X_SIZE];
     static FuncParams FUNC_PARAMS_Y[FUNC_PARAMS_Y_SIZE];

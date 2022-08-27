@@ -1342,7 +1342,7 @@ void Planner::shaped_loop() {
         shaped_index = next_block_index(shaped_index);
     }
 
-    LOG_I("remainingConsumeTime: %lf, %d, %d, %d, %d\n", axisManager.getRemainingConsumeTime(), tail_index, shaped_index, planned_index, head_index);
+    // LOG_I("remainingConsumeTime: %lf, %d, %d, %d, %d\n", axisManager.getRemainingConsumeTime(), tail_index, shaped_index, planned_index, head_index);
 
     block_buffer_shaped = shaped_index;
 }
