@@ -1628,13 +1628,13 @@ void Stepper::pulse_phase_isr() {
       return;
   }
 
-  axis_stepper.axis = -1;
-
   if (axis_stepper.dir > 0) {
     CBI(current_direction_bits, axis_stepper.axis);
   } else if(axis_stepper.dir < 0) {
     SBI(current_direction_bits, axis_stepper.axis);
   }
+
+  axis_stepper.axis = -1;
 
   if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
     || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
@@ -1652,7 +1652,6 @@ void Stepper::pulse_phase_isr() {
 
     // Determine if a pulse is needed using Bresenham
     #define PULSE_PREP(AXIS) do{ \
-      step_needed[_AXIS(AXIS)] = (delta_error[_AXIS(AXIS)] >= 0); \
       if (step_needed[_AXIS(AXIS)]) { \
         count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
       } \
