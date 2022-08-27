@@ -77,13 +77,7 @@ bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t& block)
         }
     }
 
-    time_double_t new_min_last_time = axis[0].func_manager.last_time;
-    for (int i = 1; i < AXIS_SIZE; ++i) {
-        if (axis[i].func_manager.last_time < new_min_last_time) {
-            new_min_last_time = axis[i].func_manager.last_time;
-        }
-    }
-    min_last_time = new_min_last_time;
+    axisManager.updateMinLastTime();
 
     return res;
 }

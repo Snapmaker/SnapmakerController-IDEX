@@ -69,6 +69,7 @@
 #include "../lcd/marlinui.h"
 #include "../gcode/parser.h"
 #include "AxisManager.h"
+#include "../../../../snapmaker/debug/debug.h"
 
 #include "../MarlinCore.h"
 
@@ -259,7 +260,6 @@ void Planner::init() {
     last_page_step_rate = 0;
     last_page_dir.reset();
   #endif
-  Axis a = axisManager.axis[0];
 }
 
 #if ENABLED(S_CURVE_ACCELERATION)
@@ -734,11 +734,24 @@ block_t* Planner::get_current_block() {
   if (nr_moves) {
 
     // If there is still delay of delivery of blocks running, decrement it
+    // if (delay_before_delivering) {
+    //   --delay_before_delivering;
+    //   // If the number of movements queued is less than 3, and there is still time
+    //   //  to wait, do not deliver anything
+    //   if (nr_moves < 3 && delay_before_delivering) return nullptr;
+    //   delay_before_delivering = 0;
+    // }
+
     if (delay_before_delivering) {
-      --delay_before_delivering;
+      // TODO TEST
+      // if (delay_before_delivering > 1) {
+        // --delay_before_delivering;
+      // }
       // If the number of movements queued is less than 3, and there is still time
       //  to wait, do not deliver anything
-      if (nr_moves < 3 && delay_before_delivering) return nullptr;
+      if (axisManager.getRemainingConsumeTime() < SHAPED_WAITING_MIN_TIME) {
+          return nullptr;
+      }
       delay_before_delivering = 0;
     }
 
@@ -1259,8 +1272,9 @@ void Planner::shaped_loop() {
     }
 
     float remaining_consume_time = axisManager.getRemainingConsumeTime();
+
     if (remaining_consume_time > SHAPED_WAITING_MIN_TIME) {
-      return;
+        return;
     }
 
     if (remaining_consume_time == 0 && nr_moves < 3 && delay_before_delivering > SHAPED_WAITING_MIN_TIME) {
@@ -1305,7 +1319,7 @@ void Planner::shaped_loop() {
             }
         }
 
-        if (planed_time + remaining_consume_time < need_shaped_time) {
+        if (index == head_index || planed_time + remaining_consume_time < need_shaped_time) {
             axisManager.addEmptyMove();
             block_buffer[prev_block_index(index)].shaper_data.last_print_time += axisManager.shaped_right_delta;
         }
@@ -1323,10 +1337,12 @@ void Planner::shaped_loop() {
             break;
         }
 
-        uint8_t move_index = moveQueue.calculateMoveStart(block->shaper_data.move_end, axisManager.shaped_delta);
+        // uint8_t move_index = moveQueue.calculateMoveStart(block->shaper_data.move_end, axisManager.shaped_delta);
 
         shaped_index = next_block_index(shaped_index);
     }
+
+    LOG_I("remainingConsumeTime: %lf, %d, %d, %d, %d\n", axisManager.getRemainingConsumeTime(), tail_index, shaped_index, planned_index, head_index);
 
     block_buffer_shaped = shaped_index;
 }
@@ -2165,6 +2181,22 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
   }
 
   TERN_(HAS_EXTRUDERS, block->steps.e = esteps);
+
+  if (block->millimeters > 0) {
+    LINEAR_AXIS_CODE(
+      block->axis_r.x = steps_dist_mm.x / block->millimeters,
+      block->axis_r.y = steps_dist_mm.y / block->millimeters,
+      block->axis_r.z = steps_dist_mm.z / block->millimeters,
+      block->axis_r.e = steps_dist_mm.e / block->millimeters
+    );
+  } else {
+    LINEAR_AXIS_CODE(
+      block->axis_r.x = 0,
+      block->axis_r.y = 0,
+      block->axis_r.z = 0,
+      block->axis_r.e = 0
+    );
+  }
 
   block->step_event_count = _MAX(LOGICAL_AXIS_LIST(
     esteps, block->steps.a, block->steps.b, block->steps.c, block->steps.i, block->steps.j, block->steps.k

@@ -4,7 +4,7 @@
 #include "shaper/AxisInputShaper.h"
 #include "shaper/FuncManager.h"
 #include "shaper/MoveQueue.h"
-
+#include "../../../../snapmaker/debug/debug.h"
 
 class AxisStepper {
   public:
@@ -45,6 +45,7 @@ class Axis {
         this->step = step;
         this->half_step = step / 2;
         this->func_manager.init(axis);
+        LOG_I("axis: %d, step: %lf, half_step: %lf\n", this->axis, this->step, this->half_step);
 
         if (axis <= 1) {
             if (axis_input_shaper == nullptr) {
@@ -88,9 +89,7 @@ class AxisManager {
     time_double_t min_last_time = 0;
 
   public:
-    AxisManager() {
-        init();
-    };
+    AxisManager() {};
 
     void init() {
         for (int i = 0; i < AXIS_SIZE; ++i) {
@@ -139,6 +138,16 @@ class AxisManager {
         moveQueue.addMoveStart();
         need_add_move_start = false;
         return true;
+    }
+
+    void updateMinLastTime() {
+        time_double_t new_min_last_time = axis[0].func_manager.last_time;
+        for (int i = 1; i < AXIS_SIZE; ++i) {
+            if (axis[i].func_manager.last_time < new_min_last_time) {
+                new_min_last_time = axis[i].func_manager.last_time;
+            }
+        }
+        min_last_time = new_min_last_time;
     }
 
     bool tryAddMoveEnd() {

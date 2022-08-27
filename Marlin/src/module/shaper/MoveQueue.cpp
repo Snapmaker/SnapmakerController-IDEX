@@ -1,6 +1,9 @@
 #include "MoveQueue.h"
+#include "../../../../snapmaker/debug/debug.h"
 
 MoveQueue moveQueue;
+
+static xyze_float_t ZERO_AXIS_R = {0};
 
 void MoveQueue::calculateMoves(block_t &block) {
 //    if (is_start) {
@@ -8,7 +11,6 @@ void MoveQueue::calculateMoves(block_t &block) {
 //        addMoveStart();
 //        is_start = false;
 //    }
-
     float speed_factor = block.nominal_speed / block.nominal_rate;
     float millimeters = block.millimeters;
 
@@ -55,6 +57,7 @@ void MoveQueue::calculateMoves(block_t &block) {
             addMove(entry_speed, nominal_speed, acceleration, accelDistance, block.axis_r, accelClocks);
         }
 
+        // LOG_I("p: %lf, s: %lf, t: %lf\n", plateau, nominal_speed, plateau / nominal_speed);
         addMove(nominal_speed, nominal_speed, 0, plateau, block.axis_r, plateau / nominal_speed);
 
         if (decelDistance > 0) {
@@ -68,7 +71,7 @@ void MoveQueue::calculateMoves(block_t &block) {
     block.shaper_data.last_print_time = moves[block.shaper_data.move_end].end_t;
 }
 
-void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float accelerate, float distance, float axis_r[AXIS_SIZE], float t, uint8_t flag) {
+void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float accelerate, float distance, xyze_float_t axis_r, float t, uint8_t flag) {
     Move &move = moves[move_index];
 
     move.start_v = start_v;
@@ -78,9 +81,10 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
     move.distance = distance;
 
     move.t = t;
-    for (int i = 0; i < AXIS_SIZE; ++i) {
-        move.axis_r[i] = axis_r[i];
-    }
+    move.axis_r[0] = axis_r.x;
+    move.axis_r[1] = axis_r.y;
+    move.axis_r[2] = axis_r.z;
+    move.axis_r[3] = axis_r.e;
 
     Move& last_move = moves[prevMoveIndex(move_index)];
     move.start_t = last_move.end_t;
@@ -90,6 +94,8 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
         move.start_pos[i] = last_move.end_pos[i];
         move.end_pos[i] = last_move.end_pos[i] + move.distance * move.axis_r[i];
     }
+
+    // LOG_I("move, %lf %lf %lf %lf %lf\n", move.start_t.toDouble(), move.end_t.toDouble(), move.accelerate, move.axis_r[0], move.distance);
 
 //    if (flag != 1) {
 //        Move& last_move = moves[prevMoveIndex(move_index)];
@@ -109,7 +115,7 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
     // printf("move: end_t: %lf, pos: %lf, start_v: %lf, t: %lf, flag: %d\n", move.end_t.toDouble(), move.end_pos[0], move.start_v, move.t, move.flag);
 }
 
-uint8_t MoveQueue::addMove(float start_v, float end_v, float accelerate, float distance, float axis_r[AXIS_SIZE], float t, uint8_t flag) {
+uint8_t MoveQueue::addMove(float start_v, float end_v, float accelerate, float distance, xyze_float_t axis_r, float t, uint8_t flag) {
     setMove(move_head, start_v, end_v, accelerate, distance, axis_r, t, flag);
 
     uint8_t move_index = move_head;

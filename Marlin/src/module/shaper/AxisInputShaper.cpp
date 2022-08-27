@@ -5,7 +5,8 @@
 void ShaperWindow::updateParamABC(int i, float start_v, float accelerate, time_double_t start_t, time_double_t left_time, float start_pos, float axis_r) {
     ShaperWindowParams &p = params[i];
     float A = p.A;
-    float T = p.T - (start_t - left_time);
+    float d_t = (start_t - left_time);
+    float T = p.T - d_t;
     p.a = 0.5f * accelerate * A * axis_r;
     p.b = (start_v + accelerate * T) * A * axis_r;
     p.c = (start_pos + (start_v * T + 0.5f * accelerate * sq(T)) * axis_r) * A;
@@ -15,7 +16,7 @@ void ShaperWindow::updateParamABC(int i, float start_v, float accelerate, time_d
 
 void ShaperWindow::updateABC() {
     float a = 0, b = 0, c = 0;
-    for (size_t i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
         a += params[i].a;
         b += params[i].b;
         c += params[i].c;
@@ -51,7 +52,7 @@ void ShaperWindow::updateParamLeftTime(time_double_t left_time) {
 }
 
 void AxisInputShaper::shiftPulses() {
-    for (size_t i = 0; i < params.n; i++) {
+    for (int i = 0; i < params.n; i++) {
         params.T[i] = params.T[i] * 1000;
     }
 
@@ -152,7 +153,7 @@ void AxisInputShaper::init()
     shiftPulses();
 
     LOG_I("n: %d\n", shift_params.n);
-    for (size_t i = 0; i < shift_params.n; i++)
+    for (int i = 0; i < shift_params.n; i++)
     {
         LOG_I("i: %d, A: %lf, T: %lf\n", i, shift_params.A[i], shift_params.T[i]);
     }
@@ -168,7 +169,7 @@ float AxisInputShaper::calcPosition(int move_index, time_double_t time, int move
     }
 
     float res = 0;
-    for (size_t i = 0; i < shift_params.n; i++) {
+    for (int i = 0; i < shift_params.n; i++) {
         res += shift_params.A[i] * moveQueue.getAxisPositionAcrossMoves(move_index, axis, time + shift_params.T[i], move_shaped_start, move_shaped_end);
     }
     return res;
@@ -202,6 +203,8 @@ void AxisInputShaper::moveShaperWindowByIndex(int move_shaped_start, int move_sh
 
     shaper_window.updateABC();
 
+    LOG_I("move_index: %d, %d\n", shaper_window.params[0].move_index, shaper_window.params[1].move_index);
+
     shaper_window.pos = calcPosition(move_shaped_start, shaper_window.time, move_shaped_start, move_shaped_end);
 }
 
@@ -221,7 +224,7 @@ bool AxisInputShaper::moveShaperWindowToNext(uint8_t move_shaped_start, uint8_t 
 
     time_double_t min_next_time = 1000000000.0f;
 
-    for (size_t i = 0; i < shaper_window.n; i++) {
+    for (int i = 0; i < shaper_window.n; i++) {
         ShaperWindowParams &p = shaper_window.params[i];
 
         time_double_t min_p_next_time = moveQueue.moves[p.move_index].end_t - p.time;
@@ -236,7 +239,7 @@ bool AxisInputShaper::moveShaperWindowToNext(uint8_t move_shaped_start, uint8_t 
     zero_p = &shaper_window.params[shaper_window.zero_n];
     zero_p->time = moveQueue.moves[zero_p->move_index].end_t;
 
-    for (size_t i = 0; i < shaper_window.n; i++) {
+    for (int i = 0; i < shaper_window.n; i++) {
         if (i == shaper_window.zero_n) {
             continue;
         }

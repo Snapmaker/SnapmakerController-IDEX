@@ -44,6 +44,7 @@
 #include "../inc/MarlinConfig.h"
 
 #include "planner.h"
+#include "AxisManager.h"
 #include "stepper/indirection.h"
 #ifdef __AVR__
   #include "speed_lookuptable.h"
@@ -276,8 +277,9 @@ class Stepper {
 
     static block_t* current_block;          // A pointer to the block currently being traced
 
-    static uint8_t last_direction_bits,     // The next stepping-bits to be output
-                   axis_did_move;           // Last Movement in the given direction is not null, as computed when the last movement was fetched from planner
+    static uint8_t  current_direction_bits, 
+                    last_direction_bits,     // The next stepping-bits to be output
+                    axis_did_move;           // Last Movement in the given direction is not null, as computed when the last movement was fetched from planner
 
     static bool abort_current_block;        // Signals to the stepper that current block should be aborted
 
@@ -315,6 +317,11 @@ class Stepper {
                     accelerate_until,       // The point from where we need to stop acceleration
                     decelerate_after,       // The point from where we need to start decelerating
                     step_event_count;       // The total event count for the current block
+
+    static AxisStepper axis_stepper;
+    static AxisStepper next_axis_stepper;
+    static bool is_start;
+    static time_double_t block_print_time;
 
     #if EITHER(HAS_MULTI_EXTRUDER, MIXING_EXTRUDER)
       static uint8_t stepper_extruder;
@@ -449,6 +456,9 @@ class Stepper {
         if (IS_PAGE(current_block))
           page_manager.free_page(current_block->page_idx);
       #endif
+      if (current_block != nullptr) {
+          moveQueue.updateMoveTail(current_block->shaper_data.move_end);
+      }
       current_block = nullptr;
       axis_did_move = 0;
       planner.release_current_block();

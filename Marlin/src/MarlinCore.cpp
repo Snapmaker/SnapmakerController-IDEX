@@ -52,6 +52,7 @@
 #include "module/printcounter.h" // PrintCounter or Stopwatch
 
 #include "module/stepper.h"
+#include "module/AxisManager.h"
 #include "module/stepper/indirection.h"
 
 #include "gcode/gcode.h"
@@ -774,6 +775,8 @@ void idle(bool no_stepper_sleep/*=false*/) {
   // Manage Heaters (and Watchdog)
   thermalManager.manage_heater();
 
+  planner.shaped_loop();
+
   // Max7219 heartbeat, animation, etc
   TERN_(MAX7219_DEBUG, max7219.idle_tasks());
 
@@ -1362,6 +1365,9 @@ void setup() {
   SETUP_RUN(endstops.init());         // Init endstops and pullups
 
   SETUP_RUN(stepper.init());          // Init stepper. This enables interrupts!
+  
+  SETUP_RUN(axisManager.init());  
+
   enable_all_steppers();
   #if HAS_SERVOS
     SETUP_RUN(servo_init());

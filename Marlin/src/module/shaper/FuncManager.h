@@ -5,7 +5,7 @@
 #include "../../MarlinCore.h"
 
 #define FUNC_PARAMS_SIZE 512
-#define FUNC_PARAMS_MOD(n, size) ((n) & (size - 1))
+#define FUNC_PARAMS_MOD(n, size) ((n + size) % size)
 
 class FuncParams {
   public:

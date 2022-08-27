@@ -1,4 +1,5 @@
 #include "FuncManager.h"
+#include "../../../../snapmaker/debug/debug.h"
 
 FuncParams FuncManager::FUNC_PARAMS_X[FUNC_PARAMS_X_SIZE];
 FuncParams FuncManager::FUNC_PARAMS_Y[FUNC_PARAMS_Y_SIZE];
@@ -58,6 +59,8 @@ void FuncManager::addMonotoneDeltaTimeFuncParams(float a, float b, float c, floa
         a = a;
     }
 
+    // LOG_I("a: %lf, b: %lf, c: %lf, type: %d, x: %lf, y: %lf\n", a,b,c,type, right_time.toDouble(), right_pos);
+
     f_p.a = a;
     f_p.b = b;
     f_p.c = c;
@@ -72,6 +75,8 @@ void FuncManager::addMonotoneDeltaTimeFuncParams(float a, float b, float c, floa
 void FuncManager::addDeltaTimeFuncParams(float a, float b, float c, time_double_t  left_time, time_double_t right_time, float right_pos) {
     float delta_left_time = 0;
     float delta_right_time = right_time - left_time;
+
+    // LOG_I("add a: %lf, b: %lf, c: %lf, x: %lf, y: %lf\n", a,b,c, right_time.toDouble(), right_pos);
 
     if (ABS(a) < EPSILON) {
         a = 0;

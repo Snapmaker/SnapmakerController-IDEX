@@ -192,7 +192,7 @@ typedef struct block_t {
         millimeters,                        // The total travel of this block in mm
         acceleration;                       // acceleration mm/sec^2
 
-  float axis_r[AXIS_SIZE];
+  xyze_float_t axis_r;
   shaper_data_t shaper_data;
 
   union {

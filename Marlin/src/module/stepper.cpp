@@ -154,7 +154,8 @@ Stepper stepper; // Singleton
 
 block_t* Stepper::current_block; // (= nullptr) A pointer to the block currently being traced
 
-uint8_t Stepper::last_direction_bits, // = 0
+uint8_t Stepper::current_direction_bits = 0,
+        Stepper::last_direction_bits = 0, // = 0
         Stepper::axis_did_move; // = 0
 
 bool Stepper::abort_current_block;
@@ -198,6 +199,11 @@ uint32_t Stepper::advance_divisor = 0,
          Stepper::accelerate_until,          // The count at which to stop accelerating
          Stepper::decelerate_after,          // The count at which to start decelerating
          Stepper::step_event_count;          // The total event count for the current block
+
+AxisStepper Stepper::axis_stepper;
+AxisStepper Stepper::next_axis_stepper;
+bool Stepper::is_start;
+time_double_t Stepper::block_print_time;
 
 #if EITHER(HAS_MULTI_EXTRUDER, MIXING_EXTRUDER)
   uint8_t Stepper::stepper_extruder;
@@ -1429,7 +1435,9 @@ void Stepper::isr() {
 
     if (!nextMainISR) pulse_phase_isr();                            // 0 = Do coordinated axes Stepper pulses
     if (!nextMainISR && fdm_head.is_change_filamenter()) {
-      filament_isr();
+      #if ENABLED(LIN_ADVANCE)
+        filament_isr();
+      #endif
     } else {
       #if ENABLED(LIN_ADVANCE)
         if (!nextAdvanceISR) nextAdvanceISR = advance_isr();          // 0 = Do Linear Advance E Stepper pulses
@@ -1585,11 +1593,13 @@ void Stepper::pulse_phase_isr() {
   if (TERN0(HAS_FREEZE_PIN, frozen)) return;
 
   // Count of pending loops and events for this iteration
-  const uint32_t pending_events = step_event_count - step_events_completed;
-  uint8_t events_to_do = _MIN(pending_events, steps_per_isr);
+  // const uint32_t pending_events = step_event_count - step_events_completed;
+  // uint8_t events_to_do = _MIN(pending_events, steps_per_isr);
 
   // Just update the value we will get at the end of the loop
-  step_events_completed += events_to_do;
+  // step_events_completed += events_to_do;
+
+  uint8_t events_to_do = 1;
 
   // Take multiple steps per interrupt (For high speed moves)
   #if ISR_MULTI_STEPS
@@ -1598,17 +1608,53 @@ void Stepper::pulse_phase_isr() {
   #endif
   xyze_bool_t step_needed{0};
 
+  switch (axis_stepper.axis)
+  {
+    case -1:
+      return;
+    case 0:
+      step_needed.x = true;
+      break;
+    case 1:
+      step_needed.y = true;
+      break;
+    case 2:
+      step_needed.z = true;
+      break;
+    case 3:
+      step_needed.e = true;
+      break;
+    default:
+      return;
+  }
+
+  axis_stepper.axis = -1;
+
+  if (axis_stepper.dir > 0) {
+    CBI(current_direction_bits, axis_stepper.axis);
+  } else if(axis_stepper.dir < 0) {
+    SBI(current_direction_bits, axis_stepper.axis);
+  }
+
+  if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+    || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+    || current_direction_bits != last_direction_bits
+    || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+  ) {
+    TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+    TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+    set_directions(current_direction_bits);
+  }
+
   do {
     #define _APPLY_STEP(AXIS, INV, ALWAYS) AXIS ##_APPLY_STEP(INV, ALWAYS)
     #define _INVERT_STEP_PIN(AXIS) INVERT_## AXIS ##_STEP_PIN
 
     // Determine if a pulse is needed using Bresenham
     #define PULSE_PREP(AXIS) do{ \
-      delta_error[_AXIS(AXIS)] += advance_dividend[_AXIS(AXIS)]; \
       step_needed[_AXIS(AXIS)] = (delta_error[_AXIS(AXIS)] >= 0); \
       if (step_needed[_AXIS(AXIS)]) { \
         count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
-        delta_error[_AXIS(AXIS)] -= advance_divisor; \
       } \
     }while(0)
 
@@ -1867,7 +1913,34 @@ uint32_t Stepper::block_phase_isr() {
 
   // If there is a current block
   if (current_block) {
+    if (axisManager.getNextAxisStepper()) {
+      axisManager.getCurrentAxisStepper(&next_axis_stepper);
 
+      if (next_axis_stepper.print_time >= block_print_time) {
+          discard_current_block();
+      } else {
+          float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
+          if (delta_time < 0) {
+              delta_time = 0;
+          }
+          axis_stepper.delta_time = delta_time;
+
+          axis_stepper.axis = next_axis_stepper.axis;
+          axis_stepper.dir = next_axis_stepper.dir;
+          axis_stepper.print_time = next_axis_stepper.print_time;
+
+          interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
+      }
+
+      // axis_stepper.axis = -1;
+
+    } else {
+      is_start = true;
+      discard_current_block();
+    }
+
+
+    #if ENABLED(OLD_CODE)
     // If current block is finished, reset pointer and finalize state
     if (step_events_completed >= step_event_count) {
       #if ENABLED(DIRECT_STEPPING)
@@ -2067,6 +2140,7 @@ uint32_t Stepper::block_phase_isr() {
         #endif
       }
     }
+    #endif
   }
 
   // If there is no current block at this point, attempt to pop one from the buffer
@@ -2218,6 +2292,8 @@ uint32_t Stepper::block_phase_isr() {
       // Based on the oversampling factor, do the calculations
       step_event_count = current_block->step_event_count << oversampling;
 
+      block_print_time = current_block->shaper_data.last_print_time;
+
       // Initialize Bresenham delta errors to 1/2
       delta_error = -int32_t(step_event_count);
 
@@ -2255,16 +2331,6 @@ uint32_t Stepper::block_phase_isr() {
           else LA_isr_rate = LA_ADV_NEVER;
         }
       #endif
-
-      if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
-        || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
-        || current_block->direction_bits != last_direction_bits
-        || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
-      ) {
-        TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
-        TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
-        set_directions(current_block->direction_bits);
-      }
 
       #if ENABLED(LASER_POWER_INLINE)
         const power_status_t stat = current_block->laser.status;
@@ -2326,8 +2392,29 @@ uint32_t Stepper::block_phase_isr() {
         acc_step_rate = current_block->initial_rate;
       #endif
 
+      if (is_start) {
+        axisManager.getNextAxisStepper();
+        axisManager.getCurrentAxisStepper(&axis_stepper);
+        is_start = false;
+        axis_stepper.delta_time = 0;
+      } else {
+        float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
+        if (delta_time < 0) {
+            delta_time = 0;
+        }
+        axis_stepper.delta_time = delta_time;
+        axis_stepper.axis = next_axis_stepper.axis;
+        axis_stepper.dir = next_axis_stepper.dir;
+        axis_stepper.print_time = next_axis_stepper.print_time;
+      }
+
+      //TODO TEST
+      // axis_stepper.axis = -1;
+
+      interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
+
       // Calculate the initial timer interval
-      interval = calc_timer_interval(current_block->initial_rate, &steps_per_isr);
+      // interval = calc_timer_interval(current_block->initial_rate, &steps_per_isr);
     } else {
       motion_control.update_feedrate(0);
     }
@@ -2456,9 +2543,7 @@ uint32_t Stepper::block_phase_isr() {
     return interval;
   }
 
-#endif // LIN_ADVANCE
-
-void Stepper::filament_isr() {
+  void Stepper::filament_isr() {
   HOTEND_LOOP() {
     if (fdm_head.is_change_filamenter(e)) {
       if (fdm_head.get_filamenter_dir(e)) {
@@ -2478,6 +2563,8 @@ void Stepper::filament_isr() {
     step_events_completed = accelerate_until;
   }
 }
+
+#endif // LIN_ADVANCE
 
 #if ENABLED(INTEGRATED_BABYSTEPPING)
 

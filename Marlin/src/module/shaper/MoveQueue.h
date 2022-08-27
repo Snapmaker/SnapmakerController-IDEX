@@ -12,8 +12,6 @@
 #define MOVE_FLAG_START 1
 #define MOVE_FLAG_END 2
 
-static float ZERO_AXIS_R[AXIS_SIZE] = {0};
-
 class Move {
   public:
     float start_v;
@@ -25,7 +23,7 @@ class Move {
 
     float start_pos[AXIS_SIZE] = {0};
     float end_pos[AXIS_SIZE] = {0};
-    float axis_r[AXIS_SIZE] = {0};
+    float axis_r[4] = {0};
 
     float distance;
 
@@ -66,8 +64,8 @@ class MoveQueue {
     float getAxisPositionAcrossMoves(int move_index,int axis, time_double_t time, int move_shaped_start, int move_shaped_end);
     float getAxisPosition(int move_index,int axis, time_double_t time);
 
-    void setMove(uint8_t move_index, float start_v, float end_v, float accelerate, float distance, float axis_r[AXIS_SIZE], float t, uint8_t flag = 0);
-    uint8_t addMove(float start_v, float end_v, float accelerate, float distance, float axis_r[AXIS_SIZE], float t, uint8_t flag = MOVE_FLAG_NORMAL);
+    void setMove(uint8_t move_index, float start_v, float end_v, float accelerate, float distance, xyze_float_t axis_r, float t, uint8_t flag = 0);
+    uint8_t addMove(float start_v, float end_v, float accelerate, float distance, xyze_float_t axis_r, float t, uint8_t flag = MOVE_FLAG_NORMAL);
 
   private:
 };
