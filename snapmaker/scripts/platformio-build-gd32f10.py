@@ -143,7 +143,7 @@ env.Append(
         "-ffunction-sections",  # place each function in its own section
         "-fdata-sections",
         "-nostdlib",
-        "-march=armv7-m",
+        # "-march=armv7-m",
         "--param", "max-inline-insns-single=500",
         "-Wall"
     ],
