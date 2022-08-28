@@ -1931,11 +1931,6 @@ uint32_t Stepper::block_phase_isr() {
           interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
       }
 
-      // axis_stepper.axis = -1;
-
-    } else {
-      is_start = true;
-      discard_current_block();
     }
 
 
@@ -2406,9 +2401,6 @@ uint32_t Stepper::block_phase_isr() {
         axis_stepper.dir = next_axis_stepper.dir;
         axis_stepper.print_time = next_axis_stepper.print_time;
       }
-
-      //TODO TEST
-      // axis_stepper.axis = -1;
 
       interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
 
