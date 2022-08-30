@@ -39,6 +39,7 @@ void PowerLoss::stash_print_env() {
   stash_data.duplicate_extruder_x_offset = duplicate_extruder_x_offset;
   stash_data.home_offset = home_offset;
   stash_data.print_offset = print_control.xyz_offset;
+  stash_data.work_time = print_control.get_work_time();
   HOTEND_LOOP() {
     stash_data.nozzle_temp[e] = thermalManager.degTargetHotend(e);
     stash_data.extruder_dual_enable[e] = fdm_head.is_duplication_enabled(e);
@@ -168,6 +169,7 @@ void PowerLoss::resume_print_env() {
   print_control.xyz_offset = stash_data.print_offset;
   feedrate_percentage = stash_data.feedrate_percentage;
   sync_plan_position();
+  print_control.set_work_time(stash_data.work_time);
 }
 
  /**

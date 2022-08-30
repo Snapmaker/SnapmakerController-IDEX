@@ -59,6 +59,13 @@ class PrintControl {
     }
     void temperature_lock(uint8_t e, bool enable) {temperature_lock_status[e] = enable;}
     void error_and_stop();
+    uint32_t get_work_time();
+    void set_work_time(uint32_t time);
+  private:
+    void start_work_time();
+    void pause_work_time();
+    void resume_work_time();
+    void stop_work_time();
 
   public:
     print_mode_e mode_ = PRINT_FULL_MODE;
@@ -66,6 +73,8 @@ class PrintControl {
     bool commands_lock_ = false;
     print_err_info_t print_err_info = {0};
     xyz_pos_t xyz_offset = {0, 0, 0};
+    uint32_t work_time_ms = 0;
+    uint32_t work_start_time = 0;
 };
 
 extern PrintControl print_control;

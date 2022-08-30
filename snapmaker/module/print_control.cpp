@@ -154,6 +154,39 @@ ErrCode PrintControl::push_gcode(uint32_t start_line, uint32_t end_line, uint8_t
   return E_SUCCESS;
 }
 
+void PrintControl::start_work_time() {
+  work_time_ms = 0;
+  work_start_time = millis();
+}
+
+void PrintControl::pause_work_time() {
+  work_time_ms += millis() - work_start_time;
+}
+
+void PrintControl::resume_work_time() {
+  work_start_time = millis();
+}
+
+void PrintControl::stop_work_time() {
+  work_time_ms = work_start_time = 0;
+}
+
+
+uint32_t PrintControl::get_work_time() {
+  if (!system_service.is_working()) {
+    return 0;
+  } else if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
+    return work_time_ms + millis() - work_start_time;
+  } else {
+    return work_time_ms;
+  }
+}
+
+void PrintControl::set_work_time(uint32_t time) {
+  work_time_ms = time;
+  resume_work_time();
+}
+
 ErrCode PrintControl::start() {
   if (!exception_server.is_allow_work()) {
     return E_SYSTEM_EXCEPTION;
@@ -190,11 +223,13 @@ ErrCode PrintControl::start() {
   filament_sensor.reset();
   memset(&print_err_info, 0, sizeof(print_err_info));
   system_service.set_status(SYSTEM_STATUE_PRINTING);
+  start_work_time();
   return E_SUCCESS;
 }
 
 ErrCode PrintControl::pause() {
   buffer_head = buffer_tail = 0;
+  pause_work_time();
   motion_control.quickstop();
   power_loss.stash_print_env();
   idex_set_parked(false);
@@ -222,6 +257,7 @@ ErrCode PrintControl::resume() {
     if (SYSTEM_STATUE_RESUMING == system_service.get_status()) {
       system_service.set_status(SYSTEM_STATUE_PRINTING);
     }
+    resume_work_time();
     return E_SUCCESS;
   } else {
     system_service.set_status(SYSTEM_STATUE_PAUSED);
@@ -249,6 +285,7 @@ ErrCode PrintControl::stop() {
     thermalManager.setTargetBed(0);
     set_feedrate_percentage(100);
     set_print_offset(0, 0, 0);
+    stop_work_time();
   }
   return E_SUCCESS;
 }

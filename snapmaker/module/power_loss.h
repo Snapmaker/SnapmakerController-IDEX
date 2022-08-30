@@ -56,6 +56,7 @@ typedef struct {
   uint8_t light_staus;
   xyz_pos_t home_offset;
   xyz_pos_t print_offset;
+  uint32_t work_time;
   uint32_t check_num;
 } power_loss_t;
 

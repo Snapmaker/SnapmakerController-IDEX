@@ -423,6 +423,15 @@ static ErrCode subscribe_work_feedrate_percentage(event_param_t& event) {
   return send_event(event);
 }
 
+static ErrCode subscribe_work_time(event_param_t& event) {
+  event.data[0] = E_SUCCESS;
+  uint32_t * time = (uint32_t *)&event.data[1];
+  *time = print_control.get_work_time() / 1000;
+  LOG_V("SC get : work time %d S\n", *time);
+  event.length = 5;
+  return send_event(event);
+}
+
 event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_REQ_FILE_INFO       , EVENT_CB_DIRECT_RUN, request_file_info},
   {PRINTER_ID_REQ_GCODE           , EVENT_CB_TASK_RUN,   gcode_pack_deal},
@@ -449,6 +458,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_GET_WORK_FEEDRATE    , EVENT_CB_DIRECT_RUN, get_work_feedrate},
   {PRINTER_ID_SUBSCRIBE_FLOW_PERCENTAGE    , EVENT_CB_DIRECT_RUN, subscribe_flow_percentage},
   {PRINTER_ID_SUBSCRIBE_WORK_PERCENTAGE    , EVENT_CB_DIRECT_RUN, subscribe_work_feedrate_percentage},
+  {PRINTER_ID_SUBSCRIBE_WORK_time    , EVENT_CB_DIRECT_RUN, subscribe_work_time},
 };
 
 static void req_gcode_pack() {
