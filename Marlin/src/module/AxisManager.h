@@ -35,6 +35,8 @@ class Axis {
 
     int generated_block_index = -1;
 
+    int generated_move_index = -1;
+
   public:
     Axis() {};
 
@@ -70,10 +72,16 @@ class Axis {
 
 class AxisManager {
   public:
+    int counts[20] = {0};
+
     Axis axis[AXIS_SIZE] = {Axis()};
 
     float shaped_right_delta = 0;
     float shaped_delta = 0;
+
+    time_double_t print_time = 0;
+
+    time_double_t min_last_time = 0;
 
   private:
     bool need_add_move_start = true;
@@ -84,9 +92,6 @@ class AxisManager {
 
     int8_t print_axis;
     int8_t print_dir;
-    time_double_t print_time = 0;
-
-    time_double_t min_last_time = 0;
 
   public:
     AxisManager() {};

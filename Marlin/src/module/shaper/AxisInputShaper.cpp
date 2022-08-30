@@ -203,7 +203,7 @@ void AxisInputShaper::moveShaperWindowByIndex(int move_shaped_start, int move_sh
 
     shaper_window.updateABC();
 
-    LOG_I("move_index: %d, %d\n", shaper_window.params[0].move_index, shaper_window.params[1].move_index);
+    // LOG_I("move_index: %d, %d\n", shaper_window.params[0].move_index, shaper_window.params[1].move_index);
 
     shaper_window.pos = calcPosition(move_shaped_start, shaper_window.time, move_shaped_start, move_shaped_end);
 }
@@ -252,7 +252,7 @@ bool AxisInputShaper::moveShaperWindowToNext(uint8_t move_shaped_start, uint8_t 
     shaper_window.updateABC();
 
     shaper_window.time += min_next_time;
-    shaper_window.pos = calcPosition(shaper_window.params[0].move_index, shaper_window.time, move_shaped_start, move_shaped_end);
+    shaper_window.pos = calcPosition(shaper_window.params[0].move_index, shaper_window.time, shaper_window.params[0].move_index, move_shaped_end);
 
     return true;
 }

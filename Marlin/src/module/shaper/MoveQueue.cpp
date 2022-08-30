@@ -145,6 +145,9 @@ void MoveQueue::setMoveEnd() {
 
 
 uint8_t MoveQueue::calculateMoveStart(uint8_t index, float delta_window) {
+    if (index == move_tail) {
+        return index;
+    }
     uint8_t move_shaped_start = prevMoveIndex(index);
     float t = moves[move_shaped_start].t;
 
@@ -156,6 +159,9 @@ uint8_t MoveQueue::calculateMoveStart(uint8_t index, float delta_window) {
 };
 
 uint8_t MoveQueue::calculateMoveEnd(uint8_t index, float delta_window) {
+    if (index == move_head) {
+        return index;
+    }
     uint8_t move_shaped_end = nextMoveIndex(index);
     float t = moves[move_shaped_end].t;
 

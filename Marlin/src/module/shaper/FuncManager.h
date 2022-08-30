@@ -54,6 +54,7 @@ class FuncManager {
     float print_pos = 0;
     float last_pos = 0;
     int prev_type = 0;
+    int max_size = 0;
 
     static FuncParams FUNC_PARAMS_X[FUNC_PARAMS_X_SIZE];
     static FuncParams FUNC_PARAMS_Y[FUNC_PARAMS_Y_SIZE];
@@ -86,6 +87,10 @@ class FuncManager {
                 funcParams = FUNC_PARAMS_E;
                 break;
         }
+    }
+
+    constexpr uint32_t getSize() {
+        return FUNC_PARAMS_MOD(func_params_head - func_params_tail, size);
     }
 
     constexpr uint32_t nextFuncParamsIndex(const uint32_t func_params_index) { return FUNC_PARAMS_MOD(func_params_index + 1, size); };

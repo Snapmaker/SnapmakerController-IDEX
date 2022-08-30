@@ -1931,6 +1931,8 @@ uint32_t Stepper::block_phase_isr() {
           interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
       }
 
+    } else {
+      axisManager.counts[1]++;
     }
 
 

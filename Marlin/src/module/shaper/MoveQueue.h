@@ -4,7 +4,7 @@
 #include "TimeDouble.h"
 
 #define MOVE_SIZE 64
-#define MOVE_MOD(n) ((n)&(MOVE_SIZE-1))
+#define MOVE_MOD(n) ((n + MOVE_SIZE)%MOVE_SIZE)
 
 #define EMPTY_TIME 100
 

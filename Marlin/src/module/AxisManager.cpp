@@ -23,8 +23,11 @@ bool Axis::generateFuncParams(uint8_t block_index, block_t &block, uint8_t move_
 }
 
 bool Axis::getNextStep() {
-    if (is_get_next_step_null) {
-        return false;
+    // if (is_get_next_step_null) {
+        // return false;
+    // }
+    if (func_manager.max_size < func_manager.getSize()) {
+        func_manager.max_size = func_manager.getSize();
     }
     float next_step = func_manager.print_pos == 0 ? half_step : step;
     time_double_t* next_print_time = func_manager.getNextPosTime(step, &dir);
@@ -38,7 +41,13 @@ bool Axis::getNextStep() {
 }
 
 bool Axis::generateFuncParams(FuncManager &func_manager, uint8_t move_start, uint8_t move_end) {
-    uint8_t move_index = move_start;
+    uint8_t move_index;
+    if (generated_move_index == -1) {
+        move_index = move_start;
+    } else {
+        move_index = moveQueue.nextMoveIndex(generated_move_index);
+    }
+    
     Move *move;
     while (move_index != moveQueue.nextMoveIndex(move_end)) {
         move = &moveQueue.moves[move_index];
@@ -52,6 +61,7 @@ bool Axis::generateFuncParams(FuncManager &func_manager, uint8_t move_start, uin
 
         move_index = moveQueue.nextMoveIndex(move_index);
     }
+    generated_move_index = move_end;
     return true;
 }
 
@@ -66,7 +76,7 @@ bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t& block)
             move_start = moveQueue.prevMoveIndex(move_start);
         }
 
-        if (move_end != moveQueue.move_head && moveQueue.moves[moveQueue.nextMoveIndex(move_end)].flag == 1) {
+        if (move_end != moveQueue.prevMoveIndex(moveQueue.move_head) && moveQueue.moves[moveQueue.nextMoveIndex(move_end)].flag == 1) {
             move_end = moveQueue.nextMoveIndex(move_end);
         }
     }
@@ -76,6 +86,8 @@ bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t& block)
             res = false;
         }
     }
+
+    moveQueue.updateMoveTail(moveQueue.calculateMoveStart(move_start, axisManager.shaped_delta));
 
     axisManager.updateMinLastTime();
 

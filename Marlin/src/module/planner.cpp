@@ -758,6 +758,10 @@ block_t* Planner::get_current_block() {
     // If we are here, there is no excuse to deliver the block
     block_t * const block = &block_buffer[block_buffer_tail];
 
+    if (!block->shaper_data.is_create_move) {
+      return nullptr;
+    }
+
     // No trapezoid calculated? Don't execute yet.
     if (TEST(block->flag, BLOCK_BIT_RECALCULATE)) return nullptr;
 
@@ -1264,6 +1268,11 @@ void Planner::recalculate() {
   recalculate_trapezoids();
 }
 
+static float last_remaining_consume_time = -1;
+static int count = 1000;
+static int c2 = 100000;
+static bool log111 = true;
+
 void Planner::shaped_loop() {
     const uint8_t nr_moves = movesplanned();
 
@@ -1271,10 +1280,54 @@ void Planner::shaped_loop() {
         return;
     }
 
+    c2--;
+    if (c2 <= 0) {
+      c2 = 100000;
+        LOG_I("c0: %d\n, c1: %d\n", axisManager.counts[0], axisManager.counts[1]);
+    }
+
     float remaining_consume_time = axisManager.getRemainingConsumeTime();
 
     if (remaining_consume_time > SHAPED_WAITING_MIN_TIME) {
-        return;
+      if (remaining_consume_time == last_remaining_consume_time) {
+        count--;
+      } else {
+        last_remaining_consume_time = remaining_consume_time;
+        count = 1000;
+        log111 = true;
+      }
+      last_remaining_consume_time = remaining_consume_time;
+      if (count <= 0 && log111) {
+        log111 = false;
+        LOG_I("remaining_consume_time: %lf\n", remaining_consume_time);
+        LOG_I("m: %d, %d\n", moveQueue.move_tail, moveQueue.move_head);
+        Move& m = moveQueue.moves[moveQueue.prevMoveIndex(moveQueue.move_head)];
+        LOG_I("t: %lf, flag: %d\n", m.end_t.toDouble(), m.flag);
+        for (size_t i = 0; i < 4; i++)
+        {
+          FuncManager& f = axisManager.axis[i].func_manager;
+          LOG_I("i: %d, last_time: %lf, last_pos: %lf\n",i, f.last_time.toDouble(), f.last_pos);
+
+          FuncParams& p = f.funcParams[f.prevFuncParamsIndex(f.func_params_head)];
+          LOG_I("i: %d, right_time: %lf, right_pos: %lf\n",i, p.right_time.toDouble(), p.right_pos);
+
+          LOG_I("i: %d, print_time: %lf, print_pos: %lf, type: %d, null: %d, is_c: %d\n",i, f.print_time.toDouble(), f.print_pos, f.prev_type,
+          axisManager.axis[i].is_consumed, axisManager.axis[i].is_get_next_step_null);
+
+          int ids = f.func_params_use;
+          int ide = f.func_params_head;
+          LOG_I("tail: %d, use: %d, head:%d, max_size: %d\n", f.func_params_tail, f.func_params_use, f.func_params_head, f.max_size);
+          while (ids != ide)
+          {
+            LOG_I("id: %d, rx: %lf, rp: %lf, t: %d\n", ids, f.funcParams[ids].right_time.toDouble(), f.funcParams[ids].right_pos, f.funcParams[ids].type);
+            ids = f.nextFuncParamsIndex(ids);
+          }
+          
+        }
+
+        LOG_I("print_time: %lf, min_last_time: %lf\n", axisManager.print_time.toDouble(), axisManager.min_last_time.toDouble());      
+      }
+      return;
     }
 
     if (remaining_consume_time == 0 && nr_moves < 3 && delay_before_delivering > SHAPED_WAITING_MIN_TIME) {
@@ -1293,7 +1346,7 @@ void Planner::shaped_loop() {
         moveQueue.is_start = false;
     }
 
-    float planed_time = axisManager.getRemainingConsumeTime();
+    float planed_time = 0;
     while (index != planned_index) {
         if (!block_buffer[index].shaper_data.is_create_move) {
             moveQueue.calculateMoves(block_buffer[index]);
@@ -1320,6 +1373,7 @@ void Planner::shaped_loop() {
         }
 
         if (index == head_index || planed_time + remaining_consume_time < need_shaped_time) {
+            axisManager.counts[0]++;
             axisManager.addEmptyMove();
             block_buffer[prev_block_index(index)].shaper_data.last_print_time += axisManager.shaped_right_delta;
         }

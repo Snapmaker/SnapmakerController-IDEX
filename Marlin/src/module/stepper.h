@@ -456,9 +456,6 @@ class Stepper {
         if (IS_PAGE(current_block))
           page_manager.free_page(current_block->page_idx);
       #endif
-      if (current_block != nullptr) {
-          moveQueue.updateMoveTail(current_block->shaper_data.move_end);
-      }
       current_block = nullptr;
       axis_did_move = 0;
       planner.release_current_block();
