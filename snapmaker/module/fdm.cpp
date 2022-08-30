@@ -46,8 +46,13 @@ ErrCode FDM_Head::set_work_speed(float speed) {
 
 ErrCode FDM_Head::change_filamenter(uint8_t e, float feedrate, filamenter_change_status_e status) {
   LOG_I("change head[%d] filament status:%d\n", e, status);
-  change_filamenter_status[e] = status;
+  filamenter_change_status_e status_bak;
+  status_bak = change_filamenter_status[!e];
+  change_filamenter_status[0] = FILAMENT_CHANGE_STOP;
+  change_filamenter_status[1] = FILAMENT_CHANGE_STOP;
   motion_control.quickstop();
+  change_filamenter_status[!e] = status_bak;
+  change_filamenter_status[e] = status;
   if (is_change_filamenter()) {
     // The extruded length is arbitrary, and this is just to rotate the e axis
     motion_control.extrude_e(50, feedrate);

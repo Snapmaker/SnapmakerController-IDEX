@@ -1895,7 +1895,10 @@ uint32_t Stepper::block_phase_isr() {
 
       // Are we in acceleration phase ?
       if (step_events_completed <= accelerate_until) { // Calculate new timer value
-
+        if (fdm_head.is_change_filamenter() && step_events_completed == accelerate_until) {
+          interval = uint32_t(STEPPER_TIMER_RATE) / current_block->nominal_rate;
+          return interval;
+        }
         #if ENABLED(S_CURVE_ACCELERATION)
           // Get the next speed to use (Jerk limited!)
           uint32_t acc_step_rate = acceleration_time < current_block->acceleration_time
@@ -2035,9 +2038,7 @@ uint32_t Stepper::block_phase_isr() {
 
         #if ENABLED(LIN_ADVANCE)
           // If there are any esteps, fire the next advance_isr "now"
-          if (!fdm_head.is_change_filamenter()) {
-            if (LA_steps && LA_isr_rate != current_block->advance_speed) initiateLA();
-          }
+          if (LA_steps && LA_isr_rate != current_block->advance_speed) initiateLA();
         #endif
 
         // Calculate the ticks_nominal for this nominal speed, if not done yet
@@ -2472,8 +2473,8 @@ void Stepper::filament_isr() {
     }
   }
 
-  if (step_events_completed > decelerate_after) {
-    step_events_completed = decelerate_after;
+  if (step_events_completed > accelerate_until) {
+    step_events_completed = accelerate_until;
   }
 }
 
