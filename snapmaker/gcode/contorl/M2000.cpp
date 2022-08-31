@@ -23,6 +23,7 @@
 #include "../../event/event.h"
 #include "../../debug/debug.h"
 #include "../../../Marlin/src/gcode/gcode.h"
+#include "../../../Marlin/src/module/AxisManager.h"
 
 /**
  *  S5 P0/1
@@ -73,6 +74,12 @@ void GcodeSuite::M2000() {
       vTaskDelay(pdMS_TO_TICKS(1000));
       *((uint32_t *)0) = 1234;
       break;
+
+    // case 8:
+    //   LOG_I("shapper abort\r\n");
+    //   axisManager.abort();
+    //   moveQueue.abort();
+    //   break;
 
     default:
       break;
