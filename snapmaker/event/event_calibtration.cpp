@@ -70,7 +70,11 @@ static ErrCode calibtration_move_to_pos(event_param_t& event) {
   calibtration_position_e pos = (calibtration_position_e)event.data[0];
   bool is_probe = event.data[1];
   LOG_V("move to calibtration pos:%d, probe status:%d\n", pos, is_probe);
-  event.data[0] = calibtration.bed_calibtration_preapare(pos, is_probe);
+  if (is_probe) {
+    event.data[0] = calibtration.probe_bed_base_hight(pos);
+  } else {
+    event.data[0] = calibtration.move_to_porbe_pos(pos);
+  }
   event.length = 1;
   send_event(event);
   return E_SUCCESS;
@@ -91,7 +95,7 @@ static ErrCode calibtration_start_bed_probe(event_param_t& event) {
 static ErrCode calibtration_exit(event_param_t& event) {
   LOG_V("exit calibtration and is save:%d\n", event.data[0]);
   calibtration.exit(event.data[0]);
-  
+
   uint32_t wait_timeout = millis() + 50000;
   ErrCode ret = E_SUCCESS;
   while (system_service.get_status() != SYSTEM_STATUE_IDLE) {
@@ -134,9 +138,6 @@ static ErrCode calibtration_move_nozzle(event_param_t& event) {
   calibtration_position_e pos = (calibtration_position_e)event.data[0];
   ErrCode ret = E_SUCCESS;
   ret = calibtration.nozzle_calibtration_preapare(pos);
-  if (ret == E_SUCCESS) {
-    ret = calibtration.bed_probe(pos, 1, false, true);
-  }
   event.data[0] = ret == E_SUCCESS ? ret : E_COMMON_ERROR;
   event.length = 1;
   LOG_V("SC req move to calibtration pos %d, result:%d\n", pos, ret);

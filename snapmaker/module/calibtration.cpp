@@ -115,7 +115,7 @@ void Calibtration::bed_preapare(uint8_t extruder_index) {
 
   // Make sure the other head is in the home position
   if (another_x_home_pos != another_x_pos) {
-    if(current_position[Z_AXIS] < 30) {
+    if(current_position[Z_AXIS] < 15) {
       // Avoid damage to hot bed
       motion_control.move_z(15, PROBE_MOVE_Z_FEEDRATE);
     }
@@ -154,23 +154,16 @@ void probe_axis_move(uint8_t axis, float distance, uint16_t feedrate) {
   motion_control.synchronize();
 }
 
-float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
-  float ret = distance;
-  float pos_before_probe, pos_after_probe;
-  bool sg_enable = false;
+bool Calibtration::move_to_sersor_no_trigger(uint8_t axis, int16_t try_distance) {
   bool probe_status = false;
-
-  pos_before_probe = current_position[axis];
-
   // If the sensor has been triggered, try to detect it at a distance
   probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
   if (probe_status) {
-    float try_dir = distance >= 0 ? -1 : 1;
-    float try_distance = 0;
+    float move_distance = 0;
     do {
-      try_distance += try_dir;
-      LOG_I("The Probe sensor is tigger and try move %f mm\n", try_dir);
-      probe_axis_move(axis, try_dir, feedrate);
+      move_distance += try_distance;
+      LOG_I("The Probe sensor is tigger and try move %f mm\n", try_distance);
+      probe_axis_move(axis, try_distance, MOTION_TRAVEL_FEADRATE);
       probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
       if (probe_status) {
         current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
@@ -179,20 +172,30 @@ float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
       else {
         break;
       }
-    } while(abs(try_distance) < Z_PROBE_TRY_TO_MOVE_DISTANCE);
+    } while(abs(move_distance) < Z_PROBE_TRY_TO_MOVE_DISTANCE);
     if (probe_status) {
         LOG_E("The Probe sensor is not working !\n");
-        return ret;
+        return false;
     }
+  }
+  return true;
+}
+
+float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
+  float ret = distance;
+  float pos_before_probe, pos_after_probe;
+  bool sg_enable = false;
+
+  if (!move_to_sersor_no_trigger(axis, distance >= 0 ? -1 : 1)) {
+    return ret;
   }
 
   switch_detect.enable_probe();
+  pos_before_probe = current_position[axis];
 
-  if (((axis == Z_AXIS) && (feedrate == PROBE_FAST_Z_FEEDRATE)) ||
-      (!(axis == Z_AXIS) && (feedrate == PROBE_FAST_XY_FEEDRATE))) {
-    motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
-    sg_enable = true;
-  }
+  motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
+  sg_enable = true;
+
   probe_axis_move(axis, distance, feedrate);
 
   pos_after_probe = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
@@ -242,35 +245,28 @@ ErrCode Calibtration::probe_z_offset(calibtration_position_e pos) {
   return E_SUCCESS;
 }
 
-ErrCode Calibtration::bed_probe(calibtration_position_e pos, uint8_t extruder, bool set_z_offset, bool is_sg) {
+ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t extruder) {
   ErrCode ret = E_SUCCESS;
-  float z_probe_distance;
+  float z_probe_distance = 15;
   uint8_t last_active_extruder = active_extruder;
   if (pos == CAlIBRATION_POS_0 || pos >= CAlIBRATION_POS_INVALID) {
     return E_PARAM;
   }
-  system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
   bed_preapare(extruder);
+  goto_calibtration_position(pos);
+  system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
 
   float temp_z = 0;
-  if (set_z_offset) {
-    motion_control.home_x();
-    ret = probe_z_offset(pos);
-    last_probe_pos = current_position.z;
+  motion_control.move_to_z(last_probe_pos + PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
+  uint16_t speed = PROBE_FAST_Z_FEEDRATE;
+  temp_z = probe(Z_AXIS, -z_probe_distance, speed);
+  if (temp_z == -z_probe_distance) {
+    LOG_E("failed to probe z !!!\n");
+    probe_offset = CAlIBRATIONING_ERR_CODE;
+    ret = E_CAlIBRATION_PRIOBE;
   } else {
-    goto_calibtration_position(pos);
-    motion_control.move_to_z(last_probe_pos + PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
-    z_probe_distance = 15;
-    uint16_t speed = is_sg ? PROBE_FAST_Z_FEEDRATE: PROBE_Z_FEEDRATE;
-    temp_z = probe(Z_AXIS, -z_probe_distance, speed);
-    if (temp_z == -z_probe_distance) {
-      LOG_E("failed to probe z !!!\n");
-      probe_offset = CAlIBRATIONING_ERR_CODE;
-      ret = E_CAlIBRATION_PRIOBE;
-    } else {
-      probe_offset = current_position[Z_AXIS] + home_offset[Z_AXIS] + build_plate_thickness;
-      LOG_I("JF-Z offset height:%f\n", probe_offset);
-    }
+    probe_offset = current_position[Z_AXIS] + home_offset[Z_AXIS] + build_plate_thickness;
+    LOG_I("JF-Z offset height:%f\n", probe_offset);
   }
   last_probe_pos = current_position.z;
   motion_control.move_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
@@ -281,27 +277,53 @@ ErrCode Calibtration::bed_probe(calibtration_position_e pos, uint8_t extruder, b
   return ret;
 }
 
-ErrCode Calibtration::bed_calibtration_preapare(calibtration_position_e pos, bool is_probe) {
+void stop_probe_and_sync() {
+  motion_control.synchronize();
+  // Wait for the last probe to end
+  while (system_service.get_status() > SYSTEM_STATUE_CAlIBRATION) {
+    vTaskDelay(10);
+  }
+}
+
+ErrCode Calibtration::wait_and_probe_z_offset(calibtration_position_e pos, uint8_t extruder) {
   ErrCode ret = E_SUCCESS;
   if (pos == CAlIBRATION_POS_0 || pos >= CAlIBRATION_POS_INVALID) {
     LOG_E("Points not supported by hot bed calibration: %d\n", pos);
     return E_PARAM;
   }
   cur_pos = pos;
-  mode = CAlIBRATION_MODE_BED;
   status = CAlIBRATION_STATE_IDLE;
-  motion_control.synchronize();
-  while (system_service.get_status() > SYSTEM_STATUE_CAlIBRATION) {
-    vTaskDelay(10);
+  stop_probe_and_sync();
+  // motion_control.move_z(PROBE_MOVE_XY_LIFTINT_DISTANCE);
+
+  uint8_t last_active_extruder = active_extruder;
+  system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
+  bed_preapare(extruder);
+  motion_control.home_x();
+  ret = probe_z_offset(pos);
+
+  motion_control.move_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
+  last_probe_pos = current_position.z;
+  if (last_active_extruder != active_extruder) {
+    tool_change(last_active_extruder, true);
   }
+  system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
+  return ret;
+}
+
+ErrCode Calibtration::probe_bed_base_hight(calibtration_position_e pos, uint8_t extruder) {
+  set_calibtration_mode(CAlIBRATION_MODE_BED);
+  return wait_and_probe_z_offset(pos, extruder);
+}
+
+ErrCode Calibtration::move_to_porbe_pos(calibtration_position_e pos, uint8_t extruder) {
+  ErrCode ret = E_SUCCESS;
+  cur_pos = pos;
+  status = CAlIBRATION_STATE_IDLE;
+  stop_probe_and_sync();
   motion_control.move_z(PROBE_MOVE_XY_LIFTINT_DISTANCE);
-  if (is_probe) {
-    ret = bed_probe(pos, 0, true);
-  } else {
-    bed_preapare(0);
-    goto_calibtration_position(pos);
-    ret = bed_probe(pos, 0, false, true);
-  }
+  bed_preapare(extruder);
+  goto_calibtration_position(pos);
   return ret;
 }
 
@@ -328,15 +350,11 @@ ErrCode Calibtration::bed_end_beat_mode() {
 }
 
 ErrCode Calibtration::nozzle_calibtration_preapare(calibtration_position_e pos) {
-  if (pos == CAlIBRATION_POS_0 || pos >= CAlIBRATION_POS_INVALID) {
-    LOG_E("Points not supported by hot nozzle calibration:%d\n", pos);
-    return E_PARAM;
+  set_calibtration_mode(CAlIBRATION_MODE_NOZZLE);
+  ErrCode ret = wait_and_probe_z_offset(pos);
+  if (ret == E_SUCCESS) {
+    move_to_porbe_pos(pos, 1);
   }
-  cur_pos = pos;
-  mode = CAlIBRATION_MODE_NOZZLE;
-  status = CAlIBRATION_STATE_IDLE;
-  ErrCode ret = bed_probe(pos, 0, true);
-  motion_control.move_z(PROBE_MOVE_XY_LIFTINT_DISTANCE);
   return ret;
 }
 
@@ -384,7 +402,7 @@ float Calibtration::accurate_probe(uint8_t axis, int8_t dir, uint16_t freerate) 
 
 ErrCode Calibtration::calibtration_xy() {
   ErrCode ret = E_SUCCESS;
-  float xy_center[HOTENDS][XY];
+  float xy_center[HOTENDS][XY] = {{0,0}, {0, 0}};
   float probe_distance = 15;
   float probe_value = 0;
   uint8_t old_active_extruder = active_extruder;
@@ -401,7 +419,6 @@ ErrCode Calibtration::calibtration_xy() {
     goto_calibtration_position(CAlIBRATION_POS_0);
     motion_control.logical_move_to_z(-2 - build_plate_thickness);
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
-      xy_center[e][axis] = 0;
       goto_calibtration_position(CAlIBRATION_POS_0);
       probe_value = probe(axis, -probe_distance, PROBE_FAST_XY_FEEDRATE);
       if (abs(probe_value) >= abs(probe_distance) - 5) {
@@ -492,12 +509,12 @@ ErrCode Calibtration::exit(bool is_save) {
 // Probe once per loop
 void Calibtration::loop(void) {
   if (mode == CAlIBRATION_MODE_BED && status == CAlIBRATION_STATE_BED_BEAT) {
-    if (bed_probe(cur_pos) != E_SUCCESS) {
+    if (probe_hight_offset(cur_pos, 0) != E_SUCCESS) {
       status = CAlIBRATION_STATE_IDLE;
     }
     LOG_V("probe offset:%f\n", probe_offset);
   } else if (mode == CAlIBRATION_MODE_NOZZLE && status == CAlIBRATION_STATE_BED_BEAT) {
-    if(bed_probe(cur_pos, 1) != E_SUCCESS) {
+    if(probe_hight_offset(cur_pos, 1) != E_SUCCESS) {
       status = CAlIBRATION_STATE_IDLE;
     }
   } else if (status == CAlIBRATION_STATE_BED_BEAT_WAIT_END) {

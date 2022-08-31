@@ -36,8 +36,11 @@ void GcodeSuite::G1029() {
     calibtration.goto_calibtration_position(number);
   } else if (parser.seenval('B')) {
     uint8_t number = parser.value_byte();
-    calibtration.bed_calibtration_preapare((calibtration_position_e)number, number==CAlIBRATION_POS_1);
-    if (number != CAlIBRATION_POS_1) {
+    if (number == CAlIBRATION_POS_1) {
+      calibtration.probe_bed_base_hight((calibtration_position_e)number);
+    } else {
+      calibtration.set_calibtration_mode(CAlIBRATION_MODE_BED);
+      calibtration.move_to_porbe_pos((calibtration_position_e)number);
       calibtration.bed_start_beat_mode();
     }
   } else if (parser.seenval('N')) {

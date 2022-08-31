@@ -44,12 +44,13 @@ typedef enum {
 
 class Calibtration {
   public:
+    void set_calibtration_mode(calibtration_mode_e m) {mode = m;};
     ErrCode goto_calibtration_position(uint8_t pos);
     void bed_preapare(uint8_t extruder_index=0);
     float probe(uint8_t axis, float distance, uint16_t feedrate);
     ErrCode exit(bool is_save=true);
-    ErrCode bed_probe(calibtration_position_e pos, uint8_t extruder=0, bool set_z_offset=false, bool is_sg=false);
-    ErrCode bed_calibtration_preapare(calibtration_position_e pos, bool is_probe=false);
+    ErrCode probe_bed_base_hight(calibtration_position_e pos, uint8_t extruder=0);
+    ErrCode move_to_porbe_pos(calibtration_position_e pos, uint8_t extruder=0);
     ErrCode bed_manual_calibtration(calibtration_position_e pos);
     ErrCode bed_start_beat_mode();
     ErrCode bed_end_beat_mode();
@@ -69,6 +70,10 @@ class Calibtration {
     void reset_xy_calibtration_env();
     float accurate_probe(uint8_t axis, int8_t dir, uint16_t freerate);
     void backup_offset();
+    ErrCode wait_and_probe_z_offset(calibtration_position_e pos, uint8_t extruder=0);
+    ErrCode probe_hight_offset(calibtration_position_e pos, uint8_t extruder);
+    bool move_to_sersor_no_trigger(uint8_t axis, int16_t try_distance);
+
   public:
     calibtration_position_e cur_pos;
     calibtration_mode_e mode = CAlIBRATION_MODE_IDLE;
