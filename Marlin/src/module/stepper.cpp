@@ -1608,6 +1608,8 @@ void Stepper::pulse_phase_isr() {
   #endif
   xyze_bool_t step_needed{0};
 
+  // axis_stepper.axis = -1;
+
   switch (axis_stepper.axis)
   {
     case -1:

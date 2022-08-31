@@ -1283,7 +1283,7 @@ void Planner::shaped_loop() {
     c2--;
     if (c2 <= 0) {
       c2 = 100000;
-        LOG_I("c0: %d\n, c1: %d\n", axisManager.counts[0], axisManager.counts[1]);
+        LOG_I("c0: %d, c1: %d, %d, c2: %d, m1: %d, m2: %d\n", axisManager.counts[0], axisManager.counts[1], nr_moves, axisManager.counts[2], axisManager.axis[0].func_manager.max_size, axisManager.axis[1].func_manager.max_size);
     }
 
     float remaining_consume_time = axisManager.getRemainingConsumeTime();
@@ -1330,7 +1330,7 @@ void Planner::shaped_loop() {
       return;
     }
 
-    if (remaining_consume_time == 0 && nr_moves < 3 && delay_before_delivering > SHAPED_WAITING_MIN_TIME) {
+    if (remaining_consume_time == 0 && nr_moves < 6 && delay_before_delivering > SHAPED_WAITING_MIN_TIME) {
         return;
     }
 
@@ -1924,6 +1924,8 @@ bool Planner::_buffer_steps(const xyze_long_t &target
   OPTARG(HAS_DIST_MM_ARG, const xyze_float_t &cart_dist_mm)
   , feedRate_t fr_mm_s, const uint8_t extruder, const_float_t millimeters
 ) {
+
+  axisManager.counts[2]++;
 
   // Wait for the next available block
   uint8_t next_buffer_head;

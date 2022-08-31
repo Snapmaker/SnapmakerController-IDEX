@@ -48,6 +48,7 @@ class FuncParams {
 
 class FuncManager {
   public:
+    int axis;
     int size;
     time_double_t print_time = 0;
     time_double_t last_time = 0;
@@ -55,6 +56,8 @@ class FuncManager {
     float last_pos = 0;
     int prev_type = 0;
     int max_size = 0;
+    bool last_is_zero = false;
+    
 
     static FuncParams FUNC_PARAMS_X[FUNC_PARAMS_X_SIZE];
     static FuncParams FUNC_PARAMS_Y[FUNC_PARAMS_Y_SIZE];
@@ -69,6 +72,7 @@ class FuncManager {
     FuncManager(){};
 
     void init(int8_t axis) {
+        this->axis = axis;
         switch (axis) {
             case 0:
                 size = FUNC_PARAMS_X_SIZE;

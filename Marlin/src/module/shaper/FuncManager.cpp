@@ -50,7 +50,6 @@ time_double_t FuncManager::getTimeByFuncParams(float pos, uint32_t func_params_u
 }
 
 void FuncManager::addMonotoneDeltaTimeFuncParams(float a, float b, float c, float delta_left_time, int8_t type, time_double_t right_time, float right_pos) {
-    FuncParams &f_p = funcParams[func_params_head];
 
     // x = dx + left_time => f(x) = f(dx + left_time)
     if (delta_left_time != 0) {
@@ -59,7 +58,26 @@ void FuncManager::addMonotoneDeltaTimeFuncParams(float a, float b, float c, floa
         a = a;
     }
 
-    // LOG_I("a: %lf, b: %lf, c: %lf, type: %d, x: %lf, y: %lf\n", a,b,c,type, right_time.toDouble(), right_pos);
+    if (axis < 2) {
+        // LOG_I("axis: %d, a: %lf, b: %lf, c: %lf, type: %d, x: %lf, y: %lf\n", axis, a,b,c,type, right_time.toDouble(), right_pos);
+    }
+
+    if (a == 0 && b == 0 && c == 0) {
+        if (last_is_zero) {
+            FuncParams &f_p = funcParams[prevFuncParamsIndex(func_params_head)];
+
+            f_p.right_time = right_time;
+            f_p.right_pos = right_pos;
+
+            return;
+        } else {
+            last_is_zero = true;
+        }
+    } else {
+        last_is_zero = false;
+    }
+    
+    FuncParams &f_p = funcParams[func_params_head];
 
     f_p.a = a;
     f_p.b = b;

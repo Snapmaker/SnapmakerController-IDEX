@@ -270,5 +270,11 @@ bool AxisInputShaper::generateFuncParams(FuncManager& func_manager, uint8_t move
         // printf("axis: %d, generateFuncParams: %lf, %lf, %lf \n", axis, shaper_window.pos, func_manager.getPos(shaper_window.time), shaper_window.time);
     }
 
+    if (func_manager.max_size < func_manager.getSize())
+    {
+        func_manager.max_size = func_manager.getSize();
+    }
+    
+
     return true;
 }

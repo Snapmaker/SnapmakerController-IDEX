@@ -95,7 +95,7 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
         move.end_pos[i] = last_move.end_pos[i] + move.distance * move.axis_r[i];
     }
 
-    // LOG_I("move, %lf %lf %lf %lf %lf\n", move.start_t.toDouble(), move.end_t.toDouble(), move.accelerate, move.axis_r[0], move.distance);
+    // LOG_I("move, %lf %lf %lf %lf %lf %lf\n", move.start_t.toDouble(), move.end_t.toDouble(), move.accelerate, move.axis_r[0], move.axis_r[1], move.distance);
 
 //    if (flag != 1) {
 //        Move& last_move = moves[prevMoveIndex(move_index)];
