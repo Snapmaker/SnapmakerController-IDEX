@@ -542,9 +542,9 @@ void GCodeQueue::get_serial_commands() {
 }
 
 void GCodeQueue::get_hmi_commands() {
-  if (ring_buffer.full()) return;
+  // if (ring_buffer.full()) return;
   uint32_t lines = 0;
-  if (print_control.get_commands((uint8_t *)ring_buffer.commands[ring_buffer.index_w].buffer, lines, MAX_CMD_SIZE)) {
+  while (!ring_buffer.full() && print_control.get_commands((uint8_t *)ring_buffer.commands[ring_buffer.index_w].buffer, lines, MAX_CMD_SIZE)) {
     ring_buffer.commands[ring_buffer.index_w].lines = lines;
     ring_buffer.commands[ring_buffer.index_w].skip_ok = true;
     ring_buffer.advance_pos(ring_buffer.index_w, 1);

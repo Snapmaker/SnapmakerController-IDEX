@@ -108,11 +108,11 @@ bool PrintControl::get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len) 
   }
 
   while (buffer_head != buffer_tail) {
-    if (gcode_buffer[buffer_head] == ' ' || gcode_buffer[buffer_head] == '\n') {
-      if (gcode_buffer[buffer_head] == '\n') {
+    if (gcode_buffer[buffer_tail] == ' ' || gcode_buffer[buffer_tail] == '\n') {
+      if (gcode_buffer[buffer_tail] == '\n') {
         power_loss.line_number_sum++;
       }
-      buffer_head = (buffer_head + 1) % GCODE_BUFFER_SIZE;
+      buffer_tail = (buffer_tail + 1) % GCODE_BUFFER_SIZE;
     } else {
       break;
     }
@@ -124,8 +124,8 @@ bool PrintControl::get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len) 
       return false;
     }
 
-    cmd[get_commands] = gcode_buffer[buffer_head];
-    buffer_head = (buffer_head + 1) % GCODE_BUFFER_SIZE;
+    cmd[get_commands] = gcode_buffer[buffer_tail];
+    buffer_tail = (buffer_tail + 1) % GCODE_BUFFER_SIZE;
 
     if (cmd[get_commands] == '\n') {
       cmd[get_commands] = 0;
@@ -157,8 +157,8 @@ ErrCode PrintControl::push_gcode(uint32_t start_line, uint32_t end_line, uint8_t
     return E_PARAM;
   }
   for (uint32_t i = 0; i < size; i++) {
-    gcode_buffer[buffer_tail] = data[i];
-    buffer_tail = (buffer_tail + 1) % GCODE_BUFFER_SIZE;
+    gcode_buffer[buffer_head] = data[i];
+    buffer_head = (buffer_head + 1) % GCODE_BUFFER_SIZE;
   }
   power_loss.next_req = end_line + 1;
 
