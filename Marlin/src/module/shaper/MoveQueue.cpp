@@ -68,6 +68,11 @@ void MoveQueue::calculateMoves(block_t &block) {
 
     block.shaper_data.move_end = prevMoveIndex(move_head);
 
+    Move& end_move = moves[block.shaper_data.move_end];
+    for (int i = 0; i < AXIS_SIZE; ++i) {
+        end_move.end_pos[i] = (float) LROUND(end_move.end_pos[i] * planner.settings.axis_steps_per_mm[i]) / planner.settings.axis_steps_per_mm[i];
+    }
+
     block.shaper_data.last_print_time = moves[block.shaper_data.move_end].end_t;
 }
 

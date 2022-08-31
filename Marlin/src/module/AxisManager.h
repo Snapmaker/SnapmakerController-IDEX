@@ -16,7 +16,7 @@ class AxisStepper {
 
 class Axis {
   public:
-    float step;
+    float mm_to_step;
 
     bool is_consumed = true;
     time_double_t print_time = 0;
@@ -33,7 +33,7 @@ class Axis {
   private:
     int8_t axis;
 
-    float half_step;
+    float half_step_mm;
 
     int generated_block_index = -1;
 
@@ -42,10 +42,11 @@ class Axis {
   public:
     Axis() {};
 
-    void init(int8_t axis, float step) {
+    void init(int8_t axis, float mm_to_step) {
+        LOG_I("Axis: %d, mm_to_step: %lf\r\n", mm_to_step);
         this->axis = axis;
-        this->step = step;
-        this->half_step = step / 2;
+        this->mm_to_step = mm_to_step;
+        this->half_step_mm = 0.5 / mm_to_step;
         this->func_manager.init(axis);
 
         if (axis <= 1) {
@@ -100,6 +101,8 @@ class AxisManager {
 
     bool req_abort;
 
+    int current_steps[AXIS_SIZE] = {0};
+
   private:
     bool need_add_move_start = true;
 
@@ -117,7 +120,7 @@ class AxisManager {
         req_abort = false;
 
         for (int i = 0; i < AXIS_SIZE; ++i) {
-            axis[i].init(i, planner.steps_to_mm[i]);
+            axis[i].init(i, planner.settings.axis_steps_per_mm[i]);
         }
 
         bool shaped = false;
@@ -134,8 +137,8 @@ class AxisManager {
                 if (axis[i].axis_input_shaper != nullptr && axis[i].axis_input_shaper->delta_window > shaped_delta) {
                     shaped_delta = axis[i].axis_input_shaper->delta_window;
                 }
-                if (axis[i].axis_input_shaper != nullptr && axis[i].axis_input_shaper->delta_window > shaped_delta) {
-                    shaped_delta = axis[i].axis_input_shaper->delta_window;
+                if (axis[i].axis_input_shaper != nullptr && axis[i].axis_input_shaper->right_delta > shaped_right_delta) {
+                    shaped_right_delta = axis[i].axis_input_shaper->right_delta;
                 }
             }
         }
@@ -155,6 +158,7 @@ class AxisManager {
         for (size_t i = 0; i < AXIS_SIZE; i++)
         {
             axis[i].abort();
+            current_steps[i] = 0;
         }
 
         print_time = 0;
@@ -164,8 +168,6 @@ class AxisManager {
         need_add_move_start = true;
 
         is_consumed = true;
-
-        // is_shaped = false;
 
         print_axis = -1;
         print_dir = 0;

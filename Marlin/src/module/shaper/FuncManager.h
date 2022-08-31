@@ -53,8 +53,8 @@ class FuncManager {
     time_double_t print_time = 0;
     time_double_t last_time = 0;
     float print_pos = 0;
+    int print_step = 0;
     float last_pos = 0;
-    int prev_type = 0;
     int max_size = 0;
     bool last_is_zero = false;
     
@@ -99,7 +99,7 @@ class FuncManager {
         last_time = 0;
         print_pos = 0;
         last_pos = 0;
-        prev_type = 0;
+        print_step = 0;
         last_is_zero = false;
     }
 
@@ -120,7 +120,7 @@ class FuncManager {
 
     float getPos(time_double_t time);
 
-    time_double_t *getNextPosTime(float delta_pos, int8_t *dir);
+    time_double_t *getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm);
 
     float getY(float x, float a, float b, float c) {
         return a * sq(x) + b * x + c;

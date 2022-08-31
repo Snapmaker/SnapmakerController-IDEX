@@ -29,8 +29,7 @@ bool Axis::getNextStep() {
     if (func_manager.max_size < func_manager.getSize()) {
         func_manager.max_size = func_manager.getSize();
     }
-    float next_step = func_manager.print_pos == 0 ? half_step : step;
-    time_double_t* next_print_time = func_manager.getNextPosTime(step, &dir);
+    time_double_t* next_print_time = func_manager.getNextPosTime(1, &dir, mm_to_step, half_step_mm);
     if (next_print_time == nullptr) {
         is_get_next_step_null = true;
         return false;
@@ -105,6 +104,8 @@ bool AxisManager::getCurrentAxisStepper(AxisStepper *axis_stepper) {
     axis_stepper->axis = print_axis;
     axis_stepper->dir = print_dir;
     axis_stepper->print_time = print_time;
+
+    current_steps[print_axis] += print_dir;
 
     is_consumed = true;
     return true;

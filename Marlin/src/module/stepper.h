@@ -320,6 +320,7 @@ class Stepper {
 
     static AxisStepper axis_stepper;
     static AxisStepper next_axis_stepper;
+    static int block_move_target_steps[AXIS_SIZE];
     static bool is_start;
     static time_double_t block_print_time;
 

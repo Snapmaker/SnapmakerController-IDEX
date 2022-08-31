@@ -129,36 +129,28 @@ void FuncManager::addDeltaTimeFuncParams(float a, float b, float c, time_double_
     last_pos = right_pos;
 }
 
-time_double_t* FuncManager::getNextPosTime(float delta_pos,int8_t* dir) {
+time_double_t* FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm) {
     if (print_time == last_time) {
         return nullptr;
     }
 
     FuncParams *func_params = &funcParams[func_params_use];
 
+    int next_step;
     float next_pos;
-    int next_type = prev_type;
     while (func_params_use != func_params_head) {
         if (func_params->type == 0) {
         } else if (func_params->type > 0) {
-            if (next_type == -1) {
-                next_pos = print_pos;
-            } else {
-                next_pos = print_pos + delta_pos;
-            }
+            next_step = print_step + delta_step;
+            next_pos = (float)next_step / mm_to_step - half_step_mm;
             if (next_pos <= func_params->right_pos + EPSILON) {
-                next_type = 1;
                 *dir = 1;
                 break;
             }
         } else {
-            if (next_type == 1) {
-                next_pos = print_pos;
-            } else {
-                next_pos = print_pos - delta_pos;
-            }
+            next_step = print_step - delta_step;
+            next_pos = (float)next_step / mm_to_step + half_step_mm;
             if (next_pos >= func_params->right_pos - EPSILON) {
-                next_type = -1;
                 *dir = -1;
                 break;
             }
@@ -172,9 +164,9 @@ time_double_t* FuncManager::getNextPosTime(float delta_pos,int8_t* dir) {
     }
 
     if (ABS(next_pos - func_params->right_pos) < EPSILON) {
-        prev_type = next_type;
         print_time = func_params->right_time;
         print_pos = func_params->right_pos;
+        print_step = next_step;
         return &print_time;
     }
 
@@ -189,9 +181,9 @@ time_double_t* FuncManager::getNextPosTime(float delta_pos,int8_t* dir) {
         func_params_tail = prevFuncParamsIndex(func_params_use);
     }
 
-    prev_type = next_type;
     print_time = next_time;
     print_pos = next_pos;
+    print_step = next_step;
 
     return &print_time;
 }

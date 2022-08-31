@@ -1318,7 +1318,7 @@ void Planner::shaped_loop() {
           FuncParams& p = f.funcParams[f.prevFuncParamsIndex(f.func_params_head)];
           LOG_I("i: %d, right_time: %lf, right_pos: %lf\n",i, p.right_time.toDouble(), p.right_pos);
 
-          LOG_I("i: %d, print_time: %lf, print_pos: %lf, type: %d, null: %d, is_c: %d\n",i, f.print_time.toDouble(), f.print_pos, f.prev_type,
+          LOG_I("i: %d, print_time: %lf, print_pos: %lf, print_step: %d, null: %d, is_c: %d\n",i, f.print_time.toDouble(), f.print_pos, f.print_step,
           axisManager.axis[i].is_consumed, axisManager.axis[i].is_get_next_step_null);
 
           int ids = f.func_params_use;

@@ -202,6 +202,7 @@ uint32_t Stepper::advance_divisor = 0,
 
 AxisStepper Stepper::axis_stepper;
 AxisStepper Stepper::next_axis_stepper;
+int Stepper::block_move_target_steps[AXIS_SIZE];
 bool Stepper::is_start = true;
 time_double_t Stepper::block_print_time;
 
@@ -1942,6 +1943,19 @@ uint32_t Stepper::block_phase_isr() {
 
     } else {
       axisManager.counts[1]++;
+      
+      bool is_done = true;
+      for (size_t i = 0; i < AXIS_SIZE; i++)
+      {
+        if (axisManager.current_steps[i] != block_move_target_steps[i])
+        {
+          is_done = false;
+        }
+      }
+
+      if (is_done) {
+        discard_current_block();
+      }
     }
   }
 
@@ -2095,6 +2109,11 @@ uint32_t Stepper::block_phase_isr() {
       step_event_count = current_block->step_event_count << oversampling;
 
       block_print_time = current_block->shaper_data.last_print_time;
+      
+      Move& end_move = moveQueue.moves[current_block->shaper_data.move_end];
+      for (int i = 0; i < AXIS_SIZE; ++i) {
+          block_move_target_steps[i] = LROUND(end_move.end_pos[i] * planner.settings.axis_steps_per_mm[i]);
+      }
 
       // Initialize Bresenham delta errors to 1/2
       delta_error = -int32_t(step_event_count);
