@@ -49,13 +49,15 @@ class ShaperWindow {
 };
 
 class AxisInputShaper {
+  public:
+    bool is_shaper_window_init = false;
+
   private:
     int axis;
 
     ShaperParams params;
     ShaperParams shift_params;
 
-    bool is_shaper_window_init = false;
     ShaperWindow shaper_window;
 
     void shiftPulses();

@@ -74,6 +74,10 @@ class Axis {
         generated_block_index = -1;
         generated_move_index = -1;
 
+        if (axis_input_shaper != nullptr) {
+          axis_input_shaper->is_shaper_window_init = false;
+        }
+
         func_manager.abort();
     }
 
@@ -94,6 +98,8 @@ class AxisManager {
 
     time_double_t min_last_time = 0;
 
+    bool req_abort;
+
   private:
     bool need_add_move_start = true;
 
@@ -108,6 +114,8 @@ class AxisManager {
     AxisManager() {};
 
     void init() {
+        req_abort = false;
+
         for (int i = 0; i < AXIS_SIZE; ++i) {
             axis[i].init(i, planner.steps_to_mm[i]);
         }
@@ -157,7 +165,7 @@ class AxisManager {
 
         is_consumed = true;
 
-        is_shaped = false;
+        // is_shaped = false;
 
         print_axis = -1;
         print_dir = 0;

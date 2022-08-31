@@ -1276,6 +1276,13 @@ static bool log111 = true;
 void Planner::shaped_loop() {
     const uint8_t nr_moves = movesplanned();
 
+    if (axisManager.req_abort) {
+      axisManager.abort();
+      moveQueue.abort();
+      axisManager.req_abort = false;
+      return;
+    }
+
     if (!nr_moves) {
         return;
     }
@@ -1322,10 +1329,10 @@ void Planner::shaped_loop() {
             LOG_I("id: %d, rx: %lf, rp: %lf, t: %d\n", ids, f.funcParams[ids].right_time.toDouble(), f.funcParams[ids].right_pos, f.funcParams[ids].type);
             ids = f.nextFuncParamsIndex(ids);
           }
-          
+
         }
 
-        LOG_I("print_time: %lf, min_last_time: %lf\n", axisManager.print_time.toDouble(), axisManager.min_last_time.toDouble());      
+        LOG_I("print_time: %lf, min_last_time: %lf\n", axisManager.print_time.toDouble(), axisManager.min_last_time.toDouble());
       }
       return;
     }
@@ -1903,6 +1910,7 @@ float Planner::get_axis_position_mm(const AxisEnum axis) {
 void Planner::synchronize() {
   while (has_blocks_queued() || cleaning_buffer_counter
       || TERN0(EXTERNAL_CLOSED_LOOP_CONTROLLER, CLOSED_LOOP_WAITING())
+      || axisManager.req_abort
   ) idle();
 }
 

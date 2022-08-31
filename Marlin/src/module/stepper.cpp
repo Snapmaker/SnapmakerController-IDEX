@@ -1581,8 +1581,11 @@ void Stepper::pulse_phase_isr() {
   power_loss.check();
   // If we must abort the current block, do so!
   if (abort_current_block) {
+    current_direction_bits = 0;
+    // axis_did_move = 0;
     is_start = true;
     abort_current_block = false;
+    axisManager.req_abort = true;
     if (current_block) discard_current_block();
   }
 
@@ -1638,6 +1641,7 @@ void Stepper::pulse_phase_isr() {
   }
 
   axis_stepper.axis = -1;
+  set_directions(current_direction_bits);
 
   if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
     || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
@@ -1912,6 +1916,9 @@ uint32_t Stepper::block_phase_isr() {
 
   // If no queued movements, just wait 1ms for the next block
   uint32_t interval = (STEPPER_TIMER_RATE) / 1000UL;
+
+  if (axisManager.req_abort)
+    return interval;
 
   // If there is a current block
   if (current_block) {
