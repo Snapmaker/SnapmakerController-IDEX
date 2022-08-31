@@ -1355,7 +1355,7 @@ void setup() {
   TERN_(HAS_M206_COMMAND, current_position += home_offset); // Init current position based on home_offset
 
   sync_plan_position();               // Vital to init stepper/planner equivalent for current_position
-  bed_control.self_check();
+  // bed_control.self_check();
   // tmc_driver.init();
   // tmc_driver.configure_axis();
   SETUP_RUN(thermalManager.init());   // Initialize temperature loop
@@ -1365,8 +1365,8 @@ void setup() {
   SETUP_RUN(endstops.init());         // Init endstops and pullups
 
   SETUP_RUN(stepper.init());          // Init stepper. This enables interrupts!
-  
-  SETUP_RUN(axisManager.init());  
+
+  SETUP_RUN(axisManager.init());
 
   enable_all_steppers();
   #if HAS_SERVOS
@@ -1576,7 +1576,7 @@ void setup() {
   #endif
 
   #if HAS_TRINAMIC_CONFIG && DISABLED(PSU_DEFAULT_OFF)
-    SETUP_RUN(test_tmc_connection());
+    // SETUP_RUN(test_tmc_connection());
   #endif
 
   #if HAS_DRIVER_SAFE_POWER_PROTECT
