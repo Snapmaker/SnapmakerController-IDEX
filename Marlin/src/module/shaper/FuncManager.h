@@ -93,6 +93,16 @@ class FuncManager {
         }
     }
 
+    void abort() {
+        func_params_tail = func_params_use = func_params_head = 0;
+        print_time = 0;
+        last_time = 0;
+        print_pos = 0;
+        last_pos = 0;
+        prev_type = 0;
+        last_is_zero = false;
+    }
+
     constexpr uint32_t getSize() {
         return FUNC_PARAMS_MOD(func_params_head - func_params_tail, size);
     }

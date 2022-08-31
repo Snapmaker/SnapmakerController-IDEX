@@ -58,9 +58,9 @@ void FuncManager::addMonotoneDeltaTimeFuncParams(float a, float b, float c, floa
         a = a;
     }
 
-    if (axis < 2) {
+    // if (axis < 2) {
         // LOG_I("axis: %d, a: %lf, b: %lf, c: %lf, type: %d, x: %lf, y: %lf\n", axis, a,b,c,type, right_time.toDouble(), right_pos);
-    }
+    // }
 
     if (a == 0 && b == 0 && c == 0) {
         if (last_is_zero) {

@@ -87,13 +87,15 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
     move.axis_r[3] = axis_r.e;
 
     Move& last_move = moves[prevMoveIndex(move_index)];
-    move.start_t = last_move.end_t;
+    move.start_t = is_first ? 0 : last_move.end_t;
     move.end_t = move.start_t + move.t;
 
     for (int i = 0; i < AXIS_SIZE; ++i) {
-        move.start_pos[i] = last_move.end_pos[i];
-        move.end_pos[i] = last_move.end_pos[i] + move.distance * move.axis_r[i];
+        move.start_pos[i] = is_first ? 0 : last_move.end_pos[i];
+        move.end_pos[i] = move.start_pos[i] + move.distance * move.axis_r[i];
     }
+
+    is_first = false;
 
     // LOG_I("move, %lf %lf %lf %lf %lf %lf\n", move.start_t.toDouble(), move.end_t.toDouble(), move.accelerate, move.axis_r[0], move.axis_r[1], move.distance);
 

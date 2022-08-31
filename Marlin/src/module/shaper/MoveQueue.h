@@ -37,6 +37,13 @@ class MoveQueue {
     volatile uint8_t move_head;
 
     bool is_start = true;
+    bool is_first = true;
+
+    void abort() {
+      is_start = true;
+      is_first = true;
+      move_tail = move_head = 0;
+    }
 
     constexpr uint8_t nextMoveIndex(const uint8_t block_index) { return MOVE_MOD(block_index + 1);};
     constexpr uint8_t prevMoveIndex(const uint8_t block_index) { return MOVE_MOD(block_index - 1);};
