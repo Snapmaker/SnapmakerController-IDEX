@@ -202,7 +202,7 @@ uint32_t Stepper::advance_divisor = 0,
 
 AxisStepper Stepper::axis_stepper;
 AxisStepper Stepper::next_axis_stepper;
-bool Stepper::is_start;
+bool Stepper::is_start = true;
 time_double_t Stepper::block_print_time;
 
 #if EITHER(HAS_MULTI_EXTRUDER, MIXING_EXTRUDER)
@@ -1581,6 +1581,7 @@ void Stepper::pulse_phase_isr() {
   power_loss.check();
   // If we must abort the current block, do so!
   if (abort_current_block) {
+    is_start = true;
     abort_current_block = false;
     if (current_block) discard_current_block();
   }
@@ -1925,7 +1926,6 @@ uint32_t Stepper::block_phase_isr() {
               delta_time = 0;
           }
           axis_stepper.delta_time = delta_time;
-
           axis_stepper.axis = next_axis_stepper.axis;
           axis_stepper.dir = next_axis_stepper.dir;
           axis_stepper.print_time = next_axis_stepper.print_time;
@@ -1936,209 +1936,6 @@ uint32_t Stepper::block_phase_isr() {
     } else {
       axisManager.counts[1]++;
     }
-
-
-    #if ENABLED(OLD_CODE)
-    // If current block is finished, reset pointer and finalize state
-    if (step_events_completed >= step_event_count) {
-      #if ENABLED(DIRECT_STEPPING)
-        // TODO (DerAndere): Add support for LINEAR_AXES >= 4
-        #if STEPPER_PAGE_FORMAT == SP_4x4D_128
-          #define PAGE_SEGMENT_UPDATE_POS(AXIS) \
-            count_position[_AXIS(AXIS)] += page_step_state.bd[_AXIS(AXIS)] - 128 * 7;
-        #elif STEPPER_PAGE_FORMAT == SP_4x1_512 || STEPPER_PAGE_FORMAT == SP_4x2_256
-          #define PAGE_SEGMENT_UPDATE_POS(AXIS) \
-            count_position[_AXIS(AXIS)] += page_step_state.bd[_AXIS(AXIS)] * count_direction[_AXIS(AXIS)];
-        #endif
-
-        if (IS_PAGE(current_block)) {
-          PAGE_SEGMENT_UPDATE_POS(X);
-          PAGE_SEGMENT_UPDATE_POS(Y);
-          PAGE_SEGMENT_UPDATE_POS(Z);
-          PAGE_SEGMENT_UPDATE_POS(E);
-        }
-      #endif
-      TERN_(HAS_FILAMENT_RUNOUT_DISTANCE, runout.block_completed(current_block));
-      discard_current_block();
-    }
-    else {
-      // Step events not completed yet...
-
-      // Are we in acceleration phase ?
-      if (step_events_completed <= accelerate_until) { // Calculate new timer value
-        if (fdm_head.is_change_filamenter() && step_events_completed == accelerate_until) {
-          interval = uint32_t(STEPPER_TIMER_RATE) / current_block->nominal_rate;
-          return interval;
-        }
-        #if ENABLED(S_CURVE_ACCELERATION)
-          // Get the next speed to use (Jerk limited!)
-          uint32_t acc_step_rate = acceleration_time < current_block->acceleration_time
-                                   ? _eval_bezier_curve(acceleration_time)
-                                   : current_block->cruise_rate;
-        #else
-          acc_step_rate = STEP_MULTIPLY(acceleration_time, current_block->acceleration_rate) + current_block->initial_rate;
-          NOMORE(acc_step_rate, current_block->nominal_rate);
-        #endif
-
-        // acc_step_rate is in steps/second
-
-        // step_rate to timer interval and steps per stepper isr
-        interval = calc_timer_interval(acc_step_rate, &steps_per_isr);
-        acceleration_time += interval;
-
-        #if ENABLED(LIN_ADVANCE)
-         if (!fdm_head.is_change_filamenter()) {
-            if (LA_use_advance_lead) {
-              // Fire ISR if final adv_rate is reached
-              if (LA_steps && LA_isr_rate != current_block->advance_speed) nextAdvanceISR = 0;
-            }
-            else if (LA_steps) nextAdvanceISR = 0;
-         }
-        #endif
-
-        // Update laser - Accelerating
-        #if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
-          if (laser_trap.enabled) {
-            #if DISABLED(LASER_POWER_INLINE_TRAPEZOID_CONT)
-              if (current_block->laser.entry_per) {
-                laser_trap.acc_step_count -= step_events_completed - laser_trap.last_step_count;
-                laser_trap.last_step_count = step_events_completed;
-
-                // Should be faster than a divide, since this should trip just once
-                if (laser_trap.acc_step_count < 0) {
-                  while (laser_trap.acc_step_count < 0) {
-                    laser_trap.acc_step_count += current_block->laser.entry_per;
-                    if (laser_trap.cur_power < current_block->laser.power) laser_trap.cur_power++;
-                  }
-                  cutter.set_ocr_power(laser_trap.cur_power);
-                }
-              }
-            #else
-              if (laser_trap.till_update)
-                laser_trap.till_update--;
-              else {
-                laser_trap.till_update = LASER_POWER_INLINE_TRAPEZOID_CONT_PER;
-                laser_trap.cur_power = (current_block->laser.power * acc_step_rate) / current_block->nominal_rate;
-                cutter.set_ocr_power(laser_trap.cur_power); // Cycle efficiency is irrelevant it the last line was many cycles
-              }
-            #endif
-          }
-        #endif
-      }
-      // Are we in Deceleration phase ?
-      else if (step_events_completed > decelerate_after) {
-        uint32_t step_rate;
-
-        #if ENABLED(S_CURVE_ACCELERATION)
-          // If this is the 1st time we process the 2nd half of the trapezoid...
-          if (!bezier_2nd_half) {
-            // Initialize the Bézier speed curve
-            _calc_bezier_curve_coeffs(current_block->cruise_rate, current_block->final_rate, current_block->deceleration_time_inverse);
-            bezier_2nd_half = true;
-            // The first point starts at cruise rate. Just save evaluation of the Bézier curve
-            step_rate = current_block->cruise_rate;
-          }
-          else {
-            // Calculate the next speed to use
-            step_rate = deceleration_time < current_block->deceleration_time
-              ? _eval_bezier_curve(deceleration_time)
-              : current_block->final_rate;
-          }
-        #else
-
-          // Using the old trapezoidal control
-          step_rate = STEP_MULTIPLY(deceleration_time, current_block->acceleration_rate);
-          if (step_rate < acc_step_rate) { // Still decelerating?
-            step_rate = acc_step_rate - step_rate;
-            NOLESS(step_rate, current_block->final_rate);
-          }
-          else
-            step_rate = current_block->final_rate;
-        #endif
-
-        // step_rate is in steps/second
-
-        // step_rate to timer interval and steps per stepper isr
-        interval = calc_timer_interval(step_rate, &steps_per_isr);
-        deceleration_time += interval;
-
-        #if ENABLED(LIN_ADVANCE)
-        if (!fdm_head.is_change_filamenter()) {
-          if (LA_use_advance_lead) {
-            // Wake up eISR on first deceleration loop and fire ISR if final adv_rate is reached
-            if (step_events_completed <= decelerate_after + steps_per_isr || (LA_steps && LA_isr_rate != current_block->advance_speed)) {
-              initiateLA();
-              LA_isr_rate = current_block->advance_speed;
-            }
-          }
-          else if (LA_steps) nextAdvanceISR = 0;
-        }
-        #endif // LIN_ADVANCE
-
-        // Update laser - Decelerating
-        #if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
-          if (laser_trap.enabled) {
-            #if DISABLED(LASER_POWER_INLINE_TRAPEZOID_CONT)
-              if (current_block->laser.exit_per) {
-                laser_trap.acc_step_count -= step_events_completed - laser_trap.last_step_count;
-                laser_trap.last_step_count = step_events_completed;
-
-                // Should be faster than a divide, since this should trip just once
-                if (laser_trap.acc_step_count < 0) {
-                  while (laser_trap.acc_step_count < 0) {
-                    laser_trap.acc_step_count += current_block->laser.exit_per;
-                    if (laser_trap.cur_power > current_block->laser.power_exit) laser_trap.cur_power--;
-                  }
-                  cutter.set_ocr_power(laser_trap.cur_power);
-                }
-              }
-            #else
-              if (laser_trap.till_update)
-                laser_trap.till_update--;
-              else {
-                laser_trap.till_update = LASER_POWER_INLINE_TRAPEZOID_CONT_PER;
-                laser_trap.cur_power = (current_block->laser.power * step_rate) / current_block->nominal_rate;
-                cutter.set_ocr_power(laser_trap.cur_power); // Cycle efficiency isn't relevant when the last line was many cycles
-              }
-            #endif
-          }
-        #endif
-      }
-      // Must be in cruise phase otherwise
-      else {
-
-        #if ENABLED(LIN_ADVANCE)
-          // If there are any esteps, fire the next advance_isr "now"
-          if (LA_steps && LA_isr_rate != current_block->advance_speed) initiateLA();
-        #endif
-
-        // Calculate the ticks_nominal for this nominal speed, if not done yet
-        if (ticks_nominal < 0) {
-          // step_rate to timer interval and loops for the nominal speed
-          ticks_nominal = calc_timer_interval(current_block->nominal_rate, &steps_per_isr);
-        }
-
-        // The timer interval is just the nominal value for the nominal speed
-        interval = ticks_nominal;
-
-        // Update laser - Cruising
-        #if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
-          if (laser_trap.enabled) {
-            if (!laser_trap.cruise_set) {
-              laser_trap.cur_power = current_block->laser.power;
-              cutter.set_ocr_power(laser_trap.cur_power);
-              laser_trap.cruise_set = true;
-            }
-            #if ENABLED(LASER_POWER_INLINE_TRAPEZOID_CONT)
-              laser_trap.till_update = LASER_POWER_INLINE_TRAPEZOID_CONT_PER;
-            #else
-              laser_trap.last_step_count = step_events_completed;
-            #endif
-          }
-        #endif
-      }
-    }
-    #endif
   }
 
   // If there is no current block at this point, attempt to pop one from the buffer
@@ -2361,15 +2158,6 @@ uint32_t Stepper::block_phase_isr() {
         #endif
       #endif // LASER_POWER_INLINE
 
-      // At this point, we must ensure the movement about to execute isn't
-      // trying to force the head against a limit switch. If using interrupt-
-      // driven change detection, and already against a limit then no call to
-      // the endstop_triggered method will be done and the movement will be
-      // done against the endstop. So, check the limits here: If the movement
-      // is against the limits, the block will be marked as to be killed, and
-      // on the next call to this ISR, will be discarded.
-      endstops.update();
-
       #if ENABLED(Z_LATE_ENABLE)
         // If delayed Z enable, enable it now. This option will severely interfere with
         // timing between pulses when chaining motion between blocks, and it could lead
@@ -2405,6 +2193,26 @@ uint32_t Stepper::block_phase_isr() {
         axis_stepper.dir = next_axis_stepper.dir;
         axis_stepper.print_time = next_axis_stepper.print_time;
       }
+
+
+      if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+        || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+        || current_direction_bits != last_direction_bits
+        || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+      ) {
+        TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+        TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+        set_directions(current_direction_bits);
+      }
+
+      // At this point, we must ensure the movement about to execute isn't
+      // trying to force the head against a limit switch. If using interrupt-
+      // driven change detection, and already against a limit then no call to
+      // the endstop_triggered method will be done and the movement will be
+      // done against the endstop. So, check the limits here: If the movement
+      // is against the limits, the block will be marked as to be killed, and
+      // on the next call to this ISR, will be discarded.
+      // endstops.update();
 
       interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
 
