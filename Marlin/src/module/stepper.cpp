@@ -1644,15 +1644,15 @@ void Stepper::pulse_phase_isr() {
   axis_stepper.axis = -1;
   set_directions(current_direction_bits);
 
-  if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
-    || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
-    || current_direction_bits != last_direction_bits
-    || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
-  ) {
-    TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
-    TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
-    set_directions(current_direction_bits);
-  }
+  // if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+  //   || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+  //   || current_direction_bits != last_direction_bits
+  //   || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+  // ) {
+  //   TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+  //   TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+  //   set_directions(current_direction_bits);
+  // }
 
   do {
     #define _APPLY_STEP(AXIS, INV, ALWAYS) AXIS ##_APPLY_STEP(INV, ALWAYS)
@@ -1912,7 +1912,6 @@ void Stepper::pulse_phase_isr() {
 // This is the last half of the stepper interrupt: This one processes and
 // properly schedules blocks from the planner. This is executed after creating
 // the step pulses, so it is not time critical, as pulses are already done.
-
 uint32_t Stepper::block_phase_isr() {
 
   // If no queued movements, just wait 1ms for the next block
@@ -1943,12 +1942,10 @@ uint32_t Stepper::block_phase_isr() {
 
     } else {
       axisManager.counts[1]++;
-      
+
       bool is_done = true;
-      for (size_t i = 0; i < AXIS_SIZE; i++)
-      {
-        if (axisManager.current_steps[i] != block_move_target_steps[i])
-        {
+      for (size_t i = 0; i < AXIS_SIZE; i++) {
+        if (axisManager.current_steps[i] != block_move_target_steps[i]) {
           is_done = false;
         }
       }
@@ -2106,33 +2103,31 @@ uint32_t Stepper::block_phase_isr() {
       #endif
 
       // Based on the oversampling factor, do the calculations
-      step_event_count = current_block->step_event_count << oversampling;
+      // step_event_count = current_block->step_event_count << oversampling;
 
       block_print_time = current_block->shaper_data.last_print_time;
-      
       Move& end_move = moveQueue.moves[current_block->shaper_data.move_end];
       for (int i = 0; i < AXIS_SIZE; ++i) {
           block_move_target_steps[i] = LROUND(end_move.end_pos[i] * planner.settings.axis_steps_per_mm[i]);
       }
 
       // Initialize Bresenham delta errors to 1/2
-      delta_error = -int32_t(step_event_count);
+      // delta_error = -int32_t(step_event_count);
 
       // Calculate Bresenham dividends and divisors
-      advance_dividend = current_block->steps << 1;
-      advance_divisor = step_event_count << 1;
+      // advance_dividend = current_block->steps << 1;
+      // advance_divisor = step_event_count << 1;
 
       // No step events completed so far
       step_events_completed = 0;
 
       // Compute the acceleration and deceleration points
-      accelerate_until = current_block->accelerate_until << oversampling;
-      decelerate_after = current_block->decelerate_after << oversampling;
-      if (current_block->file_position)
-        power_loss.cur_line = current_block->file_position;
+      // accelerate_until = current_block->accelerate_until << oversampling;
+      // decelerate_after = current_block->decelerate_after << oversampling;
+      power_loss.cur_line = current_block->file_position;
       motion_control.update_feedrate((uint16_t)current_block->nominal_speed);
-      TERN_(MIXING_EXTRUDER, mixer.stepper_setup(current_block->b_color))
 
+      TERN_(MIXING_EXTRUDER, mixer.stepper_setup(current_block->b_color));
       TERN_(HAS_MULTI_EXTRUDER, stepper_extruder = current_block->extruder);
 
       // Initialize the trapezoid generator from the current block.
@@ -2201,7 +2196,7 @@ uint32_t Stepper::block_phase_isr() {
         bezier_2nd_half = false;
       #else
         // Set as deceleration point the initial rate of the block
-        acc_step_rate = current_block->initial_rate;
+        // acc_step_rate = current_block->initial_rate;
       #endif
 
       if (is_start) {
