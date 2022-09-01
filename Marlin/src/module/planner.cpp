@@ -1397,7 +1397,6 @@ void Planner::shaped_loop() {
         if (!axisManager.generateAllAxisFuncParams(shaped_index, *block)) {
             break;
         }
-
         // uint8_t move_index = moveQueue.calculateMoveStart(block->shaper_data.move_end, axisManager.shaped_delta);
 
         shaped_index = next_block_index(shaped_index);
@@ -2245,14 +2244,11 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
   }
 
   TERN_(HAS_EXTRUDERS, block->steps.e = esteps);
-
   if (block->millimeters > 0) {
-    LINEAR_AXIS_CODE(
-      block->axis_r.x = steps_dist_mm.x / block->millimeters,
-      block->axis_r.y = steps_dist_mm.y / block->millimeters,
-      block->axis_r.z = steps_dist_mm.z / block->millimeters,
-      block->axis_r.e = steps_dist_mm.e / block->millimeters
-    );
+      block->axis_r.x = steps_dist_mm.x / block->millimeters;
+      block->axis_r.y = steps_dist_mm.y / block->millimeters;
+      block->axis_r.z = steps_dist_mm.z / block->millimeters;
+      block->axis_r.e = steps_dist_mm.e / block->millimeters;
   } else {
     LINEAR_AXIS_CODE(
       block->axis_r.x = 0,
