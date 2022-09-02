@@ -39,7 +39,6 @@ void SwitchDetect::init() {
   SET_INPUT_PULLUP(STALL_GUARD_PIN);
   init_probe();
   disable_all();
-  endstops.enable_globally(true);
   motion_control.init_stall_guard();
 }
 

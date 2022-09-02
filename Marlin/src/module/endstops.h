@@ -26,6 +26,7 @@
  */
 
 #include "../inc/MarlinConfig.h"
+#include "src/module/motion.h"
 #include <stdint.h>
 
 #define __ES_ITEM(N) N,
@@ -132,7 +133,7 @@ class Endstops {
      * Are endstops or the probe set to abort the move?
      */
     FORCE_INLINE static bool abort_enabled() {
-      return enabled || TERN0(HAS_BED_PROBE, z_probe_enabled);
+      return enabled || TERN0(HAS_BED_PROBE, z_probe_enabled) || homing_needed();
     }
 
     static inline bool global_enabled() { return enabled_globally; }

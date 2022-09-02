@@ -1288,7 +1288,6 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
       idex_set_parked(false);           // No longer parked
       update_software_endstops(X_AXIS, 0, active_extruder);
       apply_motion_limits(destination);
-      endstops.enable_globally(true);
     }
     return false;
   }
