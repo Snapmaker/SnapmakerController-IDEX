@@ -1269,6 +1269,8 @@ void Planner::recalculate() {
 }
 
 static float last_remaining_consume_time = -1;
+static float start_t = -1;
+static float end_t = -1;
 static int count = 1000;
 static int c2 = 100000;
 static bool log111 = true;
@@ -1290,51 +1292,57 @@ void Planner::shaped_loop() {
     c2--;
     if (c2 <= 0) {
         c2 = 100000;
-        float t = (float)axisManager.counts[4] / (float)axisManager.counts[3] / 5.0f;
-        float max_t = (float)axisManager.counts[5] / 5.0f;
+        float t = (float)axisManager.counts[4] / (float)axisManager.counts[3] / 3.0f;
+        float max_t = (float)axisManager.counts[5] / 3.0f;
         LOG_I("c0: %d, c1: %d, time: %lf, max_t: %lf, m1: %d, m2: %d\n", axisManager.counts[0], axisManager.counts[1], t, max_t, axisManager.axis[0].func_manager.max_size, axisManager.axis[1].func_manager.max_size);
     }
 
     float remaining_consume_time = axisManager.getRemainingConsumeTime();
 
+
     if (remaining_consume_time > SHAPED_WAITING_MIN_TIME) {
       if (remaining_consume_time == last_remaining_consume_time) {
         count--;
+        if(count == 999) {
+          start_t = remaining_consume_time;
+        }
+        if(count == 0) {
+          end_t = remaining_consume_time;
+        }
       } else {
-        last_remaining_consume_time = remaining_consume_time;
         count = 1000;
         log111 = true;
       }
       last_remaining_consume_time = remaining_consume_time;
       if (count <= 0 && log111) {
         log111 = false;
-        LOG_I("remaining_consume_time: %lf\n", remaining_consume_time);
-        LOG_I("m: %d, %d\n", moveQueue.move_tail, moveQueue.move_head);
-        Move& m = moveQueue.moves[moveQueue.prevMoveIndex(moveQueue.move_head)];
-        LOG_I("t: %lf, flag: %d\n", m.end_t.toDouble(), m.flag);
-        for (size_t i = 0; i < 4; i++)
-        {
-          FuncManager& f = axisManager.axis[i].func_manager;
-          LOG_I("i: %d, last_time: %lf, last_pos: %lf\n",i, f.last_time.toDouble(), f.last_pos);
+        LOG_I("remaining_t: %lf, start_t: %lf, end_t: %lf\n", remaining_consume_time, start_t, end_t);
+        // LOG_I("m: %d, %d\n", moveQueue.move_tail, moveQueue.move_head);
+        // Move& m = moveQueue.moves[moveQueue.prevMoveIndex(moveQueue.move_head)];
+        // LOG_I("t: %lf, flag: %d\n", m.end_t.toDouble(), m.flag);
+        // for (size_t i = 0; i < 4; i++)
+        // {
+        //   FuncManager& f = axisManager.axis[i].func_manager;
+        //   LOG_I("i: %d, last_time: %lf, last_pos: %lf\n",i, f.last_time.toDouble(), f.last_pos);
 
-          FuncParams& p = f.funcParams[f.prevFuncParamsIndex(f.func_params_head)];
-          LOG_I("i: %d, right_time: %lf, right_pos: %lf\n",i, p.right_time.toDouble(), p.right_pos);
+        //   FuncParams& p = f.funcParams[f.prevFuncParamsIndex(f.func_params_head)];
+        //   LOG_I("i: %d, right_time: %lf, right_pos: %lf\n",i, p.right_time.toDouble(), p.right_pos);
 
-          LOG_I("i: %d, print_time: %lf, print_pos: %lf, print_step: %d, null: %d, is_c: %d\n",i, f.print_time.toDouble(), f.print_pos, f.print_step,
-          axisManager.axis[i].is_consumed, axisManager.axis[i].is_get_next_step_null);
+        //   LOG_I("i: %d, print_time: %lf, print_pos: %lf, print_step: %d, null: %d, is_c: %d\n",i, f.print_time.toDouble(), f.print_pos, f.print_step,
+        //   axisManager.axis[i].is_consumed, axisManager.axis[i].is_get_next_step_null);
 
-          int ids = f.func_params_use;
-          int ide = f.func_params_head;
-          LOG_I("tail: %d, use: %d, head:%d, max_size: %d\n", f.func_params_tail, f.func_params_use, f.func_params_head, f.max_size);
-          while (ids != ide)
-          {
-            LOG_I("id: %d, rx: %lf, rp: %lf, t: %d\n", ids, f.funcParams[ids].right_time.toDouble(), f.funcParams[ids].right_pos, f.funcParams[ids].type);
-            ids = f.nextFuncParamsIndex(ids);
-          }
+        //   int ids = f.func_params_use;
+        //   int ide = f.func_params_head;
+        //   LOG_I("tail: %d, use: %d, head:%d, max_size: %d\n", f.func_params_tail, f.func_params_use, f.func_params_head, f.max_size);
+        //   while (ids != ide)
+        //   {
+        //     LOG_I("id: %d, rx: %lf, rp: %lf, t: %d\n", ids, f.funcParams[ids].right_time.toDouble(), f.funcParams[ids].right_pos, f.funcParams[ids].type);
+        //     ids = f.nextFuncParamsIndex(ids);
+        //   }
 
-        }
+        // }
 
-        LOG_I("print_time: %lf, min_last_time: %lf\n", axisManager.print_time.toDouble(), axisManager.min_last_time.toDouble());
+        // LOG_I("print_time: %lf, min_last_time: %lf\n", axisManager.print_time.toDouble(), axisManager.min_last_time.toDouble());
       }
       return;
     }

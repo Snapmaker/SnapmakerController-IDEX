@@ -26,11 +26,15 @@ bool Axis::getNextStep() {
     // if (is_get_next_step_null) {
         // return false;
     // }
-    if (!func_manager.getNextPosTime(1, &dir, mm_to_step, inverse_mm_to_step, half_step_mm)) {
+    if (func_manager.max_size < func_manager.getSize()) {
+        func_manager.max_size = func_manager.getSize();
+    }
+    time_double_t* next_print_time = func_manager.getNextPosTime(1, &dir, mm_to_step, half_step_mm);
+    if (next_print_time == nullptr) {
         is_get_next_step_null = true;
         return false;
     }
-    print_time = func_manager.print_time;
+    print_time = *next_print_time;
     is_consumed = false;
     return true;
 }
@@ -112,13 +116,13 @@ bool AxisManager::getCurrentAxisStepper(AxisStepper *axis_stepper) {
  And then return the closest time axis if we have
 */
 bool AxisManager::getNextAxisStepper() {
-    if (!is_consumed) {
+    if (getRemainingConsumeTime() == 0 || !is_consumed) {
         return false;
     }
 
     // If a axis has been consumed, calculate the next step time
     for (int i = 0; i < AXIS_SIZE; ++i) {
-        if (axis[i].is_consumed && !axis[i].is_get_next_step_null) {
+        if (axis[i].is_consumed) {
             axis[i].getNextStep();
         }
     }

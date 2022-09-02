@@ -1441,7 +1441,8 @@ void Stepper::isr() {
   // #ifdef DEBUG_IO
   // WRITE(DEBUG_IO, 1);
   // #endif
-    pulse_phase_isr();                            // 0 = Do coordinated axes Stepper pulses
+    // pulse_phase_isr();                            // 0 = Do coordinated axes Stepper pulses
+    if (!nextMainISR) pulse_phase_isr(); 
   // #ifdef DEBUG_IO
   // WRITE(DEBUG_IO, 0);
   // #endif
@@ -1627,6 +1628,22 @@ void Stepper::pulse_phase_isr() {
   // Skipping step processing causes motion to freeze
   if (TERN0(HAS_FREEZE_PIN, frozen)) return;
 
+  if (axis_stepper.dir > 0) {
+    CBI(current_direction_bits, axis_stepper.axis);
+  } else if(axis_stepper.dir < 0) {
+    SBI(current_direction_bits, axis_stepper.axis);
+  }
+
+  if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+    || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+    || current_direction_bits != last_direction_bits
+    || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+  ) {
+    TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+    TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+    set_directions(current_direction_bits);
+  }
+
   // Count of pending loops and events for this iteration
   // const uint32_t pending_events = step_event_count - step_events_completed;
   // uint8_t events_to_do = _MIN(pending_events, steps_per_isr);
@@ -1698,6 +1715,9 @@ void Stepper::pulse_phase_isr() {
       PULSE_STOP(E);
   }
 
+  axis_stepper.axis = -1;
+  // set_directions(current_direction_bits);
+
   // switch (axis_stepper.axis)
   // {
   //   case -1:
@@ -1734,24 +1754,7 @@ void Stepper::pulse_phase_isr() {
   //     return;
   // }
 
-  if (axis_stepper.dir > 0) {
-    CBI(current_direction_bits, axis_stepper.axis);
-  } else if(axis_stepper.dir < 0) {
-    SBI(current_direction_bits, axis_stepper.axis);
-  }
-
-  axis_stepper.axis = -1;
-  // set_directions(current_direction_bits);
-
-  if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
-    || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
-    || current_direction_bits != last_direction_bits
-    || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
-  ) {
-    TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
-    TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
-    set_directions(current_direction_bits);
-  }
+  
 
   #if 0
   //do {
