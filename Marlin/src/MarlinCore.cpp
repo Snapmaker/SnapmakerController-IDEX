@@ -1648,6 +1648,10 @@ void setup() {
   }
   J1_setup();
 
+  #ifdef DEBUG_IO
+  SET_OUTPUT(DEBUG_IO);
+  #endif
+
   vTaskStartScheduler();
 }
 
