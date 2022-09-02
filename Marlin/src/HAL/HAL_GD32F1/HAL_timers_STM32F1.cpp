@@ -128,7 +128,7 @@ void HAL_timer_start(const uint8_t timer_num, const uint32_t frequency) {
       timer_set_compare(STEP_TIMER_DEV, STEP_TIMER_CHAN, min(HAL_TIMER_TYPE_MAX, (STEPPER_TIMER_RATE / frequency)));
       timer_no_ARR_preload_ARPE(STEP_TIMER_DEV); // Need to be sure no preload on ARR register
       timer_attach_interrupt(STEP_TIMER_DEV, STEP_TIMER_CHAN, stepTC_Handler);
-      nvic_irq_set_priority(irq_num, 1);
+      nvic_irq_set_priority(irq_num, 0);
       timer_generate_update(STEP_TIMER_DEV);
       timer_resume(STEP_TIMER_DEV);
       break;

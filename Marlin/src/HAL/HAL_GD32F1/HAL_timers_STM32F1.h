@@ -61,10 +61,11 @@ typedef uint16_t hal_timer_t;
 #define TEMP_TIMER_PRESCALE     1000 // prescaler for setting Temp timer, 72Khz
 #define TEMP_TIMER_FREQUENCY    1000 // temperature interrupt frequency
 
-#define STEPPER_TIMER_PRESCALE 24             // prescaler for setting stepper timer, 4Mhz
+// #define STEPPER_TIMER_PRESCALE 24             // prescaler for setting stepper timer, 5Mhz
+#define STEPPER_TIMER_PRESCALE 40             // prescaler for setting stepper timer, 3Mhz
 #define STEPPER_TIMER_RATE     (HAL_TIMER_RATE / STEPPER_TIMER_PRESCALE)   // frequency of stepper timer
 #define STEPPER_TIMER_TICKS_PER_US ((STEPPER_TIMER_RATE) / 1000000) // stepper timer ticks per µs
-#define STEPPER_TIMER_TICKS_PER_MS ((STEPPER_TIMER_RATE) / 1000) // stepper timer ticks per µs
+#define STEPPER_TIMER_TICKS_PER_MS ((STEPPER_TIMER_RATE) / 1000) // stepper timer ticks per ms
 
 #define PULSE_TIMER_RATE       STEPPER_TIMER_RATE   // frequency of pulse timer
 #define PULSE_TIMER_PRESCALE   STEPPER_TIMER_PRESCALE
