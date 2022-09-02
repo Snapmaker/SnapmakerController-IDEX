@@ -216,10 +216,7 @@ ErrCode PrintControl::start() {
   power_loss.next_req = 0;
   buffer_head = buffer_tail = 0;
   power_loss.clear();
-  if (power_loss.is_power_loss_trigger()) {
-    power_loss.power_loss_en = false;
-    SERIAL_ECHOLNPAIR(" power-loss signal is abnormal, disable the power-loss function");
-  }
+
   filament_sensor.reset();
   memset(&print_err_info, 0, sizeof(print_err_info));
   system_service.set_status(SYSTEM_STATUE_PRINTING);

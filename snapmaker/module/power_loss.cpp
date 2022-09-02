@@ -244,6 +244,11 @@ void PowerLoss::init() {
   } else {
     SERIAL_ECHOLNPAIR("PL: No data!");
   }
+
+  if (power_loss.is_power_220v_pin_trigger()) {
+    power_loss.power_loss_en = false;
+    SERIAL_ECHOLNPAIR("power-loss signal is abnormal, disable the power-loss function");
+  }
   is_inited = true;
 }
 
@@ -397,6 +402,11 @@ void PowerLoss::close_peripheral_power() {
 
 void PowerLoss::process() {
   static uint32_t trigger_wait_time = 0;
+
+  if (!power_loss.power_loss_en) {
+    return;
+  }
+
   if (power_loss_status == POWER_LOSS_IDLE) {
     if (is_power_220v_pin_trigger()) {
       power_loss_status = POWER_LOSS_RECONFIRM;
