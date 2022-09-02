@@ -62,7 +62,8 @@ class FuncManager {
     float last_pos = 0;
     int max_size = 0;
     bool last_is_zero = false;
-
+    time_double_t last_use_right_time = 0;
+    
 
     static FuncParams FUNC_PARAMS_X[FUNC_PARAMS_X_SIZE];
     static FuncParams FUNC_PARAMS_Y[FUNC_PARAMS_Y_SIZE];
@@ -140,6 +141,8 @@ class FuncManager {
 
   private:
     time_double_t getTimeByFuncParams(float pos, uint32_t func_params_use);
+
+    FORCE_INLINE float getDeltaTimeByFuncParams(float pos, FuncParams* f_p);
 
     float getPosByFuncParams(time_double_t time, uint32_t func_params_use);
 };
