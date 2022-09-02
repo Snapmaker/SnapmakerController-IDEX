@@ -33,6 +33,7 @@ bool Axis::getNextStep() {
     print_time = func_manager.print_time;
     is_consumed = false;
     return true;
+
 }
 
 bool Axis::generateFuncParams(FuncManager &func_manager, uint8_t move_start, uint8_t move_end) {
@@ -124,6 +125,9 @@ bool AxisManager::getNextAxisStepper() {
     }
 
     // Fine the closest time of all the axes
+    // #ifdef DEBUG_IO
+    // WRITE(DEBUG_IO, 1);
+    // #endif
     time_double_t min_print_time = 1000000000;
     for (int i = 0; i < AXIS_SIZE; ++i) {
         if (!axis[i].is_consumed) {
@@ -134,6 +138,9 @@ bool AxisManager::getNextAxisStepper() {
             }
         }
     }
+    // #ifdef DEBUG_IO
+    // WRITE(DEBUG_IO, 0);
+    // #endif
 
     // is_consumed == false, means that we has a steps need to output
     if (!is_consumed) {

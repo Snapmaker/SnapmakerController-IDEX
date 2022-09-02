@@ -1403,6 +1403,10 @@ void Stepper::isr() {
     DISABLE_ISRS();
   #endif
 
+  // #ifdef DEBUG_IO
+  // WRITE(DEBUG_IO, 1);
+  // #endif
+
   // Program timer compare for the maximum period, so it does NOT
   // flag an interrupt while this ISR is running - So changes from small
   // periods to big periods are respected and the timer does not reset to 0
@@ -1434,7 +1438,13 @@ void Stepper::isr() {
     // Enable ISRs to reduce USART processing latency
     ENABLE_ISRS();
 
-    if (!nextMainISR) pulse_phase_isr();                            // 0 = Do coordinated axes Stepper pulses
+  // #ifdef DEBUG_IO
+  // WRITE(DEBUG_IO, 1);
+  // #endif
+    pulse_phase_isr();                            // 0 = Do coordinated axes Stepper pulses
+  // #ifdef DEBUG_IO
+  // WRITE(DEBUG_IO, 0);
+  // #endif
     if (!nextMainISR && fdm_head.is_change_filamenter()) {
       #if ENABLED(LIN_ADVANCE)
         filament_isr();
@@ -1451,8 +1461,13 @@ void Stepper::isr() {
     #endif
 
     // ^== Time critical. NOTHING besides pulse generation should be above here!!!
-
+  #ifdef DEBUG_IO
+  WRITE(DEBUG_IO, 1);
+  #endif
     if (!nextMainISR) nextMainISR = block_phase_isr();  // Manage acc/deceleration, get next block
+  #ifdef DEBUG_IO
+  WRITE(DEBUG_IO, 0);
+  #endif
 
     #if ENABLED(INTEGRATED_BABYSTEPPING)
       if (is_babystep)                                  // Avoid ANY stepping too soon after baby-stepping
@@ -1559,6 +1574,10 @@ void Stepper::isr() {
   // Set the next ISR to fire at the proper time
   HAL_timer_set_compare(STEP_TIMER_NUM, hal_timer_t(next_isr_ticks));
 
+  // #ifdef DEBUG_IO
+  // WRITE(DEBUG_IO, 0);
+  // #endif
+
   // Don't forget to finally reenable interrupts
   ENABLE_ISRS();
 }
@@ -1593,6 +1612,17 @@ void Stepper::pulse_phase_isr() {
   // If there is no current block, do nothing
   if (!current_block) return;
 
+  // if (step_events_completed > 5) {
+  //   // The stall gread is detected only after the motor is moving
+  //   if (motion_control.is_sg_trigger()) {
+  //     motion_control.set_sg_satats(false);
+  //     discard_current_block();
+  //     motion_control.set_sg_stop(true);
+  //     return;
+  //   }
+  // } else {
+  //   motion_control.set_sg_satats(false);
+  // }
 
   // Skipping step processing causes motion to freeze
   if (TERN0(HAS_FREEZE_PIN, frozen)) return;
@@ -1604,36 +1634,105 @@ void Stepper::pulse_phase_isr() {
   // Just update the value we will get at the end of the loop
   // step_events_completed += events_to_do;
 
-  uint8_t events_to_do = 1;
+  // uint8_t events_to_do = 1;
 
   // Take multiple steps per interrupt (For high speed moves)
-  #if ISR_MULTI_STEPS
-    bool firstStep = true;
-    USING_TIMED_PULSE();
-  #endif
-  xyze_bool_t step_needed{0};
+  // #if ISR_MULTI_STEPS
+  //   bool firstStep = true;
+  //   USING_TIMED_PULSE();
+  // #endif
+  // xyze_bool_t step_needed{0};
 
   // axis_stepper.axis = -1;
+  #define _APPLY_STEP(AXIS, INV, ALWAYS) AXIS ##_APPLY_STEP(INV, ALWAYS)
+  #define _INVERT_STEP_PIN(AXIS) INVERT_## AXIS ##_STEP_PIN
 
-  switch (axis_stepper.axis)
-  {
-    case -1:
-      return;
-    case 0:
-      step_needed.x = true;
-      break;
-    case 1:
-      step_needed.y = true;
-      break;
-    case 2:
-      step_needed.z = true;
-      break;
-    case 3:
-      step_needed.e = true;
-      break;
-    default:
-      return;
+  // Determine if a pulse is needed using Bresenham
+  // #define PULSE_PREP(AXIS) do{ \
+  //   if (step_needed[_AXIS(AXIS)]) { \
+  //     count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
+  //   } \
+  // }while(0)
+  #define PULSE_PREP(AXIS) do{ \
+    count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
+  }while(0)
+
+  // Start an active pulse if needed
+  // #define PULSE_START(AXIS) do{ \
+  //   if (step_needed[_AXIS(AXIS)]) { \
+  //     _APPLY_STEP(AXIS, !_INVERT_STEP_PIN(AXIS), 0); \
+  //   } \
+  // }while(0)
+  #define PULSE_START(AXIS) do{ \
+    _APPLY_STEP(AXIS, !_INVERT_STEP_PIN(AXIS), 0); \
+  }while(0)
+
+  // Stop an active pulse if needed
+  // #define PULSE_STOP(AXIS) do { \
+  //   if (step_needed[_AXIS(AXIS)]) { \
+  //     _APPLY_STEP(AXIS, _INVERT_STEP_PIN(AXIS), 0); \
+  //   } \
+  // }while(0)
+  #define PULSE_STOP(AXIS) do { \
+      _APPLY_STEP(AXIS, _INVERT_STEP_PIN(AXIS), 0); \
+  }while(0)
+
+  if (0 == axis_stepper.axis) {
+      PULSE_START(X);
+      PULSE_PREP(X);
+      PULSE_STOP(X);
   }
+  else if(1 == axis_stepper.axis) {
+      PULSE_START(Y);
+      PULSE_PREP(Y);
+      PULSE_STOP(Y);
+  }
+  else if(2 == axis_stepper.axis) {
+      PULSE_START(Z);
+      PULSE_PREP(Z);
+      PULSE_STOP(Z);
+  }
+  else if(3 == axis_stepper.axis) {
+      PULSE_START(E);
+      PULSE_PREP(E);
+      PULSE_STOP(E);
+  }
+
+  // switch (axis_stepper.axis)
+  // {
+  //   case -1:
+  //     return;
+  //   case 0:
+  //     // step_needed.x = true;
+  //     PULSE_START(X);
+  //     PULSE_PREP(X);
+  //     PULSE_STOP(X);
+  //     break;
+
+  //   case 1:
+  //     // step_needed.y = true;
+  //     PULSE_START(Y);
+  //     PULSE_PREP(Y);
+  //     PULSE_STOP(Y);
+  //     break;
+
+  //   case 2:
+  //     // step_needed.z = true;
+  //     PULSE_START(Z);
+  //     PULSE_PREP(Z);
+  //     PULSE_STOP(Z);
+  //     break;
+
+  //   case 3:
+  //     //step_needed.e = true;
+  //     PULSE_START(E);
+  //     PULSE_PREP(E);
+  //     PULSE_STOP(E);
+  //     break;
+
+  //   default:
+  //     return;
+  // }
 
   if (axis_stepper.dir > 0) {
     CBI(current_direction_bits, axis_stepper.axis);
@@ -1642,19 +1741,21 @@ void Stepper::pulse_phase_isr() {
   }
 
   axis_stepper.axis = -1;
-  set_directions(current_direction_bits);
+  // set_directions(current_direction_bits);
 
-  // if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
-  //   || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
-  //   || current_direction_bits != last_direction_bits
-  //   || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
-  // ) {
-  //   TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
-  //   TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
-  //   set_directions(current_direction_bits);
-  // }
+  if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+    || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+    || current_direction_bits != last_direction_bits
+    || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+  ) {
+    TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+    TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+    set_directions(current_direction_bits);
+  }
 
-  do {
+  #if 0
+  //do {
+  {
     #define _APPLY_STEP(AXIS, INV, ALWAYS) AXIS ##_APPLY_STEP(INV, ALWAYS)
     #define _INVERT_STEP_PIN(AXIS) INVERT_## AXIS ##_STEP_PIN
 
@@ -1788,50 +1889,50 @@ void Stepper::pulse_phase_isr() {
 
     #endif // DIRECT_STEPPING
 
-    if (!is_page) {
-      // Determine if pulses are needed
-      #if HAS_X_STEP
-        PULSE_PREP(X);
-      #endif
-      #if HAS_Y_STEP
-        PULSE_PREP(Y);
-      #endif
-      #if HAS_Z_STEP
-        PULSE_PREP(Z);
-      #endif
-      #if HAS_I_STEP
-        PULSE_PREP(I);
-      #endif
-      #if HAS_J_STEP
-        PULSE_PREP(J);
-      #endif
-      #if HAS_K_STEP
-        PULSE_PREP(K);
-      #endif
+    // if (!is_page) {
+    //   // Determine if pulses are needed
+    //   #if HAS_X_STEP
+    //     PULSE_PREP(X);
+    //   #endif
+    //   #if HAS_Y_STEP
+    //     PULSE_PREP(Y);
+    //   #endif
+    //   #if HAS_Z_STEP
+    //     PULSE_PREP(Z);
+    //   #endif
+    //   #if HAS_I_STEP
+    //     PULSE_PREP(I);
+    //   #endif
+    //   #if HAS_J_STEP
+    //     PULSE_PREP(J);
+    //   #endif
+    //   #if HAS_K_STEP
+    //     PULSE_PREP(K);
+    //   #endif
 
-      #if EITHER(LIN_ADVANCE, MIXING_EXTRUDER)
-        delta_error.e += advance_dividend.e;
-        if (delta_error.e >= 0) {
-          #if ENABLED(LIN_ADVANCE)
-            delta_error.e -= advance_divisor;
-            // Don't step E here - But remember the number of steps to perform
-            motor_direction(E_AXIS) ? --LA_steps : ++LA_steps;
-          #else
-            count_position.e += count_direction.e;
-            step_needed.e = true;
-          #endif
-        }
-      #elif HAS_E0_STEP
-        PULSE_PREP(E);
-      #endif
-    }
+    //   #if EITHER(LIN_ADVANCE, MIXING_EXTRUDER)
+    //     delta_error.e += advance_dividend.e;
+    //     if (delta_error.e >= 0) {
+    //       #if ENABLED(LIN_ADVANCE)
+    //         delta_error.e -= advance_divisor;
+    //         // Don't step E here - But remember the number of steps to perform
+    //         motor_direction(E_AXIS) ? --LA_steps : ++LA_steps;
+    //       #else
+    //         count_position.e += count_direction.e;
+    //         step_needed.e = true;
+    //       #endif
+    //     }
+    //   #elif HAS_E0_STEP
+    //     PULSE_PREP(E);
+    //   #endif
+    // }
 
-    #if ISR_MULTI_STEPS
-      if (firstStep)
-        firstStep = false;
-      else
-        AWAIT_LOW_PULSE();
-    #endif
+    // #if ISR_MULTI_STEPS
+    //   if (firstStep)
+    //     firstStep = false;
+    //   else
+    //     AWAIT_LOW_PULSE();
+    // #endif
 
     // Pulse start
     #if HAS_X_STEP
@@ -1865,11 +1966,11 @@ void Stepper::pulse_phase_isr() {
       i2s_push_sample();
     #endif
 
-    // TODO: need to deal with MINIMUM_STEPPER_PULSE over i2s
-    #if ISR_MULTI_STEPS
-      START_HIGH_PULSE();
-      AWAIT_HIGH_PULSE();
-    #endif
+    // // TODO: need to deal with MINIMUM_STEPPER_PULSE over i2s
+    // #if ISR_MULTI_STEPS
+    //   START_HIGH_PULSE();
+    //   AWAIT_HIGH_PULSE();
+    // #endif
 
     // Pulse stop
     #if HAS_X_STEP
@@ -1902,11 +2003,12 @@ void Stepper::pulse_phase_isr() {
       #endif
     #endif
 
-    #if ISR_MULTI_STEPS
-      if (events_to_do) START_LOW_PULSE();
-    #endif
+    // #if ISR_MULTI_STEPS
+    //   if (events_to_do) START_LOW_PULSE();
+    // #endif
 
-  } while (--events_to_do);
+  } // while (--events_to_do);
+  #endif
 }
 
 // This is the last half of the stepper interrupt: This one processes and
@@ -1933,9 +2035,7 @@ uint32_t Stepper::block_phase_isr() {
       }
       axisManager.getCurrentAxisStepper(&next_axis_stepper);
 
-      if (next_axis_stepper.print_time >= block_print_time) {
-          discard_current_block();
-      } else {
+      if (next_axis_stepper.print_time < block_print_time) {
           float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
           if (delta_time < 0) {
               delta_time = 0;
@@ -1945,7 +2045,11 @@ uint32_t Stepper::block_phase_isr() {
           axis_stepper.dir = next_axis_stepper.dir;
           axis_stepper.print_time = next_axis_stepper.print_time;
 
-          interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
+          // interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
+          interval = axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS;
+          return interval;
+      } else {
+          discard_current_block();
       }
 
     } else {
