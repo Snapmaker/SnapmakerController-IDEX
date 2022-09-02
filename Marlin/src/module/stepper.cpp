@@ -1922,7 +1922,15 @@ uint32_t Stepper::block_phase_isr() {
 
   // If there is a current block
   if (current_block) {
+    hal_timer_t st = HAL_timer_get_count(STEP_TIMER_NUM);
     if (axisManager.getNextAxisStepper()) {
+      hal_timer_t et = HAL_timer_get_count(STEP_TIMER_NUM);
+      hal_timer_t dt = et - st;
+      axisManager.counts[3]++;
+      axisManager.counts[4] += dt;
+      if (axisManager.counts[5] < dt) {
+        axisManager.counts[5] = dt;
+      }
       axisManager.getCurrentAxisStepper(&next_axis_stepper);
 
       if (next_axis_stepper.print_time >= block_print_time) {

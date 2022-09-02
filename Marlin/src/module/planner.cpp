@@ -1289,8 +1289,10 @@ void Planner::shaped_loop() {
 
     c2--;
     if (c2 <= 0) {
-      c2 = 100000;
-        LOG_I("c0: %d, c1: %d, %d, c2: %d, m1: %d, m2: %d\n", axisManager.counts[0], axisManager.counts[1], nr_moves, axisManager.counts[2], axisManager.axis[0].func_manager.max_size, axisManager.axis[1].func_manager.max_size);
+        c2 = 100000;
+        float t = (float)axisManager.counts[4] / (float)axisManager.counts[3] / 5.0f;
+        float max_t = (float)axisManager.counts[5] / 5.0f;
+        LOG_I("c0: %d, c1: %d, time: %lf, max_t: %lf, m1: %d, m2: %d\n", axisManager.counts[0], axisManager.counts[1], t, max_t, axisManager.axis[0].func_manager.max_size, axisManager.axis[1].func_manager.max_size);
     }
 
     float remaining_consume_time = axisManager.getRemainingConsumeTime();

@@ -2,6 +2,8 @@
 
 #define EPSILON 0.000001f
 
+#include "../../MarlinCore.h"
+
 class TimeDouble {
   private:
     int i = 0;
@@ -16,7 +18,7 @@ class TimeDouble {
         checkCarry();
     }
 
-    inline void checkCarry() {
+    FORCE_INLINE void checkCarry() {
         if (d >= 1) {
             int c = d;
             d = d - c;
@@ -29,37 +31,43 @@ class TimeDouble {
         }
     }
 
-    TimeDouble& operator= (int n) {
+    FORCE_INLINE TimeDouble& operator= (int n) {
         i = n;
         return *this;
     }
 
-    TimeDouble& operator= (float d) {
+    FORCE_INLINE TimeDouble& operator= (float d) {
         this->d = d;
         checkCarry();
         return *this;
     }
 
-    float operator-(TimeDouble& time_double) const {
+    FORCE_INLINE float operator-(TimeDouble& time_double) const {
         float res = (float)(i - time_double.i);
         res += d - time_double.d;
         return res;
     }
 
-    TimeDouble& operator+=(TimeDouble& time_double) {
+    FORCE_INLINE TimeDouble& operator+=(int i) {
+        this->i += i;
+        return *this;
+    }
+
+
+    FORCE_INLINE TimeDouble& operator+=(TimeDouble& time_double) {
         this->i += time_double.i;
         this->d += time_double.d;
         checkCarry();
         return *this;
     }
 
-    TimeDouble& operator+=(float d) {
+    FORCE_INLINE TimeDouble& operator+=(float d) {
         this->d += d;
         checkCarry();
         return *this;
     }
 
-    TimeDouble operator- (float d) const {
+    FORCE_INLINE TimeDouble operator- (float d) const {
         TimeDouble res;
         res.i = this->i;
         res.d = this->d - d;
@@ -67,7 +75,7 @@ class TimeDouble {
         return res;
     }
 
-    TimeDouble operator+(float d) const {
+    FORCE_INLINE TimeDouble operator+(float d) const {
         TimeDouble res;
         res.i = this->i;
         res.d = this->d + d;
@@ -75,23 +83,23 @@ class TimeDouble {
         return res;
     }
 
-    bool operator>(TimeDouble& time_double) const {
+    FORCE_INLINE bool operator>(TimeDouble& time_double) const {
         return i != time_double.i ? i > time_double.i : d > time_double.d;
     }
 
-    bool operator>=(TimeDouble& time_double) const {
+    FORCE_INLINE bool operator>=(TimeDouble& time_double) const {
         return i != time_double.i ? i > time_double.i : d >= time_double.d;
     }
 
-    bool operator<(TimeDouble& time_double) const {
+    FORCE_INLINE bool operator<(TimeDouble& time_double) const {
         return i != time_double.i ? i < time_double.i : d < time_double.d;
     }
 
-    bool operator<=(TimeDouble& time_double) const {
+    FORCE_INLINE bool operator<=(TimeDouble& time_double) const {
         return i != time_double.i ? i < time_double.i : d <= time_double.d;
     }
 
-    bool operator==(TimeDouble& time_double) const {
+    FORCE_INLINE bool operator==(TimeDouble& time_double) const {
         return i == time_double.i && d == time_double.d;
     }
 

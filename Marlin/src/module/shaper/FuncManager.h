@@ -47,6 +47,11 @@ class FuncParams {
 // static FuncParams FUNC_PARAMS_E[FUNC_PARAMS_E_SIZE];
 
 class FuncManager {
+  private:
+    int average_count = 0;
+    int average_step = 0;
+    float average_delta_time = 0;
+
   public:
     int axis;
     int size;
@@ -57,6 +62,7 @@ class FuncManager {
     float last_pos = 0;
     int max_size = 0;
     bool last_is_zero = false;
+    time_double_t last_use_right_time = 0;
     
 
     static FuncParams FUNC_PARAMS_X[FUNC_PARAMS_X_SIZE];
@@ -65,9 +71,9 @@ class FuncManager {
     static FuncParams FUNC_PARAMS_E[FUNC_PARAMS_E_SIZE];
 
     FuncParams* funcParams;
-    volatile uint32_t func_params_tail = 0;
-    volatile uint32_t func_params_use = 0;
-    volatile uint32_t func_params_head = 0;
+    uint32_t func_params_tail = 0;
+    uint32_t func_params_use = 0;
+    uint32_t func_params_head = 0;
 
     FuncManager(){};
 
@@ -101,14 +107,19 @@ class FuncManager {
         last_pos = 0;
         print_step = 0;
         last_is_zero = false;
+        last_use_right_time = 0;
+
+        average_count = 0;
+        average_step = 0;
+        average_delta_time = 0;
     }
 
-    constexpr uint32_t getSize() {
+    FORCE_INLINE constexpr uint32_t getSize() {
         return FUNC_PARAMS_MOD(func_params_head - func_params_tail, size);
     }
 
-    constexpr uint32_t nextFuncParamsIndex(const uint32_t func_params_index) { return FUNC_PARAMS_MOD(func_params_index + 1, size); };
-    constexpr uint32_t prevFuncParamsIndex(const uint32_t func_params_index) { return FUNC_PARAMS_MOD(func_params_index - 1, size); };
+    FORCE_INLINE constexpr uint32_t nextFuncParamsIndex(const uint32_t func_params_index) { return FUNC_PARAMS_MOD(func_params_index + 1, size); };
+    FORCE_INLINE constexpr uint32_t prevFuncParamsIndex(const uint32_t func_params_index) { return FUNC_PARAMS_MOD(func_params_index - 1, size); };
 
     constexpr bool isBetween(const uint32_t func_params_start, const uint32_t func_params_end, const uint32_t func_params_middle) {
         return (FUNC_PARAMS_MOD(func_params_middle - func_params_start, size) + FUNC_PARAMS_MOD(func_params_end - func_params_middle, size)) == FUNC_PARAMS_MOD(func_params_end - func_params_start, size);
@@ -120,7 +131,7 @@ class FuncManager {
 
     float getPos(time_double_t time);
 
-    time_double_t *getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm);
+    bool getNextPosTime(int delta_step, int8_t *dir, float mm_to_step, float inverse_mm_to_step, float half_step_mm);
 
     float getY(float x, float a, float b, float c) {
         return a * sq(x) + b * x + c;
@@ -130,6 +141,8 @@ class FuncManager {
 
   private:
     time_double_t getTimeByFuncParams(float pos, uint32_t func_params_use);
+
+    FORCE_INLINE float getDeltaTimeByFuncParams(float pos, FuncParams* f_p);
 
     float getPosByFuncParams(time_double_t time, uint32_t func_params_use);
 };

@@ -17,6 +17,7 @@ class AxisStepper {
 class Axis {
   public:
     float mm_to_step;
+    float inverse_mm_to_step;
 
     bool is_consumed = true;
     time_double_t print_time = 0;
@@ -46,6 +47,7 @@ class Axis {
         LOG_I("Axis: %d, mm_to_step: %lf\r\n", mm_to_step);
         this->axis = axis;
         this->mm_to_step = mm_to_step;
+        this->inverse_mm_to_step = 1 / mm_to_step;
         this->half_step_mm = 0.5 / mm_to_step;
         this->func_manager.init(axis);
 
@@ -150,7 +152,7 @@ class AxisManager {
 
     bool generateAllAxisFuncParams(uint8_t block_index, block_t& block);
 
-    float getRemainingConsumeTime() {
+    FORCE_INLINE float getRemainingConsumeTime() {
         return min_last_time - print_time;
     }
 
