@@ -23,6 +23,12 @@ typedef enum {
   CAlIBRATION_STATE_BED_BEAT_WAIT_END,
 } calibtration_status_e;
 
+typedef enum {
+  PROBR_RESULT_SUCCESS,
+  PROBR_RESULT_STALL_GUARD,
+  PROBR_RESULT_SENSOR_ERROR,
+  PROBR_RESULT_NO_TRIGGER,
+} probe_result_e;
 
 //  ______________________
 // |                      |
@@ -47,7 +53,7 @@ class Calibtration {
     void set_calibtration_mode(calibtration_mode_e m) {mode = m;};
     ErrCode goto_calibtration_position(uint8_t pos);
     void bed_preapare(uint8_t extruder_index=0);
-    float probe(uint8_t axis, float distance, uint16_t feedrate);
+    probe_result_e move_to_probe_trigger(uint8_t axis, float distance, uint16_t feedrate);
     ErrCode exit(bool is_save=true);
     ErrCode probe_bed_base_hight(calibtration_position_e pos, uint8_t extruder=0);
     ErrCode move_to_porbe_pos(calibtration_position_e pos, uint8_t extruder=0);
@@ -68,7 +74,7 @@ class Calibtration {
   private:
     ErrCode probe_z_offset(calibtration_position_e pos);
     void reset_xy_calibtration_env();
-    float accurate_probe(uint8_t axis, int8_t dir, uint16_t freerate);
+    float multiple_probe(uint8_t axis, float distance, uint16_t freerate);
     void backup_offset();
     ErrCode wait_and_probe_z_offset(calibtration_position_e pos, uint8_t extruder=0);
     ErrCode probe_hight_offset(calibtration_position_e pos, uint8_t extruder);

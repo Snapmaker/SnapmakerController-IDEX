@@ -13,9 +13,8 @@
 Calibtration calibtration;
 
 #define PROBE_FAST_Z_FEEDRATE 200
-#define PROBE_Z_FEEDRATE 100
+#define PROBE_Z_LEAVE_FEEDRATE 5
 #define PROBE_FAST_XY_FEEDRATE 800
-#define PROBE_XY_FEEDRATE 100
 #define PROBE_MOVE_XY_FEEDRATE 5000
 #define PROBE_MOVE_Z_FEEDRATE 600
 #define PROBE_LIFTINT_DISTANCE (1)  // mm
@@ -162,7 +161,7 @@ bool Calibtration::move_to_sersor_no_trigger(uint8_t axis, int16_t try_distance)
     float move_distance = 0;
     do {
       move_distance += try_distance;
-      LOG_I("The Probe sensor is tigger and try move %f mm\n", try_distance);
+      LOG_I("The Probe sensor is tigger and try move %d mm\n", try_distance);
       probe_axis_move(axis, try_distance, MOTION_TRAVEL_FEADRATE);
       probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
       if (probe_status) {
@@ -181,30 +180,32 @@ bool Calibtration::move_to_sersor_no_trigger(uint8_t axis, int16_t try_distance)
   return true;
 }
 
-float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
-  float ret = distance;
-  float pos_before_probe, pos_after_probe;
-  bool sg_enable = false;
+probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance, uint16_t feedrate) {
+  probe_result_e ret = PROBR_RESULT_SUCCESS;
+  float pos_before_probe;
 
   if (!move_to_sersor_no_trigger(axis, distance >= 0 ? -1 : 1)) {
-    return ret;
+    return PROBR_RESULT_SENSOR_ERROR;
   }
-
-  switch_detect.enable_probe();
   pos_before_probe = current_position[axis];
 
   motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
-  sg_enable = true;
-
+  switch_detect.enable_probe(0);
   probe_axis_move(axis, distance, feedrate);
+  current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
+  if (!motion_control.is_sg_trigger()) {
+    switch_detect.enable_probe(1);
+    probe_axis_move(axis, -distance, PROBE_Z_LEAVE_FEEDRATE);
+    current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
+  }
 
-  pos_after_probe = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
-  current_position[axis] = pos_after_probe;
   sync_plan_position();
-  if (sg_enable && motion_control.is_sg_trigger()) {
+  if (motion_control.is_sg_trigger()) {
     LOG_E("probe failed be stall guard!!!\n");
-  } else {
-    ret = (pos_before_probe - pos_after_probe);
+    ret = PROBR_RESULT_STALL_GUARD;
+  } else if (abs((pos_before_probe - current_position[axis]) > (abs(distance) - 0.2))) {
+    LOG_E("probe failed , sensor no trigger!!!\n");
+    ret = PROBR_RESULT_NO_TRIGGER;
   }
   motion_control.disable_stall_guard_all();
   switch_detect.disable_probe();
@@ -219,7 +220,6 @@ float Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
  * @return ErrCode
  */
 ErrCode Calibtration::probe_z_offset(calibtration_position_e pos) {
-  float temp_z = 0;
   float position = 0;
   float z_probe_distance = 25;
   float last_valid_zoffset = home_offset[Z_AXIS];
@@ -230,15 +230,14 @@ ErrCode Calibtration::probe_z_offset(calibtration_position_e pos) {
   set_home_offset(Z_AXIS, 0);
   motion_control.move_to_z(15, PROBE_MOVE_Z_FEEDRATE);
   goto_calibtration_position(pos);
+
   z_probe_distance = 25;
-  // Try a probe
-  temp_z = probe(Z_AXIS, -z_probe_distance, PROBE_FAST_Z_FEEDRATE);
-  if (temp_z == -z_probe_distance) {
-    LOG_E("failed to probe z !!!\n");
+  position = multiple_probe(Z_AXIS, -z_probe_distance, PROBE_FAST_Z_FEEDRATE);
+  if (position == CAlIBRATIONING_ERR_CODE) {
     set_home_offset(Z_AXIS, last_valid_zoffset);
     return E_CAlIBRATION_PRIOBE;
   }
-  position = accurate_probe(Z_AXIS, -z_probe_distance, PROBE_Z_FEEDRATE);
+
   set_home_offset(Z_AXIS, -(position + build_plate_thickness));
   LOG_I("Set z_offset to :%f\n", home_offset[Z_AXIS]);
   motion_control.move_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
@@ -256,12 +255,10 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
   goto_calibtration_position(pos);
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
 
-  float temp_z = 0;
   motion_control.move_to_z(last_probe_pos + PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
   uint16_t speed = PROBE_FAST_Z_FEEDRATE;
-  temp_z = probe(Z_AXIS, -z_probe_distance, speed);
-  if (temp_z == -z_probe_distance) {
-    LOG_E("failed to probe z !!!\n");
+  probe_result_e probe_result = move_to_probe_trigger(Z_AXIS, -z_probe_distance, speed);
+  if (probe_result != PROBR_RESULT_SUCCESS) {
     probe_offset = CAlIBRATIONING_ERR_CODE;
     ret = E_CAlIBRATION_PRIOBE;
   } else {
@@ -302,8 +299,8 @@ ErrCode Calibtration::wait_and_probe_z_offset(calibtration_position_e pos, uint8
   motion_control.home_x();
   ret = probe_z_offset(pos);
 
-  motion_control.move_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
   last_probe_pos = current_position.z;
+  motion_control.move_z(PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
   if (last_active_extruder != active_extruder) {
     tool_change(last_active_extruder, true);
   }
@@ -380,22 +377,18 @@ void Calibtration::reset_xy_calibtration_env() {
   }
 }
 
-/**
- * @brief The results of multiple probe, probe must be called once before calling accurate_probe
- * 
- * @param axis : X_AXIS Y_AXIS Z_AXIS
- * @param dir : <0 - Inverted movement  >=0 - Forward movement
- * @param freerate : mm/min
- * @return float 
- */
-float Calibtration::accurate_probe(uint8_t axis, int8_t dir, uint16_t freerate) {
+float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freerate) {
   #define PROBE_TIMES 3
-  float probe_distance =  dir >= 0 ? 1 : -1;
+  float probe_distance =  distance;
   float pos = 0;
   for (uint8_t i = 0; i < PROBE_TIMES; i++) {
-    motion_control.move(axis, -probe_distance / 2, freerate);
-    probe(axis, probe_distance, freerate);
+    probe_result_e probe_result = move_to_probe_trigger(axis, probe_distance, freerate);
+    if (probe_result != PROBR_RESULT_SUCCESS) {
+      return CAlIBRATIONING_ERR_CODE;
+    }
     pos += current_position[axis];
+    probe_distance =  distance >= 0 ? 1 : -1;
+    motion_control.move(axis, -probe_distance / 2, freerate);
   }
   return pos / PROBE_TIMES;
 }
@@ -404,7 +397,6 @@ ErrCode Calibtration::calibtration_xy() {
   ErrCode ret = E_SUCCESS;
   float xy_center[HOTENDS][XY] = {{0,0}, {0, 0}};
   float probe_distance = 15;
-  float probe_value = 0;
   uint8_t old_active_extruder = active_extruder;
   if (home_offset[Z_AXIS] == 0) {
     LOG_E("Calibrate XY after calibrating Z offset\n");
@@ -420,21 +412,19 @@ ErrCode Calibtration::calibtration_xy() {
     motion_control.logical_move_to_z(-2 - build_plate_thickness);
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
       goto_calibtration_position(CAlIBRATION_POS_0);
-      probe_value = probe(axis, -probe_distance, PROBE_FAST_XY_FEEDRATE);
-      if (abs(probe_value) >= abs(probe_distance) - 5) {
-        ret =  E_CAlIBRATION_PRIOBE;
+
+      float pos = multiple_probe(axis, -probe_distance, PROBE_FAST_XY_FEEDRATE);
+      if (pos == CAlIBRATIONING_ERR_CODE) {
+        ret = E_CAlIBRATION_PRIOBE;
         LOG_E("e:%d axis:%d probe 0 filed\n", e, axis);
         break;
       }
-      float pos = accurate_probe(axis, -probe_distance, PROBE_XY_FEEDRATE);
-      goto_calibtration_position(CAlIBRATION_POS_0);
-      probe_value = probe(axis, probe_distance, PROBE_FAST_XY_FEEDRATE);
-      if (abs(probe_value) >= abs(probe_distance) - 5) {
+      float pos_1 = multiple_probe(axis, probe_distance, PROBE_FAST_XY_FEEDRATE);
+      if (pos_1 == CAlIBRATIONING_ERR_CODE) {
         ret = E_CAlIBRATION_PRIOBE;
         LOG_E("e:%d axis:%d probe 1 filed\n", e, axis);
         break;
       }
-      float pos_1 = accurate_probe(axis, probe_distance, PROBE_XY_FEEDRATE);
       xy_center[e][axis] += (pos_1 + pos) / 2;
       goto_calibtration_position(CAlIBRATION_POS_0);
     }

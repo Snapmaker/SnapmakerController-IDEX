@@ -63,15 +63,9 @@ void SwitchDetect::check() {
 
   do {
     if(trigged == true) break;
-    if(probe_detect_level == 0)
-      UPDATE_STATUS(X0_CAL_PIN, LOW, tmp_status_bits, SW_PROBE0_BIT);
-    else
-      UPDATE_STATUS(X0_CAL_PIN, HIGH, tmp_status_bits, SW_PROBE0_BIT);
+    UPDATE_STATUS(X0_CAL_PIN, probe_detect_level, tmp_status_bits, SW_PROBE0_BIT);
     if(trigged == true) break;
-    if(probe_detect_level == 0)
-      UPDATE_STATUS(X1_CAL_PIN, LOW, tmp_status_bits, SW_PROBE1_BIT);
-    else
-      UPDATE_STATUS(X1_CAL_PIN, HIGH, tmp_status_bits, SW_PROBE1_BIT);
+    UPDATE_STATUS(X1_CAL_PIN, probe_detect_level, tmp_status_bits, SW_PROBE1_BIT);
   }while(0);
 
   if(trigged == true)
@@ -86,15 +80,13 @@ void SwitchDetect::disable_all() {
   status_bits = 0;
 }
 
-void SwitchDetect::set_probe_detect_level(uint8_t Level) {
-  probe_detect_level = Level;
-}
-
-void SwitchDetect::enable_probe() {
+void SwitchDetect::enable_probe(bool trigger_level) {
   init_probe();
   enable(SW_PROBE0_BIT);
   enable(SW_PROBE1_BIT);
+  probe_detect_level = trigger_level;
   WRITE(PROBE_POWER_EN_PIN, 1);
+  vTaskDelay(pdMS_TO_TICKS(5));
 }
 
 void SwitchDetect::disable_probe() {
@@ -141,8 +133,7 @@ bool get_cal_pin_status(uint8_t pin) {
   bool ret = 0;
   if (!READ(PROBE_POWER_EN_PIN)) {
     WRITE(PROBE_POWER_EN_PIN, 1);
-    uint32_t delay = millis() + 1;
-    while (delay > millis());
+    vTaskDelay(pdMS_TO_TICKS(5));
     ret = READ(pin) == LOW;
     WRITE(PROBE_POWER_EN_PIN, 0);
   } else {
