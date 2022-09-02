@@ -121,7 +121,7 @@
 /** __FPU_USED indicates whether an FPU is used or not.
     This core does not support an FPU at all
 */
-#define __FPU_USED       1
+#define __FPU_USED  1
 
 #if 0
 #if defined ( __CC_ARM )

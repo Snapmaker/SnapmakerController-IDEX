@@ -143,14 +143,19 @@ env.Append(
         "-ffunction-sections",  # place each function in its own section
         "-fdata-sections",
         "-nostdlib",
-        # "-march=armv7-m",
-        "--param", "max-inline-insns-single=500",
+        "-mfloat-abi=hard",
+        "-mfpu=fpv4-sp-d16",
+        "--param",
+        "max-inline-insns-single=500",
         "-Wall"
     ],
 
     CXXFLAGS=[
         "-std=gnu++11",
         "-fno-rtti",
+        "-mthumb",
+        "-mfloat-abi=hard",
+        "-mfpu=fpv4-sp-d16",
         "-fno-exceptions"
     ],
 
@@ -187,6 +192,8 @@ env.Append(
         "-Os",
         "-mthumb",
         "-mcpu=%s" % env.BoardConfig().get("build.cpu"),
+        "-mfloat-abi=hard",
+        "-mfpu=fpv4-sp-d16",
         "-Wl,--check-sections",
         "-Wl,--gc-sections",
         "-Wl,--unresolved-symbols=report-all",
