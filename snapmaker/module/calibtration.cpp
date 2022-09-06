@@ -479,23 +479,25 @@ float Calibtration::get_hotend_offset(uint8_t axis) {
 
 ErrCode Calibtration::exit(bool is_save) {
   LOG_V("exit justing\n");
-  if (mode != CAlIBRATION_MODE_IDLE) {
-    if (!is_save) {
-      HOTEND_LOOP() {
-        hotend_offset[e] = hotend_offset_backup[e];
+  if (system_service.is_calibtration_status()) {
+    if (mode != CAlIBRATION_MODE_IDLE) {
+      if (!is_save) {
+        HOTEND_LOOP() {
+          hotend_offset[e] = hotend_offset_backup[e];
+        }
+        home_offset = home_offset_backup;
       }
-      home_offset = home_offset_backup;
+      if (mode == CAlIBRATION_MODE_NOZZLE) {
+        set_home_offset(Z_AXIS, home_offset_backup[Z_AXIS]);
+      }
+      if (is_save) {
+        settings.save();
+      }
     }
-    if (mode == CAlIBRATION_MODE_NOZZLE) {
-      set_home_offset(Z_AXIS, home_offset_backup[Z_AXIS]);
-    }
-    if (is_save) {
-      settings.save();
-    }
+    mode = CAlIBRATION_MODE_EXIT;
+    status = CAlIBRATION_STATE_IDLE;
+    probe_offset = CAlIBRATIONING_ERR_CODE;
   }
-  mode = CAlIBRATION_MODE_EXIT;
-  status = CAlIBRATION_STATE_IDLE;
-  probe_offset = CAlIBRATIONING_ERR_CODE;
   return E_SUCCESS;
 }
 
