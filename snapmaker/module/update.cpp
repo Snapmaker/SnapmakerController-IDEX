@@ -68,6 +68,10 @@ ErrCode  UpdateServer::update_info_check(update_packet_info_t *head) {
     return E_PARAM;
   }
 
+  if (head->type != 3) {
+    return E_PARAM;
+  }
+
   return E_SUCCESS;
 }
 
