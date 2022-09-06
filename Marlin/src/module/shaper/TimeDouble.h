@@ -41,9 +41,14 @@ class TimeDouble {
     }
 
     float operator-(TimeDouble& time_double) const {
-        float res = (float)(i - time_double.i);
-        res += d - time_double.d;
-        return res;
+        int res_i = (i - time_double.i);
+        float res_d = d - time_double.d;
+        return res_i + res_d;
+    }
+
+    TimeDouble& operator+=(int i) {
+        this->i += i;
+        return *this;
     }
 
     TimeDouble& operator+=(TimeDouble& time_double) {
@@ -96,6 +101,10 @@ class TimeDouble {
     }
 
     double toDouble() {
+        return i + d;
+    }
+
+    float toFloat() {
         return i + d;
     }
 };

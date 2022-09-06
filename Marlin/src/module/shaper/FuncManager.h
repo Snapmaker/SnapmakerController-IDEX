@@ -117,6 +117,8 @@ class FuncManager {
     void addMonotoneDeltaTimeFuncParams(float a, float b, float c, float delta_left_time, int8_t type, time_double_t right_time, float right_pos);
 
     void addDeltaTimeFuncParams(float a, float b, float c, time_double_t left_time, time_double_t right_time, float right_pos);
+    
+    void addFuncParams(float a, float b, float c,int type, time_double_t right_time, float right_pos);
 
     float getPos(time_double_t time);
 

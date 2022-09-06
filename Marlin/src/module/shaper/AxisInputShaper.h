@@ -44,8 +44,11 @@ class ShaperWindow {
     FuncParams func_params;
 
     void updateParamABC(int i, float start_v, float accelerate, time_double_t start_t, time_double_t left_time, float start_pos, float axis_r);
-    void updateABC();
-    void updateParamLeftTime(time_double_t d);
+    // void updateABC();
+    // void updateABC(float x1, float y1, float x2, float y2);
+    // void updateParamLeftTime(time_double_t d);
+
+    void addFuncParams(FuncManager &func_manager, float x2, float y1, float y2);
 };
 
 class AxisInputShaper {
@@ -88,8 +91,8 @@ class AxisInputShaper {
 
     float calcPosition(int move_index, time_double_t time, int move_shaped_start, int move_shaped_end);
 
-    void moveShaperWindowByIndex(int move_shaped_start, int move_shaped_end, time_double_t last_time);
-    bool moveShaperWindowToNext(uint8_t move_shaped_start, uint8_t move_shaped_end, time_double_t last_time);
+    void moveShaperWindowByIndex(FuncManager &func_manager, int move_shaped_start, int move_shaped_end);
+    bool moveShaperWindowToNext(FuncManager &func_manager, uint8_t move_shaped_start, uint8_t move_shaped_end);
 
     bool generateFuncParams(FuncManager& func_manager, uint8_t move_shaper_start, uint8_t move_shaper_end);
 };

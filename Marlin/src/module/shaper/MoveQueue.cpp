@@ -14,36 +14,50 @@ void MoveQueue::calculateMoves(block_t &block) {
     float speed_factor = block.nominal_speed / block.nominal_rate;
     float millimeters = block.millimeters;
 
-    float entry_speed = block.initial_rate * speed_factor / 1000;
-    float leave_speed = block.final_rate * speed_factor / 1000;
-    float nominal_speed = block.nominal_speed / 1000;
-    float acceleration = block.acceleration / 1000000;
+    float entry_speed = block.initial_rate * speed_factor / 1000.0f;
+    float leave_speed = block.final_rate * speed_factor / 1000.0f;
+    float nominal_speed = block.nominal_speed / 1000.0f;
+    float i_nominal_speed = 1000.0f / block.nominal_speed;
+    float acceleration = LROUND(block.acceleration) / 1000000.0f;
+    float i_acceleration = 1000000.0f / LROUND(block.acceleration);
 
     float accelDistance = Planner::estimate_acceleration_distance(entry_speed, nominal_speed, acceleration);
-
-    float accelClocks = (nominal_speed - entry_speed) / acceleration;
+    if (accelDistance < EPSILON) {
+        accelDistance = 0;
+    }
+    float accelClocks = (nominal_speed - entry_speed) * i_acceleration;
 
     float deceleration = acceleration;
     float decelDistance = Planner::estimate_acceleration_distance(nominal_speed, leave_speed, -deceleration);
-
-    float decelClocks = (nominal_speed - leave_speed) / deceleration;
+    if (decelDistance < EPSILON) {
+        decelDistance = 0;
+    }
+    float decelClocks = (nominal_speed - leave_speed) * i_acceleration;
 
     float plateau = millimeters - accelDistance - decelDistance;
 
     if (plateau < 0) {
         float newAccelDistance = Planner::intersection_distance(entry_speed, leave_speed, acceleration, millimeters);
+        if (newAccelDistance < EPSILON) {
+            newAccelDistance = 0;
+        }
+        if ((millimeters - newAccelDistance) < EPSILON) {
+            newAccelDistance = millimeters;
+        }
         accelDistance = newAccelDistance;
         nominal_speed = SQRT(2 * acceleration * newAccelDistance + sq(entry_speed));
         if (nominal_speed < leave_speed) {
             nominal_speed = leave_speed;
         }
-        accelClocks = (nominal_speed - entry_speed) / acceleration;
+        accelClocks = (nominal_speed - entry_speed) * i_acceleration;
         decelDistance = millimeters - accelDistance;
-        decelClocks = (nominal_speed - leave_speed) / deceleration;
+        decelClocks = (nominal_speed - leave_speed) * i_acceleration;
         plateau = 0;
     }
 
     block.shaper_data.move_start = move_head;
+
+    float plateauClocks = plateau * i_nominal_speed;
 
     if (plateau == 0) {
         if (accelDistance > 0) {
@@ -58,19 +72,23 @@ void MoveQueue::calculateMoves(block_t &block) {
         }
 
         // LOG_I("p: %lf, s: %lf, t: %lf\n", plateau, nominal_speed, plateau / nominal_speed);
-        addMove(nominal_speed, nominal_speed, 0, plateau, block.axis_r, plateau / nominal_speed);
+        addMove(nominal_speed, nominal_speed, 0, plateau, block.axis_r, plateauClocks);
 
         if (decelDistance > 0) {
             addMove(nominal_speed, leave_speed, -deceleration, decelDistance, block.axis_r, decelClocks);
         }
     }
-    block.shaper_data.block_time = accelClocks + plateau / nominal_speed + decelClocks;
+
+    block.shaper_data.block_time = accelClocks + plateauClocks + decelClocks;
 
     block.shaper_data.move_end = prevMoveIndex(move_head);
 
     Move& end_move = moves[block.shaper_data.move_end];
     for (int i = 0; i < AXIS_SIZE; ++i) {
         end_move.end_pos[i] = (float) LROUND(end_move.end_pos[i] * planner.settings.axis_steps_per_mm[i]) / planner.settings.axis_steps_per_mm[i];
+        // if (i == 0 || i == 1) {
+            // LOG_I("%d %lf %lf\n", i, tmp, end_move.end_pos[i]);
+        // }
     }
 
     block.shaper_data.last_print_time = moves[block.shaper_data.move_end].end_t;
@@ -101,6 +119,8 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
     }
 
     is_first = false;
+
+    // LOG_I("%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %d\n", move_head, move.t, move.start_t.toFloat(), move.end_t.toFloat(), start_v, distance, move.start_pos[0], move.end_pos[0], move.start_pos[1], move.end_pos[1], move.flag);
 
     // LOG_I("move, %lf %lf %lf %lf %lf %lf\n", move.start_t.toDouble(), move.end_t.toDouble(), move.accelerate, move.axis_r[0], move.axis_r[1], move.distance);
 

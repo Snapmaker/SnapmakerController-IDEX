@@ -2126,7 +2126,7 @@
 #define BUFSIZE 4
 
 #define AXIS_SIZE 4
-#define SHAPED_WAITING_MIN_TIME 40
+#define SHAPED_WAITING_MIN_TIME 10
 
 // Transmission to Host Buffer Size
 // To save 386 bytes of PROGMEM (and TX_BUFFER_SIZE+3 bytes of RAM) set to 0.

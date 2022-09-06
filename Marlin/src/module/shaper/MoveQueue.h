@@ -42,7 +42,8 @@ class MoveQueue {
     void abort() {
       is_start = true;
       is_first = true;
-      move_tail = move_head = 0;
+      move_tail = 0;
+      move_head = 0;
     }
 
     constexpr uint8_t nextMoveIndex(const uint8_t block_index) { return MOVE_MOD(block_index + 1);};

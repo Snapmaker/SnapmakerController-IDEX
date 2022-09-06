@@ -1628,6 +1628,10 @@ void Stepper::pulse_phase_isr() {
   // Skipping step processing causes motion to freeze
   if (TERN0(HAS_FREEZE_PIN, frozen)) return;
 
+  if (axis_stepper.axis == -1) {
+    return;
+  }
+
   if (axis_stepper.dir > 0) {
     CBI(current_direction_bits, axis_stepper.axis);
   } else if(axis_stepper.dir < 0) {
@@ -2040,6 +2044,16 @@ uint32_t Stepper::block_phase_isr() {
 
       if (next_axis_stepper.print_time < block_print_time) {
           float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
+
+          if (delta_time < 0) 
+          {
+            axisManager.counts[10]++;
+          }
+          if (delta_time > 10) {
+            axisManager.counts[11]++;
+          }
+          
+
           if (delta_time < 0) {
               delta_time = 0;
           }
@@ -2321,6 +2335,14 @@ uint32_t Stepper::block_phase_isr() {
         axis_stepper.delta_time = 0;
       } else {
         float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
+        if (delta_time < 0) 
+        {
+          axisManager.counts[10]++;
+        }
+        if (delta_time > 10) {
+          axisManager.counts[11]++;
+        }
+          
         if (delta_time < 0) {
             delta_time = 0;
         }

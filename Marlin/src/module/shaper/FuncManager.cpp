@@ -32,7 +32,9 @@ time_double_t FuncManager::getTimeByFuncParams(float pos, uint32_t func_params_u
     c = c - pos;
 
     if (a == 0) {
-        return left_time + -c / b;
+        float k = -c / b;
+        time_double_t res = left_time + k;
+        return res;
     }
 
     float d2 = b * b - 4 * a * c;
@@ -43,14 +45,21 @@ time_double_t FuncManager::getTimeByFuncParams(float pos, uint32_t func_params_u
     float d = SQRT(d2);
 
     if (f_p.type > 0) {
-        return  left_time + (-b + d) / (2 * a);
+        float k = (-b + d) / (2 * a);
+        time_double_t res = left_time + k;
+        return  res;
     } else {
-        return left_time + (-b - d) / (2 * a);
+         float k = (-b - d) / (2 * a);
+         time_double_t res = left_time + k;
+        return res;
     }
 }
 
 void FuncManager::addMonotoneDeltaTimeFuncParams(float a, float b, float c, float delta_left_time, int8_t type, time_double_t right_time, float right_pos) {
-
+    // LOG_I("%lf, %lf, %lf, %lf, %d, %lf, %lf\n", a,b ,c, delta_left_time, type, right_time.toFloat(), right_pos);
+    if (max_size < getSize()) {
+        max_size = getSize();
+    }
     // x = dx + left_time => f(x) = f(dx + left_time)
     if (delta_left_time != 0) {
         c = c + a * sq(delta_left_time) + b * delta_left_time;
@@ -62,12 +71,15 @@ void FuncManager::addMonotoneDeltaTimeFuncParams(float a, float b, float c, floa
         // LOG_I("axis: %d, a: %lf, b: %lf, c: %lf, type: %d, x: %lf, y: %lf\n", axis, a,b,c,type, right_time.toDouble(), right_pos);
     // }
 
-    if (a == 0 && b == 0 && c == 0) {
+    if (a == 0 && b == 0) {
         if (last_is_zero) {
             FuncParams &f_p = funcParams[prevFuncParamsIndex(func_params_head)];
 
             f_p.right_time = right_time;
             f_p.right_pos = right_pos;
+
+            last_time = right_time;
+            last_pos = right_pos;
 
             return;
         } else {
@@ -86,6 +98,9 @@ void FuncManager::addMonotoneDeltaTimeFuncParams(float a, float b, float c, floa
 
     f_p.right_time = right_time;
     f_p.right_pos = right_pos;
+
+    last_time = right_time;
+    last_pos = right_pos;
 
     func_params_head = nextFuncParamsIndex(func_params_head);
 }
@@ -127,6 +142,61 @@ void FuncManager::addDeltaTimeFuncParams(float a, float b, float c, time_double_
 
     last_time = right_time;
     last_pos = right_pos;
+}
+
+void FuncManager::addFuncParams(float a, float b, float c, int type, time_double_t right_time, float right_pos) {
+    if (ABS(last_pos - right_pos) < EPSILON) {
+        type = 0;
+    }
+
+    // if (a == 0 && b == 0) {
+    //     if (last_is_zero) {
+    //         FuncParams &f_p = funcParams[prevFuncParamsIndex(func_params_head)];
+
+    //         f_p.right_time = right_time;
+    //         f_p.right_pos = right_pos;
+
+    //         last_time = right_time;
+    //         last_pos = right_pos;
+
+    //         return;
+    //     } else {
+    //         last_is_zero = true;
+    //     }
+    // } else {
+    //     last_is_zero = false;
+    // }
+
+    if (axis == 0)
+    {
+        // LOG_I("%d %lf %lf %lf %d %lf %lf\n",func_params_head, a, b, c, type, right_time.toFloat(), right_pos);
+        // LOG_I("%d %lf %lf %lf\n",func_params_head, a, right_time.toFloat(), right_pos);
+    }
+
+    FuncParams &f_p = funcParams[func_params_head];
+
+    f_p.a = a;
+    f_p.b = b;
+    f_p.c = c;
+    f_p.type = type;
+
+    f_p.right_time = right_time;
+    f_p.right_pos = right_pos;
+
+    if (type > 0 && right_pos <= last_pos) {
+        LOG_I("error1 1 for right_pos: %lf, %lf\n", right_pos, last_pos);
+    }
+    if (type == 0 && right_pos != last_pos) {
+        LOG_I("error1 0 for right_pos: %lf, %lf\n", right_pos, last_pos);
+    }
+    if (type < 0 && right_pos >= last_pos) {
+        LOG_I("error1 -1 for right_pos: %lf, %lf\n", right_pos, last_pos);
+    }
+
+    last_time = right_time;
+    last_pos = right_pos;
+
+    func_params_head = nextFuncParamsIndex(func_params_head);
 }
 
 time_double_t* FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm) {

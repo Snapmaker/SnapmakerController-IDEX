@@ -26,9 +26,9 @@ bool Axis::getNextStep() {
     // if (is_get_next_step_null) {
         // return false;
     // }
-    if (func_manager.max_size < func_manager.getSize()) {
-        func_manager.max_size = func_manager.getSize();
-    }
+    // if (func_manager.max_size < func_manager.getSize()) {
+        // func_manager.max_size = func_manager.getSize();
+    // }
     time_double_t* next_print_time = func_manager.getNextPosTime(1, &dir, mm_to_step, half_step_mm);
     if (next_print_time == nullptr) {
         is_get_next_step_null = true;
