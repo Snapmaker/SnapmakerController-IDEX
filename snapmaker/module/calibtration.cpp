@@ -182,32 +182,35 @@ bool Calibtration::move_to_sersor_no_trigger(uint8_t axis, int16_t try_distance)
 
 probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance, uint16_t feedrate) {
   probe_result_e ret = PROBR_RESULT_SUCCESS;
-  float pos_before_probe;
+  float pos_before_probe = current_position[axis];
 
   if (!move_to_sersor_no_trigger(axis, distance >= 0 ? -1 : 1)) {
     return PROBR_RESULT_SENSOR_ERROR;
   }
-  pos_before_probe = current_position[axis];
 
   motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
   switch_detect.enable_probe(0);
   probe_axis_move(axis, distance, feedrate);
   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
+  sync_plan_position();
   if (!motion_control.is_sg_trigger()) {
+    motion_control.disable_stall_guard_all();
     switch_detect.enable_probe(1);
     probe_axis_move(axis, -distance, PROBE_Z_LEAVE_FEEDRATE);
     current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
-  }
-
-  sync_plan_position();
-  if (motion_control.is_sg_trigger()) {
+    sync_plan_position();
+  } else {
     LOG_E("probe failed be stall guard!!!\n");
+    motion_control.synchronize();
+    motion_control.move_z(Z_PROBE_TRY_TO_MOVE_DISTANCE);
     ret = PROBR_RESULT_STALL_GUARD;
-  } else if (abs((pos_before_probe - current_position[axis]) > (abs(distance) - 0.2))) {
+  }
+  motion_control.disable_stall_guard_all();
+
+  if (abs((pos_before_probe - current_position[axis]) > (abs(distance) - 0.2))) {
     LOG_E("probe failed , sensor no trigger!!!\n");
     ret = PROBR_RESULT_NO_TRIGGER;
   }
-  motion_control.disable_stall_guard_all();
   switch_detect.disable_probe();
   return ret;
 }
@@ -235,6 +238,7 @@ ErrCode Calibtration::probe_z_offset(calibtration_position_e pos) {
   position = multiple_probe(Z_AXIS, -z_probe_distance, PROBE_FAST_Z_FEEDRATE);
   if (position == CAlIBRATIONING_ERR_CODE) {
     set_home_offset(Z_AXIS, last_valid_zoffset);
+    LOG_E("probe z offset failed\n");
     return E_CAlIBRATION_PRIOBE;
   }
 

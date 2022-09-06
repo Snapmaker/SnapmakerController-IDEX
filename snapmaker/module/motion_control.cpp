@@ -377,9 +377,11 @@ void MotionControl::enable_stall_guard(uint8_t axis, uint8_t sg_value, uint8_t x
   #define ENABLE_SG(AXIS) stepper##AXIS.SGTHRS(sg_value); \
                           stepper##AXIS.TPWMTHRS(1); \
                           stepper##AXIS.TCOOLTHRS(0xFFFFF); \
-                          set_sg_trigger(SG_##AXIS, false); \
-                          set_sg_enable(SG_##AXIS, true); \
-                          EnableExtiInterrupt(TMC_STALL_GUARD_##AXIS##_PIN);
+                          if (system_service.get_hw_version() != HW_VER_1) { \
+                            set_sg_trigger(SG_##AXIS, false); \
+                            set_sg_enable(SG_##AXIS, true); \
+                            EnableExtiInterrupt(TMC_STALL_GUARD_##AXIS##_PIN); \
+                          }
 
   switch (axis) {
     case X_AXIS:
@@ -403,10 +405,14 @@ void MotionControl::enable_stall_guard(uint8_t axis, uint8_t sg_value, uint8_t x
 }
 
 void MotionControl::disable_stall_guard(uint8_t axis) {
-  #define DISABLE_SG(AXIS) stepper##AXIS.SGTHRS(0); \
+  #define DISABLE_SG(AXIS) DisableExtiInterrupt(TMC_STALL_GUARD_##AXIS##_PIN);\
+                          stepper##AXIS.SGTHRS(0); \
                           stepper##AXIS.TPWMTHRS(1); \
-                          stepper##AXIS.TCOOLTHRS(0xFFFFF); \
-                          DisableExtiInterrupt(TMC_STALL_GUARD_##AXIS##_PIN);
+                          stepper##AXIS.TCOOLTHRS(0xFFFFF);
+  if (system_service.get_hw_version() == HW_VER_1) {
+    sg_enable_status = 0x0;
+    DisableExtiInterrupt(TMC_STALL_GUARD_PIN);
+  }
 
   switch (axis) {
     case X_AXIS:
@@ -420,11 +426,6 @@ void MotionControl::disable_stall_guard(uint8_t axis) {
       DISABLE_SG(Z);
       break;
   }
-  if (system_service.get_hw_version() == HW_VER_1) {
-    set_sg_trigger(0);
-    sg_enable_status = 0x0;
-    DisableExtiInterrupt(TMC_STALL_GUARD_PIN);
-  }
 }
 
 void MotionControl::enable_stall_guard_only_axis(uint8_t axis, uint8_t sg_value, uint8_t x_index) {
@@ -436,8 +437,6 @@ void MotionControl::disable_stall_guard_all() {
   LOOP_LOGICAL_AXES(i) {
     disable_stall_guard(i);
   }
-  DisableExtiInterrupt(TMC_STALL_GUARD_PIN);
-  set_sg_trigger(0);
 }
 
 void trigger_stall_guard_exit(sg_axis_e axis) {

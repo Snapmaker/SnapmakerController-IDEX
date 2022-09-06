@@ -122,11 +122,7 @@ static ErrCode calibtration_retrack_e(event_param_t& event) {
 
 static ErrCode calibtration_report_bed_offset(event_param_t& event) {
   report_probe_info_t * info = (report_probe_info_t *)event.data;
-  if (calibtration.probe_offset == CAlIBRATIONING_ERR_CODE) {
-    info->result = E_IN_PROGRESS;
-  } else {
-    info->result = E_SUCCESS;
-  }
+  info->result = E_SUCCESS;
   info->cur_pos = calibtration.cur_pos;
   info->offset = FLOAT_TO_INT(calibtration.probe_offset);
   event.length = sizeof(report_probe_info_t);
