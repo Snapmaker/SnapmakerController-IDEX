@@ -123,6 +123,10 @@ static ErrCode fdm_extrusion_until(event_param_t& event) {
   float  speed = INT_TO_FLOAT(extrusion->speed);
   filamenter_change_status_e status = extrusion->type ? FILAMENT_CHANGE_RETRACK : FILAMENT_CHANGE_EXTRUDER;
   SERIAL_ECHOLNPAIR("SC req extrusion ", MODULE_INDEX(extrusion->key), " lenght:", length, ",speed:", speed, ",type:", status);
+  if (speed == 0) {
+    speed = 200;
+    SERIAL_ECHOLNPAIR("used default speed ", speed);
+  }
   if (length < 0) {
     fdm_head.change_filamenter(MODULE_INDEX(extrusion->key), speed, status);
   } else if (length == 0) {
