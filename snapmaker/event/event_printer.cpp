@@ -341,7 +341,7 @@ static ErrCode get_fdm_enable(event_param_t& event) {
   event.data[index++] = E_SUCCESS;
   event.data[index++] = fdm_head.is_duplication_enabled(0);
   event.data[index++] = fdm_head.is_duplication_enabled(1);
-  LOG_I("SC get fdm enable: T0-%d T1-%d", event.data[1], event.data[2]);
+  LOG_V("SC get fdm enable: T0-%d T1-%d\n", event.data[1], event.data[2]);
   event.length = index;
   return send_event(event);
 }
