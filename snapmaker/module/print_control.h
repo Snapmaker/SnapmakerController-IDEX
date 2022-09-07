@@ -75,6 +75,7 @@ class PrintControl {
     xyz_pos_t xyz_offset = {0, 0, 0};
     uint32_t work_time_ms = 0;
     uint32_t work_start_time = 0;
+    bool is_calibretion_mode = false;  // calibretion mode not save powerloss data
 };
 
 extern PrintControl print_control;

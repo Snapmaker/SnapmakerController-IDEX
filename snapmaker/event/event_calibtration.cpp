@@ -1,6 +1,7 @@
 #include "event_calibtration.h"
 #include "../module/calibtration.h"
 #include "../module/system.h"
+#include "../module/print_control.h"
 
 enum {
   DED_AUTO_CAlIBRATION_MODE = 0,
@@ -8,6 +9,7 @@ enum {
   NOZZLE_AUTO_CAlIBRATION_MODE = 50,
   NOZZLE_MANUAL_CAlIBRATION_MODE = 51,
   XY_AUTO_CAlIBRATION_MODE = 100,
+  XY_CAlIBRATION_MODE_TEST = 102,
 };
 
 #pragma pack(1)
@@ -53,6 +55,10 @@ static ErrCode calibtration_set_mode(event_param_t& event) {
       case NOZZLE_AUTO_CAlIBRATION_MODE:
       case NOZZLE_MANUAL_CAlIBRATION_MODE:
       case XY_AUTO_CAlIBRATION_MODE:
+        event.data[0] = E_SUCCESS;
+        break;
+      case XY_CAlIBRATION_MODE_TEST:
+        print_control.is_calibretion_mode = true;
         event.data[0] = E_SUCCESS;
         break;
       default:

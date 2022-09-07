@@ -267,6 +267,7 @@ ErrCode PrintControl::stop() {
     power_loss.clear();
     motion_control.quickstop();
     buffer_head = buffer_tail = 0;
+    is_calibretion_mode = false;
     idex_set_parked(false);
     motion_control.retrack_e(PRINT_RETRACK_DISTANCE, PRINT_TRAVEL_FEADRATE);
     motion_control.home();
