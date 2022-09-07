@@ -9,6 +9,7 @@
 class AxisStepper {
   public:
     int8_t axis = -1;
+    int8_t last_axis = -1;
     int8_t dir = 0;
     time_double_t print_time = 0;
     float delta_time = 0;
@@ -89,6 +90,8 @@ class Axis {
 class AxisManager {
   public:
     int counts[20] = {0};
+
+    bool t = false;
 
     Axis axis[AXIS_SIZE] = {Axis()};
 

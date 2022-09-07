@@ -31,7 +31,7 @@ time_double_t FuncManager::getTimeByFuncParams(float pos, uint32_t func_params_u
     float c = f_p.c;
     c = c - pos;
 
-    if (a == 0) {
+    if (IS_ZERO(a)) {
         float k = -c / b;
         time_double_t res = left_time + k;
         return res;
@@ -39,7 +39,7 @@ time_double_t FuncManager::getTimeByFuncParams(float pos, uint32_t func_params_u
 
     float d2 = b * b - 4 * a * c;
     if (d2 < 0) {
-        return 0;
+        d2 = 0.0f;
     }
 
     float d = SQRT(d2);

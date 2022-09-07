@@ -20,24 +20,18 @@ void ShaperWindow::addFuncParams(FuncManager &func_manager, float x2, float y1, 
     for (int i = 0; i < n; i++) {
         a += params[i].a;
     }
-    if (ABS(a) < EPSILON) {
-        a = 0;
-    }
 
     float dx = x2;
     float dy = y2 - y1;
     if (dx < EPSILON) {
         return;
     }
-    if (ABS(dy) < EPSILON) {
-        dy = 0;
-    }
 
-    if (a == 0) {
+    if (IS_ZERO(a)) {
         b = dy / dx;
         c = y1;
 
-        int type = b == 0 ? 0 : b > 0 ? 1 : -1;
+        int type = IS_ZERO(b) ? 0 : b > 0 ? 1 : -1;
         func_manager.addFuncParams(a, b, c, type, time, pos);
     } else {
         b = dy / dx - a * x2;
@@ -52,7 +46,7 @@ void ShaperWindow::addFuncParams(FuncManager &func_manager, float x2, float y1, 
             func_manager.addFuncParams(a, b, c, type, middle_time, middle_pos);
             
             type = -type;
-            b = 0;
+            b = 0.0f;
             c = middle_pos;
             func_manager.addFuncParams(a, b, c, type, time, pos);
         } else {
@@ -240,6 +234,7 @@ float AxisInputShaper::calcPosition(int move_index, time_double_t time, int move
     }
 
     if (!moveQueue.isBetween(move_index)) {
+        LOG_I("isb %d, %d, %d\n",move_index, moveQueue.move_tail, moveQueue.move_head);
         return 0;
     }
 
@@ -279,6 +274,12 @@ void AxisInputShaper::moveShaperWindowByIndex(FuncManager &func_manager, int mov
 
     shaper_window.pos = calcPosition(move_shaped_start, shaper_window.time, move_shaped_start, move_shaped_end);
 
+    if (shaper_window.pos < -600 || shaper_window.pos > 600) {
+        LOG_I("debug\n");
+        shaper_window.pos = calcPosition(move_shaped_start, shaper_window.time, move_shaped_start, move_shaped_end);
+
+    }
+
     float x1 = 0;
     float y1 = func_manager.last_pos;
     float x2 = shaper_window.time - func_manager.last_time;
@@ -293,8 +294,8 @@ void AxisInputShaper::moveShaperWindowByIndex(FuncManager &func_manager, int mov
 
 
 bool AxisInputShaper::moveShaperWindowToNext(FuncManager &func_manager, uint8_t move_shaped_start, uint8_t move_shaped_end) {
-    if (shaper_window.params[shaper_window.n - 1].time == moveQueue.moves[move_shaped_end].end_t)
-    {
+    if (shaper_window.params[shaper_window.n - 1].move_index == move_shaped_end && 
+        ABS(shaper_window.params[shaper_window.n - 1].time - moveQueue.moves[move_shaped_end].end_t) < EPSILON) {
         return false;
     }
 
@@ -308,12 +309,12 @@ bool AxisInputShaper::moveShaperWindowToNext(FuncManager &func_manager, uint8_t 
 
     // shaper_window.updateParamABC(shaper_window.zero_n, move->start_v, move->accelerate, move->start_t, left_time, move->start_pos[axis], move->axis_r[axis]);
 
-    time_double_t min_next_time = 1000000000.0f;
+    float min_next_time = 1000000000.0f;
 
     for (int i = 0; i < shaper_window.n; i++) {
         ShaperWindowParams &p = shaper_window.params[i];
 
-        time_double_t min_p_next_time = moveQueue.moves[p.move_index].end_t - p.time;
+        float min_p_next_time = moveQueue.moves[p.move_index].end_t - p.time;
 
         if (min_p_next_time < min_next_time) {
             min_next_time = min_p_next_time;
@@ -337,6 +338,11 @@ bool AxisInputShaper::moveShaperWindowToNext(FuncManager &func_manager, uint8_t 
 
     shaper_window.time += min_next_time;
     shaper_window.pos = calcPosition(shaper_window.params[0].move_index, shaper_window.time, shaper_window.params[0].move_index, move_shaped_end);
+
+    if (shaper_window.pos < -600 || shaper_window.pos > 600) {
+        LOG_I("debug\n");
+        shaper_window.pos = calcPosition(move_shaped_start, shaper_window.time, move_shaped_start, move_shaped_end);
+    }
 
     float x1 = 0;
     float y1 = func_manager.last_pos;

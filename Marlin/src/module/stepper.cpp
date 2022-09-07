@@ -1462,13 +1462,13 @@ void Stepper::isr() {
     #endif
 
     // ^== Time critical. NOTHING besides pulse generation should be above here!!!
-  #ifdef DEBUG_IO
-  WRITE(DEBUG_IO, 1);
-  #endif
+  // #ifdef DEBUG_IO
+  // WRITE(DEBUG_IO, 1);
+  // #endif
     if (!nextMainISR) nextMainISR = block_phase_isr();  // Manage acc/deceleration, get next block
-  #ifdef DEBUG_IO
-  WRITE(DEBUG_IO, 0);
-  #endif
+  // #ifdef DEBUG_IO
+  // WRITE(DEBUG_IO, 0);
+  // #endif
 
     #if ENABLED(INTEGRATED_BABYSTEPPING)
       if (is_babystep)                                  // Avoid ANY stepping too soon after baby-stepping
@@ -2045,11 +2045,13 @@ uint32_t Stepper::block_phase_isr() {
       if (next_axis_stepper.print_time < block_print_time) {
           float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
 
-          if (delta_time < 0) 
+          if (axis_stepper.last_axis == next_axis_stepper.axis && delta_time <= 0) 
           {
             axisManager.counts[10]++;
+            axisManager.t = !axisManager.t;
           }
-          if (delta_time > 10) {
+          if (delta_time > 30) {
+            axisManager.t = !axisManager.t;
             axisManager.counts[11]++;
           }
           
@@ -2059,11 +2061,12 @@ uint32_t Stepper::block_phase_isr() {
           }
           axis_stepper.delta_time = delta_time;
           axis_stepper.axis = next_axis_stepper.axis;
+          axis_stepper.last_axis = next_axis_stepper.axis;
           axis_stepper.dir = next_axis_stepper.dir;
           axis_stepper.print_time = next_axis_stepper.print_time;
 
           // interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
-          interval = axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS;
+          interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
           return interval;
       } else {
           discard_current_block();
@@ -2335,11 +2338,11 @@ uint32_t Stepper::block_phase_isr() {
         axis_stepper.delta_time = 0;
       } else {
         float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
-        if (delta_time < 0) 
+        if (delta_time <= 0) 
         {
           axisManager.counts[10]++;
         }
-        if (delta_time > 10) {
+        if (delta_time >= 30) {
           axisManager.counts[11]++;
         }
           
