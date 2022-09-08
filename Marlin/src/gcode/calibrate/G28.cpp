@@ -232,8 +232,8 @@ void GcodeSuite::G28() {
   TERN_(DWIN_CREALITY_LCD, DWIN_StartHoming());
   TERN_(EXTENSIBLE_UI, ExtUI::onHomingStart());
 
+  motion_is_homing = true;
   planner.synchronize();          // Wait for planner moves to finish!
-
   SET_SOFT_ENDSTOP_LOOSE(false);  // Reset a leftover 'loose' motion state
 
   // Disable the leveling matrix before homing
@@ -480,6 +480,8 @@ void GcodeSuite::G28() {
     SERIAL_ECHOLNPGM(STR_Z_MOVE_COMP);
 
   TERN_(FULL_REPORT_TO_HOST_FEATURE, set_and_report_grblstate(M_IDLE));
+
+  motion_is_homing = false;
 
   #if HAS_L64XX
     // Set L6470 absolute position registers to counts

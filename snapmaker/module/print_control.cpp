@@ -227,6 +227,7 @@ ErrCode PrintControl::start() {
 ErrCode PrintControl::pause() {
   buffer_head = buffer_tail = 0;
   pause_work_time();
+  motion_control.wait_G28();
   motion_control.quickstop();
   power_loss.stash_print_env();
   idex_set_parked(false);
@@ -264,6 +265,7 @@ ErrCode PrintControl::resume() {
 
 ErrCode PrintControl::stop() {
   if (system_service.get_status() != SYSTEM_STATUE_IDLE) {
+    motion_control.wait_G28();
     power_loss.clear();
     motion_control.quickstop();
     buffer_head = buffer_tail = 0;

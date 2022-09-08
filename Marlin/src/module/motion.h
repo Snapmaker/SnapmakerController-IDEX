@@ -390,6 +390,7 @@ void set_axis_is_at_home(const AxisEnum axis);
    *   Cleared whenever a stepper powers off, potentially losing its position.
    */
   extern linear_axis_bits_t axis_homed, axis_trusted;
+  extern bool motion_is_homing;
   void homeaxis(const AxisEnum axis);
   void set_axis_never_homed(const AxisEnum axis);
   linear_axis_bits_t axes_should_home(linear_axis_bits_t axis_bits=linear_bits);

@@ -1375,6 +1375,7 @@ void prepare_line_to_destination() {
 #if HAS_ENDSTOPS
 
   linear_axis_bits_t axis_homed, axis_trusted; // = 0
+  bool motion_is_homing = false;
 
   linear_axis_bits_t axes_should_home(linear_axis_bits_t axis_bits/*=linear_bits*/) {
     auto set_should = [](linear_axis_bits_t &b, AxisEnum a) {
