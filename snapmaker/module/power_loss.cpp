@@ -142,6 +142,8 @@ ErrCode PowerLoss::extrude_before_resume() {
 }
 
 void PowerLoss::resume_print_env() {
+  print_control.set_work_time(stash_data.work_time);
+  print_control.mode_ = (print_mode_e)stash_data.print_mode;
   thermalManager.setTargetBed(stash_data.bed_temp);
   HOTEND_LOOP() {
     fdm_head.set_duplication_enabled(e, stash_data.extruder_dual_enable[e]);
@@ -160,7 +162,6 @@ void PowerLoss::resume_print_env() {
   fast_move_feedrate = stash_data.travel_feadrate;
   gcode.axis_relative = stash_data.axis_relative;
   duplicate_extruder_x_offset = stash_data.duplicate_extruder_x_offset;
-  print_control.mode_ = (print_mode_e)stash_data.print_mode;
   dual_x_carriage_unpark();
   motion_control.move_to_z(stash_data.position[Z_AXIS] + Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
   motion_control.move_to_xy(stash_data.position[X_AXIS], stash_data.position[Y_AXIS], PRINT_TRAVEL_FEADRATE);
@@ -169,7 +170,6 @@ void PowerLoss::resume_print_env() {
   print_control.xyz_offset = stash_data.print_offset;
   feedrate_percentage = stash_data.feedrate_percentage;
   sync_plan_position();
-  print_control.set_work_time(stash_data.work_time);
 }
 
  /**
