@@ -50,13 +50,30 @@ bool Axis::generateFuncParams(FuncManager &func_manager, uint8_t move_start, uin
     Move *move;
     while (move_index != moveQueue.nextMoveIndex(move_end)) {
         move = &moveQueue.moves[move_index];
-        float axis_r = move->axis_r[axis];
 
-        float a = 0.5 * move->accelerate * axis_r;
-        float b = move->start_v * axis_r;
+        if (IS_ZERO(move->t)) {
+            move_index = moveQueue.nextMoveIndex(move_index);
+            continue;
+        }
+
+        float y2 = move->end_pos[axis];
+        float dy = move->end_pos[axis] - move->start_pos[axis];
+        float x2 = move->t;
+        float dx = move->t;
+
+        float a = 0.5f * move->accelerate * move->axis_r[axis];
         float c = move->start_pos[axis];
+        float b = dy / dx - a * x2;
 
-        func_manager.addDeltaTimeFuncParams(a, b, c, move->start_t, move->end_t, move->end_pos[axis]);
+        int type;
+        if (IS_ZERO(dy)) {
+            type = 0;
+        } else {
+            type = dy > 0 ? 1 : -1;
+        }
+        func_manager.addFuncParams(a, b, c, type, move->end_t, move->end_pos[axis]);
+
+        // LOG_I("%d, %d, %d\n", axis, func_manager.max_size, func_manager.func_params_head);
 
         move_index = moveQueue.nextMoveIndex(move_index);
     }

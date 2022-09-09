@@ -65,9 +65,9 @@ class FuncManager {
     static FuncParams FUNC_PARAMS_E[FUNC_PARAMS_E_SIZE];
 
     FuncParams* funcParams;
-    volatile uint32_t func_params_tail = 0;
-    volatile uint32_t func_params_use = 0;
-    volatile uint32_t func_params_head = 0;
+    uint32_t func_params_tail = 0;
+    uint32_t func_params_use = 0;
+    uint32_t func_params_head = 0;
 
     FuncManager(){};
 
@@ -114,9 +114,9 @@ class FuncManager {
         return (FUNC_PARAMS_MOD(func_params_middle - func_params_start, size) + FUNC_PARAMS_MOD(func_params_end - func_params_middle, size)) == FUNC_PARAMS_MOD(func_params_end - func_params_start, size);
     };
 
-    void addMonotoneDeltaTimeFuncParams(float a, float b, float c, float delta_left_time, int8_t type, time_double_t right_time, float right_pos);
+    // void addMonotoneDeltaTimeFuncParams(float a, float b, float c, float delta_left_time, int8_t type, time_double_t right_time, float right_pos);
 
-    void addDeltaTimeFuncParams(float a, float b, float c, time_double_t left_time, time_double_t right_time, float right_pos);
+    // void addDeltaTimeFuncParams(float a, float b, float c, time_double_t left_time, time_double_t right_time, float right_pos);
     
     void addFuncParams(float a, float b, float c,int type, time_double_t right_time, float right_pos);
 

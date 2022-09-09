@@ -93,7 +93,7 @@ class AxisManager {
 
     bool t = false;
 
-    Axis axis[AXIS_SIZE] = {Axis()};
+    Axis axis[AXIS_SIZE];
 
     float shaped_right_delta = 0;
     float shaped_delta = 0;

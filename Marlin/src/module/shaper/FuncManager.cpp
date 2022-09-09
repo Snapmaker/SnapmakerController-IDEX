@@ -55,23 +55,104 @@ time_double_t FuncManager::getTimeByFuncParams(float pos, uint32_t func_params_u
     }
 }
 
-void FuncManager::addMonotoneDeltaTimeFuncParams(float a, float b, float c, float delta_left_time, int8_t type, time_double_t right_time, float right_pos) {
-    // LOG_I("%lf, %lf, %lf, %lf, %d, %lf, %lf\n", a,b ,c, delta_left_time, type, right_time.toFloat(), right_pos);
+// void FuncManager::addMonotoneDeltaTimeFuncParams(float a, float b, float c, float delta_left_time, int8_t type, time_double_t right_time, float right_pos) {
+//     // LOG_I("%lf, %lf, %lf, %lf, %d, %lf, %lf\n", a,b ,c, delta_left_time, type, right_time.toFloat(), right_pos);
+//     if (max_size < getSize()) {
+//         max_size = getSize();
+//     }
+//     // x = dx + left_time => f(x) = f(dx + left_time)
+//     if (delta_left_time != 0) {
+//         c = c + a * sq(delta_left_time) + b * delta_left_time;
+//         b = b + 2 * a * delta_left_time;
+//         a = a;
+//     }
+
+//     // if (axis < 2) {
+//         // LOG_I("axis: %d, a: %lf, b: %lf, c: %lf, type: %d, x: %lf, y: %lf\n", axis, a,b,c,type, right_time.toDouble(), right_pos);
+//     // }
+
+//     if (a == 0 && b == 0) {
+//         if (last_is_zero) {
+//             FuncParams &f_p = funcParams[prevFuncParamsIndex(func_params_head)];
+
+//             f_p.right_time = right_time;
+//             f_p.right_pos = right_pos;
+
+//             last_time = right_time;
+//             last_pos = right_pos;
+
+//             return;
+//         } else {
+//             last_is_zero = true;
+//         }
+//     } else {
+//         last_is_zero = false;
+//     }
+    
+//     FuncParams &f_p = funcParams[func_params_head];
+
+//     f_p.a = a;
+//     f_p.b = b;
+//     f_p.c = c;
+//     f_p.type = type;
+
+//     f_p.right_time = right_time;
+//     f_p.right_pos = right_pos;
+
+//     last_time = right_time;
+//     last_pos = right_pos;
+
+//     func_params_head = nextFuncParamsIndex(func_params_head);
+// }
+
+// void FuncManager::addDeltaTimeFuncParams(float a, float b, float c, time_double_t  left_time, time_double_t right_time, float right_pos) {
+//     float delta_left_time = 0;
+//     float delta_right_time = right_time - left_time;
+
+//     // LOG_I("add a: %lf, b: %lf, c: %lf, x: %lf, y: %lf\n", a,b,c, right_time.toDouble(), right_pos);
+
+//     if (ABS(a) < EPSILON) {
+//         a = 0;
+//     }
+//     if (ABS(b) < EPSILON) {
+//         b = 0;
+//     }
+
+//     int8_t type = 0;
+//     if (a == 0) {
+//         type = b == 0 ? 0 : b > 0 ? 1 : -1;
+//         addMonotoneDeltaTimeFuncParams(a, b, c, 0, type, right_time, right_pos);
+//     } else {
+//         float middle = -b / 2 / a;
+//         if (delta_left_time < middle && delta_right_time > middle) {
+//             type = a > 0 ? -1 : 1;
+//             float middle_right_pos = getY(middle, a, b, c);
+//             addMonotoneDeltaTimeFuncParams(a,b,c, 0, type, left_time + middle, middle_right_pos);
+//             type = -type;
+//             addMonotoneDeltaTimeFuncParams(a,b,c, middle, type, right_time, right_pos);
+//         } else {
+//             if (a > 0) {
+//                 type = delta_left_time >= middle && delta_right_time >= middle ? 1 : -1;
+//             } else {
+//                 type = delta_left_time >= middle && delta_right_time >= middle ? -1 : 1;
+//             }
+//             addMonotoneDeltaTimeFuncParams(a,b,c, 0, type, right_time, right_pos);
+//         }
+//     }
+
+//     last_time = right_time;
+//     last_pos = right_pos;
+// }
+
+void FuncManager::addFuncParams(float a, float b, float c, int type, time_double_t right_time, float right_pos) {
     if (max_size < getSize()) {
         max_size = getSize();
     }
-    // x = dx + left_time => f(x) = f(dx + left_time)
-    if (delta_left_time != 0) {
-        c = c + a * sq(delta_left_time) + b * delta_left_time;
-        b = b + 2 * a * delta_left_time;
-        a = a;
+    if (ABS(last_pos - right_pos) < EPSILON) {
+        type = 0;
     }
 
-    // if (axis < 2) {
-        // LOG_I("axis: %d, a: %lf, b: %lf, c: %lf, type: %d, x: %lf, y: %lf\n", axis, a,b,c,type, right_time.toDouble(), right_pos);
-    // }
-
-    if (a == 0 && b == 0) {
+    if (IS_ZERO(a) && IS_ZERO(b)) {
         if (last_is_zero) {
             FuncParams &f_p = funcParams[prevFuncParamsIndex(func_params_head)];
 
@@ -88,84 +169,6 @@ void FuncManager::addMonotoneDeltaTimeFuncParams(float a, float b, float c, floa
     } else {
         last_is_zero = false;
     }
-    
-    FuncParams &f_p = funcParams[func_params_head];
-
-    f_p.a = a;
-    f_p.b = b;
-    f_p.c = c;
-    f_p.type = type;
-
-    f_p.right_time = right_time;
-    f_p.right_pos = right_pos;
-
-    last_time = right_time;
-    last_pos = right_pos;
-
-    func_params_head = nextFuncParamsIndex(func_params_head);
-}
-
-void FuncManager::addDeltaTimeFuncParams(float a, float b, float c, time_double_t  left_time, time_double_t right_time, float right_pos) {
-    float delta_left_time = 0;
-    float delta_right_time = right_time - left_time;
-
-    // LOG_I("add a: %lf, b: %lf, c: %lf, x: %lf, y: %lf\n", a,b,c, right_time.toDouble(), right_pos);
-
-    if (ABS(a) < EPSILON) {
-        a = 0;
-    }
-    if (ABS(b) < EPSILON) {
-        b = 0;
-    }
-
-    int8_t type = 0;
-    if (a == 0) {
-        type = b == 0 ? 0 : b > 0 ? 1 : -1;
-        addMonotoneDeltaTimeFuncParams(a, b, c, 0, type, right_time, right_pos);
-    } else {
-        float middle = -b / 2 / a;
-        if (delta_left_time < middle && delta_right_time > middle) {
-            type = a > 0 ? -1 : 1;
-            float middle_right_pos = getY(middle, a, b, c);
-            addMonotoneDeltaTimeFuncParams(a,b,c, 0, type, left_time + middle, middle_right_pos);
-            type = -type;
-            addMonotoneDeltaTimeFuncParams(a,b,c, middle, type, right_time, right_pos);
-        } else {
-            if (a > 0) {
-                type = delta_left_time >= middle && delta_right_time >= middle ? 1 : -1;
-            } else {
-                type = delta_left_time >= middle && delta_right_time >= middle ? -1 : 1;
-            }
-            addMonotoneDeltaTimeFuncParams(a,b,c, 0, type, right_time, right_pos);
-        }
-    }
-
-    last_time = right_time;
-    last_pos = right_pos;
-}
-
-void FuncManager::addFuncParams(float a, float b, float c, int type, time_double_t right_time, float right_pos) {
-    if (ABS(last_pos - right_pos) < EPSILON) {
-        type = 0;
-    }
-
-    // if (a == 0 && b == 0) {
-    //     if (last_is_zero) {
-    //         FuncParams &f_p = funcParams[prevFuncParamsIndex(func_params_head)];
-
-    //         f_p.right_time = right_time;
-    //         f_p.right_pos = right_pos;
-
-    //         last_time = right_time;
-    //         last_pos = right_pos;
-
-    //         return;
-    //     } else {
-    //         last_is_zero = true;
-    //     }
-    // } else {
-    //     last_is_zero = false;
-    // }
 
     if (axis == 0)
     {

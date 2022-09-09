@@ -277,7 +277,6 @@ void AxisInputShaper::moveShaperWindowByIndex(FuncManager &func_manager, int mov
     if (shaper_window.pos < -600 || shaper_window.pos > 600) {
         LOG_I("debug\n");
         shaper_window.pos = calcPosition(move_shaped_start, shaper_window.time, move_shaped_start, move_shaped_end);
-
     }
 
     float x1 = 0;

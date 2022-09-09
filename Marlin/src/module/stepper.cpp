@@ -1553,7 +1553,7 @@ void Stepper::isr() {
       #ifdef __AVR__
         8
       #else
-        1
+        6
       #endif
       * (STEPPER_TIMER_TICKS_PER_US)
     );
