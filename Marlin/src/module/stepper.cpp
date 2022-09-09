@@ -2032,7 +2032,7 @@ uint32_t Stepper::block_phase_isr() {
   // If there is a current block
   if (current_block) {
     hal_timer_t st = HAL_timer_get_count(STEP_TIMER_NUM);
-    if (axisManager.getNextAxisStepper()) {
+    if (axisConsumerManager.getNextAxisStepper()) {
       hal_timer_t et = HAL_timer_get_count(STEP_TIMER_NUM);
       hal_timer_t dt = et - st;
       axisManager.counts[3]++;
@@ -2040,7 +2040,7 @@ uint32_t Stepper::block_phase_isr() {
       if (axisManager.counts[5] < dt) {
         axisManager.counts[5] = dt;
       }
-      axisManager.getCurrentAxisStepper(&next_axis_stepper);
+      axisConsumerManager.getCurrentAxisStepper(&next_axis_stepper);
 
       if (next_axis_stepper.print_time < block_print_time) {
           float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
@@ -2077,7 +2077,7 @@ uint32_t Stepper::block_phase_isr() {
 
       bool is_done = true;
       for (size_t i = 0; i < AXIS_SIZE; i++) {
-        if (axisManager.current_steps[i] != block_move_target_steps[i]) {
+        if (axisConsumerManager.current_steps[i] != block_move_target_steps[i]) {
           is_done = false;
         }
       }
@@ -2332,8 +2332,8 @@ uint32_t Stepper::block_phase_isr() {
       #endif
 
       if (is_start) {
-        axisManager.getNextAxisStepper();
-        axisManager.getCurrentAxisStepper(&axis_stepper);
+        axisConsumerManager.getNextAxisStepper();
+        axisConsumerManager.getCurrentAxisStepper(&axis_stepper);
         is_start = false;
         axis_stepper.delta_time = 0;
       } else {

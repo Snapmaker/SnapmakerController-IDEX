@@ -73,6 +73,7 @@ void GcodeSuite::M2000() {
       LOG_I("test crash!\n");
       vTaskDelay(pdMS_TO_TICKS(1000));
       *((uint32_t *)0) = 1234;
+
       break;
 
     // case 8:

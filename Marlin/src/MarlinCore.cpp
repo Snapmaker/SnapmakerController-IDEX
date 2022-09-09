@@ -1367,6 +1367,7 @@ void setup() {
   SETUP_RUN(stepper.init());          // Init stepper. This enables interrupts!
 
   SETUP_RUN(axisManager.init());
+  SETUP_RUN(axisConsumerManager.init());
 
   enable_all_steppers();
   #if HAS_SERVOS

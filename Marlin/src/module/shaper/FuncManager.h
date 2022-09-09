@@ -50,12 +50,9 @@ class FuncManager {
   public:
     int axis;
     int size;
-    time_double_t print_time = 0;
-    time_double_t last_time = 0;
-    float print_pos = 0;
-    int print_step = 0;
-    float last_pos = 0;
     int max_size = 0;
+    time_double_t last_time = 0;
+    float last_pos = 0;
     bool last_is_zero = false;
     
 
@@ -65,9 +62,9 @@ class FuncManager {
     static FuncParams FUNC_PARAMS_E[FUNC_PARAMS_E_SIZE];
 
     FuncParams* funcParams;
-    uint32_t func_params_tail = 0;
-    uint32_t func_params_use = 0;
-    uint32_t func_params_head = 0;
+    volatile int func_params_tail = 0;
+    // volatile int func_params_use = 0;
+    volatile int func_params_head = 0;
 
     FuncManager(){};
 
@@ -94,23 +91,22 @@ class FuncManager {
     }
 
     void abort() {
-        func_params_tail = func_params_use = func_params_head = 0;
-        print_time = 0;
+        func_params_tail = func_params_head = 0;
         last_time = 0;
-        print_pos = 0;
         last_pos = 0;
-        print_step = 0;
         last_is_zero = false;
     }
 
-    constexpr uint32_t getSize() {
+    constexpr int getSize() {
         return FUNC_PARAMS_MOD(func_params_head - func_params_tail, size);
     }
 
-    constexpr uint32_t nextFuncParamsIndex(const uint32_t func_params_index) { return FUNC_PARAMS_MOD(func_params_index + 1, size); };
-    constexpr uint32_t prevFuncParamsIndex(const uint32_t func_params_index) { return FUNC_PARAMS_MOD(func_params_index - 1, size); };
+    constexpr int nextFuncParamsIndex(const int func_params_index) { return FUNC_PARAMS_MOD(func_params_index + 1, size); };
+    constexpr int prevFuncParamsIndex(const int func_params_index) { return FUNC_PARAMS_MOD(func_params_index - 1, size); };
+    static constexpr int nextFuncParamsIndex(const int func_params_index, int s) { return FUNC_PARAMS_MOD(func_params_index + 1, s); };
+    static constexpr int prevFuncParamsIndex(const int func_params_index, int s) { return FUNC_PARAMS_MOD(func_params_index - 1, s); };
 
-    constexpr bool isBetween(const uint32_t func_params_start, const uint32_t func_params_end, const uint32_t func_params_middle) {
+    constexpr bool isBetween(const int func_params_start, const int func_params_end, const int func_params_middle) {
         return (FUNC_PARAMS_MOD(func_params_middle - func_params_start, size) + FUNC_PARAMS_MOD(func_params_end - func_params_middle, size)) == FUNC_PARAMS_MOD(func_params_end - func_params_start, size);
     };
 
@@ -122,16 +118,35 @@ class FuncManager {
 
     float getPos(time_double_t time);
 
-    time_double_t *getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm);
-
     float getY(float x, float a, float b, float c) {
         return a * sq(x) + b * x + c;
     };
 
-    //    float getXAndMove(float y, uint32_t *func_params_start, uint32_t func_params_end);
+    //    float getXAndMove(float y, int *func_params_start, int func_params_end);
 
   private:
-    time_double_t getTimeByFuncParams(float pos, uint32_t func_params_use);
 
-    float getPosByFuncParams(time_double_t time, uint32_t func_params_use);
+    float getPosByFuncParams(time_double_t time, int func_params_use);
+};
+
+class FuncConsumer {
+    public:
+        time_double_t print_time = 0;
+        time_double_t left_time = 0;
+        float print_pos = 0;
+        int print_step = 0;
+        volatile int func_params_use = 0;
+
+        void abort() {
+            print_time = 0;
+            left_time = 0;
+            print_pos = 0;
+            print_step = 0;
+            func_params_use = 0;
+        }
+
+        time_double_t *getNextPosTime(FuncParams* funcParams, int size, int func_params_head, int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm);
+
+    private:
+        float getTimeByFuncParams(FuncParams* f_p, float pos, int func_params_use);
 };

@@ -17,14 +17,6 @@ class AxisStepper {
 
 class Axis {
   public:
-    float mm_to_step;
-
-    bool is_consumed = true;
-    time_double_t print_time = 0;
-    int8_t dir = 0;
-
-    bool is_get_next_step_null = false;
-
     bool is_shaped = false;
 
     AxisInputShaper* axis_input_shaper = nullptr;
@@ -34,7 +26,6 @@ class Axis {
   private:
     int8_t axis;
 
-    float half_step_mm;
 
     int generated_block_index = -1;
 
@@ -46,8 +37,6 @@ class Axis {
     void init(int8_t axis, float mm_to_step) {
         LOG_I("Axis: %d, mm_to_step: %lf\r\n", mm_to_step);
         this->axis = axis;
-        this->mm_to_step = mm_to_step;
-        this->half_step_mm = 0.5 / mm_to_step;
         this->func_manager.init(axis);
 
         if (axis <= 1) {
@@ -59,20 +48,11 @@ class Axis {
 
             is_shaped = true;
         }
-
-        func_manager.print_pos = 0;
     }
 
     bool generateFuncParams(uint8_t block_index, block_t& block, uint8_t move_start, uint8_t move_end);
 
-    bool getNextStep();
-
     void abort() {
-        is_consumed = true;
-        print_time = 0;
-        dir = 0;
-        is_get_next_step_null = false;
-
         generated_block_index = -1;
         generated_move_index = -1;
 
@@ -98,23 +78,15 @@ class AxisManager {
     float shaped_right_delta = 0;
     float shaped_delta = 0;
 
-    time_double_t print_time = 0;
-
     time_double_t min_last_time = 0;
 
     bool req_abort;
 
-    int current_steps[AXIS_SIZE] = {0};
-
   private:
     bool need_add_move_start = true;
 
-    bool is_consumed = true;
-
     bool is_shaped = false;
 
-    int8_t print_axis;
-    int8_t print_dir;
 
   public:
     AxisManager() {};
@@ -153,32 +125,18 @@ class AxisManager {
 
     bool generateAllAxisFuncParams(uint8_t block_index, block_t& block);
 
-    float getRemainingConsumeTime() {
-        return min_last_time - print_time;
-    }
+    float getRemainingConsumeTime();
 
     void abort() {
         for (size_t i = 0; i < AXIS_SIZE; i++)
         {
             axis[i].abort();
-            current_steps[i] = 0;
         }
-
-        print_time = 0;
 
         min_last_time = 0;
 
         need_add_move_start = true;
-
-        is_consumed = true;
-
-        print_axis = -1;
-        print_dir = 0;
     }
-
-    bool getCurrentAxisStepper(AxisStepper* axis_stepper);
-
-    bool getNextAxisStepper();
 
     bool tryAddMoveStart() {
         if (!isShaped() || !need_add_move_start) {
@@ -216,6 +174,74 @@ class AxisManager {
     }
 };
 
+class AxisConsumer {
+    public:
+        int axis;
+        float mm_to_step;
+        bool is_consumed = true;
+        time_double_t print_time = 0;
+        int8_t dir = 0;
+        bool is_get_next_step_null = false;
+        float half_step_mm;
+
+        FuncConsumer func_consumer;
+
+        void init(int8_t axis, float mm_to_step) {
+            LOG_I("Axis: %d, mm_to_step: %lf\r\n", mm_to_step);
+            this->axis = axis;
+            this->mm_to_step = mm_to_step;
+            this->half_step_mm = 0.5 / mm_to_step;
+
+            func_consumer.print_pos = 0;
+        }
+
+        void abort() {
+            is_consumed = true;
+            print_time = 0;
+            dir = 0;
+            is_get_next_step_null = false;
+
+            func_consumer.abort();
+        }
+
+        bool getNextStep(FuncParams* funcParams, int size, int func_params_head);
+};
+
+class AxisConsumerManager {
+    public:
+        AxisConsumer axis_consumers[AXIS_SIZE];
+        bool is_consumed = true;
+        int8_t print_axis;
+        int8_t print_dir;
+        volatile time_double_t print_time = 0;
+        int current_steps[AXIS_SIZE] = {0};
+
+         void init() {
+            for (int i = 0; i < AXIS_SIZE; ++i) {
+                axis_consumers[i].init(i, planner.settings.axis_steps_per_mm[i]);
+            }
+        };
+
+        void abort() {
+            for (size_t i = 0; i < AXIS_SIZE; i++)
+            {
+                axis_consumers[i].abort();
+                current_steps[i] = 0;
+            }
+
+            print_time = 0;
+
+            is_consumed = true;
+
+            print_axis = -1;
+            print_dir = 0;
+        }
+        
+        bool getCurrentAxisStepper(AxisStepper* axis_stepper);
+        bool getNextAxisStepper();
+};
+
 extern AxisManager axisManager;
+extern AxisConsumerManager axisConsumerManager;
 
 

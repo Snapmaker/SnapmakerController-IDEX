@@ -7,34 +7,29 @@ FuncParams FuncManager::FUNC_PARAMS_Z[FUNC_PARAMS_Z_SIZE];
 FuncParams FuncManager::FUNC_PARAMS_E[FUNC_PARAMS_E_SIZE];
 
 float FuncManager::getPos(time_double_t time) {
-    uint32_t func_start = func_params_tail;
+    int func_start = func_params_tail;
     while (time > funcParams[func_start].right_time && func_start != prevFuncParamsIndex(func_params_head)) {
         func_start = nextFuncParamsIndex(func_start);
     }
     return getPosByFuncParams(time, func_start);
 }
 
-float FuncManager::getPosByFuncParams(time_double_t time, uint32_t func_params_use) {
+float FuncManager::getPosByFuncParams(time_double_t time, int func_params_use) {
     FuncParams& f_p = funcParams[func_params_use];
     time_double_t left_time = func_params_use == func_params_tail ? 0 : funcParams[prevFuncParamsIndex(func_params_use)].right_time;
     float t = time - left_time;
     return f_p.a * t * t + f_p.b * t + f_p.c;
 }
 
-time_double_t FuncManager::getTimeByFuncParams(float pos, uint32_t func_params_use) {
-    FuncParams& f_p = funcParams[func_params_use];
-
-    time_double_t left_time = func_params_use == func_params_tail ? 0 : funcParams[prevFuncParamsIndex(func_params_use)].right_time;
-
-    float a = f_p.a;
-    float b = f_p.b;
-    float c = f_p.c;
+float FuncConsumer::getTimeByFuncParams(FuncParams* f_p, float pos, int func_params_use) {
+    float a = f_p->a;
+    float b = f_p->b;
+    float c = f_p->c;
     c = c - pos;
 
     if (IS_ZERO(a)) {
         float k = -c / b;
-        time_double_t res = left_time + k;
-        return res;
+        return k;
     }
 
     float d2 = b * b - 4 * a * c;
@@ -44,14 +39,12 @@ time_double_t FuncManager::getTimeByFuncParams(float pos, uint32_t func_params_u
 
     float d = SQRT(d2);
 
-    if (f_p.type > 0) {
+    if (f_p->type > 0) {
         float k = (-b + d) / (2 * a);
-        time_double_t res = left_time + k;
-        return  res;
+        return k;
     } else {
-         float k = (-b - d) / (2 * a);
-         time_double_t res = left_time + k;
-        return res;
+        float k = (-b - d) / (2 * a);
+        return k;
     }
 }
 
@@ -202,8 +195,8 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
     func_params_head = nextFuncParamsIndex(func_params_head);
 }
 
-time_double_t* FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm) {
-    if (print_time == last_time) {
+time_double_t* FuncConsumer::getNextPosTime(FuncParams* funcParams, int size, int func_params_head, int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm) {
+    if (func_params_use == func_params_head) {
         return nullptr;
     }
 
@@ -228,7 +221,8 @@ time_double_t* FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& m
                 break;
             }
         }
-        func_params_use = nextFuncParamsIndex(func_params_use);
+        func_params_use = FuncManager::nextFuncParamsIndex(func_params_use, size);
+        left_time = func_params->right_time;
         func_params = &funcParams[func_params_use];
     }
 
@@ -236,22 +230,18 @@ time_double_t* FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& m
         return nullptr;
     }
 
-    if (ABS(next_pos - func_params->right_pos) < EPSILON) {
-        print_time = func_params->right_time;
-        print_pos = func_params->right_pos;
-        print_step = next_step;
-        return &print_time;
-    }
+    // if (ABS(next_pos - func_params->right_pos) < EPSILON) {
+    //     print_time = func_params->right_time;
+    //     print_pos = func_params->right_pos;
+    //     print_step = next_step;
+    //     return &print_time;
+    // }
 
     time_double_t next_time;
     if (func_params->type == 0) {
         next_time = func_params->right_time;
     } else {
-        next_time = getTimeByFuncParams(next_pos, func_params_use);
-    }
-
-    if (func_params_tail != func_params_use) {
-        func_params_tail = prevFuncParamsIndex(func_params_use);
+        next_time = left_time + getTimeByFuncParams(func_params, next_pos, func_params_use);
     }
 
     print_time = next_time;

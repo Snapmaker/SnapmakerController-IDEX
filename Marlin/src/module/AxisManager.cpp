@@ -2,12 +2,13 @@
 #include "shaper/MoveQueue.h"
 
 AxisManager axisManager;
+AxisConsumerManager axisConsumerManager;
 
 bool Axis::generateFuncParams(uint8_t block_index, block_t &block, uint8_t move_start, uint8_t move_end) {
     if (block_index == generated_block_index) {
         return true;
     }
-    is_get_next_step_null = false;
+    // is_get_next_step_null = false;
 
     bool res;
     if (is_shaped) {
@@ -22,14 +23,14 @@ bool Axis::generateFuncParams(uint8_t block_index, block_t &block, uint8_t move_
     return res;
 }
 
-bool Axis::getNextStep() {
+bool AxisConsumer::getNextStep(FuncParams* funcParams, int size, int func_params_head) {
     // if (is_get_next_step_null) {
         // return false;
     // }
     // if (func_manager.max_size < func_manager.getSize()) {
         // func_manager.max_size = func_manager.getSize();
     // }
-    time_double_t* next_print_time = func_manager.getNextPosTime(1, &dir, mm_to_step, half_step_mm);
+    time_double_t* next_print_time = func_consumer.getNextPosTime(funcParams, size, func_params_head, 1, &dir, mm_to_step, half_step_mm);
     if (next_print_time == nullptr) {
         is_get_next_step_null = true;
         return false;
@@ -81,6 +82,10 @@ bool Axis::generateFuncParams(FuncManager &func_manager, uint8_t move_start, uin
     return true;
 }
 
+float AxisManager::getRemainingConsumeTime() {
+    return min_last_time - axisConsumerManager.print_time;
+}
+
 bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t& block) {
     bool res = true;
 
@@ -114,7 +119,7 @@ bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t& block)
  Copy next step's information to axis_stepper
  and mark is_consumed = true;
 */
-bool AxisManager::getCurrentAxisStepper(AxisStepper *axis_stepper) {
+bool AxisConsumerManager::getCurrentAxisStepper(AxisStepper *axis_stepper) {
     if (is_consumed) {
         return false;
     }
@@ -132,24 +137,29 @@ bool AxisManager::getCurrentAxisStepper(AxisStepper *axis_stepper) {
  Calcuation all axes's next step's time if need
  And then return the closest time axis if we have
 */
-bool AxisManager::getNextAxisStepper() {
-    if (getRemainingConsumeTime() == 0 || !is_consumed) {
+bool AxisConsumerManager::getNextAxisStepper() {
+    if (!is_consumed) {
         return false;
     }
 
     // If a axis has been consumed, calculate the next step time
     for (int i = 0; i < AXIS_SIZE; ++i) {
-        if (axis[i].is_consumed) {
-            axis[i].getNextStep();
+        if (axis_consumers[i].is_consumed) {
+            FuncManager& func_manager = axisManager.axis[i].func_manager;
+            FuncParams* func_params = func_manager.funcParams;
+            // int func_params_use = func_manager.func_params_use;
+            int func_params_head = func_manager.func_params_head;
+            int size = func_manager.size;
+            axis_consumers[i].getNextStep(func_params, size, func_params_head);
         }
     }
 
     // Fine the closest time of all the axes
     time_double_t min_print_time = 1000000000;
     for (int i = 0; i < AXIS_SIZE; ++i) {
-        if (!axis[i].is_consumed) {
-            if (axis[i].print_time < min_print_time) {
-                min_print_time = axis[i].print_time;
+        if (!axis_consumers[i].is_consumed) {
+            if (axis_consumers[i].print_time < min_print_time) {
+                min_print_time = axis_consumers[i].print_time;
                 print_axis = i;
                 is_consumed = false;
             }
@@ -158,9 +168,9 @@ bool AxisManager::getNextAxisStepper() {
 
     // is_consumed == false, means that we has a steps need to output
     if (!is_consumed) {
-        axis[print_axis].is_consumed = true;
+        axis_consumers[print_axis].is_consumed = true;
         print_time = min_print_time;
-        print_dir = axis[print_axis].dir;
+        print_dir = axis_consumers[print_axis].dir;
         return true;
     } else {
         return false;

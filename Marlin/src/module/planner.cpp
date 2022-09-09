@@ -1280,6 +1280,7 @@ void Planner::shaped_loop() {
 
     if (axisManager.req_abort) {
       axisManager.abort();
+      axisConsumerManager.abort();
       moveQueue.abort();
       axisManager.req_abort = false;
       clear_block_buffer();
