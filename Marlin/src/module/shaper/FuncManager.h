@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "TimeDouble.h"
 #include "../../MarlinCore.h"
+#include "../../../../snapmaker/debug/debug.h"
 
 #define FUNC_PARAMS_SIZE 512
 #define FUNC_PARAMS_MOD(n, size) ((n + size) % size)
@@ -63,7 +64,6 @@ class FuncManager {
 
     FuncParams* funcParams;
     volatile int func_params_tail = 0;
-    // volatile int func_params_use = 0;
     volatile int func_params_head = 0;
 
     FuncManager(){};
@@ -91,6 +91,7 @@ class FuncManager {
     }
 
     void abort() {
+        // LOG_I("abort\n");
         func_params_tail = func_params_head = 0;
         last_time = 0;
         last_pos = 0;

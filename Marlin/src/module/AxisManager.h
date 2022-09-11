@@ -40,8 +40,11 @@ class Axis {
         this->func_manager.init(axis);
 
         if (axis <= 1) {
-            if (axis_input_shaper == nullptr) {
-                axis_input_shaper = new AxisInputShaper();
+            if (axis == 0) {
+                axis_input_shaper = &AxisInputShaper::axis_input_shaper_x;
+            }
+            if (axis == 1) {
+                axis_input_shaper = &AxisInputShaper::axis_input_shaper_y;
             }
             axis_input_shaper->setAxis(axis);
             axis_input_shaper->init();
@@ -50,7 +53,7 @@ class Axis {
         }
     }
 
-    bool generateFuncParams(uint8_t block_index, block_t& block, uint8_t move_start, uint8_t move_end);
+    FORCE_INLINE bool generateFuncParams(uint8_t block_index, uint8_t move_start, uint8_t move_end);
 
     void abort() {
         generated_block_index = -1;
@@ -64,7 +67,7 @@ class Axis {
     }
 
   private:
-    bool generateFuncParams(FuncManager& func_manager, uint8_t move_start, uint8_t move_end);
+    FORCE_INLINE bool generateAxisFuncParams(FuncManager* func_manager, uint8_t move_start, uint8_t move_end);
 };
 
 class AxisManager {
@@ -78,7 +81,7 @@ class AxisManager {
     float shaped_right_delta = 0;
     float shaped_delta = 0;
 
-    time_double_t min_last_time = 0;
+    volatile time_double_t min_last_time = 0;
 
     bool req_abort;
 
@@ -123,7 +126,7 @@ class AxisManager {
         return is_shaped;
     }
 
-    bool generateAllAxisFuncParams(uint8_t block_index, block_t& block);
+    bool generateAllAxisFuncParams(uint8_t block_index, block_t* block);
 
     float getRemainingConsumeTime();
 

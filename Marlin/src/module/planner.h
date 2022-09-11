@@ -156,12 +156,14 @@ typedef struct shaper_data_t {
     bool is_create_move;
     bool is_start = false;
     bool is_end = false;
+    bool is_zero_speed = false;
     time_double_t last_print_time;
     uint8_t move_start = 0;
     uint8_t move_end = 0;
 
     void init() {
         is_create_move = false;
+        is_zero_speed = false;
         block_time = 0;
         is_start = false;
         is_end = false;

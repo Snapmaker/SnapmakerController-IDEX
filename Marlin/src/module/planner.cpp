@@ -1271,8 +1271,8 @@ void Planner::recalculate() {
 static float last_remaining_consume_time = -1;
 static float start_t = -1;
 static float end_t = -1;
-static int count = 1000;
-static int c2 = 100000;
+static int count = 10000;
+static int c2 = 1000000;
 static bool log111 = true;
 
 void Planner::shaped_loop() {
@@ -1293,11 +1293,11 @@ void Planner::shaped_loop() {
 
     c2--;
     if (c2 <= 0) {
-        c2 = 100000;
+        c2 = 1000000;
         float t = (float)axisManager.counts[4] / (float)axisManager.counts[3] / 3.0f;
         float max_t = (float)axisManager.counts[5] / 3.0f;
         // LOG_I("c0: %d, c1: %d, time: %lf, max_t: %lf, m1: %d, m2: %d\n", axisManager.counts[0], axisManager.counts[1], t, max_t, axisManager.axis[0].func_manager.max_size, axisManager.axis[1].func_manager.max_size);
-        LOG_I("c10: %d, c11: %d\n", axisManager.counts[10], axisManager.counts[11]);
+        LOG_I("c10: %d, c11: %d, c12: %d\n", axisManager.counts[10], axisManager.counts[11], axisManager.counts[12]);
     }
 
     float remaining_consume_time = axisManager.getRemainingConsumeTime();
@@ -1306,20 +1306,20 @@ void Planner::shaped_loop() {
     if (remaining_consume_time > SHAPED_WAITING_MIN_TIME) {
       if (remaining_consume_time == last_remaining_consume_time) {
         count--;
-        if(count == 999) {
-          start_t = remaining_consume_time;
-        }
-        if(count == 0) {
-          end_t = remaining_consume_time;
-        }
+        // if(count == 999) {
+        //   start_t = remaining_consume_time;
+        // }
+        // if(count == 0) {
+        //   end_t = remaining_consume_time;
+        // }
       } else {
-        count = 1000;
+        count = 10000;
         log111 = true;
       }
       last_remaining_consume_time = remaining_consume_time;
       if (count <= 0 && log111) {
         log111 = false;
-        LOG_I("remaining_t: %lf, start_t: %lf, end_t: %lf\n", remaining_consume_time, start_t, end_t);
+        LOG_I("remaining_t: %lf\n");
         // LOG_I("m: %d, %d\n", moveQueue.move_tail, moveQueue.move_head);
         // Move& m = moveQueue.moves[moveQueue.prevMoveIndex(moveQueue.move_head)];
         // LOG_I("t: %lf, flag: %d\n", m.end_t.toDouble(), m.flag);
@@ -1370,12 +1370,19 @@ void Planner::shaped_loop() {
 
     float planed_time = 0;
     while (index != planned_index) {
-        if (!block_buffer[index].shaper_data.is_create_move) {
+        block = &block_buffer[index];
+        if (!block->shaper_data.is_create_move) {
           // LOG_I("b0: %d\n", index);
-            moveQueue.calculateMoves(block_buffer[index]);
-            block_buffer[index].shaper_data.is_create_move = true;
+            if (TEST(block->flag, BLOCK_BIT_RECALCULATE)) break;
+
+            moveQueue.calculateMoves(block);
+            block->shaper_data.is_create_move = true;
         }
-        planed_time += block_buffer[index].shaper_data.block_time;
+        if (!block->shaper_data.is_zero_speed)
+        {
+          planed_time += block->shaper_data.block_time;
+        }
+        
         index = next_block_index(index);
     }
 
@@ -1383,12 +1390,20 @@ void Planner::shaped_loop() {
 
     if (index != head_index && planed_time + remaining_consume_time < need_shaped_time) {
         while (index != head_index) {
-            if (!block_buffer[index].shaper_data.is_create_move) {
+            block = &block_buffer[index];
+            if (!block->shaper_data.is_create_move) {
               // LOG_I("b1: %d\n", index);
-                moveQueue.calculateMoves(block_buffer[index]);
-                block_buffer[index].shaper_data.is_create_move = true;
+                if (TEST(block->flag, BLOCK_BIT_RECALCULATE)) break;
+                
+                moveQueue.calculateMoves(block);
+                block->shaper_data.is_create_move = true;
             }
-            planed_time += block_buffer[index].shaper_data.block_time;
+
+            if (!block->shaper_data.is_zero_speed)
+            {
+              planed_time += block->shaper_data.block_time;
+            }
+            
             index = next_block_index(index);
 
             if (planed_time + remaining_consume_time >= need_shaped_time) {
@@ -1400,7 +1415,8 @@ void Planner::shaped_loop() {
             axisManager.counts[0]++;
             LOG_I("addEmptyMove\n");
             axisManager.addEmptyMove();
-            block_buffer[prev_block_index(index)].shaper_data.last_print_time += axisManager.shaped_right_delta;
+            block = &block_buffer[prev_block_index(index)];
+            block->shaper_data.last_print_time += axisManager.shaped_right_delta;
         }
     }
 
@@ -1412,9 +1428,13 @@ void Planner::shaped_loop() {
     while (shaped_index != planned_index) {
         block = &block_buffer[shaped_index];
 
-        if (!axisManager.generateAllAxisFuncParams(shaped_index, *block)) {
+        if (!block->shaper_data.is_zero_speed)
+        {
+          if (!axisManager.generateAllAxisFuncParams(shaped_index, block)) {
             break;
+          }
         }
+      
         // uint8_t move_index = moveQueue.calculateMoveStart(block->shaper_data.move_end, axisManager.shaped_delta);
 
         shaped_index = next_block_index(shaped_index);
@@ -2265,10 +2285,10 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
 
   TERN_(HAS_EXTRUDERS, block->steps.e = esteps);
   if (block->millimeters > 0) {
-      block->axis_r.x = steps_dist_mm.x / block->millimeters;
-      block->axis_r.y = steps_dist_mm.y / block->millimeters;
-      block->axis_r.z = steps_dist_mm.z / block->millimeters;
-      block->axis_r.e = steps_dist_mm.e / block->millimeters;
+      block->axis_r.x = da / block->millimeters;
+      block->axis_r.y = db / block->millimeters;
+      block->axis_r.z = dc / block->millimeters;
+      block->axis_r.e = de / block->millimeters;
   } else {
     LINEAR_AXIS_CODE(
       block->axis_r.x = 0,

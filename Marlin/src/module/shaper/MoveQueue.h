@@ -46,8 +46,8 @@ class MoveQueue {
       move_head = 0;
     }
 
-    constexpr uint8_t nextMoveIndex(const uint8_t block_index) { return MOVE_MOD(block_index + 1);};
-    constexpr uint8_t prevMoveIndex(const uint8_t block_index) { return MOVE_MOD(block_index - 1);};
+    FORCE_INLINE constexpr uint8_t nextMoveIndex(const uint8_t block_index) { return MOVE_MOD(block_index + 1);};
+    FORCE_INLINE constexpr uint8_t prevMoveIndex(const uint8_t block_index) { return MOVE_MOD(block_index - 1);};
     bool isBetween(const uint8_t block_index) {
         return (MOVE_MOD(move_head - block_index) + MOVE_MOD(block_index - move_tail)) == MOVE_MOD(move_head - move_tail);
     };
@@ -55,7 +55,7 @@ class MoveQueue {
         return MOVE_MOD(move_head - move_tail);
     };
 
-    void calculateMoves(block_t &block);
+    void calculateMoves(block_t* block);
 
     uint8_t addEmptyMove(float time);
     uint8_t addMoveStart();
@@ -72,8 +72,8 @@ class MoveQueue {
     float getAxisPositionAcrossMoves(int move_index,int axis, time_double_t time, int move_shaped_start, int move_shaped_end);
     float getAxisPosition(int move_index,int axis, time_double_t time);
 
-    void setMove(uint8_t move_index, float start_v, float end_v, float accelerate, float distance, xyze_float_t axis_r, float t, uint8_t flag = 0);
-    uint8_t addMove(float start_v, float end_v, float accelerate, float distance, xyze_float_t axis_r, float t, uint8_t flag = MOVE_FLAG_NORMAL);
+    void setMove(uint8_t move_index, float start_v, float end_v, float accelerate, float distance, xyze_float_t& axis_r, float t, uint8_t flag = 0);
+    uint8_t addMove(float start_v, float end_v, float accelerate, float distance, xyze_float_t& axis_r, float t, uint8_t flag = MOVE_FLAG_NORMAL);
 
   private:
 };

@@ -2045,13 +2045,17 @@ uint32_t Stepper::block_phase_isr() {
       if (next_axis_stepper.print_time < block_print_time) {
           float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
 
+          if (delta_time <= -10.0f) {
+            axisManager.counts[12]++;
+            axisManager.t = !axisManager.t;
+          }
           if (axis_stepper.last_axis == next_axis_stepper.axis && delta_time <= 0) 
           {
             axisManager.counts[10]++;
-            axisManager.t = !axisManager.t;
+            // axisManager.t = !axisManager.t;
           }
           if (delta_time > 30) {
-            axisManager.t = !axisManager.t;
+            // axisManager.t = !axisManager.t;
             axisManager.counts[11]++;
           }
           
@@ -2113,6 +2117,19 @@ uint32_t Stepper::block_phase_isr() {
         if (!(current_block = planner.get_current_block()))
           return interval; // No more queued movements!
       }
+
+      while (current_block != nullptr && current_block->shaper_data.is_zero_speed) {
+        discard_current_block();
+
+        
+        current_block = planner.get_current_block();
+      }
+
+      if (current_block == nullptr)
+      {
+        return interval;
+      }
+      
 
       // For non-inline cutter, grossly apply power
       #if ENABLED(LASER_FEATURE) && DISABLED(LASER_POWER_INLINE)
@@ -2240,7 +2257,7 @@ uint32_t Stepper::block_phase_isr() {
       block_print_time = current_block->shaper_data.last_print_time;
       Move& end_move = moveQueue.moves[current_block->shaper_data.move_end];
       for (int i = 0; i < AXIS_SIZE; ++i) {
-          block_move_target_steps[i] = LROUND(end_move.end_pos[i] * planner.settings.axis_steps_per_mm[i]);
+          block_move_target_steps[i] = LROUND(end_move.end_pos[i]);
       }
 
       // Initialize Bresenham delta errors to 1/2
@@ -2338,9 +2355,9 @@ uint32_t Stepper::block_phase_isr() {
         axis_stepper.delta_time = 0;
       } else {
         float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
-        if (delta_time <= 0) 
-        {
-          axisManager.counts[10]++;
+        if (delta_time <= -10.0f) {
+          axisManager.counts[12]++;
+          axisManager.t = !axisManager.t;
         }
         if (delta_time >= 30) {
           axisManager.counts[11]++;

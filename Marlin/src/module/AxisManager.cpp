@@ -4,7 +4,7 @@
 AxisManager axisManager;
 AxisConsumerManager axisConsumerManager;
 
-bool Axis::generateFuncParams(uint8_t block_index, block_t &block, uint8_t move_start, uint8_t move_end) {
+FORCE_INLINE bool Axis::generateFuncParams(uint8_t block_index, uint8_t move_start, uint8_t move_end) {
     if (block_index == generated_block_index) {
         return true;
     }
@@ -12,9 +12,9 @@ bool Axis::generateFuncParams(uint8_t block_index, block_t &block, uint8_t move_
 
     bool res;
     if (is_shaped) {
-        res = axis_input_shaper->generateFuncParams(func_manager, move_start, move_end);
+        res = axis_input_shaper->generateShapedFuncParams(&func_manager, move_start, move_end);
     } else {
-        res = generateFuncParams(func_manager, move_start, move_end);
+        res = generateAxisFuncParams(&func_manager, move_start, move_end);
     }
     if (res) {
         generated_block_index = block_index;
@@ -40,7 +40,7 @@ bool AxisConsumer::getNextStep(FuncParams* funcParams, int size, int func_params
     return true;
 }
 
-bool Axis::generateFuncParams(FuncManager &func_manager, uint8_t move_start, uint8_t move_end) {
+FORCE_INLINE bool Axis::generateAxisFuncParams(FuncManager *func_manager, uint8_t move_start, uint8_t move_end) {
     uint8_t move_index;
     if (generated_move_index == -1) {
         move_index = move_start;
@@ -72,7 +72,8 @@ bool Axis::generateFuncParams(FuncManager &func_manager, uint8_t move_start, uin
         } else {
             type = dy > 0 ? 1 : -1;
         }
-        func_manager.addFuncParams(a, b, c, type, move->end_t, move->end_pos[axis]);
+        time_double_t end_t = move->end_t;
+        func_manager->addFuncParams(a, b, c, type, end_t, y2);
 
         // LOG_I("%d, %d, %d\n", axis, func_manager.max_size, func_manager.func_params_head);
 
@@ -86,11 +87,11 @@ float AxisManager::getRemainingConsumeTime() {
     return min_last_time - axisConsumerManager.print_time;
 }
 
-bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t& block) {
+bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t* block) {
     bool res = true;
 
-    uint8_t move_start = block.shaper_data.move_start;
-    uint8_t move_end = block.shaper_data.move_end;
+    uint8_t move_start = block->shaper_data.move_start;
+    uint8_t move_end = block->shaper_data.move_end;
 
     if (isShaped()) {
         if (move_start != moveQueue.move_tail && moveQueue.moves[moveQueue.prevMoveIndex(move_start)].flag == 1) {
@@ -100,15 +101,20 @@ bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t& block)
         if (move_end != moveQueue.prevMoveIndex(moveQueue.move_head) && moveQueue.moves[moveQueue.nextMoveIndex(move_end)].flag == 1) {
             move_end = moveQueue.nextMoveIndex(move_end);
         }
+        if (move_end == moveQueue.move_head) {
+            move_end = moveQueue.prevMoveIndex(moveQueue.move_head);
+        }
     }
 
     for (int i = 0; i < AXIS_SIZE; ++i) {
-        if (!axis[i].generateFuncParams(block_index, block, move_start, move_end)) {
+        if (!axis[i].generateFuncParams(block_index, move_start, move_end)) {
             res = false;
         }
     }
 
-    moveQueue.updateMoveTail(moveQueue.calculateMoveStart(move_start, axisManager.shaped_delta));
+    uint8_t new_move_tail = moveQueue.calculateMoveStart(move_start, axisManager.shaped_delta);
+
+    moveQueue.updateMoveTail(new_move_tail);
 
     axisManager.updateMinLastTime();
 

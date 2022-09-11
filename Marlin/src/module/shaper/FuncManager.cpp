@@ -1,4 +1,5 @@
 #include "FuncManager.h"
+#include "../AxisManager.h"
 #include "../../../../snapmaker/debug/debug.h"
 
 FuncParams FuncManager::FUNC_PARAMS_X[FUNC_PARAMS_X_SIZE];
@@ -145,9 +146,14 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
         type = 0;
     }
 
-    if (IS_ZERO(a) && IS_ZERO(b)) {
-        if (last_is_zero) {
+    if (type == 0) {
+        int func_params_use = axisConsumerManager.axis_consumers[axis].func_consumer.func_params_use;
+        if (last_is_zero && func_params_use != func_params_head && func_params_use != prevFuncParamsIndex(func_params_head)) {
             FuncParams &f_p = funcParams[prevFuncParamsIndex(func_params_head)];
+
+            if (!IS_ZERO(f_p.right_pos - right_pos)) {
+                LOG_I("error type: %lf, %lf\n", f_p.right_pos, right_pos);
+            }
 
             f_p.right_time = right_time;
             f_p.right_pos = right_pos;
@@ -208,14 +214,14 @@ time_double_t* FuncConsumer::getNextPosTime(FuncParams* funcParams, int size, in
         if (func_params->type == 0) {
         } else if (func_params->type > 0) {
             next_step = print_step + delta_step;
-            next_pos = (float)next_step / mm_to_step - half_step_mm;
+            next_pos = (float)next_step - 0.5f;
             if (next_pos <= func_params->right_pos + EPSILON) {
                 *dir = 1;
                 break;
             }
         } else {
             next_step = print_step - delta_step;
-            next_pos = (float)next_step / mm_to_step + half_step_mm;
+            next_pos = (float)next_step + 0.5f;
             if (next_pos >= func_params->right_pos - EPSILON) {
                 *dir = -1;
                 break;

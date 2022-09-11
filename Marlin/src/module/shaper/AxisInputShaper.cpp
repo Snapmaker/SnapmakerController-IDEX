@@ -2,24 +2,24 @@
 #include "MoveQueue.h"
 #include "../../../../snapmaker/debug/debug.h"
 
-void ShaperWindow::updateParamABC(int i, float start_v, float accelerate, time_double_t start_t, time_double_t left_time, float start_pos, float axis_r) {
-    ShaperWindowParams &p = params[i];
-    float A = p.A;
-    // float d_t = (start_t - left_time);
-    // float T = p.T - d_t;
-    p.a = 0.5f * accelerate * A * axis_r;
-    // p.b = (start_v + accelerate * T) * A * axis_r;
-    // p.c = (start_pos + (start_v * T + 0.5f * accelerate * sq(T)) * axis_r) * A;
+AxisInputShaper AxisInputShaper::axis_input_shaper_x;
+AxisInputShaper AxisInputShaper::axis_input_shaper_y;
 
-    // p.left_time = left_time;
-}
+// void ShaperWindow::updateParamABC(int i, float start_v, float accelerate, time_double_t start_t, time_double_t left_time, float start_pos, float axis_r) {
+//     ShaperWindowParams &p = params[i];
+//     float A = p.A;
+//     // float d_t = (start_t - left_time);
+//     // float T = p.T - d_t;
+//     p.a = 0.5f * accelerate * A * axis_r;
+//     // p.b = (start_v + accelerate * T) * A * axis_r;
+//     // p.c = (start_pos + (start_v * T + 0.5f * accelerate * sq(T)) * axis_r) * A;
+
+//     // p.left_time = left_time;
+// }
 
 
-void ShaperWindow::addFuncParams(FuncManager &func_manager, float x2, float y1, float y2) {
-    float a = 0, b = 0, c = 0;
-    for (int i = 0; i < n; i++) {
-        a += params[i].a;
-    }
+FORCE_INLINE void AxisInputShaper::addFuncParamsToManager(FuncManager *func_manager,float a, time_double_t right_time, float right_pos, float x2, float y1, float y2) {
+    float b = 0, c = 0;
 
     float dx = x2;
     float dy = y2 - y1;
@@ -32,7 +32,7 @@ void ShaperWindow::addFuncParams(FuncManager &func_manager, float x2, float y1, 
         c = y1;
 
         int type = IS_ZERO(b) ? 0 : b > 0 ? 1 : -1;
-        func_manager.addFuncParams(a, b, c, type, time, pos);
+        func_manager->addFuncParams(a, b, c, type, right_time, right_pos);
     } else {
         b = dy / dx - a * x2;
         c = y1;
@@ -42,19 +42,19 @@ void ShaperWindow::addFuncParams(FuncManager &func_manager, float x2, float y1, 
             float k = dy / dx;
             float middle_pos = c - 0.25f * (sq(k) / a - 2 * k * x2 + a * sq(x2));
             int type = a > 0 ? -1 : 1;
-            time_double_t middle_time = func_manager.last_time + middle;
-            func_manager.addFuncParams(a, b, c, type, middle_time, middle_pos);
+            time_double_t middle_time = func_manager->last_time + middle;
+            func_manager->addFuncParams(a, b, c, type, middle_time, middle_pos);
             
             type = -type;
             b = 0.0f;
             c = middle_pos;
-            func_manager.addFuncParams(a, b, c, type, time, pos);
+            func_manager->addFuncParams(a, b, c, type, right_time, right_pos);
         } else {
             int type = a > 0 ? middle < EPSILON ? 1 : -1 :middle < EPSILON ? -1 : 1;
-            func_manager.addFuncParams(a, b, c, type, time, pos);
+            func_manager->addFuncParams(a, b, c, type, right_time, right_pos);
         }
     }
-    func_params.update(a, b, c);
+    // func_params.update(a, b, c);
 }
 
 // void ShaperWindow::updateABC() {
@@ -230,6 +230,7 @@ void AxisInputShaper::init()
 
 float AxisInputShaper::calcPosition(int move_index, time_double_t time, int move_shaped_start, int move_shaped_end) {
     if (moveQueue.getMoveSize() == 0) {
+        LOG_I("moveQueue.getMoveSize() zero\n");
         return 0;
     }
 
@@ -238,15 +239,20 @@ float AxisInputShaper::calcPosition(int move_index, time_double_t time, int move
         return 0;
     }
 
+    if (move_index == moveQueue.move_head) {
+        LOG_I("move_index == head\n");
+    }
+
     float res = 0;
     for (int i = 0; i < shift_params.n; i++) {
-        res += shift_params.A[i] * moveQueue.getAxisPositionAcrossMoves(move_index, axis, time + shift_params.T[i], move_shaped_start, move_shaped_end);
+        time_double_t t = time + shift_params.T[i];
+        res += shift_params.A[i] * moveQueue.getAxisPositionAcrossMoves(move_index, axis, t, move_shaped_start, move_shaped_end);
     }
     return res;
 }
 
 
-void AxisInputShaper::moveShaperWindowByIndex(FuncManager &func_manager, int move_shaped_start, int move_shaped_end) {
+FORCE_INLINE void AxisInputShaper::moveShaperWindowByIndex(FuncManager *func_manager, int move_shaped_start, int move_shaped_end) {
     int n = shift_params.n;
     shaper_window.n = n;
     shaper_window.zero_n = n - 1;
@@ -272,33 +278,36 @@ void AxisInputShaper::moveShaperWindowByIndex(FuncManager &func_manager, int mov
         // shaper_window.updateParamABC(i, move->start_v, move->accelerate, move->start_t, left_time, move->start_pos[axis], move->axis_r[axis]);
     }
 
-    shaper_window.pos = calcPosition(move_shaped_start, shaper_window.time, move_shaped_start, move_shaped_end);
+    time_double_t shaper_time = shaper_window.time;
+    shaper_window.pos = calcPosition(move_shaped_start, shaper_time, move_shaped_start, move_shaped_end);
 
-    if (shaper_window.pos < -600 || shaper_window.pos > 600) {
-        LOG_I("debug\n");
-        shaper_window.pos = calcPosition(move_shaped_start, shaper_window.time, move_shaped_start, move_shaped_end);
-    }
+    // if (shaper_window.pos < -48000 || shaper_window.pos > 48000) {
+    //     LOG_I("debug\n");
+    //     shaper_window.pos = calcPosition(move_shaped_start, shaper_window.time, move_shaped_start, move_shaped_end);
+    // }
 
-    float x1 = 0;
-    float y1 = func_manager.last_pos;
-    float x2 = shaper_window.time - func_manager.last_time;
+    float y1 = func_manager->last_pos;
+    float x2 = shaper_window.time - func_manager->last_time;
     float y2 = shaper_window.pos;
 
     // shaper_window.updateABC();
     // shaper_window.updateABC(x1, y1, x2, y2);
-    shaper_window.addFuncParams(func_manager, x2, y1, y2);
+    shaper_window.updateParamsA();
+    addFuncParamsToManager(func_manager, shaper_window.func_params.a, shaper_time, y2, x2, y1, y2);
 
     // LOG_I("move_index: %d, %d\n", shaper_window.params[0].move_index, shaper_window.params[1].move_index);
 }
 
 
-bool AxisInputShaper::moveShaperWindowToNext(FuncManager &func_manager, uint8_t move_shaped_start, uint8_t move_shaped_end) {
-    if (shaper_window.params[shaper_window.n - 1].move_index == move_shaped_end && 
-        ABS(shaper_window.params[shaper_window.n - 1].time - moveQueue.moves[move_shaped_end].end_t) < EPSILON) {
+bool AxisInputShaper::moveShaperWindowToNext(FuncManager *func_manager, uint8_t move_shaped_start, uint8_t move_shaped_end) {
+    ShaperWindowParams *zero_p = &shaper_window.params[shaper_window.zero_n];
+
+    if (zero_p->move_index == move_shaped_end)
+    {
         return false;
     }
+    
 
-    ShaperWindowParams *zero_p = &shaper_window.params[shaper_window.zero_n];
     zero_p->move_index = moveQueue.nextMoveIndex(zero_p->move_index);
 
     Move *move = &moveQueue.moves[zero_p->move_index];
@@ -334,21 +343,22 @@ bool AxisInputShaper::moveShaperWindowToNext(FuncManager &func_manager, uint8_t 
     }
 
     // shaper_window.updateParamLeftTime(left_time);
+    time_double_t new_time = shaper_window.time + min_next_time;
+    shaper_window.time = new_time;
+    int move_index = shaper_window.params[0].move_index;
+    shaper_window.pos = calcPosition(move_index, shaper_window.time, move_index, move_shaped_end);
 
-    shaper_window.time += min_next_time;
-    shaper_window.pos = calcPosition(shaper_window.params[0].move_index, shaper_window.time, shaper_window.params[0].move_index, move_shaped_end);
+    // if (shaper_window.pos < -48000 || shaper_window.pos > 48000) {
+    //     LOG_I("debug\n");
+    //     shaper_window.pos = calcPosition(move_shaped_start, shaper_window.time, move_shaped_start, move_shaped_end);
+    // }
 
-    if (shaper_window.pos < -600 || shaper_window.pos > 600) {
-        LOG_I("debug\n");
-        shaper_window.pos = calcPosition(move_shaped_start, shaper_window.time, move_shaped_start, move_shaped_end);
-    }
-
-    float x1 = 0;
-    float y1 = func_manager.last_pos;
-    float x2 = shaper_window.time - func_manager.last_time;
+    float y1 = func_manager->last_pos;
+    float x2 = shaper_window.time - func_manager->last_time;
     float y2 = shaper_window.pos;
 
-    shaper_window.addFuncParams(func_manager, x2, y1, y2);
+    shaper_window.updateParamsA();
+    addFuncParamsToManager(func_manager, shaper_window.func_params.a, new_time, y2, x2, y1, y2);
     // shaper_window.updateABC();
     // shaper_window.updateABC(x1, y1, x2, y2);
     
@@ -362,7 +372,7 @@ bool AxisInputShaper::moveShaperWindowToNext(FuncManager &func_manager, uint8_t 
     return true;
 }
 
-bool AxisInputShaper::generateFuncParams(FuncManager& func_manager, uint8_t move_shaper_start, uint8_t move_shaper_end) {
+bool AxisInputShaper::generateShapedFuncParams(FuncManager* func_manager, uint8_t move_shaper_start, uint8_t move_shaper_end) {
     if (!is_shaper_window_init) {
         moveShaperWindowByIndex(func_manager, move_shaper_start, move_shaper_end);
         // func_manager.addDeltaTimeFuncParams(shaper_window.func_params.a, shaper_window.func_params.b, shaper_window.func_params.c, func_manager.last_time, shaper_window.time, shaper_window.pos);

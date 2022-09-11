@@ -1,7 +1,7 @@
 #pragma once
 
 #define EPSILON 0.000001f
-#define IS_ZERO(x) ABS(x) < EPSILON
+#define IS_ZERO(x) (ABS(x) < EPSILON)
 
 // class TimeDouble {
 //   private:
