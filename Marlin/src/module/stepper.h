@@ -273,9 +273,10 @@ class Stepper {
       static bool frozen;                   // Set this flag to instantly freeze motion
     #endif
 
-  private:
+  public:
 
     static block_t* current_block;          // A pointer to the block currently being traced
+    static block_t* new_current_block;          // A pointer to the block currently being traced
 
     static uint8_t  current_direction_bits, 
                     last_direction_bits,     // The next stepping-bits to be output

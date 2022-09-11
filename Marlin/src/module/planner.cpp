@@ -768,12 +768,12 @@ block_t* Planner::get_current_block() {
     // We can't be sure how long an active block will take, so don't count it.
     TERN_(HAS_WIRED_LCD, block_buffer_runtime_us -= block->segment_time_us);
 
-    // As this block is busy, advance the nonbusy block pointer
-    block_buffer_nonbusy = next_block_index(block_buffer_tail);
+    // // As this block is busy, advance the nonbusy block pointer
+    // block_buffer_nonbusy = next_block_index(block_buffer_tail);
 
-    // Push block_buffer_planned pointer, if encountered.
-    if (block_buffer_tail == block_buffer_planned)
-      block_buffer_planned = block_buffer_nonbusy;
+    // // Push block_buffer_planned pointer, if encountered.
+    // if (block_buffer_tail == block_buffer_planned)
+    //   block_buffer_planned = block_buffer_nonbusy;
 
     // Return the block
     return block;
@@ -1291,17 +1291,18 @@ void Planner::shaped_loop() {
         return;
     }
 
+    // stepper_isr();
+
     c2--;
     if (c2 <= 0) {
         c2 = 1000000;
         float t = (float)axisManager.counts[4] / (float)axisManager.counts[3] / 3.0f;
         float max_t = (float)axisManager.counts[5] / 3.0f;
-        // LOG_I("c0: %d, c1: %d, time: %lf, max_t: %lf, m1: %d, m2: %d\n", axisManager.counts[0], axisManager.counts[1], t, max_t, axisManager.axis[0].func_manager.max_size, axisManager.axis[1].func_manager.max_size);
-        LOG_I("c10: %d, c11: %d, c12: %d\n", axisManager.counts[10], axisManager.counts[11], axisManager.counts[12]);
+        LOG_I("c0: %d, c1: %d, time: %lf, max_t: %lf, c11: %d, c12: %d\n", axisManager.counts[0], axisManager.counts[1], t, max_t, axisManager.counts[11], axisManager.counts[12]);
+        // LOG_I("c10: %d, c11: %d, c12: %d\n", axisManager.counts[10], axisManager.counts[11], axisManager.counts[12]);
     }
 
     float remaining_consume_time = axisManager.getRemainingConsumeTime();
-
 
     if (remaining_consume_time > SHAPED_WAITING_MIN_TIME) {
       if (remaining_consume_time == last_remaining_consume_time) {
@@ -1350,10 +1351,14 @@ void Planner::shaped_loop() {
       return;
     }
 
-    if (nr_moves < 6 && delay_before_delivering > SHAPED_WAITING_MIN_TIME) {
+    // if (nr_moves < 2 && delay_before_delivering > SHAPED_WAITING_MIN_TIME) {
+    //     delay_before_delivering = 0;
+    //     return;
+    // }
+    if (nr_moves < 2 && delay_before_delivering > SHAPED_WAITING_MIN_TIME) {
         return;
     }
-
+    delay_before_delivering = 0;
     // LOG_I("r: %lf\n", remaining_consume_time);
 
     uint8_t tail_index = block_buffer_tail;
@@ -1362,6 +1367,12 @@ void Planner::shaped_loop() {
     uint8_t head_index = block_buffer_head;
     block_t *block;
     uint8_t index = shaped_index;
+
+    if (shaped_index == head_index) {
+      return;
+    }
+
+    LOG_I("t: %lf\n", remaining_consume_time);
 
     if (moveQueue.is_start) {
         axisManager.addEmptyMove();
@@ -1443,6 +1454,77 @@ void Planner::shaped_loop() {
     // LOG_I("remainingConsumeTime: %lf, %d, %d, %d, %d\n", axisManager.getRemainingConsumeTime(), tail_index, shaped_index, planned_index, head_index);
 
     block_buffer_shaped = shaped_index;
+}
+
+void Planner::stepper_isr() {
+  uint8_t block_index = block_buffer_tail;
+  uint8_t block_head = block_buffer_head;
+  if (block_buffer_tail == block_buffer_head) {
+    return;
+  }
+  if (block_index != block_buffer_head) {
+    block_t* block = &block_buffer[block_index];
+    if (block->shaper_data.is_zero_speed) {
+      release_current_block();
+      return;
+    }
+    if (block->shaper_data.is_create_move) {
+      stepper.block_print_time = block->shaper_data.last_print_time;
+      Move& end_move = moveQueue.moves[block->shaper_data.move_end];
+      for (int i = 0; i < AXIS_SIZE; ++i) {
+          stepper.block_move_target_steps[i] = LROUND(end_move.end_pos[i]);
+      }
+    } else {
+      return;
+    }
+  }
+
+  if (!axisConsumerManager.getNextAxisStepper()) {
+    bool is_done = true;
+    for (size_t i = 0; i < AXIS_SIZE; i++) {
+      if (axisConsumerManager.current_steps[i] != stepper.block_move_target_steps[i]) {
+        is_done = false;
+      }
+    }
+
+    if (is_done) {
+      LOG_I("is_done\n");
+      release_current_block();
+    }
+
+    return;
+  }
+
+  axisConsumerManager.getCurrentAxisStepper(&stepper.next_axis_stepper);
+
+  if (stepper.next_axis_stepper.print_time > stepper.block_print_time) {
+    // LOG_I("tail: %d\n", block_buffer_tail);
+    // LOG_I("x: %d, y: %d, z: %d, e: %d\n", axisManager.counts[15], axisManager.counts[16], axisManager.counts[17], axisManager.counts[18]);
+    release_current_block();
+  }
+
+  float delta_time = stepper.next_axis_stepper.print_time - stepper.axis_stepper.print_time;
+  if (delta_time <= -10.0f) {
+    axisManager.counts[12]++;
+    axisManager.t = !axisManager.t;
+    LOG_I("d: %d %lf %lf\n", stepper.next_axis_stepper.axis, delta_time, stepper.next_axis_stepper.print_time);
+  }
+  if (delta_time >= 30) {
+    axisManager.counts[11]++;
+    LOG_I("d: %d %lf %lf\n", stepper.next_axis_stepper.axis, delta_time, stepper.next_axis_stepper.print_time);
+  }
+    
+  if (delta_time < 0) {
+      delta_time = 0;
+  }
+  stepper.axis_stepper.delta_time = delta_time;
+  stepper.axis_stepper.axis = stepper.next_axis_stepper.axis;
+  stepper.axis_stepper.dir = stepper.next_axis_stepper.dir;
+  stepper.axis_stepper.print_time = stepper.next_axis_stepper.print_time;
+
+  if (stepper.axis_stepper.axis >= 0) {
+    axisManager.counts[stepper.axis_stepper.axis + 15]++;
+  }
 }
 
 #if HAS_FAN && DISABLED(LASER_SYNCHRONOUS_M106_M107)
