@@ -743,11 +743,15 @@ inline void manage_inactivity(const bool no_stepper_sleep=false) {
  *  - Handle Joystick jogging
  */
 void idle(bool no_stepper_sleep/*=false*/) {
+  static bool idle_lock = false;
   #if ENABLED(MARLIN_DEV_MODE)
     static uint16_t idle_depth = 0;
     if (++idle_depth > 5) SERIAL_ECHOLNPAIR("idle() call depth: ", idle_depth);
   #endif
-
+  if (idle_lock) {
+    return;
+  }
+  idle_lock = true;
   // Core Marlin activities
   manage_inactivity(no_stepper_sleep);
 
@@ -842,6 +846,7 @@ void idle(bool no_stepper_sleep/*=false*/) {
   TERN_(MARLIN_DEV_MODE, idle_depth--);
   power_loss.process();
   filament_sensor.check();
+  idle_lock = false;
   return;
 }
 
