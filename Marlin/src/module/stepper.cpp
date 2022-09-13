@@ -1600,6 +1600,8 @@ void Stepper::isr() {
  */
 void Stepper::pulse_phase_isr() {
 
+  // return;
+
   if (axis_stepper.axis == -1) {
     return;
   }
@@ -2121,6 +2123,7 @@ uint32_t Stepper::block_phase_isr() {
 
   // If no queued movements, just wait 1ms for the next block
   uint32_t interval = (STEPPER_TIMER_RATE) / 1000UL;
+  // return interval;
 
   hal_timer_t st = HAL_timer_get_count(STEP_TIMER_NUM);
 
@@ -2164,6 +2167,8 @@ uint32_t Stepper::block_phase_isr() {
         new_current_block = nullptr;
         planner.release_current_block();
       }
+
+      axisManager.counts[1]++;
 
       return interval;
     }
@@ -2257,7 +2262,7 @@ uint32_t Stepper::block_phase_isr() {
       }
 
     } else {
-      axisManager.counts[1]++;
+      // axisManager.counts[1]++;
 
       bool is_done = true;
       for (size_t i = 0; i < AXIS_SIZE; i++) {

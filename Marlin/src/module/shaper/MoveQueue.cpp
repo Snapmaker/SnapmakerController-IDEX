@@ -11,11 +11,11 @@ void MoveQueue::calculateMoves(block_t* block) {
 //        addMoveStart();
 //        is_start = false;
 //    }
-    float speed_factor = block->nominal_speed / block->nominal_rate;
+    // float speed_factor = block->nominal_speed / block->nominal_rate;
     float millimeters = block->millimeters;
 
-    float entry_speed = block->initial_rate * speed_factor / 1000.0f;
-    float leave_speed = block->final_rate * speed_factor / 1000.0f;
+    float entry_speed = block->initial_speed / 1000.0f;
+    float leave_speed = block->final_speed / 1000.0f;
     float nominal_speed = block->nominal_speed / 1000.0f;
 
     if (nominal_speed < EPSILON) {
@@ -142,6 +142,11 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
     move.start_t = is_first ? 0 : last_move.end_t;
     move.end_t = move.start_t + move.t;
 
+    float last_end_v = is_first? 0 : last_move.end_v;
+    if (!IS_ZERO(last_end_v - move.start_v)) {
+        LOG_I("error v: %lf, %lf\n", last_end_v,  move.start_v);
+    }
+
     for (int i = 0; i < AXIS_SIZE; ++i) {
         move.start_pos[i] = is_first ? 0 : last_move.end_pos[i];
         move.end_pos[i] = move.start_pos[i] + move.distance * move.axis_r[i];
@@ -156,6 +161,8 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
     }
 
     is_first = false;
+
+    // LOG_I("v1: %lf, v2: %lf, s_p: %lf, e_p: %lf, t: %lf\n", start_v, end_v, move.start_pos[3], move.end_pos[3], t);
 
     // LOG_I("%d %lf %lf %lf %lf %lf %lf %lf %lf %lf %d\n", move_head, move.t, move.start_t.toFloat(), move.end_t.toFloat(), start_v, distance, move.start_pos[0], move.end_pos[0], move.start_pos[1], move.end_pos[1], move.flag);
 

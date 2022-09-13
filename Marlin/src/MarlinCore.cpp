@@ -251,6 +251,7 @@ MarlinState marlin_state = MF_INITIALIZING;
 // For M109 and M190, this flag may be cleared (by M108) to exit the wait loop
 bool wait_for_heatup = true;
 
+TaskHandle_t thandle_marlin = NULL;
 void marlin_loop();
 TaskHandle_t thandle_marlin = NULL;
 

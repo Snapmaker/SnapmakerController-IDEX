@@ -429,6 +429,7 @@ void Planner::init() {
         A("or %16, %14")                  // %16:%15 <<= 4
         A("subi %3,-4")                   // idx += 4
 
+
         L("3")
         A("cpi %16,0x40")                 // (nr & 0xC00000) == 0 ?
         A("brcc 4f")                      // No, skip this
@@ -768,12 +769,12 @@ block_t* Planner::get_current_block() {
     // We can't be sure how long an active block will take, so don't count it.
     TERN_(HAS_WIRED_LCD, block_buffer_runtime_us -= block->segment_time_us);
 
-    // // As this block is busy, advance the nonbusy block pointer
-    // block_buffer_nonbusy = next_block_index(block_buffer_tail);
+    // As this block is busy, advance the nonbusy block pointer
+    block_buffer_nonbusy = next_block_index(block_buffer_tail);
 
-    // // Push block_buffer_planned pointer, if encountered.
-    // if (block_buffer_tail == block_buffer_planned)
-    //   block_buffer_planned = block_buffer_nonbusy;
+    // Push block_buffer_planned pointer, if encountered.
+    if (block_buffer_tail == block_buffer_planned)
+      block_buffer_planned = block_buffer_nonbusy;
 
     // Return the block
     return block;
@@ -1202,6 +1203,8 @@ void Planner::recalculate_trapezoids() {
             // NOTE: Entry and exit factors always > 0 by all previous logic operations.
             const float current_nominal_speed = SQRT(block->nominal_speed_sqr),
                         nomr = 1.0f / current_nominal_speed;
+            block->initial_speed = current_entry_speed;
+            block->final_speed = next_entry_speed;
             calculate_trapezoid_for_block(block, current_entry_speed * nomr, next_entry_speed * nomr);
             #if ENABLED(LIN_ADVANCE)
               if (block->use_advance_lead) {
@@ -1276,6 +1279,9 @@ static int c2 = 1000000;
 static bool log111 = true;
 
 void Planner::shaped_loop() {
+    if (xTaskGetCurrentTaskHandle() != thandle_marlin)
+      return;
+
     const uint8_t nr_moves = movesplanned();
 
     if (axisManager.req_abort) {
@@ -1298,7 +1304,7 @@ void Planner::shaped_loop() {
         c2 = 1000000;
         float t = (float)axisManager.counts[4] / (float)axisManager.counts[3] / 3.0f;
         float max_t = (float)axisManager.counts[5] / 3.0f;
-        LOG_I("c0: %d, c1: %d, time: %lf, max_t: %lf, c11: %d, c12: %d\n", axisManager.counts[0], axisManager.counts[1], t, max_t, axisManager.counts[11], axisManager.counts[12]);
+        LOG_I("c0: %d, c1: %d, c2: %d, c6: %d, c7: %d, time: %lf, max_t: %lf, c11: %d, c12: %d\n", axisManager.counts[0], axisManager.counts[1], axisManager.counts[2], axisManager.counts[6],axisManager.counts[7], t, max_t, axisManager.counts[11], axisManager.counts[12]);
         // LOG_I("c10: %d, c11: %d, c12: %d\n", axisManager.counts[10], axisManager.counts[11], axisManager.counts[12]);
     }
 
@@ -1355,7 +1361,7 @@ void Planner::shaped_loop() {
     //     delay_before_delivering = 0;
     //     return;
     // }
-    if (nr_moves < 2 && delay_before_delivering > SHAPED_WAITING_MIN_TIME) {
+    if (nr_moves < 6 && delay_before_delivering > SHAPED_WAITING_MIN_TIME) {
         return;
     }
     delay_before_delivering = 0;
@@ -1384,7 +1390,10 @@ void Planner::shaped_loop() {
         block = &block_buffer[index];
         if (!block->shaper_data.is_create_move) {
           // LOG_I("b0: %d\n", index);
-            if (TEST(block->flag, BLOCK_BIT_RECALCULATE)) break;
+            if (TEST(block->flag, BLOCK_BIT_RECALCULATE)) {
+              axisManager.counts[7]++;
+               break;
+            }
 
             moveQueue.calculateMoves(block);
             block->shaper_data.is_create_move = true;
@@ -1392,6 +1401,8 @@ void Planner::shaped_loop() {
         if (!block->shaper_data.is_zero_speed)
         {
           planed_time += block->shaper_data.block_time;
+        } else {
+          axisManager.counts[6]++;
         }
         
         index = next_block_index(index);
@@ -1401,10 +1412,14 @@ void Planner::shaped_loop() {
 
     if (index != head_index && planed_time + remaining_consume_time < need_shaped_time) {
         while (index != head_index) {
+            axisManager.counts[2]++;
             block = &block_buffer[index];
             if (!block->shaper_data.is_create_move) {
               // LOG_I("b1: %d\n", index);
-                if (TEST(block->flag, BLOCK_BIT_RECALCULATE)) break;
+                if (TEST(block->flag, BLOCK_BIT_RECALCULATE)) {
+                  axisManager.counts[7]++;
+                  break;
+                }
                 
                 moveQueue.calculateMoves(block);
                 block->shaper_data.is_create_move = true;
@@ -1413,6 +1428,8 @@ void Planner::shaped_loop() {
             if (!block->shaper_data.is_zero_speed)
             {
               planed_time += block->shaper_data.block_time;
+            } else {
+              axisManager.counts[6]++;
             }
             
             index = next_block_index(index);
@@ -1521,6 +1538,8 @@ void Planner::stepper_isr() {
   stepper.axis_stepper.axis = stepper.next_axis_stepper.axis;
   stepper.axis_stepper.dir = stepper.next_axis_stepper.dir;
   stepper.axis_stepper.print_time = stepper.next_axis_stepper.print_time;
+
+  LOG_I("axis: %d, d: %lf\n", stepper.axis_stepper.axis, stepper.axis_stepper.delta_time, stepper.axis_stepper.dir);
 
   if (stepper.axis_stepper.axis >= 0) {
     axisManager.counts[stepper.axis_stepper.axis + 15]++;
@@ -2052,7 +2071,7 @@ bool Planner::_buffer_steps(const xyze_long_t &target
   , feedRate_t fr_mm_s, const uint8_t extruder, const_float_t millimeters
 ) {
 
-  axisManager.counts[2]++;
+  // axisManager.counts[2]++;
 
   // LOG_I("%d %d %d %d\n", position.x, position.y, position.z, position.e);
 

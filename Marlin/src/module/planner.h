@@ -238,6 +238,9 @@ typedef struct block_t {
     float e_D_ratio;
   #endif
 
+  float initial_speed;
+  float final_speed;
+
   uint32_t nominal_rate,                    // The nominal step rate for this block in step_events/sec
            initial_rate,                    // The jerk-adjusted step rate at start of block
            final_rate,                      // The minimal rate at exit
