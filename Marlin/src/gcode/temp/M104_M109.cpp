@@ -84,6 +84,10 @@ void GcodeSuite::M104_M109(const bool isM109) {
     if (target_extruder < 0) return;
   #endif
 
+  if (idex_is_duplicating() && target_extruder) {
+    return;
+  }
+
   bool got_temp = false;
   celsius_t temp = 0;
 
