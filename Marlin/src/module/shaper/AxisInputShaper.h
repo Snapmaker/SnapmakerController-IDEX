@@ -20,18 +20,20 @@ enum class InputShaperType : int
 class ShaperParams
 {
 public:
-  float A[5]{0};
-  float T[5]{0};
+  float A[5];
+  float T[5];
   int n = 0;
 };
 
 class ShaperWindowParams
 {
 public:
+  uint8_t move_index;
+
   float A, T;
   float a, b, c;
+
   time_double_t left_time;
-  uint8_t move_index;
   time_double_t time;
 };
 
@@ -39,11 +41,13 @@ class ShaperWindow
 {
 public:
   int n = 0;
-  ShaperWindowParams params[5];
 
-  time_double_t time = 0;
   float pos = 0;
   int zero_n = 0;
+
+  time_double_t time = 0;
+
+  ShaperWindowParams params[5];
 
   FuncParams func_params;
 
@@ -79,7 +83,7 @@ private:
 public:
   float frequency = 50;
   float zeta = 0.1;
-  InputShaperType type = InputShaperType::zv;
+  InputShaperType type = InputShaperType::zvd;
 
   float right_delta;
   float left_delta;

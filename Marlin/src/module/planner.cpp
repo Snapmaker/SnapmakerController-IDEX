@@ -1325,7 +1325,7 @@ void Planner::shaped_loop() {
       last_remaining_consume_time = remaining_consume_time;
       if (count <= 0 && log111) {
         log111 = false;
-        LOG_I("remaining_t: %lf\n");
+        LOG_I("remaining_t: %lf\n", remaining_consume_time);
         // LOG_I("m: %d, %d\n", moveQueue.move_tail, moveQueue.move_head);
         // Move& m = moveQueue.moves[moveQueue.prevMoveIndex(moveQueue.move_head)];
         // LOG_I("t: %lf, flag: %d\n", m.end_t.toDouble(), m.flag);

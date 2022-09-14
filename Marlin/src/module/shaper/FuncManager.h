@@ -10,10 +10,8 @@
 
 class FuncParams {
   public:
-    float a, b, c;
+    float a, b, c, right_pos;
     time_double_t right_time = 0;
-    float right_pos = 0;
-    int8_t type = 0;
 
     void update(float a, float b, float c) {
         this->a = a;
@@ -37,8 +35,8 @@ class FuncParams {
 //    static float getX(float y, float a, float b, float c, float left_time, int8_t type);
 //};
 
-#define FUNC_PARAMS_X_SIZE 128
-#define FUNC_PARAMS_Y_SIZE 128
+#define FUNC_PARAMS_X_SIZE 200
+#define FUNC_PARAMS_Y_SIZE 200
 #define FUNC_PARAMS_Z_SIZE 64
 #define FUNC_PARAMS_E_SIZE 64
 
@@ -61,14 +59,20 @@ class FuncManager {
     time_double_t left_time = 0;
     float print_pos = 0;
     int print_step = 0;
-    
 
     static FuncParams FUNC_PARAMS_X[FUNC_PARAMS_X_SIZE];
     static FuncParams FUNC_PARAMS_Y[FUNC_PARAMS_Y_SIZE];
     static FuncParams FUNC_PARAMS_Z[FUNC_PARAMS_Z_SIZE];
     static FuncParams FUNC_PARAMS_E[FUNC_PARAMS_E_SIZE];
 
+    static int8_t FUNC_PARAMS_TYPE_X[FUNC_PARAMS_X_SIZE];
+    static int8_t FUNC_PARAMS_TYPE_Y[FUNC_PARAMS_Y_SIZE];
+    static int8_t FUNC_PARAMS_TYPE_Z[FUNC_PARAMS_Z_SIZE];
+    static int8_t FUNC_PARAMS_TYPE_E[FUNC_PARAMS_E_SIZE];
+
     FuncParams* funcParams;
+    int8_t* funcParamsTypes;
+    
     volatile int func_params_tail = 0;
     volatile int func_params_use = 0;
     volatile int func_params_head = 0;
@@ -81,18 +85,22 @@ class FuncManager {
             case 0:
                 size = FUNC_PARAMS_X_SIZE;
                 funcParams = FUNC_PARAMS_X;
+                funcParamsTypes = FUNC_PARAMS_TYPE_X;
                 break;
             case 1:
                 size = FUNC_PARAMS_Y_SIZE;
                 funcParams = FUNC_PARAMS_Y;
+                funcParamsTypes = FUNC_PARAMS_TYPE_Y;
                 break;
             case 2:
                 size = FUNC_PARAMS_Z_SIZE;
                 funcParams = FUNC_PARAMS_Z;
+                funcParamsTypes = FUNC_PARAMS_TYPE_Z;
                 break;
             case 3:
                 size = FUNC_PARAMS_E_SIZE;
                 funcParams = FUNC_PARAMS_E;
+                funcParamsTypes = FUNC_PARAMS_TYPE_E;
                 break;
         }
     }
@@ -117,8 +125,8 @@ class FuncManager {
 
     constexpr int nextFuncParamsIndex(const int func_params_index) { return FUNC_PARAMS_MOD(func_params_index + 1, size); };
     constexpr int prevFuncParamsIndex(const int func_params_index) { return FUNC_PARAMS_MOD(func_params_index - 1, size); };
-    // static constexpr int nextFuncParamsIndex(const int func_params_index, int s) { return FUNC_PARAMS_MOD(func_params_index + 1, s); };
-    // static constexpr int prevFuncParamsIndex(const int func_params_index, int s) { return FUNC_PARAMS_MOD(func_params_index - 1, s); };
+    static constexpr int nextFuncParamsIndex(const int func_params_index, int s) { return FUNC_PARAMS_MOD(func_params_index + 1, s); };
+    static constexpr int prevFuncParamsIndex(const int func_params_index, int s) { return FUNC_PARAMS_MOD(func_params_index - 1, s); };
 
     constexpr bool isBetween(const int func_params_start, const int func_params_end, const int func_params_middle) {
         return (FUNC_PARAMS_MOD(func_params_middle - func_params_start, size) + FUNC_PARAMS_MOD(func_params_end - func_params_middle, size)) == FUNC_PARAMS_MOD(func_params_end - func_params_start, size);
@@ -144,5 +152,5 @@ class FuncManager {
 
     float getPosByFuncParams(time_double_t time, int func_params_use);
 
-    float getTimeByFuncParams(FuncParams* f_p, float pos, int func_params_use);
+    float getTimeByFuncParams(FuncParams* f_p, int8_t type, float pos, int func_params_use);
 };

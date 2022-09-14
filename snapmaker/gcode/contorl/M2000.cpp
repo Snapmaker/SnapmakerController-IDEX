@@ -60,7 +60,6 @@ void GcodeSuite::M2000() {
       WRITE(HEATER_PWR_PIN, 0);
       WRITE(HEATER_BED_PWR_PIN, 0);
       break;
-
     case 100:
       LOG_I("test watch dog!\n");
       vTaskDelay(pdMS_TO_TICKS(1000));

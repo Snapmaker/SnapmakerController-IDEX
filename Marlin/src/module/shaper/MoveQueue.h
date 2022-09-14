@@ -14,30 +14,30 @@
 
 class Move {
   public:
+    uint8_t flag = 0;
+
     float start_v;
     float end_v;
     float t;
+    float accelerate;
+    float distance;
+    float start_pos[AXIS_SIZE];
+    float end_pos[AXIS_SIZE];
+    float axis_r[AXIS_SIZE];
+
     time_double_t start_t = 0;
     time_double_t end_t = 0;
-    float accelerate;
-
-    float start_pos[AXIS_SIZE] = {0};
-    float end_pos[AXIS_SIZE] = {0};
-    float axis_r[4] = {0};
-
-    float distance;
-
-    uint8_t flag = 0;
 };
 
 class MoveQueue {
   public:
-    Move moves[MOVE_SIZE];
     volatile uint8_t move_tail;
     volatile uint8_t move_head;
 
     bool is_start = true;
     bool is_first = true;
+
+    Move moves[MOVE_SIZE];
 
     void abort() {
       is_start = true;

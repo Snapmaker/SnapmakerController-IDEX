@@ -7,6 +7,11 @@ FuncParams FuncManager::FUNC_PARAMS_Y[FUNC_PARAMS_Y_SIZE];
 FuncParams FuncManager::FUNC_PARAMS_Z[FUNC_PARAMS_Z_SIZE];
 FuncParams FuncManager::FUNC_PARAMS_E[FUNC_PARAMS_E_SIZE];
 
+int8_t FuncManager::FUNC_PARAMS_TYPE_X[FUNC_PARAMS_X_SIZE];
+int8_t FuncManager::FUNC_PARAMS_TYPE_Y[FUNC_PARAMS_Y_SIZE];
+int8_t FuncManager::FUNC_PARAMS_TYPE_Z[FUNC_PARAMS_Z_SIZE];
+int8_t FuncManager::FUNC_PARAMS_TYPE_E[FUNC_PARAMS_E_SIZE];
+
 float FuncManager::getPos(time_double_t time) {
     int func_start = func_params_tail;
     while (time > funcParams[func_start].right_time && func_start != prevFuncParamsIndex(func_params_head)) {
@@ -22,7 +27,7 @@ float FuncManager::getPosByFuncParams(time_double_t time, int func_params_use) {
     return f_p.a * t * t + f_p.b * t + f_p.c;
 }
 
-float FuncManager::getTimeByFuncParams(FuncParams* f_p, float pos, int func_params_use) {
+float FuncManager::getTimeByFuncParams(FuncParams* f_p, int8_t type, float pos, int func_params_use) {
     float a = f_p->a;
     float b = f_p->b;
     float c = f_p->c;
@@ -40,7 +45,7 @@ float FuncManager::getTimeByFuncParams(FuncParams* f_p, float pos, int func_para
 
     float d = SQRT(d2);
 
-    if (f_p->type > 0) {
+    if (type > 0) {
         float k = (-b + d) / (2 * a);
         return k;
     } else {
@@ -169,6 +174,8 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
         last_is_zero = false;
     }
 
+    // LOG_I("%d, %lf %lf\n", axis, right_time, right_pos);
+
     // if (axis == 0)
     // {
         // LOG_I("%d %lf %lf %lf %d %lf %lf\n",func_params_head, a, b, c, type, right_time.toFloat(), right_pos);
@@ -176,11 +183,11 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
     // }
 
     FuncParams &f_p = funcParams[func_params_head];
+    funcParamsTypes[func_params_head] = type;
 
     f_p.a = a;
     f_p.b = b;
     f_p.c = c;
-    f_p.type = type;
 
     f_p.right_time = right_time;
     f_p.right_pos = right_pos;
@@ -207,12 +214,13 @@ time_double_t* FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& m
     }
 
     FuncParams *func_params = &funcParams[func_params_use];
+    int8_t type = funcParamsTypes[func_params_use];
 
     int next_step;
     float next_pos;
     while (func_params_use != func_params_head) {
-        if (func_params->type == 0) {
-        } else if (func_params->type > 0) {
+        if (type == 0) {
+        } else if (type > 0) {
             next_step = print_step + delta_step;
             next_pos = (float)next_step - 0.5f;
             if (next_pos <= func_params->right_pos + EPSILON) {
@@ -230,6 +238,7 @@ time_double_t* FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& m
         func_params_use = nextFuncParamsIndex(func_params_use);
         left_time = func_params->right_time;
         func_params = &funcParams[func_params_use];
+        type = funcParamsTypes[func_params_use];
     }
 
     if (func_params_use == func_params_head) {
@@ -244,10 +253,10 @@ time_double_t* FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& m
     // }
 
     time_double_t next_time;
-    if (func_params->type == 0) {
+    if (type == 0) {
         next_time = func_params->right_time;
     } else {
-        next_time = left_time + getTimeByFuncParams(func_params, next_pos, func_params_use);
+        next_time = left_time + getTimeByFuncParams(func_params, type, next_pos, func_params_use);
     }
 
     print_time = next_time;
