@@ -22,7 +22,7 @@ float FuncManager::getPosByFuncParams(time_double_t time, int func_params_use) {
     return f_p.a * t * t + f_p.b * t + f_p.c;
 }
 
-float FuncConsumer::getTimeByFuncParams(FuncParams* f_p, float pos, int func_params_use) {
+float FuncManager::getTimeByFuncParams(FuncParams* f_p, float pos, int func_params_use) {
     float a = f_p->a;
     float b = f_p->b;
     float c = f_p->c;
@@ -147,8 +147,8 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
     }
 
     if (type == 0) {
-        int func_params_use = axisConsumerManager.axis_consumers[axis].func_consumer.func_params_use;
-        if (last_is_zero && func_params_use != func_params_head && func_params_use != prevFuncParamsIndex(func_params_head)) {
+        int func_params_use_tmp = func_params_use;
+        if (last_is_zero && func_params_use_tmp != func_params_head && func_params_use_tmp != prevFuncParamsIndex(func_params_head)) {
             FuncParams &f_p = funcParams[prevFuncParamsIndex(func_params_head)];
 
             if (!IS_ZERO(f_p.right_pos - right_pos)) {
@@ -169,11 +169,11 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
         last_is_zero = false;
     }
 
-    if (axis == 0)
-    {
+    // if (axis == 0)
+    // {
         // LOG_I("%d %lf %lf %lf %d %lf %lf\n",func_params_head, a, b, c, type, right_time.toFloat(), right_pos);
         // LOG_I("%d %lf %lf %lf\n",func_params_head, a, right_time.toFloat(), right_pos);
-    }
+    // }
 
     FuncParams &f_p = funcParams[func_params_head];
 
@@ -201,7 +201,7 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
     func_params_head = nextFuncParamsIndex(func_params_head);
 }
 
-time_double_t* FuncConsumer::getNextPosTime(FuncParams* funcParams, int size, int func_params_head, int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm) {
+time_double_t* FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm) {
     if (func_params_use == func_params_head) {
         return nullptr;
     }
@@ -227,7 +227,7 @@ time_double_t* FuncConsumer::getNextPosTime(FuncParams* funcParams, int size, in
                 break;
             }
         }
-        func_params_use = FuncManager::nextFuncParamsIndex(func_params_use, size);
+        func_params_use = nextFuncParamsIndex(func_params_use);
         left_time = func_params->right_time;
         func_params = &funcParams[func_params_use];
     }

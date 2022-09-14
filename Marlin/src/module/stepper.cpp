@@ -2147,18 +2147,18 @@ uint32_t Stepper::block_phase_isr() {
     }
 
     if (is_start) {
-        axisConsumerManager.getNextAxisStepper();
-        axisConsumerManager.getCurrentAxisStepper(&axis_stepper);
+        axisManager.getNextAxisStepper();
+        axisManager.getCurrentAxisStepper(&axis_stepper);
         is_start = false;
         axis_stepper.delta_time = 0;
     }
     
     return 0;
   } else {
-    if (!axisConsumerManager.getNextAxisStepper()) {
+    if (!axisManager.getNextAxisStepper()) {
       bool is_done = true;
       for (size_t i = 0; i < AXIS_SIZE; i++) {
-        if (axisConsumerManager.current_steps[i] != block_move_target_steps[i]) {
+        if (axisManager.current_steps[i] != block_move_target_steps[i]) {
           is_done = false;
         }
       }
@@ -2173,7 +2173,7 @@ uint32_t Stepper::block_phase_isr() {
       return interval;
     }
 
-    axisConsumerManager.getCurrentAxisStepper(&next_axis_stepper);
+    axisManager.getCurrentAxisStepper(&next_axis_stepper);
 
     if (next_axis_stepper.print_time > block_print_time) {
       new_current_block = nullptr;
@@ -2183,7 +2183,6 @@ uint32_t Stepper::block_phase_isr() {
     float delta_time = stepper.next_axis_stepper.print_time - stepper.axis_stepper.print_time;
     if (delta_time <= -10.0f) {
       axisManager.counts[12]++;
-      axisManager.t = !axisManager.t;
       LOG_I("d: %d %lf %lf\n", stepper.next_axis_stepper.axis, delta_time, stepper.next_axis_stepper.print_time);
     }
     if (delta_time >= 30) {
@@ -2217,7 +2216,7 @@ uint32_t Stepper::block_phase_isr() {
   // If there is a current block
   if (current_block) {
     hal_timer_t st = HAL_timer_get_count(STEP_TIMER_NUM);
-    if (axisConsumerManager.getNextAxisStepper()) {
+    if (axisManager.getNextAxisStepper()) {
       hal_timer_t et = HAL_timer_get_count(STEP_TIMER_NUM);
       hal_timer_t dt = et - st;
       axisManager.counts[3]++;
@@ -2225,22 +2224,19 @@ uint32_t Stepper::block_phase_isr() {
       if (axisManager.counts[5] < dt) {
         axisManager.counts[5] = dt;
       }
-      axisConsumerManager.getCurrentAxisStepper(&next_axis_stepper);
+      axisManager.getCurrentAxisStepper(&next_axis_stepper);
 
       if (next_axis_stepper.print_time < block_print_time) {
           float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
 
           if (delta_time <= -10.0f) {
             axisManager.counts[12]++;
-            axisManager.t = !axisManager.t;
           }
           if (axis_stepper.last_axis == next_axis_stepper.axis && delta_time <= 0) 
           {
             axisManager.counts[10]++;
-            // axisManager.t = !axisManager.t;
           }
           if (delta_time > 30) {
-            // axisManager.t = !axisManager.t;
             axisManager.counts[11]++;
           }
           
@@ -2266,7 +2262,7 @@ uint32_t Stepper::block_phase_isr() {
 
       bool is_done = true;
       for (size_t i = 0; i < AXIS_SIZE; i++) {
-        if (axisConsumerManager.current_steps[i] != block_move_target_steps[i]) {
+        if (axisManager.current_steps[i] != block_move_target_steps[i]) {
           is_done = false;
         }
       }
@@ -2534,15 +2530,14 @@ uint32_t Stepper::block_phase_isr() {
       #endif
 
       if (is_start) {
-        axisConsumerManager.getNextAxisStepper();
-        axisConsumerManager.getCurrentAxisStepper(&axis_stepper);
+        axisManager.getNextAxisStepper();
+        axisManager.getCurrentAxisStepper(&axis_stepper);
         is_start = false;
         axis_stepper.delta_time = 0;
       } else {
         float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
         if (delta_time <= -10.0f) {
           axisManager.counts[12]++;
-          axisManager.t = !axisManager.t;
         }
         if (delta_time >= 30) {
           axisManager.counts[11]++;

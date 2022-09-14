@@ -1286,7 +1286,6 @@ void Planner::shaped_loop() {
 
     if (axisManager.req_abort) {
       axisManager.abort();
-      axisConsumerManager.abort();
       moveQueue.abort();
       axisManager.req_abort = false;
       clear_block_buffer();
@@ -1496,10 +1495,10 @@ void Planner::stepper_isr() {
     }
   }
 
-  if (!axisConsumerManager.getNextAxisStepper()) {
+  if (!axisManager.getNextAxisStepper()) {
     bool is_done = true;
     for (size_t i = 0; i < AXIS_SIZE; i++) {
-      if (axisConsumerManager.current_steps[i] != stepper.block_move_target_steps[i]) {
+      if (axisManager.current_steps[i] != stepper.block_move_target_steps[i]) {
         is_done = false;
       }
     }
@@ -1512,7 +1511,7 @@ void Planner::stepper_isr() {
     return;
   }
 
-  axisConsumerManager.getCurrentAxisStepper(&stepper.next_axis_stepper);
+  axisManager.getCurrentAxisStepper(&stepper.next_axis_stepper);
 
   if (stepper.next_axis_stepper.print_time > stepper.block_print_time) {
     // LOG_I("tail: %d\n", block_buffer_tail);
@@ -1523,7 +1522,6 @@ void Planner::stepper_isr() {
   float delta_time = stepper.next_axis_stepper.print_time - stepper.axis_stepper.print_time;
   if (delta_time <= -10.0f) {
     axisManager.counts[12]++;
-    axisManager.t = !axisManager.t;
     LOG_I("d: %d %lf %lf\n", stepper.next_axis_stepper.axis, delta_time, stepper.next_axis_stepper.print_time);
   }
   if (delta_time >= 30) {

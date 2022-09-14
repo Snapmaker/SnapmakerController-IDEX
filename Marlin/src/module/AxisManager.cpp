@@ -2,7 +2,6 @@
 #include "shaper/MoveQueue.h"
 
 AxisManager axisManager;
-AxisConsumerManager axisConsumerManager;
 
 FORCE_INLINE bool Axis::generateFuncParams(uint8_t block_index, uint8_t move_start, uint8_t move_end) {
     if (block_index == generated_block_index) {
@@ -14,7 +13,7 @@ FORCE_INLINE bool Axis::generateFuncParams(uint8_t block_index, uint8_t move_sta
     if (is_shaped) {
         res = axis_input_shaper->generateShapedFuncParams(&func_manager, move_start, move_end);
     } else {
-        res = generateAxisFuncParams(&func_manager, move_start, move_end);
+        res = generateAxisFuncParams(move_start, move_end);
     }
     if (res) {
         generated_block_index = block_index;
@@ -23,14 +22,14 @@ FORCE_INLINE bool Axis::generateFuncParams(uint8_t block_index, uint8_t move_sta
     return res;
 }
 
-bool AxisConsumer::getNextStep(FuncParams* funcParams, int size, int func_params_head) {
+bool Axis::getNextStep() {
     // if (is_get_next_step_null) {
         // return false;
     // }
     // if (func_manager.max_size < func_manager.getSize()) {
         // func_manager.max_size = func_manager.getSize();
     // }
-    time_double_t* next_print_time = func_consumer.getNextPosTime(funcParams, size, func_params_head, 1, &dir, mm_to_step, half_step_mm);
+    time_double_t* next_print_time = func_manager.getNextPosTime(1, &dir, mm_to_step, half_step_mm);
     if (next_print_time == nullptr) {
         is_get_next_step_null = true;
         return false;
@@ -40,7 +39,7 @@ bool AxisConsumer::getNextStep(FuncParams* funcParams, int size, int func_params
     return true;
 }
 
-FORCE_INLINE bool Axis::generateAxisFuncParams(FuncManager *func_manager, uint8_t move_start, uint8_t move_end) {
+FORCE_INLINE bool Axis::generateAxisFuncParams(uint8_t move_start, uint8_t move_end) {
     uint8_t move_index;
     if (generated_move_index == -1) {
         move_index = move_start;
@@ -73,7 +72,7 @@ FORCE_INLINE bool Axis::generateAxisFuncParams(FuncManager *func_manager, uint8_
             type = dy > 0 ? 1 : -1;
         }
         time_double_t end_t = move->end_t;
-        func_manager->addFuncParams(a, b, c, type, end_t, y2);
+        func_manager.addFuncParams(a, b, c, type, end_t, y2);
 
         // LOG_I("%d, %d, %d\n", axis, func_manager.max_size, func_manager.func_params_head);
 
@@ -84,7 +83,7 @@ FORCE_INLINE bool Axis::generateAxisFuncParams(FuncManager *func_manager, uint8_
 }
 
 float AxisManager::getRemainingConsumeTime() {
-    return min_last_time - axisConsumerManager.print_time;
+    return min_last_time - print_time;
 }
 
 bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t* block) {
@@ -112,7 +111,7 @@ bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t* block)
         }
     }
 
-    uint8_t new_move_tail = moveQueue.calculateMoveStart(move_start, axisManager.shaped_delta);
+    uint8_t new_move_tail = moveQueue.calculateMoveStart(move_start, axisManager.shaped_delta_window);
 
     moveQueue.updateMoveTail(new_move_tail);
 
@@ -125,7 +124,7 @@ bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t* block)
  Copy next step's information to axis_stepper
  and mark is_consumed = true;
 */
-bool AxisConsumerManager::getCurrentAxisStepper(AxisStepper *axis_stepper) {
+bool AxisManager::getCurrentAxisStepper(AxisStepper *axis_stepper) {
     if (is_consumed) {
         return false;
     }
@@ -143,29 +142,24 @@ bool AxisConsumerManager::getCurrentAxisStepper(AxisStepper *axis_stepper) {
  Calcuation all axes's next step's time if need
  And then return the closest time axis if we have
 */
-bool AxisConsumerManager::getNextAxisStepper() {
+bool AxisManager::getNextAxisStepper() {
     if (!is_consumed) {
         return false;
     }
 
     // If a axis has been consumed, calculate the next step time
     for (int i = 0; i < AXIS_SIZE; ++i) {
-        if (axis_consumers[i].is_consumed) {
-            FuncManager& func_manager = axisManager.axis[i].func_manager;
-            FuncParams* func_params = func_manager.funcParams;
-            // int func_params_use = func_manager.func_params_use;
-            int func_params_head = func_manager.func_params_head;
-            int size = func_manager.size;
-            axis_consumers[i].getNextStep(func_params, size, func_params_head);
+        if (axis[i].is_consumed) {
+            axis[i].getNextStep();
         }
     }
 
     // Fine the closest time of all the axes
     time_double_t min_print_time = 1000000000;
     for (int i = 0; i < AXIS_SIZE; ++i) {
-        if (!axis_consumers[i].is_consumed) {
-            if (axis_consumers[i].print_time < min_print_time) {
-                min_print_time = axis_consumers[i].print_time;
+        if (!axis[i].is_consumed) {
+            if (axis[i].print_time < min_print_time) {
+                min_print_time = axis[i].print_time;
                 print_axis = i;
                 is_consumed = false;
             }
@@ -174,9 +168,9 @@ bool AxisConsumerManager::getNextAxisStepper() {
 
     // is_consumed == false, means that we has a steps need to output
     if (!is_consumed) {
-        axis_consumers[print_axis].is_consumed = true;
+        axis[print_axis].is_consumed = true;
         print_time = min_print_time;
-        print_dir = axis_consumers[print_axis].dir;
+        print_dir = axis[print_axis].dir;
         return true;
     } else {
         return false;
