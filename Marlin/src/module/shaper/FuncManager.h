@@ -46,6 +46,13 @@ class FuncParams {
 // static FuncParams FUNC_PARAMS_E[FUNC_PARAMS_E_SIZE];
 
 class FuncManager {
+  private:
+    int average_index = 0;
+    int average_count = 0;
+    int average_step = 0;
+    float average_delta_time = 0;
+    time_double_t average_print = 0;
+
   public:
     int axis;
     int size;
@@ -117,16 +124,22 @@ class FuncManager {
         print_pos = 0;
         print_step = 0;
         func_params_use = 0;
+
+        average_index = 0;
+        average_count = 0;
+        average_step = 0;
+        average_delta_time = 0;
+        average_print = 0;
     }
 
     constexpr int getSize() {
         return FUNC_PARAMS_MOD(func_params_head - func_params_tail, size);
     }
 
-    constexpr int nextFuncParamsIndex(const int func_params_index) { return FUNC_PARAMS_MOD(func_params_index + 1, size); };
-    constexpr int prevFuncParamsIndex(const int func_params_index) { return FUNC_PARAMS_MOD(func_params_index - 1, size); };
-    static constexpr int nextFuncParamsIndex(const int func_params_index, int s) { return FUNC_PARAMS_MOD(func_params_index + 1, s); };
-    static constexpr int prevFuncParamsIndex(const int func_params_index, int s) { return FUNC_PARAMS_MOD(func_params_index - 1, s); };
+    FORCE_INLINE constexpr int nextFuncParamsIndex(const int func_params_index) { return FUNC_PARAMS_MOD(func_params_index + 1, size); };
+    FORCE_INLINE constexpr int prevFuncParamsIndex(const int func_params_index) { return FUNC_PARAMS_MOD(func_params_index - 1, size); };
+    // static constexpr int nextFuncParamsIndex(const int func_params_index, int s) { return FUNC_PARAMS_MOD(func_params_index + 1, s); };
+    // static constexpr int prevFuncParamsIndex(const int func_params_index, int s) { return FUNC_PARAMS_MOD(func_params_index - 1, s); };
 
     constexpr bool isBetween(const int func_params_start, const int func_params_end, const int func_params_middle) {
         return (FUNC_PARAMS_MOD(func_params_middle - func_params_start, size) + FUNC_PARAMS_MOD(func_params_end - func_params_middle, size)) == FUNC_PARAMS_MOD(func_params_end - func_params_start, size);
@@ -146,11 +159,11 @@ class FuncManager {
 
     //    float getXAndMove(float y, int *func_params_start, int func_params_end);
 
-    time_double_t *getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm);
+    bool getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm);
 
   private:
 
     float getPosByFuncParams(time_double_t time, int func_params_use);
 
-    float getTimeByFuncParams(FuncParams* f_p, int8_t type, float pos, int func_params_use);
+    FORCE_INLINE float getTimeByFuncParams(FuncParams* f_p, int8_t type, float pos, int func_params_use);
 };

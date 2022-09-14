@@ -27,15 +27,14 @@ float FuncManager::getPosByFuncParams(time_double_t time, int func_params_use) {
     return f_p.a * t * t + f_p.b * t + f_p.c;
 }
 
-float FuncManager::getTimeByFuncParams(FuncParams* f_p, int8_t type, float pos, int func_params_use) {
+FORCE_INLINE float FuncManager::getTimeByFuncParams(FuncParams* f_p, int8_t type, float pos, int func_params_use) {
     float a = f_p->a;
     float b = f_p->b;
     float c = f_p->c;
     c = c - pos;
 
     if (IS_ZERO(a)) {
-        float k = -c / b;
-        return k;
+        return -c / b;
     }
 
     float d2 = b * b - 4 * a * c;
@@ -46,11 +45,9 @@ float FuncManager::getTimeByFuncParams(FuncParams* f_p, int8_t type, float pos, 
     float d = SQRT(d2);
 
     if (type > 0) {
-        float k = (-b + d) / (2 * a);
-        return k;
+        return (-b + d) / (2 * a);
     } else {
-        float k = (-b - d) / (2 * a);
-        return k;
+        return (-b - d) / (2 * a);
     }
 }
 
@@ -208,10 +205,19 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
     func_params_head = nextFuncParamsIndex(func_params_head);
 }
 
-time_double_t* FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm) {
+bool FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm) {
     if (func_params_use == func_params_head) {
-        return nullptr;
+        return false;
     }
+
+    if (average_index < average_count) {
+        average_index++;
+        print_step += average_step;
+        print_time = average_print + average_delta_time * average_index;
+        return true;
+    }
+    average_index = 0;
+    average_count = 0;
 
     FuncParams *func_params = &funcParams[func_params_use];
     int8_t type = funcParamsTypes[func_params_use];
@@ -236,13 +242,15 @@ time_double_t* FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& m
             }
         }
         func_params_use = nextFuncParamsIndex(func_params_use);
+
         left_time = func_params->right_time;
+
         func_params = &funcParams[func_params_use];
         type = funcParamsTypes[func_params_use];
     }
 
     if (func_params_use == func_params_head) {
-        return nullptr;
+        return false;
     }
 
     // if (ABS(next_pos - func_params->right_pos) < EPSILON) {
@@ -252,16 +260,31 @@ time_double_t* FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& m
     //     return &print_time;
     // }
 
-    time_double_t next_time;
-    if (type == 0) {
-        next_time = func_params->right_time;
-    } else {
-        next_time = left_time + getTimeByFuncParams(func_params, type, next_pos, func_params_use);
-    }
+    time_double_t next_time = left_time + getTimeByFuncParams(func_params, type, next_pos, func_params_use);
 
     print_time = next_time;
     print_pos = next_pos;
     print_step = next_step;
 
-    return &print_time;
+    if (average_count == 0 && IS_ZERO(func_params->a)) {
+        if (type > 0) {
+            int count = FLOOR((func_params->right_pos + EPSILON - next_pos));
+            if (count > 0) {
+                average_count = count;
+                average_step = delta_step;
+                average_delta_time = (float) average_step / func_params->b;
+                average_print = print_time;
+            }
+        } else if (type < 0) {
+            int count = FLOOR((next_pos - func_params->right_pos + EPSILON));
+            if (count > 0) {
+                average_count = count;
+                average_step = -delta_step;
+                average_delta_time = (float) average_step / func_params->b;
+                average_print = print_time;
+            }
+        }
+    }
+
+    return true;
 }
