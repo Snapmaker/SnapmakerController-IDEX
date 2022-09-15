@@ -303,6 +303,8 @@ ErrCode PowerLoss::power_loss_resume() {
   home_offset = stash_data.home_offset;
   update_workspace_offset(Z_AXIS);
   clear();
+  print_control.set_work_time(stash_data.work_time);
+  print_control.mode_ = (print_mode_e)stash_data.print_mode;
   // The print needs to be extruded before resuming
   if (extrude_before_resume() != E_SUCCESS) {
     system_service.set_status(SYSTEM_STATUE_PAUSED);
