@@ -68,10 +68,24 @@ static ErrCode exception_get_ack(event_param_t& event) {
   return send_event(event);
 }
 
+static ErrCode clean_exception_info(event_param_t& event) {
+  uint8_t count = event.data[0];
+  exception_info_t *exeption = (exception_info_t*)&event.data[1];
+  for (uint8_t i = 0; i < count; i++) {
+    SERIAL_ECHOLNPAIR("source[", event.source, "] req clean exception code:", exeption[i].value);
+    exception_server.clean_exception((exception_type_e)exeption[i].value);
+  }
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
+}
+
+
 event_cb_info_t exception_cb_info[EXCEPTION_ID_CB_COUNT] = {
   {EXCEPTION_ID_TIRGGER_REPORT       , EVENT_CB_DIRECT_RUN, exception_report_trigger_recv_ack},
   {EXCEPTION_ID_CLEAN_REPORT , EVENT_CB_DIRECT_RUN, exception_report_clean_info},
   {EXCEPTION_ID_GET          , EVENT_CB_DIRECT_RUN, exception_get_ack},
+  {EXCEPTION_ID_SC_CLEAN     , EVENT_CB_DIRECT_RUN, clean_exception_info},
 };
 
 
