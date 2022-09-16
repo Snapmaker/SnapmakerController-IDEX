@@ -301,6 +301,7 @@ ErrCode PowerLoss::power_loss_resume() {
   }
   system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_PL);
   home_offset = stash_data.home_offset;
+  next_req = cur_line = line_number_sum = stash_data.file_position;
   update_workspace_offset(Z_AXIS);
   clear();
   print_control.set_work_time(stash_data.work_time);
