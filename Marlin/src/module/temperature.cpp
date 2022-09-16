@@ -668,13 +668,27 @@ volatile bool Temperature::raw_temps_ready = false;
                 if (current_temp > watch_temp_target) heated = true;  // - Flag if target temperature reached
               }
               else if (ELAPSED(ms, temp_change_ms)) {                  // Watch timer expired
-                if (exception_server.trigger_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT+heater_id))) {
+                bool ret = false;
+                if (heater_id == H_BED)
+                  ret = exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
+                else if (heater_id == 0)
+                  ret = exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT);
+                else if (heater_id == 1)
+                  ret = exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP_TIMEOUT);
+                if (ret) {
                   _temp_error(heater_id, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
                 }
               }
             }
             else if (current_temp < target - (MAX_OVERSHOOT_PID_AUTOTUNE)) { // Heated, then temperature fell too far?
-              if (exception_server.trigger_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP+heater_id))) {
+              bool ret = false;
+              if (heater_id == H_BED)
+                ret = exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
+              else if (heater_id == 0)
+                ret = exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
+              else if (heater_id == 1)
+                ret = exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
+              if (ret) {
                 _temp_error(heater_id, str_t_thermal_runaway, GET_TEXT(MSG_THERMAL_RUNAWAY));
               }
             }
@@ -2575,7 +2589,14 @@ void Temperature::init() {
 
       case TRRunaway:
         TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
-        if (exception_server.trigger_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT+heater_id))) {
+        bool ret = false;
+        if (heater_id == H_BED)
+          ret = exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
+        else if (heater_id == 0)
+          ret = exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT);
+        else if (heater_id == 1)
+          ret = exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP_TIMEOUT);
+        if (ret) {
           _temp_error(heater_id, str_t_thermal_runaway, GET_TEXT(MSG_THERMAL_RUNAWAY));
         }
     }
