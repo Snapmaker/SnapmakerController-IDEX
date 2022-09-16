@@ -27,11 +27,13 @@ const nozzle_type_t nozzle_type[] = {
 };
 
 
-ErrCode FDM_Head::set_temperature(uint8_t e, uint16_t temperature) {
+ErrCode FDM_Head::set_temperature(uint8_t e, uint16_t temperature, bool is_save) {
   if (!exception_server.is_allow_heat_nozzle()) {
     return E_SYSTEM_EXCEPTION;
   }
-  power_loss.stash_data.nozzle_temp[e] = temperature;
+  if (is_save) {
+    power_loss.stash_data.nozzle_temp[e] = temperature;
+  }
   thermalManager.setTargetHotend(temperature, e);
   return E_SUCCESS;
 }

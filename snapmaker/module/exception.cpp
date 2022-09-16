@@ -74,11 +74,15 @@ void Exception::trigger_behavior(exception_behavior_e e) {
       }
       break;
     case EXCEPTION_BAN_HEAT_NOZZLE :
-      fdm_head.set_temperature(0, 0);
-      fdm_head.set_temperature(1, 0);
+      if (!system_service.is_working()) {
+        fdm_head.set_temperature(0, 0);
+        fdm_head.set_temperature(1, 0);
+      }
       break;
     case EXCEPTION_BAN_HEAT_BED :
-      bed_control.set_temperature(0);
+      if (!system_service.is_working()) {
+        bed_control.set_temperature(0);
+      }
       break;
     case EXCEPTION_BAN_WORK_AND_STOP :
       if (system_service.is_working()) {

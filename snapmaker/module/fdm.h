@@ -68,7 +68,7 @@ typedef struct {
 
 class FDM_Head {
   public:
-    ErrCode set_temperature(uint8_t e, uint16_t temperature);
+    ErrCode set_temperature(uint8_t e, uint16_t temperature, bool is_save=true);
     float   get_temperature(uint8_t e);
     ErrCode set_work_speed(float speed);
     ErrCode change_filamenter(uint8_t e, float feedrate, filamenter_change_status_e status);

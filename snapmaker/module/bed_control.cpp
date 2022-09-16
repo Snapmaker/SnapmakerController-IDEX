@@ -33,11 +33,13 @@ bool BedControl::self_check() {
   return is_error;
 }
 
-ErrCode BedControl::set_temperature(uint16_t temperature) {
+ErrCode BedControl::set_temperature(uint16_t temperature, bool is_save) {
   if (!exception_server.is_allow_heat_bed()) {
     return E_SYSTEM_EXCEPTION;
   }
-  power_loss.stash_data.bed_temp = temperature;
+  if (is_save) {
+    power_loss.stash_data.bed_temp = temperature;
+  }
   thermalManager.setTargetBed(temperature);
   return E_SUCCESS;
 }

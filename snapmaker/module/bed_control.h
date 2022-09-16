@@ -18,7 +18,7 @@ typedef struct {
 class BedControl {
   public:
     bool self_check();
-    ErrCode set_temperature(uint16_t temperature);
+    ErrCode set_temperature(uint16_t temperature, bool is_save=true);
     ErrCode get_info(bed_control_info_t &info);
     ErrCode get_module_info(module_info_t &info);
   public:

@@ -4,6 +4,7 @@
 #include "../module/filament_sensor.h"
 #include "../module/system.h"
 #include "../module/fdm.h"
+#include "../module/bed_control.h"
 #include "../module/motion_control.h"
 
 #define GCODE_MAX_PACK_SIZE 450
@@ -539,6 +540,9 @@ void pausing_status_deal() {
       break;
     case SYSTEM_STATUE_SCOURCE_EXCEPTION:
       report_status_info(STATUS_PAUSE_BE_EXCEPTION);
+      fdm_head.set_temperature(0,0, false);
+      fdm_head.set_temperature(1,0, false);
+      bed_control.set_temperature(0, false);
       SERIAL_ECHOLNPAIR("exception puase done");
       break;
     default:
