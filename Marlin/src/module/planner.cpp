@@ -1443,7 +1443,7 @@ void Planner::shaped_loop() {
             LOG_I("addEmptyMove\n");
             axisManager.addEmptyMove();
             block = &block_buffer[prev_block_index(index)];
-            block->shaper_data.last_print_time += axisManager.shaped_right_delta;
+            block->shaper_data.last_print_time += axisManager.shaped_left_delta;
         }
     }
 
