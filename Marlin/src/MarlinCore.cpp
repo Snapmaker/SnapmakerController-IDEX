@@ -748,20 +748,21 @@ inline void manage_inactivity(const bool no_stepper_sleep=false) {
  */
 void idle(bool no_stepper_sleep/*=false*/) {
 
-  static uint32_t lt = 0;
-  if (ELAPSED(millis(), lt + 100)) {
-    lt = millis();
-    // tmc_driver.write_reg(0, R_SGTHRS, 12);
-    // LOG_I("SRTHRS %d, SG_RESULT %d\r\n", tmc_driver.read_reg(0, R_SGTHRS), tmc_driver.read_reg(0, R_SG_RESULT));
-    // SET_INPUT_PULLUP(X0_CAL_PIN);
-    // SET_INPUT_PULLUP(X1_CAL_PIN);
-    // WRITE(PROBE_POWER_EN_PIN, 1);
-    // LOG_I("probe X0 %d\r\n", READ(X0_CAL_PIN));
-    // LOG_I("probe X1 %d\r\n", READ(X1_CAL_PIN));
-    // LOG_I("calibtration.probe_offset %f\r\n", calibtration.probe_offset);
-  }
+  // static uint32_t lt = 0;
+  // if (ELAPSED(millis(), lt + 100)) {
+  //   lt = millis();
+  //   // tmc_driver.write_reg(0, R_SGTHRS, 12);
+  //   // LOG_I("SRTHRS %d, SG_RESULT %d\r\n", tmc_driver.read_reg(0, R_SGTHRS), tmc_driver.read_reg(0, R_SG_RESULT));
+  //   // SET_INPUT_PULLUP(X0_CAL_PIN);
+  //   // SET_INPUT_PULLUP(X1_CAL_PIN);
+  //   // WRITE(PROBE_POWER_EN_PIN, 1);
+  //   // LOG_I("probe X0 %d\r\n", READ(X0_CAL_PIN));
+  //   // LOG_I("probe X1 %d\r\n", READ(X1_CAL_PIN));
+  //   // LOG_I("calibtration.probe_offset %f\r\n", calibtration.probe_offset);
+  // }
 
   static bool idle_lock = false;
+  
   #if ENABLED(MARLIN_DEV_MODE)
     static uint16_t idle_depth = 0;
     if (++idle_depth > 5) SERIAL_ECHOLNPAIR("idle() call depth: ", idle_depth);

@@ -1443,7 +1443,7 @@ void Stepper::isr() {
   // WRITE(DEBUG_IO, 1);
   // #endif
     // pulse_phase_isr();                            // 0 = Do coordinated axes Stepper pulses
-    if (!nextMainISR) pulse_phase_isr(); 
+    if (!nextMainISR) pulse_phase_isr();
   // #ifdef DEBUG_IO
   // WRITE(DEBUG_IO, 0);
   // #endif
@@ -1759,7 +1759,7 @@ void Stepper::pulse_phase_isr() {
   //     return;
   // }
 
-  
+
 
   #if 0
   //do {
@@ -2050,14 +2050,14 @@ uint32_t Stepper::block_phase_isr() {
           if (delta_time <= -10.0f) {
             axisManager.counts[12]++;
           }
-          if (axis_stepper.last_axis == next_axis_stepper.axis && delta_time <= 0) 
+          if (axis_stepper.last_axis == next_axis_stepper.axis && delta_time <= 0)
           {
             axisManager.counts[10]++;
           }
           if (delta_time > 30) {
             axisManager.counts[11]++;
           }
-          
+
 
           if (delta_time < 0) {
               delta_time = 0;
@@ -2072,6 +2072,7 @@ uint32_t Stepper::block_phase_isr() {
           interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
           return interval;
       } else {
+
           discard_current_block();
       }
 
@@ -2120,7 +2121,7 @@ uint32_t Stepper::block_phase_isr() {
       while (current_block != nullptr && current_block->shaper_data.is_zero_speed) {
         discard_current_block();
 
-        
+
         current_block = planner.get_current_block();
       }
 
@@ -2128,7 +2129,7 @@ uint32_t Stepper::block_phase_isr() {
       {
         return interval;
       }
-      
+
 
       // For non-inline cutter, grossly apply power
       #if ENABLED(LASER_FEATURE) && DISABLED(LASER_POWER_INLINE)
@@ -2360,7 +2361,7 @@ uint32_t Stepper::block_phase_isr() {
         if (delta_time >= 30) {
           axisManager.counts[11]++;
         }
-          
+
         if (delta_time < 0) {
             delta_time = 0;
         }
