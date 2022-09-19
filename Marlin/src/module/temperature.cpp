@@ -2591,11 +2591,11 @@ void Temperature::init() {
         TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
         bool ret = false;
         if (heater_id == H_BED)
-          ret = exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
+          ret = exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
         else if (heater_id == 0)
-          ret = exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT);
+          ret = exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
         else if (heater_id == 1)
-          ret = exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP_TIMEOUT);
+          ret = exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
         if (ret) {
           _temp_error(heater_id, str_t_thermal_runaway, GET_TEXT(MSG_THERMAL_RUNAWAY));
         }
