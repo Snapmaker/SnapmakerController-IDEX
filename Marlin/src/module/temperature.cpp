@@ -1280,7 +1280,7 @@ void Temperature::manage_heater() {
         if (degHotend(e) > temp_range[e].maxtemp) {
           max_temp_error((heater_id_t)e);
         } else {
-          exception_server.clean_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP+e));
+          // exception_server.clean_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP+e));
         }
       #endif
 
@@ -1338,7 +1338,7 @@ void Temperature::manage_heater() {
       if (degBed() > BED_MAXTEMP) {
         max_temp_error(H_BED);
       } else {
-        exception_server.clean_exception((exception_type_e)(EXCEPTION_TYPE_BED_TEMP));
+        // exception_server.clean_exception((exception_type_e)(EXCEPTION_TYPE_BED_TEMP));
       }
     #endif
 
@@ -1347,7 +1347,7 @@ void Temperature::manage_heater() {
       if (watch_bed.elapsed(ms)) {              // Time to check the bed?
         if (watch_bed.check(degBed())) {          // Increased enough?
           start_watching_bed();                 // If temp reached, turn off elapsed check
-          exception_server.clean_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
+          // exception_server.clean_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
         }
         else {
           TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
@@ -2047,7 +2047,7 @@ void Temperature::updateTemperaturesFromRawValues() {
           #endif
         }
         if (is_error == false) {
-          exception_server.clean_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP+e));
+          // exception_server.clean_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP+e));
         }
         #if MAX_CONSECUTIVE_LOW_TEMPERATURE_ERROR_ALLOWED > 1
           else
@@ -2070,7 +2070,7 @@ void Temperature::updateTemperaturesFromRawValues() {
       is_bed_err = true;
     }
     if (is_bed_err == false) {
-      exception_server.clean_exception(EXCEPTION_TYPE_BED_TEMP);
+      // exception_server.clean_exceptionclean_exception(EXCEPTION_TYPE_BED_TEMP);
     }
   #endif
 
