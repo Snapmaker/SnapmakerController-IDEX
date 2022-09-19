@@ -278,7 +278,7 @@ class Stepper {
     static block_t* current_block;          // A pointer to the block currently being traced
     static block_t* new_current_block;          // A pointer to the block currently being traced
 
-    static uint8_t  current_direction_bits, 
+    static uint8_t  current_direction_bits,
                     last_direction_bits,     // The next stepping-bits to be output
                     axis_did_move;           // Last Movement in the given direction is not null, as computed when the last movement was fetched from planner
 
@@ -471,7 +471,9 @@ class Stepper {
 
     // The last movement direction was not null on the specified axis. Note that motor direction is not necessarily the same.
     FORCE_INLINE static bool axis_is_moving(const AxisEnum axis) { return TEST(axis_did_move, axis); }
+    
     FORCE_INLINE static bool axis_is_moving() { return (step_events_completed >= accelerate_until) && (step_events_completed <= decelerate_after); }
+//     FORCE_INLINE static bool axis_is_moving() { return step_events_completed > 5; }
 
     // Handle a triggered endstop
     static void endstop_triggered(const AxisEnum axis);

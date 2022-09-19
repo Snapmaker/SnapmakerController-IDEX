@@ -538,7 +538,6 @@ void pausing_status_deal() {
        report_status_info(STATUS_PAUSE_BE_FILAMENT);
       }
       break;
-      
     case SYSTEM_STATUE_SCOURCE_EXCEPTION:
       report_status_info(STATUS_PAUSE_BE_EXCEPTION);
       fdm_head.set_temperature(0,0, false);
@@ -546,7 +545,6 @@ void pausing_status_deal() {
       bed_control.set_temperature(0, false);
       SERIAL_ECHOLNPAIR("exception puase done");
       break;
-
     default:
       send_event(print_source, source_recever_id, SACP_ATTR_ACK,
                   COMMAND_SET_PRINTER, PRINTER_ID_PAUSE_WORK, &result, 1, source_sequence);

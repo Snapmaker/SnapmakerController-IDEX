@@ -23,7 +23,6 @@
 #include "../../event/event.h"
 #include "../../debug/debug.h"
 #include "../../../Marlin/src/gcode/gcode.h"
-#include "../../../Marlin/src/module/AxisManager.h"
 
 /**
  *  S5 P0/1

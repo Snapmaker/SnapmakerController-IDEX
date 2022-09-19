@@ -556,7 +556,6 @@ ErrCode Calibtration::exit(bool is_save) {
         settings.save();
       }
     }
-
     mode = CAlIBRATION_MODE_EXIT;
     status = CAlIBRATION_STATE_IDLE;
     probe_offset = -CAlIBRATIONING_ERR_CODE;

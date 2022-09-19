@@ -1614,6 +1614,7 @@ void Stepper::pulse_phase_isr() {
   // If there is no current block, do nothing
   if (!current_block) return;
 
+  step_events_completed++;
   // if (step_events_completed > 5) {
   //   // The stall gread is detected only after the motor is moving
   //   if (motion_control.is_sg_trigger()) {
