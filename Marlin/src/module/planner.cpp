@@ -1272,8 +1272,8 @@ void Planner::recalculate() {
 }
 
 static float last_remaining_consume_time = -1;
-static float start_t = -1;
-static float end_t = -1;
+// static float start_t = -1;
+// static float end_t = -1;
 static int count = 10000;
 static int c2 = 1000000;
 static bool log111 = true;
@@ -1366,7 +1366,7 @@ void Planner::shaped_loop() {
     delay_before_delivering = 0;
     // LOG_I("r: %lf\n", remaining_consume_time);
 
-    uint8_t tail_index = block_buffer_tail;
+    // uint8_t tail_index = block_buffer_tail;
     uint8_t shaped_index = block_buffer_shaped;
     uint8_t planned_index = block_buffer_planned;
     uint8_t head_index = block_buffer_head;
@@ -1470,78 +1470,6 @@ void Planner::shaped_loop() {
     // LOG_I("remainingConsumeTime: %lf, %d, %d, %d, %d\n", axisManager.getRemainingConsumeTime(), tail_index, shaped_index, planned_index, head_index);
 
     block_buffer_shaped = shaped_index;
-}
-
-void Planner::stepper_isr() {
-  uint8_t block_index = block_buffer_tail;
-  uint8_t block_head = block_buffer_head;
-  if (block_buffer_tail == block_buffer_head) {
-    return;
-  }
-  if (block_index != block_buffer_head) {
-    block_t* block = &block_buffer[block_index];
-    if (block->shaper_data.is_zero_speed) {
-      release_current_block();
-      return;
-    }
-    if (block->shaper_data.is_create_move) {
-      stepper.block_print_time = block->shaper_data.last_print_time;
-      Move& end_move = moveQueue.moves[block->shaper_data.move_end];
-      for (int i = 0; i < AXIS_SIZE; ++i) {
-          stepper.block_move_target_steps[i] = LROUND(end_move.end_pos[i]);
-      }
-    } else {
-      return;
-    }
-  }
-
-  if (!axisManager.getNextAxisStepper()) {
-    bool is_done = true;
-    for (size_t i = 0; i < AXIS_SIZE; i++) {
-      if (axisManager.current_steps[i] != stepper.block_move_target_steps[i]) {
-        is_done = false;
-      }
-    }
-
-    if (is_done) {
-      LOG_I("is_done\n");
-      release_current_block();
-    }
-
-    return;
-  }
-
-  axisManager.getCurrentAxisStepper(&stepper.next_axis_stepper);
-
-  if (stepper.next_axis_stepper.print_time > stepper.block_print_time) {
-    // LOG_I("tail: %d\n", block_buffer_tail);
-    // LOG_I("x: %d, y: %d, z: %d, e: %d\n", axisManager.counts[15], axisManager.counts[16], axisManager.counts[17], axisManager.counts[18]);
-    release_current_block();
-  }
-
-  float delta_time = stepper.next_axis_stepper.print_time - stepper.axis_stepper.print_time;
-  if (delta_time <= -10.0f) {
-    axisManager.counts[12]++;
-    LOG_I("d: %d %lf %lf\n", stepper.next_axis_stepper.axis, delta_time, stepper.next_axis_stepper.print_time);
-  }
-  if (delta_time >= 30) {
-    axisManager.counts[11]++;
-    LOG_I("d: %d %lf %lf\n", stepper.next_axis_stepper.axis, delta_time, stepper.next_axis_stepper.print_time);
-  }
-    
-  if (delta_time < 0) {
-      delta_time = 0;
-  }
-  stepper.axis_stepper.delta_time = delta_time;
-  stepper.axis_stepper.axis = stepper.next_axis_stepper.axis;
-  stepper.axis_stepper.dir = stepper.next_axis_stepper.dir;
-  stepper.axis_stepper.print_time = stepper.next_axis_stepper.print_time;
-
-  LOG_I("axis: %d, d: %lf\n", stepper.axis_stepper.axis, stepper.axis_stepper.delta_time, stepper.axis_stepper.dir);
-
-  if (stepper.axis_stepper.axis >= 0) {
-    axisManager.counts[stepper.axis_stepper.axis + 15]++;
-  }
 }
 
 #if HAS_FAN && DISABLED(LASER_SYNCHRONOUS_M106_M107)

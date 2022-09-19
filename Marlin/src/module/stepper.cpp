@@ -2031,8 +2031,6 @@ uint32_t Stepper::block_phase_isr() {
   if (axisManager.req_abort)
     return interval;
 
-  hal_timer_t st = HAL_timer_get_count(STEP_TIMER_NUM);
-
   // If there is a current block
   if (current_block) {
     hal_timer_t st = HAL_timer_get_count(STEP_TIMER_NUM);

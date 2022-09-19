@@ -111,11 +111,11 @@ class AxisManager {
 
 
     // FuncManager Generate
-    volatile time_double_t min_last_time = 0;
+    time_double_t min_last_time = 0;
 
     // FuncManager Consume
     bool is_consumed = true;
-    volatile time_double_t print_time = 0;
+    time_double_t print_time = 0;
     int8_t print_axis = -1;
     int8_t print_dir = 0;
     int current_steps[AXIS_SIZE];

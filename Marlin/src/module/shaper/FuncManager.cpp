@@ -222,8 +222,8 @@ bool FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step,
     FuncParams *func_params = &funcParams[func_params_use];
     int8_t type = funcParamsTypes[func_params_use];
 
-    int next_step;
-    float next_pos;
+    int next_step = print_step;
+    float next_pos = print_pos;
     while (func_params_use != func_params_head) {
         if (type == 0) {
         } else if (type > 0) {

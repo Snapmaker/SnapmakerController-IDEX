@@ -464,8 +464,6 @@ class Planner {
 
     static void shaped_loop();
 
-    static void stepper_isr();
-
   private:
 
     /**
