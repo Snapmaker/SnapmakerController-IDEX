@@ -8,6 +8,7 @@
 #include "src/module/tool_change.h"
 #include "../../Marlin/src/module/temperature.h"
 #include "print_control.h"
+#include "power_loss.h"
 #include "system.h"
 
 Calibtration calibtration;
@@ -567,6 +568,12 @@ void Calibtration::set_z_offset(float offset, bool is_moved) {
   } else {
     LOG_I("curZ: %f\n",cur_z);
     motion_control.logical_move_to_z(cur_z, 600);
+    sync_plan_position();
+
+    if (system_service.get_status() == SYSTEM_STATUE_PAUSED) {
+      power_loss.stash_data.home_offset = home_offset;
+      power_loss.stash_data.position[Z_AXIS] -= diff;
+    }
   }
   print_control.commands_unlock();
   LOG_I("Apply Z offset: %f\n", home_offset[Z_AXIS]);
