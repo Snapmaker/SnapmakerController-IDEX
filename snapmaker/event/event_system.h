@@ -14,6 +14,7 @@ enum : uint8_t {
   SYS_ID_REQ_MODULE_INFO        = 0x20,
   SYS_ID_REQ_MACHINE_INFO       = 0x21,
   SYS_ID_REQ_MACHINE_SIZE       = 0x22,
+  SYS_ID_SAVE_SETTING           = 0x24,
   SYS_ID_REQ_COORDINATE_SYSTEM  = 0x30,
   SYS_ID_SET_COORDINATE_SYSTEM  = 0x31,
   SYS_ID_SET_ORIGIN             = 0x32,
@@ -28,7 +29,7 @@ enum : uint8_t {
   SYS_ID_SUBSCRIBE_MOTOR_ENABLE_STATUS  = 0xA4,
 };
 
-#define SYS_ID_CB_COUNT 22
+#define SYS_ID_CB_COUNT 23
 
 extern event_cb_info_t system_cb_info[SYS_ID_CB_COUNT];
 

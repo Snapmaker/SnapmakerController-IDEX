@@ -197,3 +197,7 @@ void SystemService::factory_reset() {
   settings.reset();
   settings.save();
 }
+
+void SystemService::save_setting() {
+  settings.save();
+}

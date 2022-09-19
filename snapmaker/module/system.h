@@ -105,6 +105,7 @@ class SystemService {
     bool is_idle() {return status_ == SYSTEM_STATUE_IDLE;}
     void factory_reset(void);
     uint8_t get_hw_version(bool is_refresh = false);
+    void save_setting();
   private:
     system_status_e status_ = SYSTEM_STATUE_IDLE;
     system_status_source_e source_ = SYSTEM_STATUE_SCOURCE_NONE;

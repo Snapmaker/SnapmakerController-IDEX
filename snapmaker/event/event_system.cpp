@@ -113,6 +113,15 @@ static ErrCode req_machine_size(event_param_t& event) {
   return E_SUCCESS;
 }
 
+static ErrCode req_save_setting(event_param_t& event) {
+  SERIAL_ECHOLN("SC req save setting");
+  event.data[0] = E_SUCCESS;
+  system_service.save_setting();
+  event.length = 1;
+  send_event(event);
+  return E_SUCCESS;
+}
+
 static ErrCode req_coordinate_system(event_param_t& event) {
   uint8_t mode = event.data[0];
   coordinate_system_t * info = (coordinate_system_t *)(event.data + 1);
@@ -275,6 +284,7 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_REQ_MODULE_INFO       , EVENT_CB_DIRECT_RUN, req_module_info},
   {SYS_ID_REQ_MACHINE_INFO      , EVENT_CB_DIRECT_RUN, req_machine_info},
   {SYS_ID_REQ_MACHINE_SIZE      , EVENT_CB_DIRECT_RUN, req_machine_size},
+  {SYS_ID_SAVE_SETTING          , EVENT_CB_DIRECT_RUN, req_save_setting},
   {SYS_ID_REQ_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, req_coordinate_system},
   {SYS_ID_SET_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, set_coordinate_system},
   {SYS_ID_SET_ORIGIN            , EVENT_CB_DIRECT_RUN, set_origin},
