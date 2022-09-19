@@ -180,6 +180,15 @@ bool Calibtration::move_to_sersor_no_trigger(uint8_t axis, int16_t try_distance)
   return true;
 }
 
+void reset_move_param() {
+  planner.settings.min_segment_time_us = DEFAULT_MINSEGMENTTIME;
+  planner.settings.acceleration = DEFAULT_ACCELERATION;
+  planner.settings.retract_acceleration = DEFAULT_RETRACT_ACCELERATION;
+  planner.settings.travel_acceleration = DEFAULT_TRAVEL_ACCELERATION;
+  planner.settings.min_feedrate_mm_s = feedRate_t(DEFAULT_MINIMUMFEEDRATE);
+  planner.settings.min_travel_feedrate_mm_s = feedRate_t(DEFAULT_MINTRAVELFEEDRATE);
+}
+
 probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance, uint16_t feedrate) {
   probe_result_e ret = PROBR_RESULT_SUCCESS;
   float pos_before_probe = current_position[axis];
@@ -187,6 +196,8 @@ probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance,
   if (!move_to_sersor_no_trigger(axis, distance >= 0 ? -1 : 1)) {
     return PROBR_RESULT_SENSOR_ERROR;
   }
+
+  reset_move_param();
 
   motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
   switch_detect.enable_probe(0);
