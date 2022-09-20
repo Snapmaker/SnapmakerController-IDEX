@@ -1,7 +1,60 @@
 #include "AxisManager.h"
 #include "shaper/MoveQueue.h"
+#include "../gcode/gcode.h"
 
 AxisManager axisManager;
+
+void GcodeSuite::M593() {
+    LOG_I("M593\n");
+    if (axisManager.req_update_shaped) {
+        LOG_I("Send too many\n");
+        return;
+    }
+    bool update = false;
+    if (parser.seen('P') || parser.seen('F') || parser.seen('D')) {
+        update = true;
+    }
+    bool x = parser.seen('X');
+    bool y = parser.seen('Y');
+    if (!x && !y) {
+        x = true;
+        y = true;
+    }
+    LOG_I("update: %d\n", update);
+    const char* input_shaper_type_name[] = {"none", "ei", "ei2", "ei3", "mzv", "zv", "zvd", "zvdd", "zvddd"};
+    if (x) {
+        AxisInputShaper* axis_input_shaper = axisManager.axis[0].axis_input_shaper;
+        float frequency = parser.floatval('F', axis_input_shaper->frequency);
+        float zeta = parser.floatval('D', axis_input_shaper->zeta);
+        int type = parser.floatval('P', (int)axis_input_shaper->type);
+        LOG_I("X type: %s, frequency: %lf, zeta: %lf\n", input_shaper_type_name[type], frequency, zeta);
+        if (!update) {
+            axis_input_shaper->logParams();
+        } else {
+            axis_input_shaper->setConfig(type, frequency, zeta);
+        }
+    }
+    if (y) {
+        AxisInputShaper* axis_input_shaper = axisManager.axis[1].axis_input_shaper;
+        float frequency = parser.floatval('F', axis_input_shaper->frequency);
+        float zeta = parser.floatval('D', axis_input_shaper->zeta);
+        int type = parser.floatval('P', (int)axis_input_shaper->type);
+        LOG_I("Y type: %s, frequency: %lf, zeta: %lf\n", input_shaper_type_name[type], frequency, zeta);
+        if (!update) {
+            axis_input_shaper->logParams();
+        } else {
+            axis_input_shaper->setConfig(type, frequency, zeta);
+        }
+    }
+    if (update) {
+        if(planner.movesplanned() == 0) {
+            axisManager.initAxisShaper();
+            axisManager.addEmptyMove();
+        } else {
+            axisManager.req_update_shaped = true;
+        }
+    }
+}
 
 FORCE_INLINE bool Axis::generateFuncParams(uint8_t block_index, uint8_t move_start, uint8_t move_end) {
     if (block_index == generated_block_index) {
@@ -91,6 +144,12 @@ bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t* block)
     uint8_t move_start = block->shaper_data.move_start;
     uint8_t move_end = block->shaper_data.move_end;
 
+    if (req_update_shaped && req_update_index == -1) {
+        if (moveQueue.back().flag != 1) {
+            req_update_index = addEmptyMove();
+        }
+    }
+
     if (isShaped()) {
         if (move_start != moveQueue.move_tail && moveQueue.moves[moveQueue.prevMoveIndex(move_start)].flag == 1) {
             move_start = moveQueue.prevMoveIndex(move_start);
@@ -104,10 +163,19 @@ bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t* block)
         }
     }
 
+    // LOG_I("start %d, end %d\n", move_start, move_end);
+
     for (int i = 0; i < AXIS_SIZE; ++i) {
         if (!axis[i].generateFuncParams(block_index, move_start, move_end)) {
             res = false;
         }
+    }
+
+    if (req_update_shaped && req_update_index == move_end) {
+        initAxisShaper();
+        addEmptyMove();
+        req_update_shaped = false;
+        req_update_index = -1;
     }
 
     uint8_t new_move_tail = moveQueue.calculateMoveStart(move_start, axisManager.shaped_delta_window);

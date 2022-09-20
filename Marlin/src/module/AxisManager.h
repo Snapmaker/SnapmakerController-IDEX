@@ -42,30 +42,30 @@ class Axis {
     int generated_move_index = -1;
 
 
-
-
   public:
     Axis() {};
 
     void init(int8_t axis, float mm_to_step) {
         this->axis = axis;
         this->func_manager.init(axis);
-
-        if (axis <= 1) {
-            if (axis == 0) {
-                axis_input_shaper = &AxisInputShaper::axis_input_shaper_x;
-            }
-            if (axis == 1) {
-                axis_input_shaper = &AxisInputShaper::axis_input_shaper_y;
-            }
-            axis_input_shaper->setAxis(axis);
-            axis_input_shaper->init();
-
-            is_shaped = true;
-        }
-
         this->mm_to_step = mm_to_step;
         this->half_step_mm = 0.5 / mm_to_step;
+    }
+
+    void initShaper() {
+        if (axis > 1) {
+            return;
+        }
+        if (axis_input_shaper == nullptr && axis == 0) {
+            axis_input_shaper = &AxisInputShaper::axis_input_shaper_x;
+            axis_input_shaper->setAxis(axis);
+        }
+        if (axis_input_shaper == nullptr && axis == 1) {
+            axis_input_shaper = &AxisInputShaper::axis_input_shaper_y;
+            axis_input_shaper->setAxis(axis);
+        }
+        axis_input_shaper->init();
+        is_shaped = axis_input_shaper->isShaped();
     }
 
     FORCE_INLINE bool generateFuncParams(uint8_t block_index, uint8_t move_start, uint8_t move_end);
@@ -100,6 +100,9 @@ class AxisManager {
 
     bool req_abort;
 
+    volatile bool req_update_shaped = false;
+    volatile int req_update_index = -1;
+
     // MoveQueue
     bool need_add_move_start = true;
 
@@ -130,8 +133,16 @@ class AxisManager {
             axis[i].init(i, planner.settings.axis_steps_per_mm[i]);
         }
 
+        initAxisShaper();
+
+        addEmptyMove();
+    };
+
+    void initAxisShaper() {
         is_shaped = false;
         for (int i = 0; i < AXIS_SIZE; ++i) {
+            axis[i].initShaper();
+
             if (axis[i].is_shaped) {
                 is_shaped = true;
             }
@@ -154,7 +165,7 @@ class AxisManager {
                 }
             }
         }
-    };
+    }
 
     void abort() {
         for (size_t i = 0; i < AXIS_SIZE; i++) {
@@ -170,6 +181,9 @@ class AxisManager {
         print_time = 0;
         print_axis = -1;
         print_dir = 0;
+
+        req_update_shaped = false;
+        req_update_index = -1;
     }
 
     bool isShaped() {
@@ -208,11 +222,12 @@ class AxisManager {
         return true;
     }
 
-    void addEmptyMove() {
+    int addEmptyMove() {
         if (!isShaped()) {
-            return;
+            return -1;
         }
-        moveQueue.addEmptyMove(shaped_delta_window + 0.001f);
+        // LOG_I("shaped_delta_window: %lf\n", shaped_delta_window);
+        return moveQueue.addEmptyMove(shaped_delta_window + 0.001f);
     }
 
     bool getCurrentAxisStepper(AxisStepper* axis_stepper);

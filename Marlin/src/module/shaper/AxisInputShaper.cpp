@@ -5,18 +5,225 @@
 AxisInputShaper AxisInputShaper::axis_input_shaper_x;
 AxisInputShaper AxisInputShaper::axis_input_shaper_y;
 
-// void ShaperWindow::updateParamABC(int i, float start_v, float accelerate, time_double_t start_t, time_double_t left_time, float start_pos, float axis_r) {
-//     ShaperWindowParams &p = params[i];
-//     float A = p.A;
-//     // float d_t = (start_t - left_time);
-//     // float T = p.T - d_t;
-//     p.a = 0.5f * accelerate * A * axis_r;
-//     // p.b = (start_v + accelerate * T) * A * axis_r;
-//     // p.c = (start_pos + (start_v * T + 0.5f * accelerate * sq(T)) * axis_r) * A;
+void AxisInputShaper::init()
+{
+    params.n = 0;
+    is_shaper_window_init = false;
+    switch (type) {
+        case InputShaperType::none: {
+            params.n = 1;
+            params.A[0] = 1;
+            params.T[0] = 0;
+            break;
+        }
 
-//     // p.left_time = left_time;
-// }
+        case InputShaperType::zv: {
+            float df = SQRT(1. - sq(zeta));
+            float K = expf(-zeta * M_PI / df);
+            float t_d = 1. / (frequency * df);
+            params.n = 2;
+            params.A[0] = 1;
+            params.A[1] = K;
+            params.T[0] = 0;
+            params.T[1] = 0.5 * t_d;
+            break;
+        }
 
+        case InputShaperType::zvd: {
+            float df = SQRT(1. - sq(zeta));
+            float K = expf(-zeta * M_PI / df);
+            float t_d = 1. / (frequency * df);
+            params.n = 3;
+            params.A[0] = 1;
+            params.A[1] = 2 * K;
+            params.A[2] = sq(K);
+            params.T[0] = 0;
+            params.T[1] = 0.5 * t_d;
+            params.T[2] = t_d;
+            break;
+        }
+
+        case InputShaperType::zvdd: {
+            float df = SQRT(1. - sq(zeta));
+            float K = expf(-zeta * M_PI / df);
+            float t_d = 1. / (frequency * df);
+            params.n = 4;
+
+            params.A[0] = 1;
+            params.A[1] = 3 * K;
+            params.A[2] = 3 * sq(K);
+            params.A[3] = K * K * K;
+
+            params.T[0] = 0;
+            params.T[1] = 0.5 * t_d;
+            params.T[2] = t_d;
+            params.T[3] = 1.5 * t_d;
+            break;
+        }
+
+        case InputShaperType::zvddd: {
+            float df = SQRT(1. - sq(zeta));
+            float K = expf(-zeta * M_PI / df);
+            float t_d = 1. / (frequency * df);
+            params.n = 4;
+
+            params.A[0] = 1;
+            params.A[1] = 4 * K;
+            params.A[2] = 6 * sq(K);
+            params.A[3] = 4 * K * K * K;
+            params.A[4] = K * K * K * K;
+
+            params.T[0] = 0;
+            params.T[1] = 0.5 * t_d;
+            params.T[2] = t_d;
+            params.T[3] = 1.5 * t_d;
+            params.T[4] = 2 * t_d;
+            break;
+        }
+
+        case InputShaperType::mzv: {
+            float df = SQRT(1. - sq(zeta));
+            float K = expf(-.75 * zeta * M_PI / df);
+            float t_d = 1. / (frequency * df);
+
+            float a1 = 1. - 1. / SQRT(2.);
+            float a2 = (SQRT(2.) - 1.) * K;
+            float a3 = a1 * K * K;
+
+            params.n = 3;
+            params.A[0] = a1;
+            params.A[1] = a2;
+            params.A[2] = a3;
+
+            params.T[0] = 0.;
+            params.T[1] = .375*t_d;
+            params.T[2] = .75*t_d;
+            break;
+        }
+
+        case InputShaperType::ei: {
+            float v_tol = 1. / SHAPER_VIBRATION_REDUCTION; // vibration tolerance
+            float df = SQRT(1. - sq(zeta));
+            float K = expf(-zeta * M_PI / df);
+            float t_d = 1. / (frequency * df);
+
+            float a1 = .25 * (1. + v_tol);
+            float a2 = .5 * (1. - v_tol) * K;
+            float a3 = a1 * K * K;
+
+            params.n = 3;
+            params.A[0] = a1;
+            params.A[1] = a2;
+            params.A[2] = a3;
+
+            params.T[0] = 0;
+            params.T[1] = 0.5 * t_d;
+            params.T[2] = t_d;
+            break;
+        }
+
+        case InputShaperType::ei2: {
+            float v_tol = 1. / SHAPER_VIBRATION_REDUCTION; // vibration tolerance
+            float df = SQRT(1. - sq(zeta));
+            float K = expf(-zeta * M_PI / df);
+            float t_d = 1. / (frequency * df);
+
+            float V2 = sq(v_tol);
+            float X = pow(V2 * (SQRT(1. - V2) + 1.), 1./3.);
+            float a1 = (3.*X*X + 2.*X + 3.*V2) / (16.*X);
+            float a2 = (.5 - a1) * K;
+            float a3 = a2 * K;
+            float a4 = a1 * K * K * K;
+
+            params.n = 4;
+            params.A[0] = a1;
+            params.A[1] = a2;
+            params.A[2] = a3;
+            params.A[3] = a4;
+
+            params.T[0] = 0;
+            params.T[1] = 0.5 * t_d;
+            params.T[2] = t_d;
+            params.T[3] = 1.5 * t_d;
+            break;
+        }
+
+        case InputShaperType::ei3: {
+            float v_tol = 1. / SHAPER_VIBRATION_REDUCTION;
+            float df = SQRT(1. - sq(zeta));
+            float K = expf(-zeta * M_PI / df);
+            float t_d = 1. / (frequency * df);
+
+            float K2 = K * K;
+            float a1 = 0.0625 * (1. + 3. * v_tol + 2. * SQRT(2. * (v_tol + 1.) * v_tol));
+            float a2 = 0.25 * (1. - v_tol) * K;
+            float a3 = (0.5 * (1. + v_tol) - 2. * a1) * K2;
+            float a4 = a2 * K2;
+            float a5 = a1 * K2 * K2;
+
+            params.n = 5;
+            params.A[0] = a1;
+            params.A[1] = a2;
+            params.A[2] = a3;
+            params.A[3] = a4;
+            params.A[4] = a5;
+
+            params.T[0] = 0;
+            params.T[1] = 0.5 * t_d;
+            params.T[2] = t_d;
+            params.T[3] = 1.5 * t_d;
+            params.T[4] = 2 * t_d;
+            break;
+        }
+
+        default: {
+            params.n = 1;
+            params.A[0] = 1;
+            params.T[0] = 0;
+            break;
+        }
+    }
+
+    shiftPulses();
+
+    logParams();
+}
+
+void AxisInputShaper::logParams() {
+    LOG_I("logParams\n");
+    LOG_I("n: %d\n", shift_params.n);
+    for (int i = 0; i < shift_params.n; i++)
+    {
+        LOG_I("i: %d, A: %lf, T: %lf\n", i, shift_params.A[i], shift_params.T[i]);
+    }
+}
+
+void AxisInputShaper::shiftPulses() {
+    float sum_a = 0.;
+    for (int i = 0; i < params.n; ++i)
+        sum_a += params.A[i];
+    float inv_a = 1. / sum_a;
+    for (int i = 0; i < params.n; ++i) {
+        shift_params.A[params.n - i - 1] = params.A[i] * inv_a;
+        shift_params.T[params.n - i - 1] = -params.T[i];
+    }
+    shift_params.n = params.n;
+
+    sum_a = 0;
+    for (int i = 0; i < params.n; ++i) {
+        shift_params.T[i] = shift_params.T[i] * 1000;
+    }
+
+    float ts = 0.;
+    for (int i = 0; i < shift_params.n; ++i)
+        ts += shift_params.A[i] * shift_params.T[i];
+    for (int i = 0; i < shift_params.n; ++i)
+        shift_params.T[i] -= ts;
+
+    left_delta = params.n == 0 ? 0 : ABS(shift_params.T[0]);
+    right_delta = params.n == 0 ? 0 : ABS(shift_params.T[shift_params.n - 1]);
+    delta_window = right_delta + left_delta;
+}
 
 FORCE_INLINE void AxisInputShaper::addFuncParamsToManager(FuncManager *func_manager,float a, time_double_t right_time, float right_pos, float x2, float y1, float y2) {
     float b = 0, c = 0;
@@ -53,178 +260,6 @@ FORCE_INLINE void AxisInputShaper::addFuncParamsToManager(FuncManager *func_mana
             int type = a > 0 ? middle < EPSILON ? 1 : -1 :middle < EPSILON ? -1 : 1;
             func_manager->addFuncParams(a, b, c, type, right_time, right_pos);
         }
-    }
-    // func_params.update(a, b, c);
-}
-
-// void ShaperWindow::updateABC() {
-//     float a = 0, b = 0, c = 0;
-//     for (int i = 0; i < n; i++) {
-//         a += params[i].a;
-//         b += params[i].b;
-//         c += params[i].c;
-//     }
-//     if (ABS(a) < EPSILON) {
-//         a = 0;
-//     }
-//     if (ABS(b) < EPSILON) {
-//         b = 0;
-//     }
-//     if (ABS(c) < EPSILON) {
-//         c = 0;
-//     }
-
-//     func_params.update(a, b, c);
-// }
-
-
-// void ShaperWindow::updateABC(float x1, float y1, float x2, float y2) {
-//     float a = 0, b = 0, c = 0;
-//     for (int i = 0; i < n; i++) {
-//         a += params[i].a;
-//     }
-//     if (ABS(a) < EPSILON) {
-//         a = 0;
-//     }
-//     if (a == 0) {
-//         b = (y2 - y1) / (x2 - x1);
-//         c = y1 - b * x1;
-//     } else {
-//         b =(y2 - y1) / (x2 - x1) - a * (x2 + x1);
-//         c = y1 - b * x1 - a * sq(x1);
-//     }
-//     new_func_params.update(a, b, c);
-// }
-
-// void ShaperWindow::updateParamLeftTime(time_double_t left_time) {
-//     for (int i = 0; i < n; ++i) {
-//         if (params[i].left_time == left_time) {
-//             continue;
-//         }
-
-//         ShaperWindowParams& w_p = params[i];
-
-//         float delta_left_time = left_time - params[i].left_time;
-//         params[i].left_time = left_time;
-
-//         w_p.c = w_p.c + w_p.a * sq(delta_left_time) + w_p.b * delta_left_time;
-//         w_p.b = w_p.b + 2 * w_p.a * delta_left_time;
-//         w_p.a = w_p.a;
-//     }
-// }
-
-void AxisInputShaper::shiftPulses() {
-    float sum_a = 0.;
-    for (int i = 0; i < params.n; ++i)
-        sum_a += params.A[i];
-    float inv_a = 1. / sum_a;
-    for (int i = 0; i < params.n; ++i) {
-        shift_params.A[params.n - i - 1] = params.A[i] * inv_a;
-        shift_params.T[params.n - i - 1] = -params.T[i];
-    }
-    shift_params.n = params.n;
-
-    sum_a = 0;
-    for (int i = 0; i < params.n; ++i) {
-        // if (i == params.n - 1) {
-        //     shift_params.A[i] = 1 - sum_a;
-        // } else {
-        //     shift_params.A[i] = LROUND(shift_params.A[i] * 10000) / 10000.0f;
-        //     sum_a += shift_params.A[i];
-        // }
-        shift_params.T[i] = shift_params.T[i] * 1000;
-    }
-
-    float ts = 0.;
-    for (int i = 0; i < shift_params.n; ++i)
-        ts += shift_params.A[i] * shift_params.T[i];
-    for (int i = 0; i < shift_params.n; ++i)
-        shift_params.T[i] -= ts;
-
-    left_delta = ABS(shift_params.T[0]);
-    right_delta = ABS(shift_params.T[shift_params.n - 1]);
-    delta_window = right_delta + left_delta;
-}
-
-void AxisInputShaper::init()
-{
-    params.n = 0;
-    switch (type) {
-        case InputShaperType::none: {
-            break;
-        }
-
-        case InputShaperType::zv: {
-            const float df = SQRT(1. - sq(zeta));
-            const float K = expf(-zeta * M_PI / df);
-            const float t_d = 1. / (frequency * df);
-            params.n = 2;
-            params.A[0] = 1;
-            params.A[1] = K;
-            params.T[0] = 0;
-            params.T[1] = 0.5 * t_d;
-
-            is_shaper_window_init = false;
-            break;
-        }
-
-        case InputShaperType::zvd: {
-            float df = SQRT(1. - sq(zeta));
-            float K = expf(-zeta * M_PI / df);
-            float t_d = 1. / (frequency * df);
-            params.n = 3;
-            params.A[0] = 1;
-            params.A[1] = 2 * K;
-            params.A[2] = sq(K);
-            params.T[0] = 0;
-            params.T[1] = 0.5 * t_d;
-            params.T[2] = t_d;
-
-            is_shaper_window_init = false;
-            break;
-        }
-
-        case InputShaperType::ei3: {
-            float v_tol = 1. / SHAPER_VIBRATION_REDUCTION;
-            float df = SQRT(1. - sq(zeta));
-            float K = expf(-zeta * M_PI / df);
-            float t_d = 1. / (frequency * df);
-
-            float K2 = K * K;
-            float a1 = 0.0625 * (1. + 3. * v_tol + 2. * SQRT(2. * (v_tol + 1.) * v_tol));
-            float a2 = 0.25 * (1. - v_tol) * K;
-            float a3 = (0.5 * (1. + v_tol) - 2. * a1) * K2;
-            float a4 = a2 * K2;
-            float a5 = a1 * K2 * K2;
-
-            params.n = 5;
-            params.A[0] = a1;
-            params.A[1] = a2;
-            params.A[2] = a3;
-            params.A[3] = a4;
-            params.A[4] = a5;
-
-            params.T[0] = 0;
-            params.T[1] = 0.5 * t_d;
-            params.T[2] = t_d;
-            params.T[3] = 1.5 * t_d;
-            params.T[4] = 2 * t_d;
-
-            is_shaper_window_init = false;
-            break;
-        }
-
-        default: {
-            break;
-        }
-    }
-
-    shiftPulses();
-
-    LOG_I("n: %d\n", shift_params.n);
-    for (int i = 0; i < shift_params.n; i++)
-    {
-        LOG_I("i: %d, A: %lf, T: %lf\n", i, shift_params.A[i], shift_params.T[i]);
     }
 }
 

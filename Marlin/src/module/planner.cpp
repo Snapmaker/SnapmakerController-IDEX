@@ -1275,7 +1275,7 @@ static float last_remaining_consume_time = -1;
 // static float start_t = -1;
 // static float end_t = -1;
 static int count = 10000;
-static int c2 = 1000000;
+static int c2 = 100000;
 static bool log111 = true;
 
 void Planner::shaped_loop() {
@@ -1300,10 +1300,11 @@ void Planner::shaped_loop() {
 
     c2--;
     if (c2 <= 0) {
-        c2 = 1000000;
+        c2 = 100000;
         float t = (float)axisManager.counts[4] / (float)axisManager.counts[3] / 3.0f;
         float max_t = (float)axisManager.counts[5] / 3.0f;
-        LOG_I("c0: %d, c1: %d, c2: %d, c6: %d, c7: %d, time: %lf, max_t: %lf, c11: %d, c12: %d\n", axisManager.counts[0], axisManager.counts[1], axisManager.counts[2], axisManager.counts[6],axisManager.counts[7], t, max_t, axisManager.counts[11], axisManager.counts[12]);
+        LOG_I("time: %lf, max_t: %lf, max_size: %d, %d\n",  t, max_t, axisManager.axis[0].func_manager.max_size, axisManager.axis[1].func_manager.max_size);
+        // LOG_I("c0: %d, c1: %d, c2: %d, c6: %d, c7: %d, time: %lf, max_t: %lf, c11: %d, c12: %d\n", axisManager.counts[0], axisManager.counts[1], axisManager.counts[2], axisManager.counts[6],axisManager.counts[7], t, max_t, axisManager.counts[11], axisManager.counts[12]);
         // LOG_I("c10: %d, c11: %d, c12: %d\n", axisManager.counts[10], axisManager.counts[11], axisManager.counts[12]);
     }
 
@@ -1379,10 +1380,10 @@ void Planner::shaped_loop() {
 
     LOG_I("t: %lf\n", remaining_consume_time);
 
-    if (moveQueue.is_start) {
-        axisManager.addEmptyMove();
-        moveQueue.is_start = false;
-    }
+    // if (moveQueue.is_start) {
+    //     axisManager.addEmptyMove();
+    //     moveQueue.is_start = false;
+    // }
 
     float planed_time = 0;
     while (index != planned_index) {
@@ -1391,7 +1392,7 @@ void Planner::shaped_loop() {
           // LOG_I("b0: %d\n", index);
             if (TEST(block->flag, BLOCK_BIT_RECALCULATE)) {
               axisManager.counts[7]++;
-               break;
+              break;
             }
 
             moveQueue.calculateMoves(block);

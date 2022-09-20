@@ -2073,7 +2073,6 @@ uint32_t Stepper::block_phase_isr() {
           interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
           return interval;
       } else {
-
           discard_current_block();
       }
 

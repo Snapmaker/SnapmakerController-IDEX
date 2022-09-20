@@ -171,7 +171,7 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
         last_is_zero = false;
     }
 
-    // LOG_I("%d, %lf %lf\n", axis, right_time, right_pos);
+    // LOG_I("%d, %lf %lf %lf %lf %lf\n", axis, a, b, c, right_time.toFloat(), right_pos);
 
     // if (axis == 0)
     // {
@@ -247,6 +247,10 @@ bool FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step,
 
         func_params = &funcParams[func_params_use];
         type = funcParamsTypes[func_params_use];
+    }
+
+    if (func_params_tail != func_params_use) {
+        func_params_tail = prevFuncParamsIndex(func_params_use);
     }
 
     if (func_params_use == func_params_head) {

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../planner.h"
 #include "FuncManager.h"
 
 #define SHAPER_VIBRATION_REDUCTION 20
@@ -8,13 +7,14 @@
 enum class InputShaperType : int
 {
   none = 0,
-  zv = 1,
-  zvd = 2,
-  zvdd = 3,
-  zvddd = 4,
-  mzv = 5,
-  ei2 = 6,
-  ei3 = 7
+  ei = 1,
+  ei2 = 2,
+  ei3 = 3,
+  mzv = 4,
+  zv = 5,
+  zvd = 6,
+  zvdd = 7,
+  zvddd = 8
 };
 
 class ShaperParams
@@ -64,12 +64,6 @@ public:
 
 class AxisInputShaper
 {
-public:
-  static AxisInputShaper axis_input_shaper_x;
-  static AxisInputShaper axis_input_shaper_y;
-
-  bool is_shaper_window_init = false;
-
 private:
   int axis;
 
@@ -81,6 +75,11 @@ private:
   void shiftPulses();
 
 public:
+  static AxisInputShaper axis_input_shaper_x;
+  static AxisInputShaper axis_input_shaper_y;
+
+  bool is_shaper_window_init = false;
+
   float frequency = 50;
   float zeta = 0.1;
   InputShaperType type = InputShaperType::zvd;
@@ -93,11 +92,19 @@ public:
 
   AxisInputShaper(){};
 
+  void setConfig(int type, float frequency, float zeta) {
+    this->type = (InputShaperType)type;
+    this->frequency = frequency;
+    this->zeta = zeta;
+  };
+
   void init();
+
+  void logParams();
 
   bool isShaped()
   {
-    return type != InputShaperType::none;
+    return true;
   }
 
   void setAxis(int axis)

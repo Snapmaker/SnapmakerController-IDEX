@@ -35,8 +35,8 @@ class FuncParams {
 //    static float getX(float y, float a, float b, float c, float left_time, int8_t type);
 //};
 
-#define FUNC_PARAMS_X_SIZE 200
-#define FUNC_PARAMS_Y_SIZE 200
+#define FUNC_PARAMS_X_SIZE 300
+#define FUNC_PARAMS_Y_SIZE 300
 #define FUNC_PARAMS_Z_SIZE 64
 #define FUNC_PARAMS_E_SIZE 64
 
@@ -114,7 +114,7 @@ class FuncManager {
 
     void abort() {
         // LOG_I("abort\n");
-        func_params_tail = func_params_head = 0;
+        func_params_tail = func_params_use = func_params_head = 0;
         last_time = 0;
         last_pos = 0;
         last_is_zero = false;

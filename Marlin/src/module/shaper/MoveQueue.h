@@ -39,6 +39,10 @@ class MoveQueue {
 
     Move moves[MOVE_SIZE];
 
+    Move& back() {
+      return moves[prevMoveIndex(move_head)];
+    };
+
     void abort() {
       is_start = true;
       is_first = true;

@@ -142,6 +142,8 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
     move.start_t = is_first ? 0 : last_move.end_t;
     move.end_t = move.start_t + move.t;
 
+    // LOG_I("move_index: %d %lf %d %lf\n", move_index, t, flag, move.start_t.toFloat());
+
     float last_end_v = is_first? 0 : last_move.end_v;
     if (!IS_ZERO(last_end_v - move.start_v)) {
         LOG_I("error v: %lf, %lf\n", last_end_v,  move.start_v);
