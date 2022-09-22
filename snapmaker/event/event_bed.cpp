@@ -14,7 +14,7 @@ static ErrCode bed_report_info(event_param_t& event) {
 static ErrCode bed_set_temperature(event_param_t& event) {
   int16_t target = *((int16_t *)(event.data + 2));
   LOG_V("SC set bed temp to: %d\n", target);
-  event.data[0] = bed_control.set_temperature(target);;
+  event.data[0] = bed_control.set_temperature(target, false);
   event.length = 1;
   return send_event(event);
 }
