@@ -105,7 +105,7 @@ bool Exception::trigger_exception(exception_type_e e) {
 
   EXCEPTION_TRIGGER(e);
   exception_behavior |= exception_behavior_map[e].behavior;
-  LOG_I("trigger exception:%d, cur exception code:0x%x,behavior code:0x%x\n", e, exception_status, exception_behavior);
+  LOG_I("trigger exception:%d, cur exception code:0x%x, behavior code:0x%x\n", e, exception_status, exception_behavior);
   return true;
 }
 

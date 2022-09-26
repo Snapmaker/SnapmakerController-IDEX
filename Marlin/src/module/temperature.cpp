@@ -221,6 +221,8 @@
 #endif
 
 Temperature thermalManager;
+bool bed_temp_first_trigger = false;
+uint32_t bed_temp_first_min_abnormal_ms = 0;
 
 const char str_t_thermal_runaway[] PROGMEM = STR_T_THERMAL_RUNAWAY,
            str_t_heating_failed[] PROGMEM = STR_T_HEATING_FAILED;
@@ -1243,6 +1245,14 @@ void Temperature::min_temp_error(const heater_id_t heater_id) {
  *  - Update the heated bed PID output value
  */
 void Temperature::manage_heater() {
+
+  if (bed_temp_first_trigger) {
+    if (ELAPSED(millis(), bed_temp_first_min_abnormal_ms + BED_TEMP_MIN_ABNORMAL_WATCH_WINDOW_TIME_MS)) {
+      bed_temp_first_trigger = false;
+      LOG_I("bed_temp_first_trigger reset to false\r\n");
+    }
+  }
+
   if (marlin_state == MF_INITIALIZING) return watchdog_refresh(); // If Marlin isn't started, at least reset the watchdog!
 
   #if ENABLED(EMERGENCY_PARSER)
@@ -2585,6 +2595,20 @@ void Temperature::init() {
           break;
         }
         else if (PENDING(millis(), timer)) break;
+
+        if (heater_id == H_BED) {
+          if (!bed_temp_first_trigger) {
+            bed_temp_first_trigger = true;
+            bed_temp_first_min_abnormal_ms = millis();
+            LOG_I("bed temp abnormal first trigger\r\n");
+            break;
+          }
+          else if PENDING(millis(), bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS){
+            LOG_I("bed temp abnormal trigger ignore, as in disable window %d ms\r\n", (bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS) - millis());
+            break;
+          }
+        }
+
         state = TRRunaway;
 
       case TRRunaway:
