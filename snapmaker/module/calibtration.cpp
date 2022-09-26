@@ -15,7 +15,7 @@ Calibtration calibtration;
 
 #define PROBE_FAST_Z_FEEDRATE 200
 #define PROBE_Z_LEAVE_FEEDRATE 5
-#define PROBE_FAST_XY_FEEDRATE 800
+#define PROBE_FAST_XY_FEEDRATE 1000
 #define PROBE_MOVE_XY_FEEDRATE 5000
 #define PROBE_MOVE_Z_FEEDRATE 600
 #define PROBE_LIFTINT_DISTANCE (1)  // mm
@@ -36,7 +36,7 @@ static float build_plate_thickness = 5;
 // |         [0]          |
 // |                      |
 // | [2]             [3]  |
-// |______________________|  
+// |______________________|
 
 #define HALF_BED_X (X_BED_SIZE / 2)
 #define HALF_BED_Y (Y_BED_SIZE / 2)
@@ -47,7 +47,7 @@ static float build_plate_thickness = 5;
 #define POS_Y_D_DIFF 94
 
 static float calibration_position_xy[6][2] = {
-  /*CAlIBRATION_POS_0*/ {HALF_BED_X, HALF_BED_Y}, 
+  /*CAlIBRATION_POS_0*/ {HALF_BED_X, HALF_BED_Y},
   /*CAlIBRATION_POS_1*/ {HALF_BED_X, HALF_BED_Y + POS_Y_U_DIFF},
   /*CAlIBRATION_POS_2*/ {HALF_BED_X - POS_X_L_DIFF, HALF_BED_Y - POS_Y_D_DIFF},
   /*CAlIBRATION_POS_3*/ {HALF_BED_X + POS_X_R_DIFF, HALF_BED_Y - POS_Y_D_DIFF},
@@ -58,7 +58,7 @@ static float calibration_position_xy[6][2] = {
 
 /**
  * @brief Backup offset data for recovery
- * 
+ *
  */
 void Calibtration::backup_offset() {
   HOTEND_LOOP() {
@@ -373,7 +373,7 @@ ErrCode Calibtration::nozzle_calibtration_preapare(calibtration_position_e pos) 
 
 /**
  * @brief reset home_offset、hotend_offsets and home
- * 
+ *
  */
 void Calibtration::reset_xy_calibtration_env() {
   set_hotend_offsets_to_default();
@@ -549,9 +549,9 @@ void Calibtration::loop(void) {
 
 
 /**
- * @brief Change and apply z_offset  
- * 
- * @param offset Absolute z-offset value  
+ * @brief Change and apply z_offset
+ *
+ * @param offset Absolute z-offset value
  * @param is_moved : true - Change the coordinate system by adjusting the hot bed position
  *                   false - Change the coordinate system value directly
  */
