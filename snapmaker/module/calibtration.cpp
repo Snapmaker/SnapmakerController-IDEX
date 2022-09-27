@@ -13,15 +13,15 @@
 
 Calibtration calibtration;
 
-#define PROBE_FAST_Z_FEEDRATE 200
-#define PROBE_Z_LEAVE_FEEDRATE 5
-#define PROBE_FAST_XY_FEEDRATE 2500
-#define PROBE_MOVE_XY_FEEDRATE 5000
-#define PROBE_MOVE_Z_FEEDRATE 600
-#define PROBE_LIFTINT_DISTANCE (1)  // mm
-#define PROBE_MOVE_XY_LIFTINT_DISTANCE (5)  // mm
-#define Z_REMOVE_PLATE_THICKNESS(z) (z - build_plate_thickness)
-#define Z_PROBE_TRY_TO_MOVE_DISTANCE (10)  // mm
+#define PROBE_FAST_Z_FEEDRATE                 (200)
+#define PROBE_Z_LEAVE_FEEDRATE                (5)
+#define PROBE_FAST_XY_FEEDRATE                (1800)
+#define PROBE_MOVE_XY_FEEDRATE                (5000)
+#define PROBE_MOVE_Z_FEEDRATE                 (600)
+#define PROBE_LIFTINT_DISTANCE                (1)  // mm
+#define PROBE_MOVE_XY_LIFTINT_DISTANCE        (5)  // mm
+#define Z_REMOVE_PLATE_THICKNESS(z)           (z - build_plate_thickness)
+#define Z_PROBE_TRY_TO_MOVE_DISTANCE          (10)  // mm
 
 #define X2_MIN_HOTEND_OFFSET (X2_MAX_POS - X2_MIN_POS - 20)
 
@@ -202,7 +202,8 @@ probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance,
 
   motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
   switch_detect.enable_probe(0);
-  probe_axis_move(axis, distance, feedrate);
+  uint16_t using_fr = axis == Y_AXIS ? (feedrate>>1) : feedrate;
+  probe_axis_move(axis, distance, using_fr);
   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   sync_plan_position();
   if (!motion_control.is_sg_trigger()) {
