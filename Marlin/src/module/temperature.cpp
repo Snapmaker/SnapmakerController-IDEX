@@ -220,6 +220,9 @@
   static constexpr uint8_t heater_ttbllen_map[HOTENDS] = ARRAY_BY_HOTENDS(TEMPTABLE_0_LEN REPEAT_S(1, HOTENDS, NEXT_TEMPTABLE_LEN));
 #endif
 
+#define BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS   (5 * 60 * 1000)
+#define BED_TEMP_MIN_ABNORMAL_WATCH_WINDOW_TIME_MS    (10 * 60 * 1000)
+
 Temperature thermalManager;
 bool bed_temp_first_trigger = false;
 uint32_t bed_temp_first_min_abnormal_ms = 0;
@@ -671,8 +674,21 @@ volatile bool Temperature::raw_temps_ready = false;
               }
               else if (ELAPSED(ms, temp_change_ms)) {                  // Watch timer expired
                 bool ret = false;
-                if (heater_id == H_BED)
-                  ret = exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
+                if (heater_id == H_BED) {
+                  if (!bed_temp_first_trigger) {
+                    bed_temp_first_trigger = true;
+                    bed_temp_first_min_abnormal_ms = millis();
+                    LOG_I("bed temp abnormal first trigger\r\n");
+                    ret = false;
+                  }
+                  else if PENDING(millis(), bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS){
+                    LOG_I("bed temp abnormal trigger ignore, as in disable window %d ms\r\n", (bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS) - millis());
+                    ret = false;
+                  }
+                  else {
+                    ret = exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
+                  }
+                }
                 else if (heater_id == 0)
                   ret = exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT);
                 else if (heater_id == 1)
@@ -1357,12 +1373,21 @@ void Temperature::manage_heater() {
       if (watch_bed.elapsed(ms)) {              // Time to check the bed?
         if (watch_bed.check(degBed())) {          // Increased enough?
           start_watching_bed();                 // If temp reached, turn off elapsed check
-          // exception_server.clean_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
         }
         else {
-          TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
-          if (exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT)) {
-            _temp_error(H_BED, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
+          if (!bed_temp_first_trigger) {
+            bed_temp_first_trigger = true;
+            bed_temp_first_min_abnormal_ms = millis();
+            LOG_I("bed temp abnormal first trigger\r\n");
+          }
+          else if PENDING(millis(), bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS){
+            LOG_I("bed temp abnormal trigger ignore, as in disable window %d ms\r\n", (bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS) - millis());
+          }
+          else {
+            TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
+            if (exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT)) {
+              _temp_error(H_BED, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
+            }
           }
         }
       }

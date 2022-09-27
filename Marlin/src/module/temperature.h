@@ -44,11 +44,6 @@
 #define HOTEND_INDEX TERN(HAS_MULTI_HOTEND, e, 0)
 #define E_NAME TERN_(HAS_MULTI_HOTEND, e)
 
-#define BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS   (5 * 60 * 1000)
-#define BED_TEMP_MIN_ABNORMAL_WATCH_WINDOW_TIME_MS    (10 * 60 * 1000)
-extern bool bed_temp_first_trigger;
-extern uint32_t bed_temp_first_min_abnormal_ms;
-
 // Element identifiers. Positive values are hotends. Negative values are other heaters or coolers.
 typedef enum : int8_t {
   H_NONE = -6,
