@@ -67,7 +67,7 @@ ErrCode MotionControl::move_axis(mobile_instruction_t *move) {
 }
 
 // pos is float[4], 0-X1  1-X2  2-Y  3-Z
-void MotionControl::get_home_pos(float *pos) {  
+void MotionControl::get_home_pos(float *pos) {
   pos[0] = x_home_pos(0);
   pos[1] = x_home_pos(1);
   pos[2] = Y_MIN_POS;
@@ -324,7 +324,7 @@ void MotionControl::motor_enable(uint8_t axis, uint8_t index) {
       else ENABLE_STEPPER_X2(); break;
     case Y_AXIS: ENABLE_AXIS_Y(); break;
     case Z_AXIS: ENABLE_AXIS_Z(); break;
-    case E_AXIS: 
+    case E_AXIS:
       if (index == 0) ENABLE_STEPPER_E0();
       else ENABLE_STEPPER_E1(); break;
   }
@@ -337,7 +337,7 @@ void MotionControl::motor_disable(uint8_t axis, uint8_t index) {
       else DISABLE_STEPPER_X2(); break;
     case Y_AXIS: DISABLE_AXIS_Y(); break;
     case Z_AXIS: DISABLE_AXIS_Z(); break;
-    case E_AXIS: 
+    case E_AXIS:
       if (index == 0) DISABLE_STEPPER_E0();
       else DISABLE_STEPPER_E1(); break;
   }
@@ -352,7 +352,7 @@ bool MotionControl::is_motor_enable(uint8_t axis, uint8_t index) {
       else {ret = (X2_ENABLE_READ() == X_ENABLE_ON);} break;
     case Y_AXIS: ret = (Y_ENABLE_READ() == Y_ENABLE_ON); break;
     case Z_AXIS: ret = (Z_ENABLE_READ() == Z_ENABLE_ON); break;
-    case E_AXIS: 
+    case E_AXIS:
       if (index == 0) {ret = (E0_ENABLE_READ() == E_ENABLE_ON);}
       else {ret = (E1_ENABLE_READ() == E_ENABLE_ON);} break;
   }
@@ -457,7 +457,7 @@ extern "C" {
         motion_control.set_sg_trigger(0xf);
         stepper.quick_stop();
       }
-    } else if (stepper.axis_is_moving() && motion_control.is_sg_enable(SG_X2)) {
+    } else if (stepper.axis_is_moving(X_AXIS) && motion_control.is_sg_enable(SG_X2)) {
       if (active_extruder == 1) {
         trigger_stall_guard_exit(SG_X2);
       }
@@ -467,14 +467,14 @@ extern "C" {
 
   void __irq_exti9_5() {
     if(ExitGetITStatus(TMC_STALL_GUARD_Z_PIN)) {
-      if (stepper.axis_is_moving()  && motion_control.is_sg_enable(SG_Z)) {
+      if (stepper.axis_is_moving() && motion_control.is_sg_enable(SG_Z)) {
          trigger_stall_guard_exit(SG_Z);
       }
       ExtiClearITPendingBit(TMC_STALL_GUARD_Z_PIN);
     }
 
     if(ExitGetITStatus(TMC_STALL_GUARD_Y_PIN)) {
-      if (stepper.axis_is_moving()  && motion_control.is_sg_enable(SG_Y)) {
+      if (stepper.axis_is_moving(Y_AXIS) && motion_control.is_sg_enable(SG_Y)) {
          trigger_stall_guard_exit(SG_Y);
       }
       ExtiClearITPendingBit(TMC_STALL_GUARD_Y_PIN);
@@ -484,7 +484,7 @@ extern "C" {
 
   void __irq_exti15_10() {
     if(ExitGetITStatus(TMC_STALL_GUARD_X_PIN)) {
-      if (stepper.axis_is_moving(X_AXIS)  && motion_control.is_sg_enable(SG_X)) {
+      if (stepper.axis_is_moving(X_AXIS) && motion_control.is_sg_enable(SG_X)) {
         if (active_extruder == 0) {
           trigger_stall_guard_exit(SG_X);
         }

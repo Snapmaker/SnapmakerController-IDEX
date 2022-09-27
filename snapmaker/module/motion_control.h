@@ -108,6 +108,7 @@ class MotionControl {
     void set_sg_trigger(uint8_t status) {sg_trigger_status = status;}
     bool is_sg_trigger(sg_axis_e axis) {return GET_BIT(sg_trigger_status, axis) && GET_BIT(sg_enable_status, axis);}
     bool is_sg_trigger() {return sg_trigger_status;}
+    void clear_trigger() {sg_trigger_status  = 0;};
     void set_sg_exti_status(sg_axis_e axis, bool status) {SET_BIT(sg_exti_status, axis, status);}
     void set_sg_enable(sg_axis_e axis, bool status) {SET_BIT(sg_enable_status, axis, status);}
     bool is_sg_enable(sg_axis_e axis) {return GET_BIT(sg_enable_status, axis);}

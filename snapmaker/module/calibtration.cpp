@@ -15,7 +15,7 @@ Calibtration calibtration;
 
 #define PROBE_FAST_Z_FEEDRATE                 (200)
 #define PROBE_Z_LEAVE_FEEDRATE                (5)
-#define PROBE_FAST_XY_FEEDRATE                (1800)
+#define PROBE_FAST_XY_FEEDRATE                (800)
 #define PROBE_MOVE_XY_FEEDRATE                (5000)
 #define PROBE_MOVE_Z_FEEDRATE                 (600)
 #define PROBE_LIFTINT_DISTANCE                (1)  // mm
@@ -194,33 +194,40 @@ probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance,
   probe_result_e ret = PROBR_RESULT_SUCCESS;
   float pos_before_probe = current_position[axis];
 
-  if (!move_to_sersor_no_trigger(axis, distance >= 0 ? -1 : 1)) {
+  if (!move_to_sersor_no_trigger(axis, distance >= 0.000001 ? -1 : 1)) {
     return PROBR_RESULT_SENSOR_ERROR;
   }
 
   reset_move_param();
-
+  motion_control.clear_trigger();
   motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
   switch_detect.enable_probe(0);
   uint16_t using_fr = axis == Y_AXIS ? (feedrate>>1) : feedrate;
   probe_axis_move(axis, distance, using_fr);
   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   sync_plan_position();
-  if (!motion_control.is_sg_trigger()) {
+
+  // if (!motion_control.is_sg_trigger()) {
+  //   motion_control.disable_stall_guard_all();
+  //   switch_detect.enable_probe(1);
+  //   probe_axis_move(axis, -distance, PROBE_Z_LEAVE_FEEDRATE);
+  //   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
+  //   sync_plan_position();
+  // } else {
+  //   LOG_E("probe failed be stall guard!!!\n");
+  //   motion_control.synchronize();
+  //   motion_control.move_z(Z_PROBE_TRY_TO_MOVE_DISTANCE);
+  //   ret = PROBR_RESULT_STALL_GUARD;
+  // }
+  // motion_control.disable_stall_guard_all();
+
     motion_control.disable_stall_guard_all();
     switch_detect.enable_probe(1);
     probe_axis_move(axis, -distance, PROBE_Z_LEAVE_FEEDRATE);
     current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
     sync_plan_position();
-  } else {
-    LOG_E("probe failed be stall guard!!!\n");
-    motion_control.synchronize();
-    motion_control.move_z(Z_PROBE_TRY_TO_MOVE_DISTANCE);
-    ret = PROBR_RESULT_STALL_GUARD;
-  }
-  motion_control.disable_stall_guard_all();
 
-  if (abs((pos_before_probe - current_position[axis]) > (abs(distance) - 0.2))) {
+  if (abs(pos_before_probe - current_position[axis]) > abs(distance)) {
     LOG_E("probe failed , sensor no trigger!!!\n");
     ret = PROBR_RESULT_NO_TRIGGER;
   }
@@ -396,7 +403,7 @@ void Calibtration::reset_xy_calibtration_env() {
 
 float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freerate) {
   #define PROBE_TIMES 3
-  float probe_distance =  distance;
+  float probe_distance = distance;
   float pos = 0;
   for (uint8_t i = 0; i < PROBE_TIMES; i++) {
     probe_result_e probe_result = move_to_probe_trigger(axis, probe_distance, freerate);
@@ -404,7 +411,7 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
       return CAlIBRATIONING_ERR_CODE;
     }
     pos += current_position[axis];
-    probe_distance =  distance >= 0 ? 1 : -1;
+    probe_distance = (distance >= 0.000001) ? 1 : -1;
     motion_control.move(axis, -probe_distance / 2, freerate);
   }
   return pos / PROBE_TIMES;
