@@ -743,6 +743,14 @@ inline void manage_inactivity(const bool no_stepper_sleep=false) {
  *  - Handle Joystick jogging
  */
 void idle(bool no_stepper_sleep/*=false*/) {
+
+  static uint32_t lt = 0;
+  if (ELAPSED(millis(), lt + 100)) {
+    lt = millis();
+    // tmc_driver.write_reg(0, R_SGTHRS, 12);
+    // LOG_I("SRTHRS %d, SG_RESULT %d\r\n", tmc_driver.read_reg(0, R_SGTHRS), tmc_driver.read_reg(0, R_SG_RESULT));
+  }
+
   static bool idle_lock = false;
   #if ENABLED(MARLIN_DEV_MODE)
     static uint16_t idle_depth = 0;

@@ -69,6 +69,16 @@ void GcodeSuite::M122() {
     }
     return;
   }
+  if (parser.seen('W')) {
+    uint8_t thrs = parser.value_byte();
+    LOOP_LOGICAL_AXES(i) {
+      if (print_axis[i]) {
+        set_sgthrs(i, thrs);
+        tmc_report_sg_result(i);
+      }
+    }
+    return;
+  }
 
 
   if (parser.boolval('I')) restore_stepper_drivers();

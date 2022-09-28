@@ -42,6 +42,8 @@ public:
   static void set_reg_value(uint8_t index, uint8_t reg, uint32_t value);
   static void enable_stall_guard_interrupt();
   static void disable_stall_guard_interrupt();
+  static void write_reg(uint8_t index, uint8_t reg_addr, uint32_t value);
+  static uint32_t read_reg(uint8_t index, uint8_t reg_addr);
 private:
   static void stall_guard_init(uint8_t index, uint8_t sg_value);
   static void cool_step_init(uint8_t index, bool enable, uint8_t low_limit, uint8_t high_limit);
