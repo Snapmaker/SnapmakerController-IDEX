@@ -2544,7 +2544,9 @@ void MarlinSettings::reset() {
   #endif
 
   #if HAS_JUNCTION_DEVIATION
-    planner.junction_deviation_mm = float(JUNCTION_DEVIATION_MM);
+    // planner.junction_deviation_mm = float(JUNCTION_DEVIATION_MM);
+    planner.corner_velocity_sqr = float(CORNER_VELOCITY);
+    planner.junction_deviation_mm = planner.corner_velocity_sqr * (SQRT(2.) - 1.) / _MAX(planner.settings.acceleration, planner.settings.travel_acceleration);
   #endif
 
   #if HAS_SCARA_OFFSET

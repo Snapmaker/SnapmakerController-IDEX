@@ -131,6 +131,7 @@ void GcodeSuite::M204() {
     if (parser.seenval('P')) planner.settings.acceleration = parser.value_linear_units();
     if (parser.seenval('R')) planner.settings.retract_acceleration = parser.value_linear_units();
     if (parser.seenval('T')) planner.settings.travel_acceleration = parser.value_linear_units();
+    planner.junction_deviation_mm = planner.corner_velocity_sqr * (SQRT(2.) - 1.) / _MAX(planner.settings.acceleration, planner.settings.travel_acceleration);
   }
 }
 
@@ -147,7 +148,7 @@ void GcodeSuite::M204() {
  *    J = Junction Deviation (mm) (If not using CLASSIC_JERK)
  */
 void GcodeSuite::M205() {
-  if (!parser.seen("BST" TERN_(HAS_JUNCTION_DEVIATION, "J") TERN_(HAS_CLASSIC_JERK, "XYZE"))) return;
+  if (!parser.seen("BST" TERN_(HAS_JUNCTION_DEVIATION, "V") TERN_(HAS_CLASSIC_JERK, "XYZE"))) return;
 
   //planner.synchronize();
   if (parser.seenval('B')) planner.settings.min_segment_time_us = parser.value_ulong();
@@ -157,14 +158,22 @@ void GcodeSuite::M205() {
     #if HAS_CLASSIC_JERK && (AXIS4_NAME == 'J' || AXIS5_NAME == 'J' || AXIS6_NAME == 'J')
       #error "Can't set_max_jerk for 'J' axis because 'J' is used for Junction Deviation."
     #endif
-    if (parser.seenval('J')) {
-      const float junc_dev = parser.value_linear_units();
-      if (WITHIN(junc_dev, 0.01f, 0.3f)) {
-        planner.junction_deviation_mm = junc_dev;
+    if (parser.seenval('V')) {
+      const float corner_velocity = parser.value_linear_units();
+      if (WITHIN(corner_velocity, 0.1f, 20.0f)) {
+        planner.corner_velocity_sqr = corner_velocity * corner_velocity;
+        planner.junction_deviation_mm = planner.corner_velocity_sqr * (SQRT(2.) - 1.) / _MAX(planner.settings.acceleration, planner.settings.travel_acceleration);
         TERN_(LIN_ADVANCE, planner.recalculate_max_e_jerk());
       }
       else
         SERIAL_ERROR_MSG("?J out of range (0.01 to 0.3)");
+
+      // if (WITHIN(junc_dev, 0.01f, 0.3f)) {
+      //   planner.junction_deviation_mm = junc_dev;
+      //   TERN_(LIN_ADVANCE, planner.recalculate_max_e_jerk());
+      // }
+      // else
+      //   SERIAL_ERROR_MSG("?J out of range (0.01 to 0.3)");
     }
   #endif
   #if HAS_CLASSIC_JERK

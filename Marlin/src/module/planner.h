@@ -399,6 +399,7 @@ class Planner {
 
     #if HAS_JUNCTION_DEVIATION
       static float junction_deviation_mm;             // (mm) M205 J
+      static float corner_velocity_sqr;             // (mm) M205 V
       #if HAS_LINEAR_E_JERK
         static float max_e_jerk[DISTINCT_E];          // Calculated from junction_deviation_mm
       #endif
