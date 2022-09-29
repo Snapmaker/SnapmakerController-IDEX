@@ -178,7 +178,7 @@ ErrCode MotionControl::home() {
   planner.synchronize();
   uint32_t calibtration_wait = millis() + 20000;
   while (system_service.is_calibtration_status()) {
-    if (ELAPSED(millis(), calibtration_wait) {
+    if (ELAPSED(millis(), calibtration_wait)) {
       return E_COMMON_ERROR;
     }
     vTaskDelay(pdMS_TO_TICKS(1));
