@@ -416,7 +416,7 @@ void PowerLoss::process() {
       trigger_wait_time = millis() + 10;
     }
   } else if (power_loss_status == POWER_LOSS_RECONFIRM) {
-      if (trigger_wait_time <= millis()) {
+      if (ELAPSED(millis(), trigger_wait_time)) {
         if (is_power_220v_pin_trigger()) {
           power_loss_status = POWER_LOSS_TRIGGER;
           is_trigger = true;

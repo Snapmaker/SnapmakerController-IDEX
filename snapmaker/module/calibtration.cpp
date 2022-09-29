@@ -355,7 +355,7 @@ ErrCode Calibtration::bed_end_beat_mode() {
   status = CAlIBRATION_STATE_BED_BEAT_WAIT_END;
   uint32_t timeout = millis() + 5000;
   while (status == CAlIBRATION_STATE_BED_BEAT_WAIT_END) {
-    if (timeout < millis())
+    if (ELAPSED(millis(), timeout))
       return E_COMMON_ERROR;
     vTaskDelay(pdMS_TO_TICKS(1));
   }

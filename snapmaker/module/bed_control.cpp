@@ -11,7 +11,7 @@ bool BedControl::self_check() {
   SET_INPUT(HEATER_BED_BACK_PIN);
   OUT_WRITE(HEATER_BED_PIN, HIGH);
   delay_time = millis() + 20;
-  while(delay_time > millis());
+  while (PENDING(millis(), delay_time));
   if (READ(HEATER_BED_BACK_PIN) == HIGH) {
     is_error = true;
     LOG_E("BED open self check failed\n");
@@ -19,7 +19,7 @@ bool BedControl::self_check() {
 
   OUT_WRITE(HEATER_BED_PIN, LOW);
   delay_time = millis() + 20;
-  while(delay_time > millis());
+  while (PENDING(millis(), delay_time));
   if (READ(HEATER_BED_BACK_PIN) == LOW) {
     LOG_E("BED close self check failed\n");
     is_error = true;

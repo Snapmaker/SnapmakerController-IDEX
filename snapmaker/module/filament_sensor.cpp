@@ -124,7 +124,7 @@ void FilamentSensor::test_adc(uint8_t e, float step_mm, uint32_t count) {
     motion_control.extrude_e(step_mm, 15 * 60);
     planner.synchronize();
     time = millis();
-    while ((time + 8) > millis());
+    while (PENDING(millis(), (time + 8)));
     uint16_t adc = get_adc_val(e);
     int32_t diff = adc - last_adc;
     if (diff > 500 || diff < -500) {
