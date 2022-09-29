@@ -82,7 +82,9 @@ void Subscribe::loop_task(void * arg) {
   while (true) {
     for (uint8_t i = 0; i < sub_count; i++) {
       if (sub[i].is_available) {
-        if (sub[i].last_time < millis()) {
+        // if (sub[i].last_time < millis()) {
+        // LOG_I("SB_LOOP: index %i, cur %d, to %d\r\n", i, millis(), sub[i].last_time);
+        if (ELAPSED(millis(), sub[i].last_time)) {
           sub[i].last_time = millis() + sub[i].time_interval;
           sub[i].info.sequence = protocol_sacp.sequence_pop();
           event_public_param.write_byte = sub[i].write_byte;
