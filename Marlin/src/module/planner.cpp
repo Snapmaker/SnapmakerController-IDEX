@@ -1176,7 +1176,7 @@ void Planner::recalculate_trapezoids() {
 
   // Go from the tail (currently executed block) to the first block, without including it)
   block_t *block = nullptr, *next = nullptr;
-  float current_entry_speed = 0.0, next_entry_speed = 0.0;
+  float current_entry_speed = float(MINIMUM_PLANNER_SPEED), next_entry_speed = float(MINIMUM_PLANNER_SPEED);
   while (block_index != head_block_index) {
 
     next = &block_buffer[block_index];
@@ -1244,8 +1244,8 @@ void Planner::recalculate_trapezoids() {
 
       const float next_nominal_speed = SQRT(next->nominal_speed_sqr),
                   nomr = 1.0f / next_nominal_speed;
-      block->initial_speed = next_entry_speed;
-      block->final_speed = float(MINIMUM_PLANNER_SPEED);
+      next->initial_speed = next_entry_speed;
+      next->final_speed = float(MINIMUM_PLANNER_SPEED);
       calculate_trapezoid_for_block(next, next_entry_speed * nomr, float(MINIMUM_PLANNER_SPEED) * nomr);
       #if ENABLED(LIN_ADVANCE)
         if (next->use_advance_lead) {
