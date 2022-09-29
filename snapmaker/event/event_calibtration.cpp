@@ -132,7 +132,7 @@ static ErrCode calibtration_report_bed_offset(event_param_t& event) {
   info->cur_pos = calibtration.cur_pos;
   info->offset = FLOAT_TO_INT(calibtration.probe_offset);
   event.length = sizeof(report_probe_info_t);
-  LOG_V("SC req calibtration bed pos:%d offset,:%d\n", info->cur_pos, info->offset);
+  LOG_I("SC req calibtration bed: result: %d pos:%d offset:%d\n", info->result, info->cur_pos, info->offset);
   return send_event(event);
 }
 

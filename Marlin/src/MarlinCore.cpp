@@ -65,6 +65,7 @@
 #include "lcd/marlinui.h"
 #include "../snapmaker/J1/tmc_driver.h"
 #include "../snapmaker/J1/J1.h"
+#include "../snapmaker/J1/switch_detect.h"
 #include "../snapmaker/module/calibtration.h"
 #include "../snapmaker/module/power_loss.h"
 #include "../snapmaker/module/bed_control.h"
@@ -749,6 +750,12 @@ void idle(bool no_stepper_sleep/*=false*/) {
     lt = millis();
     // tmc_driver.write_reg(0, R_SGTHRS, 12);
     // LOG_I("SRTHRS %d, SG_RESULT %d\r\n", tmc_driver.read_reg(0, R_SGTHRS), tmc_driver.read_reg(0, R_SG_RESULT));
+    // SET_INPUT_PULLUP(X0_CAL_PIN);
+    // SET_INPUT_PULLUP(X1_CAL_PIN);
+    // WRITE(PROBE_POWER_EN_PIN, 1);
+    // LOG_I("probe X0 %d\r\n", READ(X0_CAL_PIN));
+    // LOG_I("probe X1 %d\r\n", READ(X1_CAL_PIN));
+    // LOG_I("calibtration.probe_offset %f\r\n", calibtration.probe_offset);
   }
 
   static bool idle_lock = false;

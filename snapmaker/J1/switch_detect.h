@@ -19,6 +19,7 @@ public:
   void stall_guard_stop();
   bool read_e0_probe_status();
   bool read_e1_probe_status();
+  bool test_trigger();
 private:
   void enable(uint8_t Item);
   void disable(uint8_t Item);

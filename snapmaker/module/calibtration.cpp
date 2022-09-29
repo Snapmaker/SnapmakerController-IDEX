@@ -18,7 +18,7 @@ Calibtration calibtration;
 #define PROBE_FAST_XY_FEEDRATE                (800)
 #define PROBE_MOVE_XY_FEEDRATE                (5000)
 #define PROBE_MOVE_Z_FEEDRATE                 (600)
-#define PROBE_LIFTINT_DISTANCE                (1)  // mm
+#define PROBE_LIFTINT_DISTANCE                (2)  // mm
 #define PROBE_MOVE_XY_LIFTINT_DISTANCE        (5)  // mm
 #define Z_REMOVE_PLATE_THICKNESS(z)           (z - build_plate_thickness)
 #define Z_PROBE_TRY_TO_MOVE_DISTANCE          (10)  // mm
@@ -199,18 +199,47 @@ probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance,
   }
 
   reset_move_param();
-  motion_control.clear_trigger();
   motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
   switch_detect.enable_probe(0);
   probe_axis_move(axis, distance, feedrate);
+  LOG_I("touch bed, probe %d\r\n", READ(X0_CAL_PIN));
   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   sync_plan_position();
+
+  uint32_t test_cnt = 0;
+  do {
+    if(!switch_detect.test_trigger())
+      vTaskDelay(1);
+    else
+      break;
+    test_cnt++;
+    if(test_cnt > 100) {
+      LOG_E("probe failed , sensor no trigger!!!\n");
+      ret = PROBR_RESULT_NO_TRIGGER;
+      return ret;
+    }
+  } while(1);
+
   if (!motion_control.is_sg_trigger()) {
     motion_control.disable_stall_guard_all();
     switch_detect.enable_probe(1);
     probe_axis_move(axis, -distance, PROBE_Z_LEAVE_FEEDRATE);
+    LOG_I("leaving bed , probe %d\r\n", READ(X0_CAL_PIN));
     current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
     sync_plan_position();
+    uint32_t test_cnt = 0;
+    do {
+      if(!switch_detect.test_trigger())
+        vTaskDelay(1);
+      else
+        break;
+      test_cnt++;
+      if(test_cnt > 100) {
+        LOG_E("probe failed , sensor no trigger!!!\n");
+        ret = PROBR_RESULT_NO_TRIGGER;
+        return ret;
+      }
+    } while(1);
   } else {
     LOG_E("probe failed be stall guard!!!\n");
     motion_control.synchronize();
@@ -219,10 +248,11 @@ probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance,
   }
   motion_control.disable_stall_guard_all();
 
-  if (abs(pos_before_probe - current_position[axis]) > abs(distance)) {
+  if (abs(pos_before_probe - current_position[axis]) > (abs(distance) - 0.2)) {
     LOG_E("probe failed , sensor no trigger!!!\n");
     ret = PROBR_RESULT_NO_TRIGGER;
   }
+  LOG_I("probe distance %f, (abs(distance) - 0.2) %f\r\n", abs(pos_before_probe - current_position[axis]), (abs(distance) - 0.2));
   switch_detect.disable_probe();
   return ret;
 }
@@ -277,6 +307,7 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
   if (probe_result != PROBR_RESULT_SUCCESS) {
     probe_offset = CAlIBRATIONING_ERR_CODE;
     ret = E_CAlIBRATION_PRIOBE;
+    LOG_E("CAlIBRATIONING_ERR_CODE\r\n");
   } else {
     probe_offset = current_position[Z_AXIS] + home_offset[Z_AXIS] + build_plate_thickness;
     LOG_I("JF-Z offset height:%f\n", probe_offset);
@@ -342,6 +373,7 @@ ErrCode Calibtration::move_to_porbe_pos(calibtration_position_e pos, uint8_t ext
 
 ErrCode Calibtration::bed_start_beat_mode() {
   if (mode == CAlIBRATION_MODE_BED) {
+    LOG_I("setting to CAlIBRATION_STATE_BED_BEAT\r\n");
     status = CAlIBRATION_STATE_BED_BEAT;
     return E_SUCCESS;
   } else if (mode == CAlIBRATION_MODE_NOZZLE) {
@@ -490,7 +522,7 @@ float Calibtration::get_hotend_offset(uint8_t axis) {
 }
 
 ErrCode Calibtration::exit(bool is_save) {
-  LOG_V("exit justing\n");
+  LOG_I("exit justing\n");
   if (system_service.is_calibtration_status()) {
     if (mode != CAlIBRATION_MODE_IDLE) {
       if (!is_save) {
@@ -517,7 +549,9 @@ ErrCode Calibtration::exit(bool is_save) {
 // Probe once per loop
 void Calibtration::loop(void) {
   if (mode == CAlIBRATION_MODE_BED && status == CAlIBRATION_STATE_BED_BEAT) {
+    LOG_I("CAlIBRATION_STATE_BED_BEAT\r\n");
     if (probe_hight_offset(cur_pos, 0) != E_SUCCESS) {
+      LOG_I("probe_hight_offset error, return CAlIBRATION_STATE_IDLE\r\n");
       status = CAlIBRATION_STATE_IDLE;
     }
     LOG_V("probe offset:%f\n", probe_offset);

@@ -72,8 +72,6 @@ void SwitchDetect::check() {
   status_bits = tmp_status_bits;
 }
 
-
-
 void SwitchDetect::disable_all() {
   enable_bits = 0;
   status_bits = 0;
@@ -81,10 +79,10 @@ void SwitchDetect::disable_all() {
 
 void SwitchDetect::enable_probe(bool trigger_level) {
   init_probe();
-  enable(SW_PROBE0_BIT);
-  enable(SW_PROBE1_BIT);
   probe_detect_level = trigger_level;
   WRITE(PROBE_POWER_EN_PIN, 1);
+  enable(SW_PROBE0_BIT);
+  enable(SW_PROBE1_BIT);
   vTaskDelay(pdMS_TO_TICKS(5));
 }
 
@@ -147,5 +145,24 @@ bool SwitchDetect::read_e0_probe_status() {
 
 bool SwitchDetect::read_e1_probe_status() {
   return get_cal_pin_status(X1_CAL_PIN);
+}
+
+bool SwitchDetect::test_trigger() {
+  bool trigged = false;
+
+  if(TEST(status_bits, SW_MANUAL_STOP_BIT)) {
+    trigged = true;
+  }
+  if(TEST(status_bits, SW_STALLGUARD_BIT)) {
+    trigged = true;
+  }
+
+  if (TEST(enable_bits, SW_PROBE0_BIT) && READ(X0_CAL_PIN) == probe_detect_level)
+    trigged = true;
+
+  if (TEST(enable_bits, SW_PROBE1_BIT) && READ(X1_CAL_PIN) == probe_detect_level)
+    trigged = true;
+
+  return trigged;
 }
 

@@ -875,12 +875,14 @@ void restore_feedrate_and_scaling() {
 
     #if HAS_Z_AXIS
       if (axis_was_homed(Z_AXIS)) {
+        // LOG_I("befor z limit %f\r\n", target.z);
         #if !HAS_SOFTWARE_ENDSTOPS || ENABLED(MIN_SOFTWARE_ENDSTOP_Z)
           NOLESS(target.z, soft_endstop.min.z);
         #endif
         #if !HAS_SOFTWARE_ENDSTOPS || ENABLED(MAX_SOFTWARE_ENDSTOP_Z)
           NOMORE(target.z, soft_endstop.max.z);
         #endif
+        // LOG_I("after z limit %f\r\n", target.z);
       }
     #endif
     #if LINEAR_AXES >= 4
@@ -1198,7 +1200,7 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
    */
   inline bool dual_x_carriage_unpark() {
     if (active_extruder_parked) {
-      endstops.enable_globally(false);  // The home position endStop will not move  
+      endstops.enable_globally(false);  // The home position endStop will not move
       switch (dual_x_carriage_mode) {
 
         case DXC_FULL_CONTROL_MODE: break;

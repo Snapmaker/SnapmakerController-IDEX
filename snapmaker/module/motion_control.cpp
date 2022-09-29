@@ -479,7 +479,6 @@ extern "C" {
       }
       ExtiClearITPendingBit(TMC_STALL_GUARD_Y_PIN);
     }
-
   }
 
   void __irq_exti15_10() {
