@@ -190,12 +190,12 @@ void AxisInputShaper::init()
 }
 
 void AxisInputShaper::logParams() {
-    LOG_I("logParams\n");
-    LOG_I("n: %d\n", shift_params.n);
-    for (int i = 0; i < shift_params.n; i++)
-    {
-        LOG_I("i: %d, A: %lf, T: %lf\n", i, shift_params.A[i], shift_params.T[i]);
-    }
+    // LOG_I("logParams\n");
+    // LOG_I("n: %d\n", shift_params.n);
+    // for (int i = 0; i < shift_params.n; i++)
+    // {
+    //     LOG_I("i: %d, A: %lf, T: %lf\n", i, shift_params.A[i], shift_params.T[i]);
+    // }
 }
 
 void AxisInputShaper::shiftPulses() {
