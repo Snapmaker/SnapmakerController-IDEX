@@ -34,6 +34,8 @@ class Axis {
     int8_t dir = 0;
     bool is_get_next_step_null = false;
 
+    float delta_e = 0;
+
   private:
     int8_t axis;
 
@@ -79,6 +81,8 @@ class Axis {
         dir = 0;
         is_get_next_step_null = false;
 
+        delta_e = 0;
+
         if (axis_input_shaper != nullptr) {
             axis_input_shaper->is_shaper_window_init = false;
         }
@@ -90,6 +94,10 @@ class Axis {
 
   private:
     FORCE_INLINE bool generateAxisFuncParams(uint8_t move_start, uint8_t move_end);
+
+    FORCE_INLINE bool generateEAxisFuncParams(uint8_t block_index, uint8_t move_start, uint8_t move_end);
+
+    FORCE_INLINE bool generateLineFuncParams(Move* move);
 };
 
 class AxisManager {

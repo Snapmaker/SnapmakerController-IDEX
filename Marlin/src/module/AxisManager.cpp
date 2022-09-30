@@ -65,8 +65,14 @@ FORCE_INLINE bool Axis::generateFuncParams(uint8_t block_index, uint8_t move_sta
     bool res;
     if (is_shaped) {
         res = axis_input_shaper->generateShapedFuncParams(&func_manager, move_start, move_end);
-    } else {
+    } else if (axis == 3) {
+      #if ENABLED(LIN_ADVANCE)
+        res = generateEAxisFuncParams(block_index, move_start, move_end);
+      #else
         res = generateAxisFuncParams(move_start, move_end);
+      #endif
+    } else {
+      res = generateAxisFuncParams(move_start, move_end);
     }
     if (res) {
         generated_block_index = block_index;
@@ -91,7 +97,7 @@ bool Axis::getNextStep() {
     return true;
 }
 
-FORCE_INLINE bool Axis::generateAxisFuncParams(uint8_t move_start, uint8_t move_end) {
+FORCE_INLINE bool Axis::generateEAxisFuncParams(uint8_t block_index, uint8_t move_start, uint8_t move_end) {
     uint8_t move_index;
     if (generated_move_index == -1) {
         move_index = move_start;
@@ -101,37 +107,101 @@ FORCE_INLINE bool Axis::generateAxisFuncParams(uint8_t move_start, uint8_t move_
 
     Move *move;
     while (move_index != moveQueue.nextMoveIndex(move_end)) {
-        move = &moveQueue.moves[move_index];
+        Move *move = &moveQueue.moves[move_index];
 
         if (IS_ZERO(move->t)) {
-            move_index = moveQueue.nextMoveIndex(move_index);
-            continue;
+          move_index = moveQueue.nextMoveIndex(move_index);
+          continue;
         }
 
-        float y2 = move->end_pos[axis];
-        float dy = move->end_pos[axis] - move->start_pos[axis];
-        float x2 = move->t;
-        float dx = move->t;
+        // update the position  
+        move->start_pos[axis] += delta_e;
+        move->end_pos[axis] += delta_e;
 
-        float a = 0.5f * move->accelerate * move->axis_r[axis];
-        float c = move->start_pos[axis];
-        float b = dy / dx - a * x2;
+        // #define K (0.04)
+        float K = planner.extruder_advance_K[active_extruder];
+        float eda = K * move->accelerate * move->t * move->axis_r[axis];
+        delta_e += eda;
 
-        int type;
-        if (IS_ZERO(dy)) {
-            type = 0;
+        if (!IS_ZERO(move->accelerate) && move->start_v > K * move->accelerate && move->end_v < K * move->accelerate) {
+          float zero_t = (move->start_v - K * move->accelerate) / move->accelerate;
+          float zero_pos = (move->start_v * zero_t + 0.5 * move->accelerate * sq(zero_t)) * move->axis_r[axis];
+
+          float origin_t = move->t;
+          float origin_pos = move->end_pos[axis];
+
+          move->t = zero_t;
+          // move->end_pos[axis] = move->end_pos[axis] - tmp_pos + pos;
+          move->end_pos[axis] = move->start_pos[axis] + zero_pos;
+
+          float zero_eda = K * move->accelerate * zero_t * move->axis_r[axis];
+
+          move->end_pos[axis] += zero_eda;
+
+          generateLineFuncParams(move);
+
+          move->t = origin_t;
+          move->end_pos[axis] = origin_pos;
+          move->end_pos[axis] += eda;
+
+          generateLineFuncParams(move);
+
         } else {
-            type = dy > 0 ? 1 : -1;
-        }
-        time_double_t end_t = move->end_t;
-        func_manager.addFuncParams(a, b, c, type, end_t, y2);
 
-        // LOG_I("%d, %d, %d\n", axis, func_manager.max_size, func_manager.func_params_head);
+          move->end_pos[axis] += eda;
+          generateLineFuncParams(move);
+        }
 
         move_index = moveQueue.nextMoveIndex(move_index);
     }
     generated_move_index = move_end;
     return true;
+}
+
+FORCE_INLINE bool Axis::generateAxisFuncParams(uint8_t move_start, uint8_t move_end) {
+  uint8_t move_index;
+  if (generated_move_index == -1) {
+      move_index = move_start;
+  } else {
+      move_index = moveQueue.nextMoveIndex(generated_move_index);
+  }
+
+  Move *move;
+  while (move_index != moveQueue.nextMoveIndex(move_end)) {
+    Move *move = &moveQueue.moves[move_index];
+
+    if (IS_ZERO(move->t)) {
+      move_index = moveQueue.nextMoveIndex(move_index);
+      continue;
+    }
+
+    generateLineFuncParams(move);
+
+    move_index = moveQueue.nextMoveIndex(move_index);
+  }
+  generated_move_index = move_end;
+  return true;
+}
+
+
+FORCE_INLINE bool Axis::generateLineFuncParams(Move* move) {
+    float y2 = move->end_pos[axis];
+    float dy = move->end_pos[axis] - move->start_pos[axis];
+    float x2 = move->t;
+    float dx = move->t;
+
+    float a = 0.5f * move->accelerate * move->axis_r[axis];
+    float c = move->start_pos[axis];
+    float b = dy / dx - a * x2;
+
+    int type;
+    if (IS_ZERO(dy)) {
+        type = 0;
+    } else {
+        type = dy > 0 ? 1 : -1;
+    }
+    time_double_t end_t = move->end_t;
+    func_manager.addFuncParams(a, b, c, type, end_t, y2);
 }
 
 float AxisManager::getRemainingConsumeTime() {
