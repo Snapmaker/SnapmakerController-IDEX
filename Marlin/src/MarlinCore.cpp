@@ -70,6 +70,7 @@
 #include "../snapmaker/module/power_loss.h"
 #include "../snapmaker/module/bed_control.h"
 #include "../snapmaker/module/filament_sensor.h"
+#include "../snapmaker/module/print_control.h"
 #if HAS_TOUCH_BUTTONS
   #include "lcd/touch/touch_buttons.h"
 #endif
@@ -757,6 +758,7 @@ void idle(bool no_stepper_sleep/*=false*/) {
     // LOG_I("probe X1 %d\r\n", READ(X1_CAL_PIN));
     // LOG_I("calibtration.probe_offset %f\r\n", calibtration.probe_offset);
   }
+  print_control.loop();
 
   static bool idle_lock = false;
   #if ENABLED(MARLIN_DEV_MODE)

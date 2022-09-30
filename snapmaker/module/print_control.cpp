@@ -78,6 +78,18 @@ bool PrintControl::filament_check() {
   return true;
 }
 
+void PrintControl::loop() {
+  static uint32_t last_ms = 0;
+
+  if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
+    if (ELAPSED(millis(), last_ms + 10)) {
+      work_time_ms += 10;
+      last_ms = millis();
+    }
+  }
+
+}
+
 bool PrintControl::get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len) {
 
   if (power_loss.power_loss_status != POWER_LOSS_IDLE) {
@@ -156,30 +168,32 @@ ErrCode PrintControl::push_gcode(uint32_t start_line, uint32_t end_line, uint8_t
 
 void PrintControl::start_work_time() {
   work_time_ms = 0;
-  work_start_time = millis();
+  // work_start_time = millis();
 }
 
 void PrintControl::pause_work_time() {
-  work_time_ms += millis() - work_start_time;
+  // work_time_ms += millis() - work_start_time;
 }
 
 void PrintControl::resume_work_time() {
-  work_start_time = millis();
+  // work_start_time = millis();
 }
 
 void PrintControl::stop_work_time() {
-  work_time_ms = work_start_time = 0;
+  // work_time_ms = work_start_time = 0;
+  // work_time_ms = 0;
 }
 
 
 uint32_t PrintControl::get_work_time() {
-  if (!system_service.is_working()) {
-    return 0;
-  } else if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
-    return work_time_ms + millis() - work_start_time;
-  } else {
-    return work_time_ms;
-  }
+  // if (!system_service.is_working()) {
+  //   return 0;
+  // } else if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
+  //   return work_time_ms + millis() - work_start_time;
+  // } else {
+  //   return work_time_ms;
+  // }
+  return work_time_ms;
 }
 
 void PrintControl::set_work_time(uint32_t time) {
