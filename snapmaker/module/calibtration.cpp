@@ -13,7 +13,7 @@
 
 Calibtration calibtration;
 
-#define PROBE_FAST_Z_FEEDRATE                 (200)
+#define PROBE_FAST_Z_FEEDRATE                 (300)
 #define PROBE_Z_LEAVE_FEEDRATE                (5)
 #define PROBE_FAST_XY_FEEDRATE                (800)
 #define PROBE_MOVE_XY_FEEDRATE                (5000)
@@ -201,8 +201,8 @@ probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance,
   reset_move_param();
   motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
   switch_detect.enable_probe(0);
+  LOG_I("touching bed\r\n");
   probe_axis_move(axis, distance, feedrate);
-  LOG_I("touch bed, probe %d\r\n", READ(X0_CAL_PIN));
   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   sync_plan_position();
 
@@ -213,7 +213,7 @@ probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance,
     else
       break;
     test_cnt++;
-    if(test_cnt > 100) {
+    if(test_cnt > 200) {
       LOG_E("probe failed , sensor no trigger!!!\n");
       ret = PROBR_RESULT_NO_TRIGGER;
       return ret;
@@ -223,8 +223,8 @@ probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance,
   if (!motion_control.is_sg_trigger()) {
     motion_control.disable_stall_guard_all();
     switch_detect.enable_probe(1);
+    LOG_I("leaving bed\r\n");
     probe_axis_move(axis, -distance, PROBE_Z_LEAVE_FEEDRATE);
-    LOG_I("leaving bed , probe %d\r\n", READ(X0_CAL_PIN));
     current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
     sync_plan_position();
     uint32_t test_cnt = 0;
@@ -540,7 +540,7 @@ ErrCode Calibtration::exit(bool is_save) {
     }
     mode = CAlIBRATION_MODE_EXIT;
     status = CAlIBRATION_STATE_IDLE;
-    probe_offset = CAlIBRATIONING_ERR_CODE;
+    probe_offset = -CAlIBRATIONING_ERR_CODE;
   }
   return E_SUCCESS;
 }
@@ -549,7 +549,6 @@ ErrCode Calibtration::exit(bool is_save) {
 // Probe once per loop
 void Calibtration::loop(void) {
   if (mode == CAlIBRATION_MODE_BED && status == CAlIBRATION_STATE_BED_BEAT) {
-    LOG_I("CAlIBRATION_STATE_BED_BEAT\r\n");
     if (probe_hight_offset(cur_pos, 0) != E_SUCCESS) {
       LOG_I("probe_hight_offset error, return CAlIBRATION_STATE_IDLE\r\n");
       status = CAlIBRATION_STATE_IDLE;

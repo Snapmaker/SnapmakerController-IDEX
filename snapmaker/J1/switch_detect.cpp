@@ -63,8 +63,16 @@ void SwitchDetect::check() {
   do {
     if(trigged == true) break;
     UPDATE_STATUS(X0_CAL_PIN, probe_detect_level, tmp_status_bits, SW_PROBE0_BIT);
+    if (trigged) {
+      UPDATE_STATUS(X0_CAL_PIN, probe_detect_level, tmp_status_bits, SW_PROBE0_BIT);
+    }
+
     if(trigged == true) break;
     UPDATE_STATUS(X1_CAL_PIN, probe_detect_level, tmp_status_bits, SW_PROBE1_BIT);
+    if (trigged) {
+      UPDATE_STATUS(X1_CAL_PIN, probe_detect_level, tmp_status_bits, SW_PROBE1_BIT);
+    }
+
   }while(0);
 
   if(trigged == true)

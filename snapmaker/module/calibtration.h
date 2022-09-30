@@ -37,7 +37,7 @@ typedef enum {
 // |         [0]          |
 // |                      |
 // | [2]             [3]  |
-// |______________________|  
+// |______________________|
 typedef enum {
   CAlIBRATION_POS_0,
   CAlIBRATION_POS_1,
@@ -84,7 +84,7 @@ class Calibtration {
     calibtration_position_e cur_pos;
     calibtration_mode_e mode = CAlIBRATION_MODE_IDLE;
     calibtration_status_e status;
-    float probe_offset = CAlIBRATIONING_ERR_CODE;
+    float probe_offset = -CAlIBRATIONING_ERR_CODE;
     float live_z_offset = 0;
     xyz_pos_t hotend_offset_backup[HOTENDS];
     xyz_pos_t home_offset_backup;
