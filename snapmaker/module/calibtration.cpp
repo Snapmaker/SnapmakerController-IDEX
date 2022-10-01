@@ -61,10 +61,19 @@ static float calibration_position_xy[6][2] = {
  *
  */
 void Calibtration::backup_offset() {
+  LOG_I("backup offset\r\n");
   HOTEND_LOOP() {
     hotend_offset_backup[e] = hotend_offset[e];
   }
   home_offset_backup = home_offset;
+}
+
+void Calibtration::restore_offset() {
+  LOG_I("restore offset\r\n");
+  HOTEND_LOOP() {
+    hotend_offset[e] = hotend_offset_backup[e];
+  }
+  home_offset = home_offset_backup;
 }
 
 static void set_hotend_offsets_to_default() {
@@ -435,7 +444,7 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
       return CAlIBRATIONING_ERR_CODE;
     }
     pos += current_position[axis];
-    probe_distance = (distance >= 0.000001) ? 1 : -1;
+    probe_distance = (distance >= 0.000001) ? 2 : -2;
     motion_control.move(axis, -probe_distance / 2, freerate);
   }
   return pos / PROBE_TIMES;
@@ -505,6 +514,7 @@ ErrCode Calibtration::calibtration_xy() {
   }
   else {
     LOG_E("JF-XY calibration: Fail!\n");
+    motion_control.home_z();
     return ret;
   }
 }
@@ -522,16 +532,14 @@ float Calibtration::get_hotend_offset(uint8_t axis) {
 }
 
 ErrCode Calibtration::exit(bool is_save) {
-  LOG_I("exit justing\n");
+  LOG_I("exit justing with is_save %d\n", is_save);
   if (system_service.is_calibtration_status()) {
     if (mode != CAlIBRATION_MODE_IDLE) {
       if (!is_save) {
-        HOTEND_LOOP() {
-          hotend_offset[e] = hotend_offset_backup[e];
-        }
-        home_offset = home_offset_backup;
+        restore_offset();
       }
       if (mode == CAlIBRATION_MODE_NOZZLE) {
+        LOG_I("z offset set to %f\r\n", home_offset_backup[Z_AXIS]);
         set_home_offset(Z_AXIS, home_offset_backup[Z_AXIS]);
       }
       if (is_save) {
