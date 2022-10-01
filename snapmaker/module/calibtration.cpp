@@ -208,6 +208,7 @@ probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance,
   }
 
   reset_move_param();
+  motion_control.clear_trigger();
   motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
   switch_detect.enable_probe(0);
   LOG_I("touching bed\r\n");
@@ -230,6 +231,7 @@ probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance,
   } while(1);
 
   if (!motion_control.is_sg_trigger()) {
+    LOG_I("sg_trigger_status 0x%02x\r\n", motion_control.sg_trigger_status);
     motion_control.disable_stall_guard_all();
     switch_detect.enable_probe(1);
     LOG_I("leaving bed\r\n");
@@ -444,7 +446,7 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
       return CAlIBRATIONING_ERR_CODE;
     }
     pos += current_position[axis];
-    probe_distance = (distance >= 0.000001) ? 2 : -2;
+    probe_distance = (distance >= 0.000001) ? 1 : -1;
     motion_control.move(axis, -probe_distance / 2, freerate);
   }
   return pos / PROBE_TIMES;
