@@ -13,7 +13,7 @@
 
 Calibtration calibtration;
 
-#define PROBE_FAST_Z_FEEDRATE                 (300)
+#define PROBE_FAST_Z_FEEDRATE                 (200)
 #define PROBE_Z_LEAVE_FEEDRATE                (5)
 #define PROBE_FAST_XY_FEEDRATE                (800)
 #define PROBE_MOVE_XY_FEEDRATE                (5000)
@@ -26,7 +26,7 @@ Calibtration calibtration;
 #define X2_MIN_HOTEND_OFFSET (X2_MAX_POS - X2_MIN_POS - 20)
 
 static uint8_t probe_sg_reg[3] = {20, 20, 80};  // X Y Z1
-static float build_plate_thickness = 5;
+static float build_plate_thickness = 5.1;
 
 #define Y_POS_DIFF 4
 //  ______________________

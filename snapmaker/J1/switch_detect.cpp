@@ -60,23 +60,35 @@ void SwitchDetect::check() {
     CBI(status_bits, SW_STALLGUARD_BIT);
   }
 
-  do {
-    if(trigged == true) break;
-    UPDATE_STATUS(X0_CAL_PIN, probe_detect_level, tmp_status_bits, SW_PROBE0_BIT);
-    if (trigged) {
-      UPDATE_STATUS(X0_CAL_PIN, probe_detect_level, tmp_status_bits, SW_PROBE0_BIT);
-    }
+  if (!trigged) {
+    uint32_t max_continue_trigger_cnt = 0;
+    do {
+      if (TEST(enable_bits, SW_PROBE0_BIT)) {
+        if (READ(X0_CAL_PIN) == probe_detect_level)
+          trigged = true;
+        else
+          trigged = false;
+      }
+      max_continue_trigger_cnt++;
+    } while(trigged && max_continue_trigger_cnt < 20);
+  }
 
-    if(trigged == true) break;
-    UPDATE_STATUS(X1_CAL_PIN, probe_detect_level, tmp_status_bits, SW_PROBE1_BIT);
-    if (trigged) {
-      UPDATE_STATUS(X1_CAL_PIN, probe_detect_level, tmp_status_bits, SW_PROBE1_BIT);
-    }
-
-  }while(0);
+  if (!trigged) {
+    uint32_t max_continue_trigger_cnt = 0;
+    do {
+      if (TEST(enable_bits, SW_PROBE1_BIT)) {
+        if (READ(X1_CAL_PIN) == probe_detect_level)
+          trigged = true;
+        else
+          trigged = false;
+      }
+      max_continue_trigger_cnt++;
+    } while(trigged && max_continue_trigger_cnt < 20);
+  }
 
   if(trigged == true)
     stepper.quick_stop();
+
   status_bits = tmp_status_bits;
 }
 
