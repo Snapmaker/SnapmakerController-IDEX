@@ -31,8 +31,18 @@ typedef enum : uint8_t {
   E_PARAM,            /* got a invalid parameter */
   E_MODULE_KEY,
   E_NO_MEM,           /* apply memory failed */
-  E_SYSTEM_EXCEPTION = 14,
-  E_COMMON_ERROR = 15,
+  E_NO_RESRC,         /* apply resource failed except memory */
+  E_FAILURE,          /* common error code */
+  E_BUSY,             /* resource is busy, for example, bus is busy,
+                      * a mutex lock is busy
+                      */
+  E_HARDWARE,         /* hardware errors such as invalid bus state */
+  E_INVALID_STATE,    /* state is invalid for current operation */
+  E_SYSTEM_EXCEPTION, /* prevent action as system exceptions */
+  E_COMMON_ERROR,
+  E_NON_HOME,                   /* didn't home axes */
+  E_MACHINE_PROCESS_BLOCK,      /* handling thread blocking*/
+
   E_CAlIBRATION_PRIOBE = 200,
   E_CAlIBRATION_XY = 201,
 } ErrCode_e;
