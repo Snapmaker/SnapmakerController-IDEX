@@ -3,8 +3,8 @@
 
 #include "../J1/common_type.h"
 
-#define EXCEPTION_TRIGGER(type) (exception_status |= (1 << type)) 
-#define EXCEPTION_CLEAN(type) (exception_status &= ~(1 << type)) 
+#define EXCEPTION_TRIGGER(type) (exception_status |= (1 << type))
+#define EXCEPTION_CLEAN(type) (exception_status &= ~(1 << type))
 
 #define EXCEPTION_TMC_FILED_BEHAVIOR (E_B(EXCEPTION_BAN_MOVE))
 #define EXCEPTION_BED_NOT_FIND_BEHAVIOR (E_B(EXCEPTION_BAN_HEAT_BED))
@@ -65,7 +65,7 @@ class Exception {
     uint32_t get_behavior();
     exception_type_e get_wait_report_exception();
     bool trigger_exception(exception_type_e e);
-    void trigger_behavior(exception_behavior_e e);
+    void trigger_behavior(exception_behavior_e e, bool same_sta = false);
     void recover_behavior(exception_behavior_e e);
     void clean_exception(exception_type_e e);
     uint8_t get_level(exception_type_e e);
