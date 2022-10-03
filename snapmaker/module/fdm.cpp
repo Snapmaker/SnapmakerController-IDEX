@@ -28,7 +28,7 @@ const nozzle_type_t nozzle_type[] = {
 
 
 ErrCode FDM_Head::set_temperature(uint8_t e, uint16_t temperature, bool is_save) {
-  if (!exception_server.is_allow_heat_nozzle()) {
+  if (temperature > 0 && !exception_server.is_allow_heat_nozzle()) {
     return E_SYSTEM_EXCEPTION;
   }
   if (is_save) {
@@ -118,7 +118,7 @@ ErrCode FDM_Head::get_fdm_info(uint8_t e, FDM_info *fdm) {
   fdm->head_active = e == active_extruder;
   fdm->extruder_count = 1;
   get_extruder_info(e, &fdm->extruder_info);
-  
+
   uint8_t index=0, speed=0;
   fdm->fan_count = 1;
   get_fan_speed(e, index, speed);
@@ -171,11 +171,13 @@ bool FDM_Head::is_duplicating() {
 uint16_t FDM_Head::get_nozzle_type(uint8_t e, nozzle_texture_type_e *texture, float *caliber) {
   uint16_t val = 0;
   if (e == 0) {
-    pinMode(HEAD0_ID_PIN, INPUT_ANALOG);
+    taskENTER_CRITICAL();
     val = analogRead(HEAD0_ID_PIN);
+    taskEXIT_CRITICAL();
   } else {
-    pinMode(HEAD1_ID_PIN, INPUT_ANALOG);
+    taskENTER_CRITICAL();
     val = analogRead(HEAD1_ID_PIN);
+    taskEXIT_CRITICAL();
   }
   uint8_t type_count = ARRAY_SIZE(nozzle_type);
   uint8_t i = 0;
@@ -192,4 +194,9 @@ uint16_t FDM_Head::get_nozzle_type(uint8_t e, nozzle_texture_type_e *texture, fl
     *caliber = nozzle_type[i].caliber;
   }
   return val;
+}
+
+void FDM_Head::init() {
+  pinMode(HEAD0_ID_PIN, INPUT_ANALOG);
+  pinMode(HEAD1_ID_PIN, INPUT_ANALOG);
 }

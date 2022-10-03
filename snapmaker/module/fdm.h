@@ -68,6 +68,7 @@ typedef struct {
 
 class FDM_Head {
   public:
+    void    init();
     ErrCode set_temperature(uint8_t e, uint16_t temperature, bool is_save=true);
     float   get_temperature(uint8_t e);
     ErrCode set_work_speed(float speed);
