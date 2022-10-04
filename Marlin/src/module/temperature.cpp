@@ -694,13 +694,14 @@ volatile bool Temperature::raw_temps_ready = false;
               }
             }
             else if (current_temp < target - (MAX_OVERSHOOT_PID_AUTOTUNE)) { // Heated, then temperature fell too far?
+              _temp_error(heater_id, str_t_thermal_runaway, GET_TEXT(MSG_THERMAL_RUNAWAY));
+
               if (heater_id == H_BED)
                 exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
               else if (heater_id == 0)
                 exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
               else if (heater_id == 1)
                 exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
-              _temp_error(heater_id, str_t_thermal_runaway, GET_TEXT(MSG_THERMAL_RUNAWAY));
             }
           }
         #endif
@@ -978,28 +979,28 @@ void Temperature::max_temp_error(const heater_id_t heater_id) {
     DWIN_Popup_Temperature(1);
   #endif
 
+  _temp_error(heater_id, PSTR(STR_T_MAXTEMP), GET_TEXT(MSG_ERR_MAXTEMP));
+
   if (heater_id == H_BED)
     exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
   else if (heater_id == 0)
     exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
   else if (heater_id == 1)
     exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
-
-  _temp_error(heater_id, PSTR(STR_T_MAXTEMP), GET_TEXT(MSG_ERR_MAXTEMP));
 }
 
 void Temperature::min_temp_error(const heater_id_t heater_id) {
   #if ENABLED(DWIN_CREALITY_LCD) && (HAS_HOTEND || HAS_HEATED_BED)
     DWIN_Popup_Temperature(0);
   #endif
+  _temp_error(heater_id, PSTR(STR_T_MINTEMP), GET_TEXT(MSG_ERR_MINTEMP));
+
   if (heater_id == H_BED)
     exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
   else if (heater_id == 0)
     exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
   else if (heater_id == 1)
     exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
-  _temp_error(heater_id, PSTR(STR_T_MINTEMP), GET_TEXT(MSG_ERR_MINTEMP));
-
 }
 
 #if ANY(PID_DEBUG, PID_BED_DEBUG, PID_CHAMBER_DEBUG)
@@ -1318,9 +1319,8 @@ void Temperature::manage_heater() {
           }
           else {
             TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
-            if (exception_server.trigger_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT+e))) {
-              _temp_error((heater_id_t)e, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
-            }
+            _temp_error((heater_id_t)e, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
+            exception_server.trigger_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT+e));
           }
         }
       #endif
@@ -1376,9 +1376,8 @@ void Temperature::manage_heater() {
           }
           else {
             TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
-            if (exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT)) {
-              _temp_error(H_BED, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
-            }
+            _temp_error(H_BED, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
+            exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
           }
         }
       }
@@ -2629,14 +2628,15 @@ void Temperature::init() {
 
       case TRRunaway:
         TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
+        _temp_error(heater_id, str_t_thermal_runaway, GET_TEXT(MSG_THERMAL_RUNAWAY));
+
         if (heater_id == H_BED)
           exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
         else if (heater_id == 0)
           exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
         else if (heater_id == 1)
           exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
-
-        _temp_error(heater_id, str_t_thermal_runaway, GET_TEXT(MSG_THERMAL_RUNAWAY));
+        break;
     }
   }
 
