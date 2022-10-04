@@ -101,7 +101,8 @@ class SystemService {
     system_status_source_e get_source() {return source_;}
     void set_status(system_status_e status, system_status_source_e source=SYSTEM_STATUE_SCOURCE_NONE);
     bool is_calibtration_status() { return (status_ >= SYSTEM_STATUE_CAlIBRATION) && (status_ <= SYSTEM_STATUE_CAlIBRATION_XY_PROBING);}
-    bool is_working() {return (status_ >= SYSTEM_STATUE_STARTING) && (status_ <= SYSTEM_STATUE_RESUMING);}
+    bool is_working();
+    bool is_printing();
     bool is_idle() {return status_ == SYSTEM_STATUE_IDLE;}
     void factory_reset(void);
     uint8_t get_hw_version(bool is_refresh = false);

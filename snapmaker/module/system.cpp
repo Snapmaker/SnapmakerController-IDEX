@@ -172,6 +172,35 @@ void SystemService::set_status(system_status_e status, system_status_source_e so
   }
 }
 
+
+bool SystemService::is_working() {
+  switch (status_)
+  {
+  case SYSTEM_STATUE_STARTING:
+  case SYSTEM_STATUE_PRINTING:
+  case SYSTEM_STATUE_PAUSING:
+  case SYSTEM_STATUE_PAUSED:
+  case SYSTEM_STATUE_RESUMING:
+  case SYSTEM_STATUE_RECOVERING:
+    return true;
+    break;
+
+  default:
+    break;
+  }
+
+  return false;
+}
+
+bool SystemService::is_printing() {
+  switch (status_) {
+    case SYSTEM_STATUE_PRINTING:
+      return true;
+  }
+
+  return false;
+}
+
 void SystemService::get_machine_size(machine_size_t *size) {
   size->size_count = AXIS_COUNT;
   size->size[0].axis = AXIS_X1;

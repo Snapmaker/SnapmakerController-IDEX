@@ -4,10 +4,12 @@
 #include "../protocol/protocol_sacp.h"
 #include "switch_detect.h"
 #include "../module/update.h"
+#include "../module/fdm.h"
 
 void J1_setup() {
   update_server.init();
   switch_detect.init();
+  fdm_head.init();
   subscribe_init();
   event_init();
 }

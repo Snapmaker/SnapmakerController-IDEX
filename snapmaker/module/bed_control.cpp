@@ -34,7 +34,7 @@ bool BedControl::self_check() {
 }
 
 ErrCode BedControl::set_temperature(uint16_t temperature, bool is_save) {
-  if (!exception_server.is_allow_heat_bed()) {
+  if (temperature > 0 && !exception_server.is_allow_heat_bed()) {
     return E_SYSTEM_EXCEPTION;
   }
   if (is_save) {

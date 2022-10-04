@@ -314,5 +314,5 @@ void HAL_uart_reset_rx(HardwareSerial &serial);
 #define JTAGSWD_DISABLE() afio_cfg_debug_ports(AFIO_DEBUG_NONE)
 
 inline void watchdog_refresh() {
-  TERN_(USE_WATCHDOG, HAL_watchdog_refresh());
+  TERN_(USE_WATCHDOG, watchdog_reset());
 }

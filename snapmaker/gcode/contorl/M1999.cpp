@@ -30,10 +30,10 @@ void GcodeSuite::M1999() {
     OUT_WRITE(SCREEN_PWR_PIN, HIGH);
   } else if (parser.seen("C")) {
     SERIAL_ECHOLN("will reboot machine");
-    WatchDogInit();
+    nvic_sys_reset();
   } else {
     SERIAL_ECHOLN("will reboot machine and screen");
     OUT_WRITE(SCREEN_PWR_PIN, LOW);
-    WatchDogInit();
+    nvic_sys_reset();
   }
 }

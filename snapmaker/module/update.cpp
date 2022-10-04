@@ -3,7 +3,7 @@
 #include "flash_stm32.h"
 #include HAL_PATH(src/HAL, HAL_watchdog_STM32F1.h)
 
-UpdateServer update_server; 
+UpdateServer update_server;
 
 uint32_t update_calc_checksum(uint8_t *buffer, uint32_t length) {
   uint32_t volatile checksum = 0;
@@ -103,7 +103,8 @@ ErrCode UpdateServer::is_allow_update(update_packet_info_t *head) {
 }
 
 void UpdateServer::just_to_boot() {
-  WatchDogInit();
+  // WatchDogInit();
+  nvic_sys_reset();
 }
 
 void UpdateServer::init() {

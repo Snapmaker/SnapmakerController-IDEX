@@ -8,6 +8,8 @@
 #include "motion_control.h"
 #include "exception.h"
 
+#define NOZZLE_TYPE_SAMPLE_COUNT  (10)
+
 FDM_Head fdm_head;
 
 enum {
@@ -28,7 +30,7 @@ const nozzle_type_t nozzle_type[] = {
 
 
 ErrCode FDM_Head::set_temperature(uint8_t e, uint16_t temperature, bool is_save) {
-  if (!exception_server.is_allow_heat_nozzle()) {
+  if (temperature > 0 && !exception_server.is_allow_heat_nozzle()) {
     return E_SYSTEM_EXCEPTION;
   }
   if (is_save) {
@@ -118,7 +120,7 @@ ErrCode FDM_Head::get_fdm_info(uint8_t e, FDM_info *fdm) {
   fdm->head_active = e == active_extruder;
   fdm->extruder_count = 1;
   get_extruder_info(e, &fdm->extruder_info);
-  
+
   uint8_t index=0, speed=0;
   fdm->fan_count = 1;
   get_fan_speed(e, index, speed);
@@ -169,18 +171,37 @@ bool FDM_Head::is_duplicating() {
 }
 
 uint16_t FDM_Head::get_nozzle_type(uint8_t e, nozzle_texture_type_e *texture, float *caliber) {
-  uint16_t val = 0;
+  uint32_t sum = 0;
+  uint16_t adc_max = 0, adc_min = 0xffff, adc_raw;
+  uint8_t  pin;
+
   if (e == 0) {
-    pinMode(HEAD0_ID_PIN, INPUT_ANALOG);
-    val = analogRead(HEAD0_ID_PIN);
+    pin = HEAD0_ID_PIN;
   } else {
-    pinMode(HEAD1_ID_PIN, INPUT_ANALOG);
-    val = analogRead(HEAD1_ID_PIN);
+    pin = HEAD1_ID_PIN;
   }
+
+  for (int i = 0; i < NOZZLE_TYPE_SAMPLE_COUNT; i++) {
+    taskENTER_CRITICAL();
+    adc_raw = analogRead(pin);
+    taskEXIT_CRITICAL();
+    if (adc_raw > adc_max)
+      adc_max = adc_raw;
+
+    if (adc_raw < adc_min)
+      adc_min = adc_raw;
+
+    sum += adc_raw;
+  }
+
+  sum = sum - adc_max - adc_min;
+
+  adc_raw = (uint16_t)(sum / (NOZZLE_TYPE_SAMPLE_COUNT - 2));
+
   uint8_t type_count = ARRAY_SIZE(nozzle_type);
   uint8_t i = 0;
   for (i = 0; i < type_count; i++) {
-    if (nozzle_type[i].adc_min <= val && nozzle_type[i].adc_max >= val) {
+    if (nozzle_type[i].adc_min <= adc_raw && nozzle_type[i].adc_max >= adc_raw) {
       break;
     }
   }
@@ -191,5 +212,11 @@ uint16_t FDM_Head::get_nozzle_type(uint8_t e, nozzle_texture_type_e *texture, fl
     *texture = nozzle_type[i].texture;
     *caliber = nozzle_type[i].caliber;
   }
-  return val;
+
+  return adc_raw;
+}
+
+void FDM_Head::init() {
+  pinMode(HEAD0_ID_PIN, INPUT_ANALOG);
+  pinMode(HEAD1_ID_PIN, INPUT_ANALOG);
 }

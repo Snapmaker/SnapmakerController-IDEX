@@ -83,11 +83,10 @@ void PrintControl::loop() {
 
   if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
     if (ELAPSED(millis(), last_ms + 10)) {
-      work_time_ms += 10;
+      work_time_ms += (millis() - last_ms);
       last_ms = millis();
     }
   }
-
 }
 
 bool PrintControl::get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len) {

@@ -673,42 +673,34 @@ volatile bool Temperature::raw_temps_ready = false;
                 if (current_temp > watch_temp_target) heated = true;  // - Flag if target temperature reached
               }
               else if (ELAPSED(ms, temp_change_ms)) {                  // Watch timer expired
-                bool ret = false;
                 if (heater_id == H_BED) {
                   if (!bed_temp_first_trigger) {
                     bed_temp_first_trigger = true;
                     bed_temp_first_min_abnormal_ms = millis();
                     LOG_I("bed temp abnormal first trigger\r\n");
-                    ret = false;
                   }
                   else if PENDING(millis(), bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS){
                     LOG_I("bed temp abnormal trigger ignore, as in disable window %d ms\r\n", (bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS) - millis());
-                    ret = false;
                   }
                   else {
-                    ret = exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
+                    exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
                   }
                 }
                 else if (heater_id == 0)
-                  ret = exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT);
+                  exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT);
                 else if (heater_id == 1)
-                  ret = exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP_TIMEOUT);
-                if (ret) {
-                  _temp_error(heater_id, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
-                }
+                  exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP_TIMEOUT);
+                _temp_error(heater_id, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
               }
             }
             else if (current_temp < target - (MAX_OVERSHOOT_PID_AUTOTUNE)) { // Heated, then temperature fell too far?
-              bool ret = false;
               if (heater_id == H_BED)
-                ret = exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
+                exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
               else if (heater_id == 0)
-                ret = exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
+                exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
               else if (heater_id == 1)
-                ret = exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
-              if (ret) {
-                _temp_error(heater_id, str_t_thermal_runaway, GET_TEXT(MSG_THERMAL_RUNAWAY));
-              }
+                exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
+              _temp_error(heater_id, str_t_thermal_runaway, GET_TEXT(MSG_THERMAL_RUNAWAY));
             }
           }
         #endif
@@ -940,7 +932,7 @@ void Temperature::_temp_error(const heater_id_t heater_id, PGM_P const serial_ms
 
   // static uint8_t killed = 0;
 
-  if (IsRunning() && TERN1(BOGUS_TEMPERATURE_GRACE_PERIOD, killed == 2)) {
+  if (IsRunning() && ((heater_id >= 0 && degTargetHotend(heater_id) > 0) || (heater_id == H_BED && degTargetBed() > 0))) {
     SERIAL_ERROR_START();
     SERIAL_ECHOPGM_P(serial_msg);
     SERIAL_ECHOPGM(STR_STOPPED_HEATER);
@@ -955,8 +947,8 @@ void Temperature::_temp_error(const heater_id_t heater_id, PGM_P const serial_ms
     SERIAL_EOL();
   }
 
-  // disable_all_heaters(); // always disable (even for bogus temp)
-  // watchdog_refresh();
+  disable_all_heaters(); // always disable (even for bogus temp)
+  watchdog_refresh();
 
   #if BOGUS_TEMPERATURE_GRACE_PERIOD
     const millis_t ms = millis();
@@ -985,34 +977,29 @@ void Temperature::max_temp_error(const heater_id_t heater_id) {
   #if ENABLED(DWIN_CREALITY_LCD) && (HAS_HOTEND || HAS_HEATED_BED)
     DWIN_Popup_Temperature(1);
   #endif
-  bool ret = false;
-  if (heater_id == H_BED)
-    ret = exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
-  else if (heater_id == 0)
-    ret = exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
-  else if (heater_id == 1)
-    ret = exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
 
-  if (ret) {
-    _temp_error(heater_id, PSTR(STR_T_MAXTEMP), GET_TEXT(MSG_ERR_MAXTEMP));
-  }
+  if (heater_id == H_BED)
+    exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
+  else if (heater_id == 0)
+    exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
+  else if (heater_id == 1)
+    exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
+
+  _temp_error(heater_id, PSTR(STR_T_MAXTEMP), GET_TEXT(MSG_ERR_MAXTEMP));
 }
 
 void Temperature::min_temp_error(const heater_id_t heater_id) {
   #if ENABLED(DWIN_CREALITY_LCD) && (HAS_HOTEND || HAS_HEATED_BED)
     DWIN_Popup_Temperature(0);
   #endif
-  bool ret = false;
   if (heater_id == H_BED)
-    ret = exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
+    exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
   else if (heater_id == 0)
-    ret = exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
+    exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
   else if (heater_id == 1)
-    ret = exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
-  if (ret) {
-    _temp_error(heater_id, PSTR(STR_T_MINTEMP), GET_TEXT(MSG_ERR_MINTEMP));
+    exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
+  _temp_error(heater_id, PSTR(STR_T_MINTEMP), GET_TEXT(MSG_ERR_MINTEMP));
 
-  }
 }
 
 #if ANY(PID_DEBUG, PID_BED_DEBUG, PID_CHAMBER_DEBUG)
@@ -1304,8 +1291,12 @@ void Temperature::manage_heater() {
     HOTEND_LOOP() {
       #if ENABLED(THERMAL_PROTECTION_HOTENDS)
         if (degHotend(e) > temp_range[e].maxtemp) {
+          // turn off power of toolheads
+          WRITE(HEATER_PWR_PIN, LOW);
           max_temp_error((heater_id_t)e);
         } else {
+          // turn on power of toolheads
+          WRITE(HEATER_PWR_PIN, HIGH);
           // exception_server.clean_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP+e));
         }
       #endif
@@ -2638,16 +2629,14 @@ void Temperature::init() {
 
       case TRRunaway:
         TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
-        bool ret = false;
         if (heater_id == H_BED)
-          ret = exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
+          exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
         else if (heater_id == 0)
-          ret = exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
+          exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
         else if (heater_id == 1)
-          ret = exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
-        if (ret) {
-          _temp_error(heater_id, str_t_thermal_runaway, GET_TEXT(MSG_THERMAL_RUNAWAY));
-        }
+          exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
+
+        _temp_error(heater_id, str_t_thermal_runaway, GET_TEXT(MSG_THERMAL_RUNAWAY));
     }
   }
 
