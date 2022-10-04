@@ -758,7 +758,6 @@ void idle(bool no_stepper_sleep/*=false*/) {
     // LOG_I("probe X1 %d\r\n", READ(X1_CAL_PIN));
     // LOG_I("calibtration.probe_offset %f\r\n", calibtration.probe_offset);
   }
-  print_control.loop();
 
   static bool idle_lock = false;
   #if ENABLED(MARLIN_DEV_MODE)
@@ -774,8 +773,6 @@ void idle(bool no_stepper_sleep/*=false*/) {
 
   // Manage Heaters (and Watchdog)
   thermalManager.manage_heater();
-
-  watchdog_refresh();
 
   // Max7219 heartbeat, animation, etc
   TERN_(MAX7219_DEBUG, max7219.idle_tasks());

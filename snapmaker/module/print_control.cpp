@@ -80,23 +80,12 @@ bool PrintControl::filament_check() {
 
 void PrintControl::loop() {
   static uint32_t last_ms = 0;
-  static uint32_t syslog_timeout = millis() + 10000;
 
   if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
     if (ELAPSED(millis(), last_ms + 10)) {
-      work_time_ms += 10;
+      work_time_ms += (millis() - last_ms);
       last_ms = millis();
     }
-  }
-
-  if (ELAPSED(millis(), syslog_timeout)) {
-    syslog_timeout = millis() + 20000;
-    LOG_I("c0: %d/t0: %d, c1: %d/t1: %d, cb: %d/tb: %d\n",
-      (int)thermalManager.degHotend(0), thermalManager.degTargetHotend(0),
-      (int)thermalManager.degHotend(1), thermalManager.degTargetHotend(1),
-      (int)thermalManager.degBed(), thermalManager.degTargetBed());
-    LOG_I("sta: %u, excep sta: 0x%x, excep beh: 0x%x\n", system_service.get_status(),
-      exception_server.get_exception(), exception_server.get_behavior());
   }
 }
 

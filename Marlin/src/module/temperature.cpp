@@ -1291,11 +1291,11 @@ void Temperature::manage_heater() {
     HOTEND_LOOP() {
       #if ENABLED(THERMAL_PROTECTION_HOTENDS)
         if (degHotend(e) > temp_range[e].maxtemp) {
-          // turn off power off power
+          // turn off power of toolheads
           WRITE(HEATER_PWR_PIN, LOW);
           max_temp_error((heater_id_t)e);
         } else {
-          // turn on power off power
+          // turn on power of toolheads
           WRITE(HEATER_PWR_PIN, HIGH);
           // exception_server.clean_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP+e));
         }

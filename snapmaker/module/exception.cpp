@@ -65,7 +65,7 @@ void Exception::trigger_behavior(exception_behavior_e e, bool same_sta) {
       OUT_WRITE(HEATER_BED_PWR_PIN, LOW);
       break;
     case EXCEPTION_BAN_MOVE :
-      if (system_service.is_working()) {
+      if (system_service.is_printing()) {
         if (!same_sta)
           LOG_I("pause working cause exception!");
         system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_EXCEPTION);
@@ -93,7 +93,7 @@ void Exception::trigger_behavior(exception_behavior_e e, bool same_sta) {
       bed_control.set_temperature(0);
       break;
     case EXCEPTION_BAN_WORK_AND_STOP :
-      if (system_service.is_working() && system_service.get_status() != SYSTEM_STATUE_STOPPING) {
+      if (system_service.is_working()) {
         if (!same_sta)
           LOG_I("stop working cause exception!");
         system_service.set_status(SYSTEM_STATUE_STOPPING, SYSTEM_STATUE_SCOURCE_EXCEPTION);
