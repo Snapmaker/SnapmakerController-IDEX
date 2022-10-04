@@ -224,8 +224,6 @@
 #define BED_TEMP_MIN_ABNORMAL_WATCH_WINDOW_TIME_MS    (10 * 60 * 1000)
 
 Temperature thermalManager;
-bool bed_temp_first_trigger = false;
-uint32_t bed_temp_first_min_abnormal_ms = 0;
 
 const char str_t_thermal_runaway[] PROGMEM = STR_T_THERMAL_RUNAWAY,
            str_t_heating_failed[] PROGMEM = STR_T_HEATING_FAILED;
@@ -673,24 +671,14 @@ volatile bool Temperature::raw_temps_ready = false;
                 if (current_temp > watch_temp_target) heated = true;  // - Flag if target temperature reached
               }
               else if (ELAPSED(ms, temp_change_ms)) {                  // Watch timer expired
-                if (heater_id == H_BED) {
-                  if (!bed_temp_first_trigger) {
-                    bed_temp_first_trigger = true;
-                    bed_temp_first_min_abnormal_ms = millis();
-                    LOG_I("bed temp abnormal first trigger\r\n");
-                  }
-                  else if PENDING(millis(), bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS){
-                    LOG_I("bed temp abnormal trigger ignore, as in disable window %d ms\r\n", (bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS) - millis());
-                  }
-                  else {
-                    exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
-                  }
-                }
+                _temp_error(heater_id, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
+
+                if (heater_id == H_BED)
+                  exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
                 else if (heater_id == 0)
                   exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT);
                 else if (heater_id == 1)
                   exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP_TIMEOUT);
-                _temp_error(heater_id, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
               }
             }
             else if (current_temp < target - (MAX_OVERSHOOT_PID_AUTOTUNE)) { // Heated, then temperature fell too far?
@@ -1249,14 +1237,6 @@ void Temperature::min_temp_error(const heater_id_t heater_id) {
  *  - Update the heated bed PID output value
  */
 void Temperature::manage_heater() {
-
-  if (bed_temp_first_trigger) {
-    if (ELAPSED(millis(), bed_temp_first_min_abnormal_ms + BED_TEMP_MIN_ABNORMAL_WATCH_WINDOW_TIME_MS)) {
-      bed_temp_first_trigger = false;
-      LOG_I("bed_temp_first_trigger reset to false\r\n");
-    }
-  }
-
   if (marlin_state == MF_INITIALIZING) return watchdog_refresh(); // If Marlin isn't started, at least reset the watchdog!
 
   #if ENABLED(EMERGENCY_PARSER)
@@ -1366,19 +1346,9 @@ void Temperature::manage_heater() {
           start_watching_bed();                 // If temp reached, turn off elapsed check
         }
         else {
-          if (!bed_temp_first_trigger) {
-            bed_temp_first_trigger = true;
-            bed_temp_first_min_abnormal_ms = millis();
-            LOG_I("bed temp abnormal first trigger\r\n");
-          }
-          else if PENDING(millis(), bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS){
-            LOG_I("bed temp abnormal trigger ignore, as in disable window %d ms\r\n", (bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS) - millis());
-          }
-          else {
-            TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
-            _temp_error(H_BED, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
-            exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
-          }
+          TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
+          _temp_error(H_BED, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
+          exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP_TIMEOUT);
         }
       }
     #endif // WATCH_BED
@@ -2610,20 +2580,6 @@ void Temperature::init() {
           break;
         }
         else if (PENDING(millis(), timer)) break;
-
-        if (heater_id == H_BED) {
-          if (!bed_temp_first_trigger) {
-            bed_temp_first_trigger = true;
-            bed_temp_first_min_abnormal_ms = millis();
-            LOG_I("bed temp abnormal first trigger\r\n");
-            break;
-          }
-          else if PENDING(millis(), bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS){
-            LOG_I("bed temp abnormal trigger ignore, as in disable window %d ms\r\n", (bed_temp_first_min_abnormal_ms + BED_TEMP_FIRST_MIN_ABNORMAL_DISABLE_TIME_MS) - millis());
-            break;
-          }
-        }
-
         state = TRRunaway;
 
       case TRRunaway:
