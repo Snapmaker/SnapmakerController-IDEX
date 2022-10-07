@@ -423,7 +423,7 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
 
       case 92: G92(); break;                                      // G92: Set current axis position(s)
 
-      case 1029 : G1029(); break;                                 // G1029: Auto calibration 
+      case 1029 : G1029(); break;                                 // G1029: Auto calibration
       #if ENABLED(CALIBRATION_GCODE)
         case 425: G425(); break;                                  // G425: Perform calibration with calibration cube
       #endif
@@ -533,6 +533,8 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
       #if ENABLED(M100_FREE_MEMORY_WATCHER)
         case 100: M100(); break;                                  // M100: Free Memory Report
       #endif
+
+      case 101: M101(); break;
 
       #if HAS_EXTRUDERS
         case 104: M104(); break;                                  // M104: Set hot end temperature
