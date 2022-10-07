@@ -72,6 +72,7 @@ extern HardwareSerial *evevnt_serial[EVENT_SOURCE_ALL];
 extern write_byte_f event_write_byte[EVENT_SOURCE_ALL];
 extern read_byte_f event_read_byte[EVENT_SOURCE_ALL];
 
+void event_base_init();
 // Find the corresponding event callback by id
 event_cb_info_t * get_evevt_info_by_id(uint8_t id, event_cb_info_t *array, uint8_t count);
 // Pack the parameters and call the event source send callback to send the data
