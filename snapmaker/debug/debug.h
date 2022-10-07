@@ -22,6 +22,7 @@
 #define SNAPMAKER_DEBUG_H_
 
 #include <stdio.h>
+#include "MapleFreeRTOS1030.h"
 
 // 1 = enable API for snap debug
 #define SNAP_DEBUG 1
@@ -64,10 +65,14 @@ enum GcodeState : uint8_t {
 extern const char *snap_debug_str[SNAP_DEBUG_LEVEL_MAX];
 class SnapDebug {
   public:
+    void init();
     void Log(debug_level_e level, const char *fmt, ...);
     void set_level(debug_level_e l);
     debug_level_e get_level();
     void show_all_status();
+
+  private:
+    SemaphoreHandle_t lock = NULL;
 };
 
 // interface for external use
