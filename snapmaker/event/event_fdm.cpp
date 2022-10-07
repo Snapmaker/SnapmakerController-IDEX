@@ -208,7 +208,7 @@ event_cb_info_t fdm_cb_info[FDM_ID_CB_COUNT] = {
   {FDM_ID_SET_TEMPERATURE       , EVENT_CB_DIRECT_RUN, fdm_set_temperature},
   {FDM_ID_SET_WORK_SPEED        , EVENT_CB_DIRECT_RUN, fdm_set_work_speed},
   {FDM_ID_ENABLE_FILAMENT_SENSOR, EVENT_CB_DIRECT_RUN, fdm_enable_filament_sensor},
-  {FDM_ID_CHANGE_TOOL_HEAD      , EVENT_CB_DIRECT_RUN, fdm_change_tool_head},
+  {FDM_ID_CHANGE_TOOL_HEAD      , EVENT_CB_TASK_RUN, fdm_change_tool_head},
   {FDM_ID_SET_FAN_SPEED         , EVENT_CB_DIRECT_RUN, fdm_set_fan_speed},
   {FDM_ID_SET_NOZZLE_SPACING    , EVENT_CB_DIRECT_RUN, fdm_set_nozzle_spacing},
   {FDM_ID_GET_NOZZLE_SPACING    , EVENT_CB_DIRECT_RUN, fdm_get_nozzle_spacing},
