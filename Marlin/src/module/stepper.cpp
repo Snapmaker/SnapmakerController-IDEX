@@ -2082,9 +2082,18 @@ uint32_t Stepper::block_phase_isr() {
 
       bool is_done = true;
       for (size_t i = 0; i < AXIS_SIZE; i++) {
-        if (axisManager.current_steps[i] != block_move_target_steps[i]) {
-          is_done = false;
+        if (i == 3) {
+          if (axisManager.current_steps[i] != block_move_target_steps[i] + LROUND(axisManager.axis[i].delta_e)) {
+              is_done = false;
+          }
+        } else {
+          if (axisManager.current_steps[i] != block_move_target_steps[i]) {
+              is_done = false;
+          }
         }
+        // if (axisManager.current_steps[i] != block_move_target_steps[i]) {
+        //   is_done = false;
+        // }
       }
 
       if (is_done) {

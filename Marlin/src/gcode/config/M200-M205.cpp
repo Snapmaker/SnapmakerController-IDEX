@@ -23,6 +23,7 @@
 #include "../gcode.h"
 #include "../../MarlinCore.h"
 #include "../../module/planner.h"
+#include "../../../../snapmaker/debug/debug.h"
 
 #if DISABLED(NO_VOLUMETRICS)
 

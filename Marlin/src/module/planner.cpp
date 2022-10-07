@@ -2642,10 +2642,12 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
         if (block->e_D_ratio > 3.0f)
           block->use_advance_lead = false;
         else {
-          const uint32_t max_accel_steps_per_s2 = MAX_E_JERK(extruder) / (extruder_advance_K[active_extruder] * block->e_D_ratio) * steps_per_mm;
-          if (TERN0(LA_DEBUG, accel > max_accel_steps_per_s2))
-            SERIAL_ECHOLNPGM("Acceleration limited.");
-          NOMORE(accel, max_accel_steps_per_s2);
+          // const uint32_t max_accel_steps_per_s2 = MAX_E_JERK(extruder) / (extruder_advance_K[active_extruder] * block->e_D_ratio) * steps_per_mm;
+          // if (TERN0(LA_DEBUG, accel > max_accel_steps_per_s2))
+          //   SERIAL_ECHOLNPGM("Acceleration limited.");
+          // LOG_I("junction_deviation_mm: %lf\n", junction_deviation_mm);
+          // LOG_I("max_e_jerk: %lf %lf %lf %lf\n", accel / steps_per_mm, max_accel_steps_per_s2 / steps_per_mm, MAX_E_JERK(extruder), block->e_D_ratio);
+          // NOMORE(accel, max_accel_steps_per_s2);
         }
       }
     #endif

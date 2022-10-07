@@ -114,46 +114,75 @@ FORCE_INLINE bool Axis::generateEAxisFuncParams(uint8_t block_index, uint8_t mov
           continue;
         }
 
-        // update the position  
-        move->start_pos[axis] += delta_e;
-        move->end_pos[axis] += delta_e;
-
         // #define K (0.04)
         float K = planner.extruder_advance_K[active_extruder];
-        float eda = K * move->accelerate * move->t * move->axis_r[axis];
-        delta_e += eda;
+        float delta_v = IS_ZERO(move->accelerate) ? 0 : K * move->accelerate;
+        float eda = delta_v * move->t * move->axis_r[axis];
 
-        if (!IS_ZERO(move->accelerate) && move->start_v > K * move->accelerate && move->end_v < K * move->accelerate) {
-          float zero_t = (move->start_v - K * move->accelerate) / move->accelerate;
-          float zero_pos = (move->start_v * zero_t + 0.5 * move->accelerate * sq(zero_t)) * move->axis_r[axis];
+        float a = 0.5f * move->accelerate * move->axis_r[axis];
+        float b, c;
 
-          float origin_t = move->t;
-          float origin_pos = move->end_pos[axis];
+        if (delta_v < 0 && move->start_v + delta_v > 0 && move->end_v + delta_v < 0) {
+            float zero_t = ABS((move->start_v + delta_v) / move->accelerate);
+            float zero_pos = ((move->start_v + delta_v) * zero_t + 0.5f * move->accelerate * sq(zero_t)) * move->axis_r[axis];
 
-          move->t = zero_t;
-          // move->end_pos[axis] = move->end_pos[axis] - tmp_pos + pos;
-          move->end_pos[axis] = move->start_pos[axis] + zero_pos;
+            float y2 = move->start_pos[axis] + delta_e + zero_pos;
+            float dy = zero_pos;
+            float x2 = zero_t;
+            float dx = zero_t;
 
-          float zero_eda = K * move->accelerate * zero_t * move->axis_r[axis];
+            c = move->start_pos[axis] + delta_e;
+            b = dy / dx - a * x2;
 
-          move->end_pos[axis] += zero_eda;
+            int type;
+            if (IS_ZERO(dy)) {
+                type = 0;
+            } else {
+                type = dy > 0 ? 1 : -1;
+            }
 
-          generateLineFuncParams(move);
+            time_double_t end_t = move->start_t + zero_t;
+            func_manager.addFuncParams(a, b, c, type, end_t, y2);
 
-          move->t = origin_t;
-          move->end_pos[axis] = origin_pos;
-          move->end_pos[axis] += eda;
+            y2 = move->end_pos[axis] + delta_e + eda;
+            dy = move->end_pos[axis] - move->start_pos[axis] + eda - zero_pos;
+            x2 = move->t - zero_t;
+            dx = move->t - zero_t;
 
-          generateLineFuncParams(move);
+            c = move->start_pos[axis] + delta_e + zero_pos;
+            b = dy / dx - a * x2;
 
+            if (IS_ZERO(dy)) {
+                type = 0;
+            } else {
+                type = dy > 0 ? 1 : -1;
+            }
+
+            end_t = move->end_t;
+            func_manager.addFuncParams(a, b, c, type, end_t, y2);
         } else {
+            float y2 = move->end_pos[axis] + delta_e + eda;
+            float dy = move->end_pos[axis] - move->start_pos[axis] + eda;
+            float x2 = move->t;
+            float dx = move->t;
 
-          move->end_pos[axis] += eda;
-          generateLineFuncParams(move);
+            c = move->start_pos[axis] + delta_e;
+            b = dy / dx - a * x2;
+
+            int type;
+            if (IS_ZERO(dy)) {
+                type = 0;
+            } else {
+                type = dy > 0 ? 1 : -1;
+            }
+            time_double_t end_t = move->end_t;
+            func_manager.addFuncParams(a, b, c, type, end_t, y2);
         }
 
+        delta_e += eda;
         move_index = moveQueue.nextMoveIndex(move_index);
     }
+
     generated_move_index = move_end;
     return true;
 }
