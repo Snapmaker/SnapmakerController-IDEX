@@ -44,6 +44,7 @@ class EventHandler {
     event_cache_node_t * get_event_cache();
 
   private:
+    event_cache_node_t err_result_event;
     event_cache_node_t event_cache[EVENT_CACHE_COUNT];
     recv_data_info_t recv_data_info[EVENT_SOURCE_ALL] = {0};
 };

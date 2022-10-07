@@ -65,6 +65,8 @@ ErrCode EventHandler::parse(recv_data_info_t *recv_info) {
   event_cache_node_t *event = get_event_cache();
   if (!event) {
     SERIAL_ECHO("ERROR:event no cache\n");
+    parse_event_info(recv_info, &err_result_event);
+    send_result(err_result_event.param, E_NO_MEM);
     return E_NO_MEM;
   }
 
