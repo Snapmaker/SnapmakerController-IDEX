@@ -66,8 +66,7 @@ const char *snap_debug_str[SNAP_DEBUG_LEVEL_MAX] = {
 
 
 void SnapDebug::init() {
-  lock = xSemaphoreCreateMutex();
-  configASSERT(lock);
+  return;
 }
 
 // output debug message, will not output message whose level
@@ -86,19 +85,9 @@ void SnapDebug::Log(debug_level_e level, const char *fmt, ...) {
   // the front 4 bytes will be used to save SACP packet info
   char *data = log_buf + 4;
 
-  if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
-    if (xSemaphoreTake(lock, pdMS_TO_TICKS(500)) == pdPASS) {
-      va_start(args, fmt);
-      vsnprintf(data, SNAP_LOG_BUFFER_SIZE, fmt, args);
-      va_end(args);
-      xSemaphoreGive(lock);
-    }
-  }
-  else {
-    va_start(args, fmt);
-    vsnprintf(data, SNAP_LOG_BUFFER_SIZE, fmt, args);
-    va_end(args);
-  }
+  va_start(args, fmt);
+  vsnprintf(data, SNAP_LOG_BUFFER_SIZE, fmt, args);
+  va_end(args);
 
   log_buf[0] = E_SUCCESS;
   log_buf[1] = level;

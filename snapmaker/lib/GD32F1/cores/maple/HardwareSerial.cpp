@@ -47,6 +47,7 @@ HardwareSerial::HardwareSerial(usart_dev *usart_device,
 
 #define LOG_BUF_SIZE 256
 static char log_buf[LOG_BUF_SIZE];
+static char log_buf_cache[LOG_BUF_SIZE];
 static uint16_t log_buf_index = 0;
 
 /*
@@ -149,26 +150,32 @@ size_t HardwareSerial::write(unsigned char ch) {
         if (sta == taskSCHEDULER_RUNNING)
             taskENTER_CRITICAL();
 
-        log_buf[log_buf_index] = '\0';
+        for (int i = 0; i < log_buf_index; i++)
+            log_buf_cache[i] = log_buf[i];
+
+        log_buf_cache[log_buf_index] = '\0';
         log_buf_index = 0;
 
         if (sta == taskSCHEDULER_RUNNING)
             taskEXIT_CRITICAL();
 
-        LOG_I(log_buf);
+        LOG_I(log_buf_cache);
     }
 
     if ((log_buf_index + 1) == LOG_BUF_SIZE) {
         if (sta == taskSCHEDULER_RUNNING)
             taskENTER_CRITICAL();
 
-        log_buf[log_buf_index] = '\0';
+        for (int i = 0; i < log_buf_index; i++)
+            log_buf_cache[i] = log_buf[i];
+
+        log_buf_cache[log_buf_index] = '\0';
         log_buf_index = 0;
 
         if (sta == taskSCHEDULER_RUNNING)
             taskEXIT_CRITICAL();
 
-        LOG_I(log_buf);
+        LOG_I(log_buf_cache);
     }
 
 	return 1;
