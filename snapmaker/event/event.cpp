@@ -92,7 +92,7 @@ ErrCode EventHandler::parse(recv_data_info_t *recv_info) {
       SERIAL_ECHOLN("event cacne full!!!");
       send_result(event->param, E_NO_MEM);
     } else {
-      LOG_I(">>> send event\r\n");
+      // LOG_I(">>> send event\r\n");
     }
   }
   return E_PARAM;
@@ -115,7 +115,7 @@ void EventHandler::loop_task() {
   event_cache_node_t *event = NULL;
   if (xQueueReceive(event_queue, &event, 1 ) == pdPASS) {
     if (event->block_status == EVENT_CACHT_STATUS_WAIT) {
-      LOG_I("<<<< event proces...\r\n");
+      // LOG_I("<<<< event proces...\r\n");
       event->block_status = EVENT_CACHT_STATUS_BUSY;
       (event->cb)(event->param);
       event->block_status = EVENT_CACHT_STATUS_IDLE;
