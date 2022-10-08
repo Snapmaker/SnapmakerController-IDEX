@@ -48,6 +48,7 @@ class EventHandler {
     event_cache_node_t event_cache[EVENT_CACHE_COUNT];
     recv_data_info_t recv_data_info[EVENT_SOURCE_ALL] = {0};
 };
+void event_task(void * arg);
 void event_init();
 void event_port_init();
 extern EventHandler event_handler;
