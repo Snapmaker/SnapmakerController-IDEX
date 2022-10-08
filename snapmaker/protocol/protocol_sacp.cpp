@@ -100,7 +100,7 @@ uint16_t ProtocolSACP::package(SACP_head_base_t head, uint8_t *in_data, uint16_t
   out->recever_id = head.recever_id;
   out->crc8 = sacp_calc_crc8(out_data, 6);
   out->sender_id = SACP_ID_CONTROLLER;
-  out->arrt.type = head.attribute;
+  out->attr = head.attribute;
   out->sequence = head.sequence;
   out->command_set = head.command_set;
   out->command_id = head.command_id;

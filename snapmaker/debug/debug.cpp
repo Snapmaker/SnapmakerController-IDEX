@@ -101,7 +101,7 @@ void SnapDebug::Log(debug_level_e level, const char *fmt, ...) {
   // always send log to HMI
   send_event(EVENT_SOURCE_HMI, sacp, (uint8_t*)log_buf, *data_len + 4);
 
-  if (!evevnt_serial[EVENT_SOURCE_MARLIN]->enable_sacp()) {
+  if (!event_serial[EVENT_SOURCE_MARLIN]->enable_sacp()) {
     // send raw string to PC channel
     send_data(EVENT_SOURCE_MARLIN, (uint8_t *)data, *data_len);
   } else {

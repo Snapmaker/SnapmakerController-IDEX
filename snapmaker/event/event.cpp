@@ -126,9 +126,9 @@ void EventHandler::loop_task() {
 }
 
 void EventHandler::recv_enable(event_source_e source, bool enable) {
-  evevnt_serial[source]->enable_sacp(enable);
+  event_serial[source]->enable_sacp(enable);
   if (enable) {
-    evevnt_serial[source]->begin(115200);
+    event_serial[source]->begin(115200);
   }
 }
 
@@ -142,7 +142,7 @@ void EventHandler::recv_task() {
     bool need_wait = true;
     for (uint8_t i = 0; i < EVENT_SOURCE_ALL; i++) {
       recv_info = &recv_data_info[i];
-      if (evevnt_serial[i]->enable_sacp()) {
+      if (event_serial[i]->enable_sacp()) {
         int ch = event_read_byte[i]();
         if (ch != -1) {
           uint8_t data = ch&0xFF;

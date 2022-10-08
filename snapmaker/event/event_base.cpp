@@ -1,24 +1,25 @@
 #include "event_base.h"
 #include "../protocol/protocol_sacp.h"
 
-HardwareSerial *evevnt_serial[EVENT_SOURCE_ALL] = {&MSerial1, &MSerial2};
+HardwareSerial *event_serial[EVENT_SOURCE_ALL] = {&MSerial1, &MSerial2};
 
 write_byte_f event_write_byte[EVENT_SOURCE_ALL] = {
-  [](unsigned char ch)->size_t{return evevnt_serial[EVENT_SOURCE_MARLIN]->write_byte(ch);},
-  [](unsigned char ch)->size_t{return evevnt_serial[EVENT_SOURCE_HMI]->write_byte(ch);},
+  [](unsigned char ch)->size_t{return event_serial[EVENT_SOURCE_MARLIN]->write_byte(ch);},
+  [](unsigned char ch)->size_t{return event_serial[EVENT_SOURCE_HMI]->write_byte(ch);},
 };
+
+static SemaphoreHandle_t event_write_lock[EVENT_SOURCE_ALL] {NULL};
 
 read_byte_f event_read_byte[EVENT_SOURCE_ALL] = {
-  []()->size_t{return evevnt_serial[EVENT_SOURCE_MARLIN]->read();},
-  []()->size_t{return evevnt_serial[EVENT_SOURCE_HMI]->read();},
+  []()->size_t{return event_serial[EVENT_SOURCE_MARLIN]->read();},
+  []()->size_t{return event_serial[EVENT_SOURCE_HMI]->read();},
 };
 
-static SemaphoreHandle_t send_lock = NULL;
-static uint8_t send_buf[PACK_PARSE_MAX_SIZE];
-
 void event_base_init() {
-  send_lock = xSemaphoreCreateMutex();
-  configASSERT(send_lock);
+  for (auto &lock : event_write_lock) {
+    lock = xSemaphoreCreateMutex();
+    configASSERT(lock);
+  }
 }
 
 
@@ -33,10 +34,25 @@ event_cb_info_t * get_evevt_info_by_id(uint8_t id, event_cb_info_t *array, uint8
 
 
 static bool send_to(event_source_e source, uint8_t *data, uint16_t len) {
-  for (int i = 0; i < len; i++) {
-    event_write_byte[source](data[i]);
+  if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+    if (xSemaphoreTake(event_write_lock[source], portMAX_DELAY) == pdPASS) {
+      for (int i = 0; i < len; i++) {
+        event_write_byte[source](data[i]);
+      }
+      xSemaphoreGive(event_write_lock[source]);
+
+      return true;
+    }
+
+    return false;
   }
-  return true;
+  else {
+    for (int i = 0; i < len; i++) {
+      event_write_byte[source](data[i]);
+    }
+
+    return true;
+  }
 }
 
 bool send_data(event_source_e source, uint8_t *data, uint16_t len) {
@@ -62,31 +78,19 @@ ErrCode send_event(event_param_t &event, uint8_t *data, uint16_t length) {
 }
 
 ErrCode send_event(event_source_e source, SACP_head_base_t &sacp, uint8_t *data, uint16_t length) {
-  if ((source < EVENT_SOURCE_ALL) && !evevnt_serial[source]->enable_sacp()) {
+  uint8_t  send_buf[PACK_PARSE_MAX_SIZE];
+  uint16_t pack_len = 0;
+
+  if ((source < EVENT_SOURCE_ALL) && !event_serial[source]->enable_sacp()) {
     return E_PARAM;
   }
 
-  uint16_t pack_len = 0;
+  // Package the data and call write_byte to emit the information
+  pack_len = protocol_sacp.package(sacp, data, length, send_buf);
 
-  if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
-    if (xSemaphoreTake(send_lock, portMAX_DELAY) == pdPASS) {
-      // Package the data and call write_byte to emit the information
-      pack_len = protocol_sacp.package(sacp, data, length, send_buf);
-      send_data(source, send_buf, pack_len);
+  send_data(source, send_buf, pack_len);
 
-      xSemaphoreGive(send_lock);
-    }
-    else {
-      return E_FAILURE;
-    }
-  }
-  else {
-    // if didn't start scheduler, won't take lock
-    pack_len = protocol_sacp.package(sacp, data, length, send_buf);
-    send_data(source, send_buf, pack_len);
-  }
-
-  if (!evevnt_serial[EVENT_SOURCE_MARLIN]->enable_sacp()) {
+  if (!event_serial[EVENT_SOURCE_MARLIN]->enable_sacp()) {
     // char debug_buf[100];
     // sprintf(debug_buf, "MC:source:0x%x ,cmd_set:0x%x,cmd_id:0x%x, sequence:%d, len:%d", source, sacp.command_set, sacp.command_id, sacp.sequence, length);
     // SERIAL_ECHOLN(debug_buf);

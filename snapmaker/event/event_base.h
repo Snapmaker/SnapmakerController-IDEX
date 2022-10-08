@@ -68,7 +68,7 @@ typedef struct {
 } event_result_t;
 #pragma pack(0)
 
-extern HardwareSerial *evevnt_serial[EVENT_SOURCE_ALL];
+extern HardwareSerial *event_serial[EVENT_SOURCE_ALL];
 extern write_byte_f event_write_byte[EVENT_SOURCE_ALL];
 extern read_byte_f event_read_byte[EVENT_SOURCE_ALL];
 

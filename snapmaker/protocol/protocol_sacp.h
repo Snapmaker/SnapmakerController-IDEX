@@ -27,16 +27,11 @@ typedef struct {
   uint8_t recever_id;
   uint8_t crc8;
   uint8_t sender_id;
-  union {
-    struct {
-      uint8_t type: 1;  // 0 - request, 1 - ack
-      uint8_t reserve : 7;
-    } arrt;
-  };
+  uint8_t attr;
   uint16_t sequence;
   uint8_t command_set;
   uint8_t command_id;
-  uint8_t data[];
+  uint8_t data[0];
 } SACP_struct_t;
 
 typedef struct {
