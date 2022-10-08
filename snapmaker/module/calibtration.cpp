@@ -12,6 +12,7 @@
 #include "system.h"
 
 Calibtration calibtration;
+planner_settings_t planner_backup_setting;
 
 #define PROBE_FAST_Z_FEEDRATE                 (200)
 #define PROBE_Z_LEAVE_FEEDRATE                (5)
@@ -191,6 +192,8 @@ bool Calibtration::move_to_sersor_no_trigger(uint8_t axis, int16_t try_distance)
 }
 
 void reset_move_param() {
+  LOG_I("reset planner setting\r\n");
+  planner_backup_setting = planner.settings;
   planner.settings.min_segment_time_us = DEFAULT_MINSEGMENTTIME;
   planner.settings.acceleration = DEFAULT_ACCELERATION;
   planner.settings.retract_acceleration = DEFAULT_RETRACT_ACCELERATION;
@@ -549,6 +552,7 @@ ErrCode Calibtration::exit(bool is_save) {
         settings.save();
       }
     }
+
     mode = CAlIBRATION_MODE_EXIT;
     status = CAlIBRATION_STATE_IDLE;
     probe_offset = -CAlIBRATIONING_ERR_CODE;
@@ -587,6 +591,10 @@ void Calibtration::loop(void) {
     }
     thermalManager.setTargetBed(0);
     mode = CAlIBRATION_MODE_IDLE;
+
+    LOG_I("restore planner setting\r\n");
+    planner.settings = planner_backup_setting;
+
     system_service.set_status(SYSTEM_STATUE_IDLE);
   }
 }
