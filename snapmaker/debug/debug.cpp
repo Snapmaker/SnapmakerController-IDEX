@@ -83,29 +83,41 @@ void SnapDebug::Log(debug_level_e level, const char *fmt, ...) {
   if (level < debug_msg_level)
     return;
 
-  va_start(args, fmt);
-  char * data = log_buf + 4;
+  // the front 4 bytes will be used to save SACP packet info
+  char *data = log_buf + 4;
+
   if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
     if (xSemaphoreTake(lock, pdMS_TO_TICKS(500)) == pdPASS) {
-      vsnprintf(data, SNAP_LOG_BUFFER_SIZE - 4, fmt, args);
+      va_start(args, fmt);
+      vsnprintf(data, SNAP_LOG_BUFFER_SIZE, fmt, args);
+      va_end(args);
       xSemaphoreGive(lock);
     }
   }
   else {
-    vsnprintf(data, SNAP_LOG_BUFFER_SIZE - 4, fmt, args);
+    va_start(args, fmt);
+    vsnprintf(data, SNAP_LOG_BUFFER_SIZE, fmt, args);
+    va_end(args);
   }
+
   log_buf[0] = E_SUCCESS;
   log_buf[1] = level;
+
+  // length of string
   uint16_t *data_len = ((uint16_t *)(&log_buf[2]));
   *data_len = strlen(data);
-  va_end(args);
 
   SACP_head_base_t sacp = {SACP_ID_HMI, SACP_ATTR_ACK, 0, COMMAND_SET_SYS, SYS_ID_REPORT_LOG};
+
+  // always send log to HMI
   send_event(EVENT_SOURCE_HMI, sacp, (uint8_t*)log_buf, *data_len + 4);
+
   if (!evevnt_serial[EVENT_SOURCE_MARLIN]->enable_sacp()) {
+    // send raw string to PC channel
     send_data(EVENT_SOURCE_MARLIN, (uint8_t *)data, *data_len);
   } else {
     sacp.recever_id = SACP_ID_PC;
+    // send log to PC channel with SACP packet
     send_event(EVENT_SOURCE_MARLIN, sacp, (uint8_t*)log_buf, *data_len + 4);
   }
 }

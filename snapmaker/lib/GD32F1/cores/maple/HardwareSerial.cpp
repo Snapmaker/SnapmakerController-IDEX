@@ -134,18 +134,43 @@ int HardwareSerial::availableForWrite(void)
 }
 
 size_t HardwareSerial::write(unsigned char ch) {
+    BaseType_t sta = xTaskGetSchedulerState();
+
+    if (sta == taskSCHEDULER_RUNNING)
+        taskENTER_CRITICAL();
+
     log_buf[log_buf_index] = ch;
     log_buf_index++;
+
+    if (sta == taskSCHEDULER_RUNNING)
+        taskEXIT_CRITICAL();
+
     if (ch == '\n') {
+        if (sta == taskSCHEDULER_RUNNING)
+            taskENTER_CRITICAL();
+
         log_buf[log_buf_index] = '\0';
-        LOG_I(log_buf);
         log_buf_index = 0;
+
+        if (sta == taskSCHEDULER_RUNNING)
+            taskEXIT_CRITICAL();
+
+        LOG_I(log_buf);
     }
+
     if ((log_buf_index + 1) == LOG_BUF_SIZE) {
+        if (sta == taskSCHEDULER_RUNNING)
+            taskENTER_CRITICAL();
+
         log_buf[log_buf_index] = '\0';
         log_buf_index = 0;
+
+        if (sta == taskSCHEDULER_RUNNING)
+            taskEXIT_CRITICAL();
+
         LOG_I(log_buf);
     }
+
 	return 1;
 }
 size_t HardwareSerial::write_byte(unsigned char ch) {
