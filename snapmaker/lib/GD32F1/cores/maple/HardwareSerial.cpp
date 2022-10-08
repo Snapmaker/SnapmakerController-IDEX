@@ -45,10 +45,45 @@ HardwareSerial::HardwareSerial(usart_dev *usart_device,
     this->rx_pin = rx_pin;
 }
 
-#define LOG_BUF_SIZE 256
-static char log_buf[LOG_BUF_SIZE];
-static char log_buf_cache[LOG_BUF_SIZE];
-static uint16_t log_buf_index = 0;
+#define BB_BUF_SIZE 256
+
+struct BangBangBuffer {
+    uint32_t index;
+    uint8_t write_p;
+    uint8_t read_p;
+    char buffer[2][BB_BUF_SIZE];
+
+    void swap() {
+        char temp = write_p;
+        write_p   = read_p;
+        read_p    = temp;
+        index     = 0;
+    }
+
+    int write(char c) {
+        if (index < BB_BUF_SIZE - 1) {
+            buffer[write_p][index++] = c;
+            return 1;
+        }
+
+        return -1;
+    }
+
+    int set(uint32_t i, char c) {
+        if (i < BB_BUF_SIZE) {
+            buffer[write_p][i] = c;
+            return 1;
+        }
+        else
+            return -1;
+    }
+
+    char *get_read() {
+        return buffer[read_p];
+    }
+};
+
+static struct BangBangBuffer logger = {0, 0, 1};
 
 /*
  * Set up/tear down
@@ -136,46 +171,45 @@ int HardwareSerial::availableForWrite(void)
 
 size_t HardwareSerial::write(unsigned char ch) {
     BaseType_t sta = xTaskGetSchedulerState();
+    int ret = 0;
 
     if (sta == taskSCHEDULER_RUNNING)
         taskENTER_CRITICAL();
 
-    log_buf[log_buf_index] = ch;
-    log_buf_index++;
+    ret = logger.write(ch);
 
     if (sta == taskSCHEDULER_RUNNING)
         taskEXIT_CRITICAL();
+
+    // if full?
+    if (ret < 0) {
+
+        if (sta == taskSCHEDULER_RUNNING)
+            taskENTER_CRITICAL();
+
+        logger.set(BB_BUF_SIZE - 1, 0);
+        logger.swap();
+
+        if (sta == taskSCHEDULER_RUNNING)
+            taskEXIT_CRITICAL();
+
+        LOG_I(logger.get_read());
+
+        return 1;
+    }
+
 
     if (ch == '\n') {
         if (sta == taskSCHEDULER_RUNNING)
             taskENTER_CRITICAL();
 
-        for (int i = 0; i < log_buf_index; i++)
-            log_buf_cache[i] = log_buf[i];
-
-        log_buf_cache[log_buf_index] = '\0';
-        log_buf_index = 0;
+        logger.write(0);
+        logger.swap();
 
         if (sta == taskSCHEDULER_RUNNING)
             taskEXIT_CRITICAL();
 
-        LOG_I(log_buf_cache);
-    }
-
-    if ((log_buf_index + 1) == LOG_BUF_SIZE) {
-        if (sta == taskSCHEDULER_RUNNING)
-            taskENTER_CRITICAL();
-
-        for (int i = 0; i < log_buf_index; i++)
-            log_buf_cache[i] = log_buf[i];
-
-        log_buf_cache[log_buf_index] = '\0';
-        log_buf_index = 0;
-
-        if (sta == taskSCHEDULER_RUNNING)
-            taskEXIT_CRITICAL();
-
-        LOG_I(log_buf_cache);
+        LOG_I(logger.get_read());
     }
 
 	return 1;
