@@ -367,7 +367,7 @@ bool PowerLoss::is_power_loss_trigger() {
 
 bool PowerLoss::check() {
   if (is_inited && power_loss_en && system_service.is_working()) {
-    if (is_power_loss_trigger() && !print_control.is_calibretion_mode) {
+    if (is_trigger && !print_control.is_calibretion_mode) {
       switch (power_loss_status) {
         case POWER_LOSS_TRIGGER:
           close_peripheral_power();
@@ -410,29 +410,29 @@ void PowerLoss::process() {
     return;
   }
 
-  if (power_loss_status == POWER_LOSS_IDLE) {
-    if (is_power_220v_pin_trigger()) {
+  if (is_power_220v_pin_trigger()) {
+    if (power_loss_status == POWER_LOSS_IDLE) {
       power_loss_status = POWER_LOSS_RECONFIRM;
       trigger_wait_time = millis() + 10;
-    }
-  } else if (power_loss_status == POWER_LOSS_RECONFIRM) {
+      SERIAL_ECHOLNPAIR("power loss first trigger");
+    } else if (power_loss_status == POWER_LOSS_RECONFIRM) {
       if (ELAPSED(millis(), trigger_wait_time)) {
-        if (is_power_220v_pin_trigger()) {
-          power_loss_status = POWER_LOSS_TRIGGER;
-          is_trigger = true;
-          SERIAL_ECHOLNPAIR("trigger power loss");
-        } else {
-          power_loss_status = POWER_LOSS_IDLE;
-          is_trigger = false;
-        }
+        power_loss_status = POWER_LOSS_TRIGGER;
+        is_trigger = true;
+        SERIAL_ECHOLNPAIR("trigger power loss");
       }
-  } else if (power_loss.power_loss_status == POWER_LOSS_WAIT_Z_MOVE) {
-    power_loss.power_loss_status = POWER_LOSS_DONE;
-    SERIAL_ECHOLNPAIR("trigger power loss done");
-    motion_control.synchronize();
-    sync_plan_position();
-    motion_control.move_z(POWERLOSS_Z_DOWN_DISTANCE, 600);
-    SERIAL_ECHOLNPAIR("power loss kill");
-    kill();
+    } else if (power_loss_status == POWER_LOSS_WAIT_Z_MOVE) {
+      power_loss_status = POWER_LOSS_DONE;
+      SERIAL_ECHOLNPAIR("trigger power loss done");
+      motion_control.synchronize();
+      sync_plan_position();
+      motion_control.move_z(POWERLOSS_Z_DOWN_DISTANCE, 600);
+      SERIAL_ECHOLNPAIR("power loss kill");
+      kill();
+    }
+  }
+  else {
+    is_trigger = false;
+    power_loss_status = POWER_LOSS_IDLE;
   }
 }
