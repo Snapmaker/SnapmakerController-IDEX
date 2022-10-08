@@ -13,6 +13,15 @@ read_byte_f event_read_byte[EVENT_SOURCE_ALL] = {
   []()->size_t{return evevnt_serial[EVENT_SOURCE_HMI]->read();},
 };
 
+static SemaphoreHandle_t send_lock = NULL;
+static uint8_t send_buf[PACK_PARSE_MAX_SIZE];
+
+void event_base_init() {
+  send_lock = xSemaphoreCreateMutex();
+  configASSERT(send_lock);
+}
+
+
 event_cb_info_t * get_evevt_info_by_id(uint8_t id, event_cb_info_t *array, uint8_t count) {
   for (uint8_t i = 0; i < count; i++) {
     if (array[i].command_id == id) {
@@ -22,8 +31,6 @@ event_cb_info_t * get_evevt_info_by_id(uint8_t id, event_cb_info_t *array, uint8
   return NULL;
 }
 
-static bool send_lock = false;
-static uint8_t send_buf[PACK_PARSE_MAX_SIZE];
 
 static bool send_to(event_source_e source, uint8_t *data, uint16_t len) {
   for (int i = 0; i < len; i++) {
@@ -58,19 +65,33 @@ ErrCode send_event(event_source_e source, SACP_head_base_t &sacp, uint8_t *data,
   if ((source < EVENT_SOURCE_ALL) && !evevnt_serial[source]->enable_sacp()) {
     return E_PARAM;
   }
-  while (send_lock) {
-    vTaskDelay(2);
+
+  uint16_t pack_len = 0;
+
+  if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+    if (xSemaphoreTake(send_lock, portMAX_DELAY) == pdPASS) {
+      // Package the data and call write_byte to emit the information
+      pack_len = protocol_sacp.package(sacp, data, length, send_buf);
+      send_data(source, send_buf, pack_len);
+
+      xSemaphoreGive(send_lock);
+    }
+    else {
+      return E_FAILURE;
+    }
   }
-  send_lock = true;
-  // Package the data and call write_byte to emit the information
-  uint16_t pack_len = protocol_sacp.package(sacp, data, length, send_buf);
+  else {
+    // if didn't start scheduler, won't take lock
+    pack_len = protocol_sacp.package(sacp, data, length, send_buf);
+    send_data(source, send_buf, pack_len);
+  }
+
   if (!evevnt_serial[EVENT_SOURCE_MARLIN]->enable_sacp()) {
     // char debug_buf[100];
     // sprintf(debug_buf, "MC:source:0x%x ,cmd_set:0x%x,cmd_id:0x%x, sequence:%d, len:%d", source, sacp.command_set, sacp.command_id, sacp.sequence, length);
     // SERIAL_ECHOLN(debug_buf);
   }
-  send_data(source, send_buf, pack_len);
-  send_lock = false;
+
   return E_SUCCESS;
 }
 

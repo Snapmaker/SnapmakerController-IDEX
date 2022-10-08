@@ -10,6 +10,7 @@ void J1_setup() {
   update_server.init();
   switch_detect.init();
   fdm_head.init();
+  debug.init();
   subscribe_init();
   event_init();
 }

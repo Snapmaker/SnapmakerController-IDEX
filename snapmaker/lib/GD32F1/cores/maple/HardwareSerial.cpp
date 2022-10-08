@@ -45,7 +45,7 @@ HardwareSerial::HardwareSerial(usart_dev *usart_device,
     this->rx_pin = rx_pin;
 }
 
-#define LOG_BUF_SIZE 512
+#define LOG_BUF_SIZE 256
 static char log_buf[LOG_BUF_SIZE];
 static uint16_t log_buf_index = 0;
 
@@ -68,18 +68,18 @@ static void disable_timer_if_necessary(timer_dev *dev, uint8 ch) {
 #warning "Unsupported STM32 series; timer conflicts are possible"
 #endif
 
-void HardwareSerial::begin(uint32 baud) 
+void HardwareSerial::begin(uint32 baud)
 {
 	begin(baud,SERIAL_8N1);
 }
 /*
  * Roger Clark.
- * Note. The config parameter is not currently used. This is a work in progress.  
+ * Note. The config parameter is not currently used. This is a work in progress.
  * Code needs to be written to set the config of the hardware serial control register in question.
  *
 */
 
-void HardwareSerial::begin(uint32 baud, uint8_t config) 
+void HardwareSerial::begin(uint32 baud, uint8_t config)
 {
  //   ASSERT(baud <= this->usart_device->max_baud);// Roger Clark. Assert doesn't do anything useful, we may as well save the space in flash and ram etc
 
@@ -142,8 +142,9 @@ size_t HardwareSerial::write(unsigned char ch) {
         log_buf_index = 0;
     }
     if ((log_buf_index + 1) == LOG_BUF_SIZE) {
+        log_buf[log_buf_index] = '\0';
         log_buf_index = 0;
-        LOG_E("marlin log buf full\n");
+        LOG_I(log_buf);
     }
 	return 1;
 }
@@ -155,5 +156,5 @@ size_t HardwareSerial::write_byte(unsigned char ch) {
 /* edogaldo: Waits for the transmission of outgoing serial data to complete (Arduino 1.0 api specs) */
 void HardwareSerial::flush(void) {
     while(!rb_is_empty(this->usart_device->wb)); // wait for TX buffer empty
-    while(!((this->usart_device->regs->SR) & (1<<USART_SR_TC_BIT))); // wait for TC (Transmission Complete) flag set 
+    while(!((this->usart_device->regs->SR) & (1<<USART_SR_TC_BIT))); // wait for TC (Transmission Complete) flag set
 }

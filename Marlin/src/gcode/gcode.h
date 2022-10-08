@@ -1122,6 +1122,7 @@ private:
   #if ENABLED(CONTROLLER_FAN_EDITABLE)
     static void M710();
   #endif
+  static void M101();
   static void M1999();
   static void M2000();
   static void M2020();

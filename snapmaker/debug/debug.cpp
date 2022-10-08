@@ -53,7 +53,7 @@ SnapDebug debug;
 #endif
 
 static debug_level_e  debug_msg_level = SNAP_DEBUG_LEVEL_INFO;
-static char log_buf[SNAP_LOG_BUFFER_SIZE + 2];
+// static char log_buf[SNAP_LOG_BUFFER_SIZE + 2];
 
 const char *snap_debug_str[SNAP_DEBUG_LEVEL_MAX] = {
   SNAP_TRACE_STR,
@@ -64,6 +64,12 @@ const char *snap_debug_str[SNAP_DEBUG_LEVEL_MAX] = {
   SNAP_FATAL_STR
 };
 
+
+void SnapDebug::init() {
+  lock = xSemaphoreCreateMutex();
+  configASSERT(lock);
+}
+
 // output debug message, will not output message whose level
 // is less than msg_level
 // param:
@@ -71,6 +77,7 @@ const char *snap_debug_str[SNAP_DEBUG_LEVEL_MAX] = {
 //    fmt - format of messages
 //    ... - args
 void SnapDebug::Log(debug_level_e level, const char *fmt, ...) {
+  char log_buf[SNAP_LOG_BUFFER_SIZE + 4];
   va_list args;
 
   if (level < debug_msg_level)
@@ -78,7 +85,15 @@ void SnapDebug::Log(debug_level_e level, const char *fmt, ...) {
 
   va_start(args, fmt);
   char * data = log_buf + 4;
-  vsnprintf(data, SNAP_LOG_BUFFER_SIZE - 4, fmt, args);
+  if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+    if (xSemaphoreTake(lock, pdMS_TO_TICKS(500)) == pdPASS) {
+      vsnprintf(data, SNAP_LOG_BUFFER_SIZE - 4, fmt, args);
+      xSemaphoreGive(lock);
+    }
+  }
+  else {
+    vsnprintf(data, SNAP_LOG_BUFFER_SIZE - 4, fmt, args);
+  }
   log_buf[0] = E_SUCCESS;
   log_buf[1] = level;
   uint16_t *data_len = ((uint16_t *)(&log_buf[2]));
@@ -113,7 +128,7 @@ debug_level_e SnapDebug::get_level() {
 }
 
 void SnapDebug::show_all_status() {
-
+  char log_buf[SNAP_LOG_BUFFER_SIZE + 2];
   snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "J1 version:%s\n", J1_BUILD_VERSION);
   SERIAL_ECHO(log_buf);
   snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "HW version:%d, adc:%d\n", system_service.get_hw_version(true), analogRead(HW_VERSION_PIN));

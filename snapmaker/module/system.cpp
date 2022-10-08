@@ -196,6 +196,9 @@ bool SystemService::is_printing() {
   switch (status_) {
     case SYSTEM_STATUE_PRINTING:
       return true;
+
+    default:
+      break;
   }
 
   return false;
