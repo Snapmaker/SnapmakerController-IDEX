@@ -384,10 +384,11 @@ ErrCode Calibtration::move_to_porbe_pos(calibtration_position_e pos, uint8_t ext
 
 ErrCode Calibtration::bed_start_beat_mode() {
   if (mode == CAlIBRATION_MODE_BED) {
-    LOG_I("setting to CAlIBRATION_STATE_BED_BEAT\r\n");
+    LOG_I("Calibration status set to CAlIBRATION_STATE_BED_BEAT\r\n");
     status = CAlIBRATION_STATE_BED_BEAT;
     return E_SUCCESS;
   } else if (mode == CAlIBRATION_MODE_NOZZLE) {
+    LOG_I("Calibration status set to CAlIBRATION_STATE_BED_BEAT\r\n");
     status = CAlIBRATION_STATE_BED_BEAT;
     return E_SUCCESS;
   }
