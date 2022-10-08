@@ -4,7 +4,6 @@
 #include "../J1/common_type.h"
 #include "../protocol/protocol_sacp.h"
 #include "../debug/debug.h"
-#include "../../Marlin/src/module/temperature.h"
 #include "../module/system.h"
 #include "../module/exception.h"
 #include "../module/print_control.h"
@@ -85,8 +84,6 @@ ErrCode Subscribe::disable(event_param_t &event) {
 }
 
 void Subscribe::loop_task(void * arg) {
-  uint32_t syslog_timeout = millis();
-
   while (true) {
     for (uint8_t i = 0; i < sub_count; i++) {
       if (sub[i].is_available) {
@@ -103,20 +100,6 @@ void Subscribe::loop_task(void * arg) {
         }
       }
     }
-
-    print_control.loop();
-
-    if (ELAPSED(millis(), syslog_timeout)) {
-      syslog_timeout = millis() + 20000;
-      LOG_I("c0: %d/t0: %d, c1: %d/t1: %d, cb: %d/tb: %d\n",
-        (int)thermalManager.degHotend(0), thermalManager.degTargetHotend(0),
-        (int)thermalManager.degHotend(1), thermalManager.degTargetHotend(1),
-        (int)thermalManager.degBed(), thermalManager.degTargetBed());
-      LOG_I("sta: %u, excep sta: 0x%x, excep beh: 0x%x\n", system_service.get_status(),
-        exception_server.get_exception(), exception_server.get_behavior());
-    }
-
-    vTaskDelay(pdMS_TO_TICKS(20));
   }
 }
 
