@@ -77,10 +77,6 @@ ErrCode send_event(event_source_e source, SACP_head_base_t &sacp, uint8_t *data,
       xSemaphoreGive(send_lock);
     }
     else {
-      if (!evevnt_serial[EVENT_SOURCE_MARLIN]->enable_sacp()) {
-        SERIAL_ECHOLN("failed apply send lock!");
-      }
-
       return E_FAILURE;
     }
   }
