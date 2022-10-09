@@ -181,7 +181,12 @@ ErrCode MotionControl::home() {
     if (ELAPSED(millis(), calibtration_wait)) {
       return E_COMMON_ERROR;
     }
-    idle();
+    if (xTaskGetCurrentTaskHandle() == thandle_marlin)
+      idle();
+    else {
+      vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    watchdog_refresh();
   }
   home(Z_AXIS);
   home(X_AXIS);
@@ -441,7 +446,12 @@ void MotionControl::disable_stall_guard_all() {
 
 void MotionControl::wait_G28() {
   while (motion_is_homing) {
-    idle();
+    if (xTaskGetCurrentTaskHandle() == thandle_marlin)
+      idle();
+    else {
+      vTaskDelay(pdMS_TO_TICKS(1));
+    }
+    watchdog_refresh();
   }
 }
 

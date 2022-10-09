@@ -22,7 +22,6 @@
 
 /**
  * About Marlin
- *
  * This firmware is a mashup between Sprinter and grbl.
  *  - https://github.com/kliment/Sprinter
  *  - https://github.com/grbl/grbl
@@ -252,6 +251,7 @@ MarlinState marlin_state = MF_INITIALIZING;
 bool wait_for_heatup = true;
 
 void marlin_loop();
+TaskHandle_t thandle_marlin = NULL;
 
 // For M0/M1, this flag may be cleared (by M108) to exit the wait-for-user loop
 #if HAS_RESUME_CONTINUE
@@ -759,15 +759,15 @@ void idle(bool no_stepper_sleep/*=false*/) {
     // LOG_I("calibtration.probe_offset %f\r\n", calibtration.probe_offset);
   }
 
-  // static bool idle_lock = false;
+  static bool idle_lock = false;
   #if ENABLED(MARLIN_DEV_MODE)
     static uint16_t idle_depth = 0;
     if (++idle_depth > 5) SERIAL_ECHOLNPAIR("idle() call depth: ", idle_depth);
   #endif
-  // if (idle_lock) {
-  //   return;
-  // }
-  // idle_lock = true;
+  if (idle_lock) {
+    return;
+  }
+  idle_lock = true;
   // Core Marlin activities
   manage_inactivity(no_stepper_sleep);
 
@@ -862,7 +862,7 @@ void idle(bool no_stepper_sleep/*=false*/) {
   TERN_(MARLIN_DEV_MODE, idle_depth--);
   power_loss.process();
   filament_sensor.check();
-  // idle_lock = false;
+  idle_lock = false;
 
   return;
 }
@@ -1634,7 +1634,7 @@ void setup() {
   marlin_state = MF_RUNNING;
 
   SETUP_LOG("setup() completed.");
-  BaseType_t ret = xTaskCreate((TaskFunction_t)marlin_loop, "marlin_loop", (1024 * 3), NULL, 5, NULL);
+  BaseType_t ret = xTaskCreate((TaskFunction_t)marlin_loop, "marlin_loop", 1024, NULL, 5, &thandle_marlin);
   if (ret != pdPASS) {
     SERIAL_ECHO("Failed to create marlin_loop!\n");
   }
@@ -1675,9 +1675,6 @@ void marlin_loop() {
     TERN_(HAS_TFT_LVGL_UI, printer_state_polling());
 
     calibtration.loop();
-
-    extern void event_task(void * arg);
-    event_task(nullptr);
   }
 }
 

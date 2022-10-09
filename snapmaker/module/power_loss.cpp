@@ -64,7 +64,12 @@ bool PowerLoss::wait_temp_resume() {
         thermalManager.degBed() >= thermalManager.degTargetBed()) {
         break;
     }
-    idle();
+    if (xTaskGetCurrentTaskHandle() == thandle_marlin)
+      idle();
+    else {
+      vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    watchdog_refresh();
     temp_target_count++;
     if (ELAPSED(millis(), log_timeout)) {
       thermalManager.print_heater_states(active_extruder);

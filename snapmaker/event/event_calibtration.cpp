@@ -214,8 +214,8 @@ static ErrCode calibtration_get_z_offset(event_param_t& event) {
 event_cb_info_t calibtration_cb_info[CAlIBRATION_ID_CB_COUNT] = {
   {CAlIBRATION_ID_SET_MODE         , EVENT_CB_DIRECT_RUN, calibtration_set_mode},
   {CAlIBRATION_ID_MOVE_TO_POSITION , EVENT_CB_TASK_RUN, calibtration_move_to_pos},
-  {CAlIBRATION_ID_START_BED_PROBE  , EVENT_CB_DIRECT_RUN, calibtration_start_bed_probe},
-  {CAlIBRATION_ID_EXIT             , EVENT_CB_DIRECT_RUN, calibtration_exit},
+  {CAlIBRATION_ID_START_BED_PROBE  , EVENT_CB_TASK_RUN, calibtration_start_bed_probe},
+  {CAlIBRATION_ID_EXIT             , EVENT_CB_TASK_RUN, calibtration_exit},
   {CAlIBRATION_ID_RETRACK_E        , EVENT_CB_TASK_RUN, calibtration_retrack_e},
   {CAlIBRATION_ID_REPORT_BED_OFFSET, EVENT_CB_DIRECT_RUN, calibtration_report_bed_offset},
   {CAlIBRATION_ID_MOVE_NOZZLE      , EVENT_CB_TASK_RUN, calibtration_move_nozzle},

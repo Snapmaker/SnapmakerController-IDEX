@@ -100,13 +100,16 @@ ErrCode EventHandler::parse(recv_data_info_t *recv_info) {
 
 void EventHandler::loop_task() {
   event_cache_node_t *event = NULL;
-  if (xQueueReceive(event_queue, &event, 1 ) == pdPASS) {
-    if (event->block_status == EVENT_CACHT_STATUS_WAIT) {
-      // LOG_I("<<<< event proces...\r\n");
-      event->block_status = EVENT_CACHT_STATUS_BUSY;
-      (event->cb)(event->param);
-      event->block_status = EVENT_CACHT_STATUS_IDLE;
+  while (true) {
+    if (xQueueReceive(event_queue, &event, 1 ) == pdPASS) {
+      if (event->block_status == EVENT_CACHT_STATUS_WAIT) {
+        event->block_status = EVENT_CACHT_STATUS_BUSY;
+        (event->cb)(event->param);
+        event->block_status = EVENT_CACHT_STATUS_IDLE;
+      }
     }
+    printer_event_loop();
+    exception_event_loop();
   }
 }
 
@@ -142,6 +145,7 @@ void EventHandler::recv_task() {
     if (need_wait) {
       vTaskDelay(5);
     }
+    watchdog_refresh();
   }
 }
 
@@ -157,13 +161,13 @@ void event_init() {
   event_base_init();
   printer_event_init();
   event_queue = xQueueCreate(EVENT_CACHE_COUNT, sizeof(event_cache_node_t *));
-  // BaseType_t ret = xTaskCreate(event_task, "event_loop", 1000,NULL, 5, NULL);
-  // if (ret != pdPASS) {
-  //   SERIAL_ECHO("Failed to create event_loop!\n");
-  // }
-  // else {
-  //   SERIAL_ECHO("Created event_loop task!\n");
-  // }
+  ret = xTaskCreate(event_task, "event_loop", 1024, NULL, 5, NULL);
+  if (ret != pdPASS) {
+    SERIAL_ECHO("Failed to create event_loop!\n");
+  }
+  else {
+    SERIAL_ECHO("Created event_loop task!\n");
+  }
 
   ret = xTaskCreate(event_recv_task, "event_recv_task", 1024*3,NULL, 5, NULL);
   if (ret != pdPASS) {
