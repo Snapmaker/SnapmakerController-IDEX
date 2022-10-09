@@ -16,6 +16,7 @@ void j1_main_task(void *args) {
   uint32_t syslog_timeout = millis();
 
   while(1) {
+    printer_event_loop();
     exception_event_loop();
     print_control.loop();
 
