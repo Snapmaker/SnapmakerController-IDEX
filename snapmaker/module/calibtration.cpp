@@ -219,6 +219,20 @@ probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance,
   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   sync_plan_position();
 
+  uint32_t test_cnt = 0;
+  do {
+    if(!switch_detect.test_trigger())
+      vTaskDelay(1);
+    else
+      break;
+    test_cnt++;
+    if(test_cnt > 200) {
+      LOG_E("probe failed , sensor no trigger!!!\n");
+      ret = PROBR_RESULT_NO_TRIGGER;
+      return ret;
+    }
+  } while(1);
+
   if (!motion_control.is_sg_trigger()) {
     LOG_I("sg_trigger_status 0x%02x\r\n", motion_control.sg_trigger_status);
     motion_control.disable_stall_guard_all();
@@ -227,6 +241,21 @@ probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance,
     probe_axis_move(axis, -distance, PROBE_Z_LEAVE_FEEDRATE);
     current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
     sync_plan_position();
+
+    uint32_t test_cnt = 0;
+    do {
+      if(!switch_detect.test_trigger())
+        vTaskDelay(1);
+      else
+        break;
+      test_cnt++;
+      if(test_cnt > 200) {
+        LOG_E("probe failed , sensor no trigger!!!\n");
+        ret = PROBR_RESULT_NO_TRIGGER;
+        return ret;
+      }
+    } while(1);
+
   } else {
     LOG_E("probe failed be stall guard!!!\n");
     motion_control.synchronize();
