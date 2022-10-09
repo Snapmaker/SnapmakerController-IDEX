@@ -99,19 +99,6 @@ ErrCode EventHandler::parse(recv_data_info_t *recv_info) {
 }
 
 void EventHandler::loop_task() {
-  // event_cache_node_t *event = NULL;
-  // while (true) {
-  //   if (xQueueReceive(event_queue, &event, 1 ) == pdPASS) {
-  //     if (event->block_status == EVENT_CACHT_STATUS_WAIT) {
-  //       event->block_status = EVENT_CACHT_STATUS_BUSY;
-  //       (event->cb)(event->param);
-  //       event->block_status = EVENT_CACHT_STATUS_IDLE;
-  //     }
-  //   }
-  //   printer_event_loop();
-  //   exception_event_loop();
-  // }
-
   event_cache_node_t *event = NULL;
   if (xQueueReceive(event_queue, &event, 1 ) == pdPASS) {
     if (event->block_status == EVENT_CACHT_STATUS_WAIT) {
@@ -121,8 +108,6 @@ void EventHandler::loop_task() {
       event->block_status = EVENT_CACHT_STATUS_IDLE;
     }
   }
-  // printer_event_loop();
-  // exception_event_loop();
 }
 
 void EventHandler::recv_enable(event_source_e source, bool enable) {

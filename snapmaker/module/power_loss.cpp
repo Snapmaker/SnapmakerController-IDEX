@@ -52,21 +52,24 @@ void PowerLoss::stash_print_env() {
 }
 
 bool PowerLoss::wait_temp_resume() {
+  uint32_t log_timeout;
   uint8_t temp_target_count = 0;
   LOG_I("wait for the temperature to recover\n");
   thermalManager.print_heater_states(active_extruder);
   SERIAL_EOL();
+  log_timeout = millis() + 10 * 1000;
   while (system_service.get_status() == SYSTEM_STATUE_RESUMING) {
     if (thermalManager.degHotend(0) >= thermalManager.degTargetHotend(0) &&
         thermalManager.degHotend(1) >= thermalManager.degTargetHotend(1) &&
         thermalManager.degBed() >= thermalManager.degTargetBed()) {
         break;
     }
-    vTaskDelay(pdMS_TO_TICKS(200));
+    idle();
     temp_target_count++;
-    if (temp_target_count % 50 == 0) {
+    if (ELAPSED(millis(), log_timeout)) {
       thermalManager.print_heater_states(active_extruder);
       SERIAL_EOL();
+      log_timeout = millis() + 10 * 1000;
     }
   }
   thermalManager.print_heater_states(active_extruder);

@@ -1678,6 +1678,9 @@ void marlin_loop() {
 
     extern void event_task(void * arg);
     event_task(nullptr);
+
+    extern void printer_event_loop(void);
+    printer_event_loop();
   }
 }
 
