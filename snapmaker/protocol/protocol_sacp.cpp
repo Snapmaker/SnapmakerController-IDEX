@@ -63,11 +63,15 @@ ErrCode ProtocolSACP::parse(uint8_t *data, uint16_t len, SACP_param_t &out) {
       parse_buff[out.lenght++] = ch;
     }
 
-    if (out.lenght == 7) {
+    if (out.lenght < 7) {
+      break;
+    }
+    else if (out.lenght == 7) {
       if (sacp_calc_crc8(parse_buff, 6) != parse_buff[6]) {
         out.lenght = 0;
       }
-    } else {
+    }
+    else {
       uint16_t data_len = (parse_buff[3] << 8 | parse_buff[2]);
       uint16_t total_len = data_len + 7;
       if (out.lenght == total_len) {
