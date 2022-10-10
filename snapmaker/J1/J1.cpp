@@ -30,6 +30,7 @@ void j1_main_task(void *args) {
         exception_server.get_exception(), exception_server.get_behavior());
     }
 
+    watchdog_refresh();
     vTaskDelay(pdMS_TO_TICKS(5));
   }
 }
