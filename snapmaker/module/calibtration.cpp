@@ -341,7 +341,7 @@ void stop_probe_and_sync() {
   motion_control.synchronize();
   // Wait for the last probe to end
   while (system_service.get_status() > SYSTEM_STATUE_CAlIBRATION) {
-    idle();
+    vTaskDelay(pdMS_TO_TICKS(5));
   }
 }
 

@@ -9,6 +9,7 @@
 #include "../event/event_exception.h"
 #include "../module/print_control.h"
 #include "../../Marlin/src/module/temperature.h"
+#include "../module/power_loss.h"
 #include "../module/exception.h"
 
 
@@ -17,6 +18,7 @@ void j1_main_task(void *args) {
 
   while(1) {
     print_control.loop();
+    power_loss.process();
 
     if (ELAPSED(millis(), syslog_timeout)) {
       syslog_timeout = millis() + 20000;
