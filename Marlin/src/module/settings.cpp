@@ -206,6 +206,7 @@ typedef struct SettingsDataStruct {
 
   xyze_float_t planner_max_jerk;                        // M205 XYZE  planner.max_jerk
   float planner_junction_deviation_mm;                  // M205 J     planner.junction_deviation_mm
+  float planner_corner_velocity_sqr;                  // M205 V     planner.corner_velocity_sqr
 
   xyz_pos_t home_offset;                                // M206 XYZ / M665 TPZ
 
@@ -668,6 +669,7 @@ void MarlinSettings::postprocess() {
 
       TERN_(CLASSIC_JERK, dummyf = 0.02f);
       EEPROM_WRITE(TERN(CLASSIC_JERK, dummyf, planner.junction_deviation_mm));
+      EEPROM_WRITE(planner.corner_velocity_sqr);
     }
 
     //
@@ -1509,6 +1511,7 @@ void MarlinSettings::postprocess() {
         #endif
 
         EEPROM_READ(TERN(CLASSIC_JERK, dummyf, planner.junction_deviation_mm));
+        EEPROM_READ(planner.corner_velocity_sqr);
       }
 
       //
@@ -3154,6 +3157,7 @@ void MarlinSettings::reset() {
       , SP_T_STR, LINEAR_UNIT(planner.settings.min_travel_feedrate_mm_s)
       #if HAS_JUNCTION_DEVIATION
         , PSTR(" J"), LINEAR_UNIT(planner.junction_deviation_mm)
+        , PSTR(" V"), LINEAR_UNIT(planner.corner_velocity_sqr)
       #endif
       #if HAS_CLASSIC_JERK
         , LIST_N(DOUBLE(LINEAR_AXES),
