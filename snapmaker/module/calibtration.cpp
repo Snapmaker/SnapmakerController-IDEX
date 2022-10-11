@@ -382,9 +382,7 @@ ErrCode Calibtration::move_to_porbe_pos(calibtration_position_e pos, uint8_t ext
   cur_pos = pos;
   status = CAlIBRATION_STATE_IDLE;
   stop_probe_and_sync();
-  motion_control.home_z();
-  //motion_control.move_z(PROBE_MOVE_XY_LIFTINT_DISTANCE);
-  motion_control.move_z(15, PROBE_MOVE_Z_FEEDRATE);
+  motion_control.move_z(PROBE_MOVE_XY_LIFTINT_DISTANCE);
   bed_preapare(extruder);
   goto_calibtration_position(pos);
   return ret;
