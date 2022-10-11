@@ -12,6 +12,8 @@
 #include "../module/power_loss.h"
 #include "../module/exception.h"
 
+uint32_t feed_dog_time = 0;
+uint32_t max_starve_dog_time = 0;
 
 void j1_main_task(void *args) {
   uint32_t syslog_timeout = millis();
@@ -28,6 +30,16 @@ void j1_main_task(void *args) {
         (int)thermalManager.degBed(), thermalManager.degTargetBed());
       LOG_I("sta: %u, excep sta: 0x%x, excep beh: 0x%x\n", system_service.get_status(),
         exception_server.get_exception(), exception_server.get_behavior());
+    }
+
+    uint32_t starve_dog_time_ms = (uint32_t)(millis() - feed_dog_time);
+    if (ELAPSED(millis(), feed_dog_time + 1000)) {
+      LOG_E("Starve dog for %d ms\r\n", starve_dog_time_ms);
+    }
+
+    if (max_starve_dog_time < starve_dog_time_ms) {
+      max_starve_dog_time = starve_dog_time_ms;
+      LOG_E("max_starve_dog_time = %d \r\n", max_starve_dog_time);
     }
 
     watchdog_refresh();

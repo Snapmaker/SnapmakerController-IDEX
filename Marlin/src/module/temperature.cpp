@@ -937,6 +937,8 @@ void Temperature::_temp_error(const heater_id_t heater_id, PGM_P const serial_ms
   }
 
   disable_all_heaters(); // always disable (even for bogus temp)
+  extern uint32_t feed_dog_time;
+  feed_dog_time = millis();
   watchdog_refresh();
 
   #if BOGUS_TEMPERATURE_GRACE_PERIOD
@@ -1237,6 +1239,8 @@ void Temperature::min_temp_error(const heater_id_t heater_id) {
  *  - Update the heated bed PID output value
  */
 void Temperature::manage_heater() {
+  extern uint32_t feed_dog_time;
+  feed_dog_time = millis();
   if (marlin_state == MF_INITIALIZING) return watchdog_refresh(); // If Marlin isn't started, at least reset the watchdog!
 
   #if ENABLED(EMERGENCY_PARSER)
@@ -1981,7 +1985,8 @@ void Temperature::manage_heater() {
  * 4 seconds then something has gone afoul and the machine will be reset.
  */
 void Temperature::updateTemperaturesFromRawValues() {
-
+  extern uint32_t feed_dog_time;
+  feed_dog_time = millis();
   watchdog_refresh(); // Reset because raw_temps_ready was set by the interrupt
 
   TERN_(TEMP_SENSOR_0_IS_MAX_TC, temp_hotend[0].raw = READ_MAX_TC(0));
