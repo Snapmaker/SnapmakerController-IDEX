@@ -4147,7 +4147,10 @@
  * When running in the debugger it will break for debugging. This is useful to help understand
  * a crash from a remote location. Requires ~400 bytes of SRAM and 5Kb of flash.
  */
-//#define POSTMORTEM_DEBUGGING
+#define POSTMORTEM_DEBUGGING
+
+// add by 747
+#define DYNAMIC_VECTORTABLE
 
 /**
  * Software Reset options

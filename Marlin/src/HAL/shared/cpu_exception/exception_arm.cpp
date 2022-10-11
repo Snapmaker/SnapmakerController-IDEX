@@ -55,8 +55,12 @@
 #include "exception_hook.h"
 #include "../backtrace/backtrace.h"
 #include "../HAL_MinSerial.h"
+#include "../../../module/temperature.h"
+#include "../../../../../snapmaker/module/fdm.h"
+#include "../../../../../snapmaker/module/bed_control.h"
 
 #define HW_REG(X)  (*((volatile unsigned long *)(X)))
+#undef PC
 
 // Default function use the CPU VTOR register to get the vector table.
 // Accessing the CPU VTOR register is done in assembly since it's the only way that's common to all current tool
@@ -216,6 +220,18 @@ bool resume_from_fault() {
   // Call the last resort function here
   hook_last_resort_func();
 
+  // turn off hotends
+  // #define HEATER_0_PIN       PE14   // EXTRUDER 1
+  // #define HEATER_1_PIN       PE13   // EXTRUDER 2
+  // #define HEATER_BED_PIN     PA10   // BED
+  // thermalManager.setTargetHotend(0, 0);
+  // thermalManager.setTargetHotend(0, 1);
+  // thermalManager.setTargetBed(0)
+  WRITE(HEATER_PWR_PIN, LOW);
+  WRITE(PE14, 0);
+  WRITE(PE13, 0);
+  WRITE(PA10, 0);
+
   const uint32_t start = millis(), end = start + 100; // 100ms should be enough
   // We need to wait for the serial buffers to be output but we don't know for how long
   // So we'll just need to refresh the watchdog for a while and then stop for the system to reboot
@@ -334,7 +350,7 @@ void hook_cpu_exceptions() {
 
       // When searching for the end of the vector table, this acts as a limit not to overcome
       #ifndef VECTOR_TABLE_SENTINEL
-        #define VECTOR_TABLE_SENTINEL 80
+        #define VECTOR_TABLE_SENTINEL 160
       #endif
 
       // Find the vector table size

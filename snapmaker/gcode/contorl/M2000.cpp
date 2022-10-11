@@ -66,6 +66,12 @@ void GcodeSuite::M2000() {
       taskEXIT_CRITICAL();
       break;
 
+    case 101:
+      LOG_I("test crash!\n");
+      vTaskDelay(pdMS_TO_TICKS(1000));
+      *((uint32_t *)0) = 1234;
+      break;
+
     default:
       break;
   }

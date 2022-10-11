@@ -38,10 +38,14 @@ __stm32_vector_table:
 	.long	__msp_init
 	.long	__exc_reset
 	.long	__exc_nmi
-	.long	__exc_hardfault
-	.long	__exc_memmanage
-	.long	__exc_busfault
-	.long	__exc_usagefault
+	// .long	__exc_hardfault
+	// .long	__exc_memmanage
+	// .long	__exc_busfault
+	// .long	__exc_usagefault
+  .long CommonHandler_ASM
+  .long CommonHandler_ASM
+  .long CommonHandler_ASM
+  .long CommonHandler_ASM
 	.long	__stm32reservedexception7
 	.long	__stm32reservedexception8
 	.long	__stm32reservedexception9
