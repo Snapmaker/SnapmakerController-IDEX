@@ -65,12 +65,10 @@ FORCE_INLINE bool Axis::generateFuncParams(uint8_t block_index, uint8_t move_sta
     bool res;
     if (is_shaped) {
         res = axis_input_shaper->generateShapedFuncParams(&func_manager, move_start, move_end);
+    #if ENABLED(LIN_ADVANCE)
     } else if (axis == 3 && planner.block_buffer[block_index].use_advance_lead) {
-      #if ENABLED(LIN_ADVANCE)
         res = generateEAxisFuncParams(block_index, move_start, move_end);
-      #else
-        res = generateAxisFuncParams(move_start, move_end);
-      #endif
+    #endif
     } else {
       res = generateAxisFuncParams(move_start, move_end);
     }
@@ -97,6 +95,7 @@ bool Axis::getNextStep() {
     return true;
 }
 
+#if ENABLED(LIN_ADVANCE)
 FORCE_INLINE bool Axis::generateEAxisFuncParams(uint8_t block_index, uint8_t move_start, uint8_t move_end) {
     uint8_t move_index;
     if (generated_move_index == -1) {
@@ -188,6 +187,8 @@ FORCE_INLINE bool Axis::generateEAxisFuncParams(uint8_t block_index, uint8_t mov
     generated_move_index = move_end;
     return true;
 }
+#endif
+
 
 FORCE_INLINE bool Axis::generateAxisFuncParams(uint8_t move_start, uint8_t move_end) {
   uint8_t move_index;
