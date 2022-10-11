@@ -29,6 +29,8 @@ typedef std::function<int(void)> read_byte_f;
 // update
 #define COMMAND_SET_UPDATE 0xAD
 
+#define STR_PACK_TOO_LARGE  ("sacp packet is large than PACK_PARSE_MAX_SIZE\r\n")
+
 // Event Source
 typedef enum {
   EVENT_SOURCE_MARLIN,

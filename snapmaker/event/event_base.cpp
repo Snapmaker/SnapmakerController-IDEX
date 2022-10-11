@@ -85,6 +85,10 @@ ErrCode send_event(event_source_e source, SACP_head_base_t &sacp, uint8_t *data,
     return E_PARAM;
   }
 
+  if (length + SACP_HEADER_LEN > PACK_PARSE_MAX_SIZE) {
+    send_data(EVENT_SOURCE_ALL, (uint8_t *)STR_PACK_TOO_LARGE, sizeof(STR_PACK_TOO_LARGE));
+  }
+
   // Package the data and call write_byte to emit the information
   pack_len = protocol_sacp.package(sacp, data, length, send_buf);
 
