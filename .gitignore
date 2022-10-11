@@ -168,3 +168,4 @@ eeprom.dat
 imgui.ini
 snapmaker/scripts/env.txt
 snapmaker/scripts/env_old.txt
+*.map
