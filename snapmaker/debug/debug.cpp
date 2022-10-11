@@ -52,6 +52,8 @@ SnapDebug debug;
   #error "Snap debug only support GNU compiler for now"
 #endif
 
+#define STR_LOG_LEN_TOO_LARGE  ("log data too large\r\n")
+
 static debug_level_e  debug_msg_level = SNAP_DEBUG_LEVEL_INFO;
 // static char log_buf[SNAP_LOG_BUFFER_SIZE + 2];
 
@@ -96,6 +98,10 @@ void SnapDebug::Log(debug_level_e level, const char *fmt, ...) {
   uint16_t *data_len = ((uint16_t *)(&log_buf[2]));
   *data_len = strlen(data);
 
+  if ((*data_len) > SNAP_LOG_BUFFER_SIZE) {
+    send_data(EVENT_SOURCE_MARLIN, (uint8_t *)STR_LOG_LEN_TOO_LARGE, sizeof(STR_LOG_LEN_TOO_LARGE));
+  }
+
   SACP_head_base_t sacp = {SACP_ID_HMI, SACP_ATTR_ACK, 0, COMMAND_SET_SYS, SYS_ID_REPORT_LOG};
 
   // always send log to HMI
@@ -137,6 +143,10 @@ void SnapDebug::show_all_status() {
   snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "system status:%d\n", system_service.get_status());
   SERIAL_ECHO(log_buf);
   snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "active_extruder:%d\n", active_extruder);
+  SERIAL_ECHO(log_buf);
+
+  extern uint32_t max_starve_dog_time;
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "max_starve_dog_time:%d ms\n", max_starve_dog_time);
   SERIAL_ECHO(log_buf);
 
   extruder_info_t extruder0_info, extruder1_info;
