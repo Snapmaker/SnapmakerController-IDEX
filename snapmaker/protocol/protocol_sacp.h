@@ -7,6 +7,7 @@
 #define SACP_PDU_SOF_H   0xAA
 #define SACP_PDU_SOF_L   0x55
 #define SACP_VERSION     0x01
+#define SACP_HEADER_LEN  (15)   // frame_length - length_paylod
 
 #define SACP_ID_PC         0
 #define SACP_ID_CONTROLLER 1
