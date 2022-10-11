@@ -358,6 +358,7 @@ ErrCode Calibtration::wait_and_probe_z_offset(calibtration_position_e pos, uint8
 
   uint8_t last_active_extruder = active_extruder;
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
+  motion_control.home_z();
   bed_preapare(extruder);
   motion_control.home_x();
   ret = probe_z_offset(pos);
@@ -381,7 +382,9 @@ ErrCode Calibtration::move_to_porbe_pos(calibtration_position_e pos, uint8_t ext
   cur_pos = pos;
   status = CAlIBRATION_STATE_IDLE;
   stop_probe_and_sync();
-  motion_control.move_z(PROBE_MOVE_XY_LIFTINT_DISTANCE);
+  motion_control.home_z();
+  //motion_control.move_z(PROBE_MOVE_XY_LIFTINT_DISTANCE);
+  motion_control.move_z(15, PROBE_MOVE_Z_FEEDRATE);
   bed_preapare(extruder);
   goto_calibtration_position(pos);
   return ret;
@@ -437,6 +440,7 @@ void Calibtration::reset_xy_calibtration_env() {
     if(current_position[Z_AXIS] < 30) {
       motion_control.move_z(15, PROBE_MOVE_Z_FEEDRATE);
     }
+    motion_control.home_z();
     motion_control.home_x();
     motion_control.home_y();
   }
