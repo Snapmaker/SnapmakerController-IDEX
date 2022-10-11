@@ -214,12 +214,6 @@ bool resume_from_fault() {
   MinSerial::TX("ExcLR: "); MinSerial::TXHex(savedFrame.ELR); MinSerial::TX('\n');
   MinSerial::TX("ExcSP: "); MinSerial::TXHex(savedFrame.ESP); MinSerial::TX('\n');
 
-  // The stack pointer is pushed by 8 words upon entering an exception, so we need to revert this
-  backtrace_ex(savedFrame.ESP + 8*4, savedFrame.LR, savedFrame.PC);
-
-  // Call the last resort function here
-  hook_last_resort_func();
-
   // turn off hotends
   // #define HEATER_0_PIN       PE14   // EXTRUDER 1
   // #define HEATER_1_PIN       PE13   // EXTRUDER 2
@@ -231,6 +225,12 @@ bool resume_from_fault() {
   WRITE(PE14, 0);
   WRITE(PE13, 0);
   WRITE(PA10, 0);
+
+  // The stack pointer is pushed by 8 words upon entering an exception, so we need to revert this
+  // backtrace_ex(savedFrame.ESP + 8*4, savedFrame.LR, savedFrame.PC);
+
+  // Call the last resort function here
+  hook_last_resort_func();
 
   const uint32_t start = millis(), end = start + 100; // 100ms should be enough
   // We need to wait for the serial buffers to be output but we don't know for how long

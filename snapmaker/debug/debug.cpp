@@ -146,7 +146,7 @@ void SnapDebug::show_all_status() {
   SERIAL_ECHO(log_buf);
 
   extern uint32_t max_starve_dog_time;
-  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "max_starve_dog_time:%d ms\n", max_starve_dog_time);
+  snprintf(log_buf, SNAP_LOG_BUFFER_SIZE, "max_starve_dog_time:%d ms\n", (unsigned int)max_starve_dog_time);
   SERIAL_ECHO(log_buf);
 
   extruder_info_t extruder0_info, extruder1_info;
