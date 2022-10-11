@@ -2364,6 +2364,8 @@ uint32_t Stepper::block_phase_isr() {
         is_start = false;
         axis_stepper.delta_time = 0;
       } else {
+        axisManager.getNextAxisStepper();
+        axisManager.getCurrentAxisStepper(&next_axis_stepper);
         float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
         if (delta_time <= -10.0f) {
           axisManager.counts[12]++;

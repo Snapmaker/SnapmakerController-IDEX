@@ -65,7 +65,7 @@ FORCE_INLINE bool Axis::generateFuncParams(uint8_t block_index, uint8_t move_sta
     bool res;
     if (is_shaped) {
         res = axis_input_shaper->generateShapedFuncParams(&func_manager, move_start, move_end);
-    } else if (axis == 3) {
+    } else if (axis == 3 && planner.block_buffer[block_index].use_advance_lead) {
       #if ENABLED(LIN_ADVANCE)
         res = generateEAxisFuncParams(block_index, move_start, move_end);
       #else
@@ -115,9 +115,11 @@ FORCE_INLINE bool Axis::generateEAxisFuncParams(uint8_t block_index, uint8_t mov
         }
 
         // #define K (0.04)
-        float K = planner.extruder_advance_K[active_extruder];
+        float K = planner.extruder_advance_K[active_extruder] * 1000;
         float delta_v = IS_ZERO(move->accelerate) ? 0 : K * move->accelerate;
         float eda = delta_v * move->t * move->axis_r[axis];
+
+        // LOG_I("k: %lf, d_v: %lf, eda: %lf\n", K, delta_v, eda);
 
         float a = 0.5f * move->accelerate * move->axis_r[axis];
         float b, c;

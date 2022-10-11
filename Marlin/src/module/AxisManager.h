@@ -95,7 +95,9 @@ class Axis {
   private:
     FORCE_INLINE bool generateAxisFuncParams(uint8_t move_start, uint8_t move_end);
 
+    #if ENABLED(LIN_ADVANCE)
     FORCE_INLINE bool generateEAxisFuncParams(uint8_t block_index, uint8_t move_start, uint8_t move_end);
+    #endif
 
     FORCE_INLINE bool generateLineFuncParams(Move* move);
 };
