@@ -294,7 +294,7 @@ inline int read_serial(const serial_index_t index) {
   if (SERIAL_IMPL.enable_sacp()) {
     return -1;
   }
-  return SERIAL_IMPL.read(); 
+  return SERIAL_IMPL.read();
 }
 
 void GCodeQueue::gcode_line_error(PGM_P const err, const serial_index_t serial_ind) {
@@ -432,7 +432,7 @@ void GCodeQueue::get_serial_commands() {
         // This should never happen, let's log it
         PORT_REDIRECT(SERIAL_PORTMASK(p));     // Reply to the serial port that sent the command
         // Crash here to get more information why it failed
-        BUG_ON("SP available but read -1");
+        // BUG_ON("SP available but read -1");
         SERIAL_ERROR_MSG(STR_ERR_SERIAL_MISMATCH);
         SERIAL_FLUSH();
         continue;
