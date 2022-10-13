@@ -15,8 +15,36 @@
 uint32_t feed_dog_time = 0;
 uint32_t max_starve_dog_time = 0;
 
+void log_reset_source(void) {
+  extern unsigned int ahbrst_reg;
+  LOG_I("Reset source: ");
+  if (ahbrst_reg & (1<<31)) {
+    LOG_I(" low power\r\n");
+  }
+  else if (ahbrst_reg & (1<<30)) {
+    LOG_I(" window watchDog\r\n");
+  }
+  else if (ahbrst_reg & (1<<29)) {
+    LOG_I(" indepenten watchDog\r\n");
+  }
+  else if (ahbrst_reg & (1<<28)) {
+    LOG_I(" software\r\n");
+  }
+  else if (ahbrst_reg & (1<<27)) {
+    LOG_I(" power on\r\n");
+  }
+  else if (ahbrst_reg & (1<<26)) {
+    LOG_I(" extern reset pin\r\n");
+  }
+  else {
+    LOG_I("unknown\r\n");
+  }
+}
+
 void j1_main_task(void *args) {
   uint32_t syslog_timeout = millis();
+
+  log_reset_source();
 
   while(1) {
     print_control.loop();

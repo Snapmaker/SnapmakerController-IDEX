@@ -28,10 +28,14 @@ extern void setup(void);
 extern void loop(void);
 extern void init(void);
 
+#define RCC_AHBRST    (0x40021000 + 0x24)
+unsigned int ahbrst_reg;
+
 // Force init to be called *first*, i.e. before static object allocation.
 // Otherwise, statically allocated objects that need libmaple may fail.
  __attribute__(( constructor (101))) void premain() {
     init();
+    ahbrst_reg = *(volatile unsigned int *)(RCC_AHBRST);
 }
 
 int main(void) {

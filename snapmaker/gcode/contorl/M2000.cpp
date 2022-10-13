@@ -32,6 +32,8 @@ void GcodeSuite::M2000() {
   switch (s) {
     case 1:
       debug.show_all_status();
+      extern void log_reset_source(void);
+      log_reset_source();
       break;
     case 2:
       WRITE(E0_AUTO_FAN_PIN, 1);
