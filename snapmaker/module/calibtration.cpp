@@ -27,7 +27,7 @@ planner_settings_t planner_backup_setting;
 #define X2_MIN_HOTEND_OFFSET (X2_MAX_POS - X2_MIN_POS - 20)
 
 static uint8_t probe_sg_reg[3] = {20, 20, 80};  // X Y Z1
-static float build_plate_thickness = 5.1;
+static float build_plate_thickness = 5.0;
 
 #define Y_POS_DIFF 4
 //  ______________________
