@@ -8,6 +8,7 @@
 #include "event_enclouser.h"
 #include "event_update.h"
 #include "event_exception.h"
+#include "../../../../Marlin/src/MarlinCore.h"
 
 EventHandler event_handler;
 static QueueHandle_t event_queue = NULL;
@@ -145,6 +146,7 @@ void EventHandler::recv_task() {
     if (need_wait) {
       vTaskDelay(5);
     }
+    idle();
   }
 }
 
@@ -160,8 +162,10 @@ void event_init() {
   event_base_init();
   printer_event_init();
   event_queue = xQueueCreate(EVENT_CACHE_COUNT, sizeof(event_cache_node_t *));
-  ret = xTaskCreate(event_task, "event_loop", 1024, NULL, 5, NULL);
-  // BaseType_t ret = xTaskCreate(event_task, "event_loop", 1024, NULL, 5, NULL);
+
+  TaskHandle_t thandle_event_loop;
+  ret = xTaskCreate(event_task, "event_loop", 1024, NULL, 5, &thandle_event_loop);
+
   if (ret != pdPASS) {
     SERIAL_ECHO("Failed to create event_loop!\n");
   }
@@ -169,7 +173,10 @@ void event_init() {
     SERIAL_ECHO("Created event_loop task!\n");
   }
 
-  ret = xTaskCreate(event_recv_task, "event_recv_task", 1024, NULL, 5, NULL);
+
+  TaskHandle_t thandle_event_recv;
+  ret = xTaskCreate(event_recv_task, "event_recv_task", 1024*3, NULL, 5, &thandle_event_recv);
+
   if (ret != pdPASS) {
     SERIAL_ECHO("Failed to create event_recv_task!\n");
   }

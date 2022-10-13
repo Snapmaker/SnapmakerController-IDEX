@@ -108,7 +108,10 @@ static void subscribe_task(void * arg) {
 }
 
 void subscribe_init(void) {
-  BaseType_t ret = xTaskCreate(subscribe_task, "subscribe_loop", 1024, NULL, 5, NULL);
+
+  TaskHandle_t thandle_subscribe = NULL;
+  BaseType_t ret = xTaskCreate(subscribe_task, "subscribe_loop", 1000,NULL, 5, &thandle_subscribe);
+
   if (ret != pdPASS) {
     SERIAL_ECHO("Failed to create subscribe_loop!\n");
   }

@@ -12,6 +12,11 @@
 #include "../module/power_loss.h"
 #include "../module/exception.h"
 
+TaskHandle_t thandle_event_loop = NULL;
+TaskHandle_t thandle_event_recv = NULL;
+TaskHandle_t thandle_j1_main = NULL;
+TaskHandle_t thandle_subscribe = NULL;
+
 uint32_t feed_dog_time = 0;
 uint32_t max_starve_dog_time = 0;
 
@@ -83,7 +88,8 @@ void J1_setup() {
   subscribe_init();
   event_init();
 
-  BaseType_t ret = xTaskCreate(j1_main_task, "j1_main_task", 1024, NULL, 5, NULL);
+  TaskHandle_t thandle_j1_main = NULL;
+  BaseType_t ret = xTaskCreate(j1_main_task, "j1_main_task", 1024, NULL, 5, &thandle_j1_main);
   if (ret != pdPASS) {
     SERIAL_ECHO("Failed to create j1_main_task!\n");
   }

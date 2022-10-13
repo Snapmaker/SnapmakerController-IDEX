@@ -252,7 +252,9 @@ MarlinState marlin_state = MF_INITIALIZING;
 bool wait_for_heatup = true;
 
 TaskHandle_t thandle_marlin = NULL;
+
 void marlin_loop();
+
 
 // For M0/M1, this flag may be cleared (by M108) to exit the wait-for-user loop
 #if HAS_RESUME_CONTINUE
@@ -747,6 +749,7 @@ inline void manage_inactivity(const bool no_stepper_sleep=false) {
  */
 void idle(bool no_stepper_sleep/*=false*/) {
 
+<<<<<<< HEAD
   // static uint32_t lt = 0;
   // if (ELAPSED(millis(), lt + 100)) {
   //   lt = millis();
@@ -762,14 +765,44 @@ void idle(bool no_stepper_sleep/*=false*/) {
 
   static bool idle_lock = false;
 
+=======
+  if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+    if (xSemaphoreTake(idle_call_record_thread_mutex, portMAX_DELAY) == pdPASS) {
+      // LOG_I("idle_call_task_handle 0x%08x, current 0x%08x\r\n", (uint32_t)idle_call_task_handle, (uint32_t)xTaskGetCurrentTaskHandle());
+      if ((idle_call_task_handle != NULL) && (idle_call_task_handle != xTaskGetCurrentTaskHandle())) {
+        // LOG_I("=== idle() run call in two task, ");
+        // LOG_I("last task %s, current task %s\r\n",
+        //       pcTaskGetName(idle_call_task_handle),
+        //       pcTaskGetName(xTaskGetCurrentTaskHandle()));
+      }
+      idle_call_task_handle = xTaskGetCurrentTaskHandle();
+      xSemaphoreGive(idle_call_record_thread_mutex);
+    }
+  }
+
+  static uint32_t lt = 0;
+  if (ELAPSED(millis(), lt + 100)) {
+    lt = millis();
+    // tmc_driver.write_reg(0, R_SGTHRS, 12);
+    // LOG_I("SRTHRS %d, SG_RESULT %d\r\n", tmc_driver.read_reg(0, R_SGTHRS), tmc_driver.read_reg(0, R_SG_RESULT));
+    // SET_INPUT_PULLUP(X0_CAL_PIN);
+    // SET_INPUT_PULLUP(X1_CAL_PIN);
+    // WRITE(PROBE_POWER_EN_PIN, 1);
+    // LOG_I("probe X0 %d\r\n", READ(X0_CAL_PIN));
+    // LOG_I("probe X1 %d\r\n", READ(X1_CAL_PIN));
+    // LOG_I("calibtration.probe_offset %f\r\n", calibtration.probe_offset);
+  }
+
+  // static bool idle_lock = false;
+>>>>>>> 54cc194885 (Feat: add idle debug info)
   #if ENABLED(MARLIN_DEV_MODE)
     static uint16_t idle_depth = 0;
     if (++idle_depth > 5) SERIAL_ECHOLNPAIR("idle() call depth: ", idle_depth);
   #endif
-  if (idle_lock) {
-    return;
-  }
-  idle_lock = true;
+  // if (idle_lock) {
+  //   return;
+  // }
+  // idle_lock = true;
   // Core Marlin activities
   manage_inactivity(no_stepper_sleep);
 
@@ -865,7 +898,14 @@ void idle(bool no_stepper_sleep/*=false*/) {
   IDLE_DONE:
   TERN_(MARLIN_DEV_MODE, idle_depth--);
   filament_sensor.check();
-  idle_lock = false;
+  // idle_lock = false;
+
+  if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+    if (xSemaphoreTake(idle_call_record_thread_mutex, portMAX_DELAY) == pdPASS) {
+      idle_call_task_handle = NULL;
+      xSemaphoreGive(idle_call_record_thread_mutex);
+    }
+  }
 
   return;
 }
