@@ -66,7 +66,7 @@ FORCE_INLINE bool Axis::generateFuncParams(uint8_t block_index, uint8_t move_sta
     if (is_shaped) {
         res = axis_input_shaper->generateShapedFuncParams(&func_manager, move_start, move_end);
     #if ENABLED(LIN_ADVANCE)
-    } else if (axis == 3 && planner.block_buffer[block_index].use_advance_lead) {
+    } else if (axis == 3) {
         res = generateEAxisFuncParams(block_index, move_start, move_end);
     #endif
     } else {
@@ -104,7 +104,6 @@ FORCE_INLINE bool Axis::generateEAxisFuncParams(uint8_t block_index, uint8_t mov
         move_index = moveQueue.nextMoveIndex(generated_move_index);
     }
 
-    Move *move;
     while (move_index != moveQueue.nextMoveIndex(move_end)) {
         Move *move = &moveQueue.moves[move_index];
 
@@ -114,7 +113,7 @@ FORCE_INLINE bool Axis::generateEAxisFuncParams(uint8_t block_index, uint8_t mov
         }
 
         // #define K (0.04)
-        float K = planner.extruder_advance_K[active_extruder] * 1000;
+        float K = planner.block_buffer[block_index].use_advance_lead ? planner.extruder_advance_K[active_extruder] * 1000 : 0;
         float delta_v = IS_ZERO(move->accelerate) ? 0 : K * move->accelerate;
         float eda = delta_v * move->t * move->axis_r[axis];
 
@@ -198,7 +197,6 @@ FORCE_INLINE bool Axis::generateAxisFuncParams(uint8_t move_start, uint8_t move_
       move_index = moveQueue.nextMoveIndex(generated_move_index);
   }
 
-  Move *move;
   while (move_index != moveQueue.nextMoveIndex(move_end)) {
     Move *move = &moveQueue.moves[move_index];
 

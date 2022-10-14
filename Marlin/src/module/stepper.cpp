@@ -2046,37 +2046,36 @@ uint32_t Stepper::block_phase_isr() {
       }
       axisManager.getCurrentAxisStepper(&next_axis_stepper);
 
-      if (next_axis_stepper.print_time < block_print_time) {
-          float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
+      float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
 
-          if (delta_time <= -10.0f) {
-            axisManager.counts[12]++;
-          }
-          if (axis_stepper.last_axis == next_axis_stepper.axis && delta_time <= 0)
-          {
-            axisManager.counts[10]++;
-          }
-          if (delta_time > 30) {
-            axisManager.counts[11]++;
-          }
-
-
-          if (delta_time < 0) {
-              delta_time = 0;
-          }
-          axis_stepper.delta_time = delta_time;
-          axis_stepper.axis = next_axis_stepper.axis;
-          axis_stepper.last_axis = next_axis_stepper.axis;
-          axis_stepper.dir = next_axis_stepper.dir;
-          axis_stepper.print_time = next_axis_stepper.print_time;
-
-          // interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
-          interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
-          return interval;
-      } else {
-          discard_current_block();
+      if (delta_time <= -10.0f) {
+        axisManager.counts[12]++;
+      }
+      if (axis_stepper.last_axis == next_axis_stepper.axis && delta_time <= 0)
+      {
+        axisManager.counts[10]++;
+      }
+      if (delta_time > 30) {
+        axisManager.counts[11]++;
       }
 
+
+      if (delta_time < 0) {
+          delta_time = 0;
+      }
+      axis_stepper.delta_time = delta_time;
+      axis_stepper.axis = next_axis_stepper.axis;
+      axis_stepper.last_axis = next_axis_stepper.axis;
+      axis_stepper.dir = next_axis_stepper.dir;
+      axis_stepper.print_time = next_axis_stepper.print_time;
+
+      // interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
+      interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
+
+      // return interval;
+      if (next_axis_stepper.print_time >= block_print_time) {
+          discard_current_block();
+      } 
     } else {
       // axisManager.counts[1]++;
 
@@ -2363,25 +2362,24 @@ uint32_t Stepper::block_phase_isr() {
         axisManager.getCurrentAxisStepper(&axis_stepper);
         is_start = false;
         axis_stepper.delta_time = 0;
-      } else {
-        axisManager.getNextAxisStepper();
-        axisManager.getCurrentAxisStepper(&next_axis_stepper);
-        float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
-        if (delta_time <= -10.0f) {
-          axisManager.counts[12]++;
-        }
-        if (delta_time >= 30) {
-          axisManager.counts[11]++;
-        }
+      } 
+      // else {
+      //   float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
+      //   if (delta_time <= -10.0f) {
+      //     axisManager.counts[12]++;
+      //   }
+      //   if (delta_time >= 30) {
+      //     axisManager.counts[11]++;
+      //   }
 
-        if (delta_time < 0) {
-            delta_time = 0;
-        }
-        axis_stepper.delta_time = delta_time;
-        axis_stepper.axis = next_axis_stepper.axis;
-        axis_stepper.dir = next_axis_stepper.dir;
-        axis_stepper.print_time = next_axis_stepper.print_time;
-      }
+      //   if (delta_time < 0) {
+      //       delta_time = 0;
+      //   }
+      //   axis_stepper.delta_time = delta_time;
+      //   axis_stepper.axis = next_axis_stepper.axis;
+      //   axis_stepper.dir = next_axis_stepper.dir;
+      //   axis_stepper.print_time = next_axis_stepper.print_time;
+      // }
 
 
       if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
@@ -2403,7 +2401,7 @@ uint32_t Stepper::block_phase_isr() {
       // on the next call to this ISR, will be discarded.
       // endstops.update();
 
-      interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
+      // interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
 
       // Calculate the initial timer interval
       // interval = calc_timer_interval(current_block->initial_rate, &steps_per_isr);
