@@ -253,7 +253,6 @@ bool wait_for_heatup = true;
 
 TaskHandle_t thandle_marlin = NULL;
 void marlin_loop();
-TaskHandle_t thandle_marlin = NULL;
 
 // For M0/M1, this flag may be cleared (by M108) to exit the wait-for-user loop
 #if HAS_RESUME_CONTINUE
@@ -762,7 +761,7 @@ void idle(bool no_stepper_sleep/*=false*/) {
   // }
 
   static bool idle_lock = false;
-  
+
   #if ENABLED(MARLIN_DEV_MODE)
     static uint16_t idle_depth = 0;
     if (++idle_depth > 5) SERIAL_ECHOLNPAIR("idle() call depth: ", idle_depth);
