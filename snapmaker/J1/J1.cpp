@@ -72,7 +72,7 @@ void j1_main_task(void *args) {
 
     if (max_starve_dog_time < starve_dog_time_ms) {
       max_starve_dog_time = starve_dog_time_ms;
-      LOG_E("max_starve_dog_time = %d \r\n", max_starve_dog_time);
+      //LOG_E("max_starve_dog_time = %d \r\n", max_starve_dog_time);
     }
 
     watchdog_refresh();

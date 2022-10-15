@@ -425,6 +425,7 @@ void usart_set_baud_rate(usart_dev *dev, uint32 clock_speed, uint32 baud);
 void usart_enable(usart_dev *dev);
 void usart_disable(usart_dev *dev);
 void usart_foreach(void (*fn)(usart_dev *dev));
+uint32 usart_tx_direct(usart_dev *dev, const uint8 *buf, uint32 len);
 uint32 usart_tx(usart_dev *dev, const uint8 *buf, uint32 len);
 uint32 usart_rx(usart_dev *dev, uint8 *buf, uint32 len);
 void usart_putudec(usart_dev *dev, uint32 val);
@@ -480,7 +481,7 @@ static inline uint8 usart_getc(usart_dev *dev) {
 }
 
 /*
- * Roger Clark. 20141125, 
+ * Roger Clark. 20141125,
  * added peek function.
  * @param dev Serial port to read from
  * @return byte read

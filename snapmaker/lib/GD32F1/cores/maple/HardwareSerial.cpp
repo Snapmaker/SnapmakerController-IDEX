@@ -170,53 +170,60 @@ int HardwareSerial::availableForWrite(void)
 }
 
 size_t HardwareSerial::write(unsigned char ch) {
-    BaseType_t sta = xTaskGetSchedulerState();
-    int ret = 0;
 
-    if (sta == taskSCHEDULER_RUNNING)
-        taskENTER_CRITICAL();
+  BaseType_t sta = xTaskGetSchedulerState();
+  int ret = 0;
 
-    ret = logger.write(ch);
+  if (sta == taskSCHEDULER_RUNNING && !no_os_log)
+      taskENTER_CRITICAL();
 
-    if (sta == taskSCHEDULER_RUNNING)
-        taskEXIT_CRITICAL();
+  ret = logger.write(ch);
 
-    // if full?
-    if (ret < 0) {
+  if (sta == taskSCHEDULER_RUNNING && !no_os_log)
+      taskEXIT_CRITICAL();
 
-        if (sta == taskSCHEDULER_RUNNING)
-            taskENTER_CRITICAL();
+  // if full?
+  if (ret < 0) {
 
-        logger.set(BB_BUF_SIZE - 1, 0);
-        logger.swap();
+      if (sta == taskSCHEDULER_RUNNING && !no_os_log)
+          taskENTER_CRITICAL();
 
-        if (sta == taskSCHEDULER_RUNNING)
-            taskEXIT_CRITICAL();
+      logger.set(BB_BUF_SIZE - 1, 0);
+      logger.swap();
 
-        LOG_I(logger.get_read());
+      if (sta == taskSCHEDULER_RUNNING && !no_os_log)
+          taskEXIT_CRITICAL();
 
-        return 1;
-    }
+      LOG_I(logger.get_read());
+
+      return 1;
+  }
 
 
-    if (ch == '\n') {
-        if (sta == taskSCHEDULER_RUNNING)
-            taskENTER_CRITICAL();
+  if (ch == '\n') {
+      if (sta == taskSCHEDULER_RUNNING && !no_os_log)
+          taskENTER_CRITICAL();
 
-        logger.write(0);
-        logger.swap();
+      logger.write(0);
+      logger.swap();
 
-        if (sta == taskSCHEDULER_RUNNING)
-            taskEXIT_CRITICAL();
+      if (sta == taskSCHEDULER_RUNNING && !no_os_log)
+          taskEXIT_CRITICAL();
 
-        LOG_I(logger.get_read());
-    }
+      LOG_I(logger.get_read());
+  }
 
-	return 1;
+  return 1;
 }
+
 size_t HardwareSerial::write_byte(unsigned char ch) {
     usart_putc(this->usart_device, ch);
 	return 1;
+}
+
+size_t HardwareSerial::write_byte_direct(uint8_t ch) {
+  usart_tx_direct(this->usart_device, &ch, 1);
+  return 1;
 }
 
 /* edogaldo: Waits for the transmission of outgoing serial data to complete (Arduino 1.0 api specs) */

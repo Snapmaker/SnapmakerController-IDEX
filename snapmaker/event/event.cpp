@@ -146,7 +146,6 @@ void EventHandler::recv_task() {
     if (need_wait) {
       vTaskDelay(5);
     }
-    idle();
   }
 }
 

@@ -173,12 +173,71 @@ struct __attribute__((packed)) ContextSavedFrame {
 // basic loop with watchdog calling or manual resetting
 static ContextSavedFrame savedFrame;
 static uint8_t           lastCause;
-bool resume_from_fault() {
+
+void fault_protect_actoin(void) {
+  // turn off hotends
+  // #define HEATER_0_PIN       PE14   // EXTRUDER 1
+  // #define HEATER_1_PIN       PE13   // EXTRUDER 2
+  // #define HEATER_BED_PIN     PA10   // BED
+  // thermalManager.setTargetHotend(0, 0);
+  // thermalManager.setTargetHotend(0, 1);
+  // thermalManager.setTargetBed(0)
+  WRITE(HEATER_PWR_PIN, LOW);
+  WRITE(PE14, 0);
+  WRITE(PE13, 0);
+  WRITE(PA10, 0);
+}
+
+void log_fault_frame(void) {
   static const char* causestr[] = { "Thread", "Rsvd", "NMI", "Hard", "Mem", "Bus", "Usage", "7", "8", "9", "10", "SVC", "Dbg", "13", "PendSV", "SysTk", "IRQ" };
+
   // Reinit the serial link (might only work if implemented in each of your boards)
   MinSerial::init();
 
-  MinSerial::TX("\n\n## Software Fault detected ##\n");
+  MinSerial::TX("\n\n## Fault detected ##\n");
+  MinSerial::TX("Cause: "); MinSerial::TX(causestr[min(lastCause, (uint8_t)16)]); MinSerial::TX('\n');
+
+  MinSerial::TX("R0   : "); MinSerial::TXHex(savedFrame.R0);   MinSerial::TX('\n');
+  MinSerial::TX("R1   : "); MinSerial::TXHex(savedFrame.R1);   MinSerial::TX('\n');
+  MinSerial::TX("R2   : "); MinSerial::TXHex(savedFrame.R2);   MinSerial::TX('\n');
+  MinSerial::TX("R3   : "); MinSerial::TXHex(savedFrame.R3);   MinSerial::TX('\n');
+  MinSerial::TX("R12  : "); MinSerial::TXHex(savedFrame.R12);  MinSerial::TX('\n');
+  MinSerial::TX("LR   : "); MinSerial::TXHex(savedFrame.LR);   MinSerial::TX('\n');
+  MinSerial::TX("PC   : "); MinSerial::TXHex(savedFrame.PC);   MinSerial::TX('\n');
+  MinSerial::TX("PSR  : "); MinSerial::TXHex(savedFrame.XPSR); MinSerial::TX('\n');
+
+  // Configurable Fault Status Register
+  // Consists of MMSR, BFSR and UFSR
+  MinSerial::TX("CFSR : "); MinSerial::TXHex(savedFrame.CFSR); MinSerial::TX('\n');
+
+  // Hard Fault Status Register
+  MinSerial::TX("HFSR : "); MinSerial::TXHex(savedFrame.HFSR); MinSerial::TX('\n');
+
+  // Debug Fault Status Register
+  MinSerial::TX("DFSR : "); MinSerial::TXHex(savedFrame.DFSR); MinSerial::TX('\n');
+
+  // Auxiliary Fault Status Register
+  MinSerial::TX("AFSR : "); MinSerial::TXHex(savedFrame.AFSR); MinSerial::TX('\n');
+
+  // Read the Fault Address Registers. These may not contain valid values.
+  // Check BFARVALID/MMARVALID to see if they are valid values
+  // MemManage Fault Address Register
+  MinSerial::TX("MMAR : "); MinSerial::TXHex(savedFrame.MMAR); MinSerial::TX('\n');
+
+  // Bus Fault Address Register
+  MinSerial::TX("BFAR : "); MinSerial::TXHex(savedFrame.BFAR); MinSerial::TX('\n');
+
+  MinSerial::TX("ExcLR: "); MinSerial::TXHex(savedFrame.ELR); MinSerial::TX('\n');
+  MinSerial::TX("ExcSP: "); MinSerial::TXHex(savedFrame.ESP); MinSerial::TX('\n');
+}
+
+bool resume_from_fault() {
+  static const char* causestr[] = { "Thread", "Rsvd", "NMI", "Hard", "Mem", "Bus", "Usage", "7", "8", "9", "10", "SVC", "Dbg", "13", "PendSV", "SysTk", "IRQ" };
+
+  // Reinit the serial link (might only work if implemented in each of your boards)
+  MinSerial::init();
+
+  MinSerial::TX("\n\n## Fault detected ##\n");
   MinSerial::TX("Cause: "); MinSerial::TX(causestr[min(lastCause, (uint8_t)16)]); MinSerial::TX('\n');
 
   MinSerial::TX("R0   : "); MinSerial::TXHex(savedFrame.R0);   MinSerial::TX('\n');
@@ -214,18 +273,6 @@ bool resume_from_fault() {
   MinSerial::TX("ExcLR: "); MinSerial::TXHex(savedFrame.ELR); MinSerial::TX('\n');
   MinSerial::TX("ExcSP: "); MinSerial::TXHex(savedFrame.ESP); MinSerial::TX('\n');
 
-  // turn off hotends
-  // #define HEATER_0_PIN       PE14   // EXTRUDER 1
-  // #define HEATER_1_PIN       PE13   // EXTRUDER 2
-  // #define HEATER_BED_PIN     PA10   // BED
-  // thermalManager.setTargetHotend(0, 0);
-  // thermalManager.setTargetHotend(0, 1);
-  // thermalManager.setTargetBed(0)
-  WRITE(HEATER_PWR_PIN, LOW);
-  WRITE(PE14, 0);
-  WRITE(PE13, 0);
-  WRITE(PA10, 0);
-
   // The stack pointer is pushed by 8 words upon entering an exception, so we need to revert this
   // backtrace_ex(savedFrame.ESP + 8*4, savedFrame.LR, savedFrame.PC);
 
@@ -260,7 +307,7 @@ __attribute__((optimize("O0")))
 void CommonHandler_C(ContextStateFrame * frame, unsigned long lr, unsigned long cause) {
 
   // If you are using it'll stop here
-  HALT_IF_DEBUGGING();
+  // HALT_IF_DEBUGGING();
 
   // Save the state to backtrace later on (don't call memcpy here since the stack can be corrupted)
   savedFrame.R0  = frame->r0;
@@ -283,6 +330,12 @@ void CommonHandler_C(ContextStateFrame * frame, unsigned long lr, unsigned long 
   savedFrame.ESP  = (unsigned long)frame; // Even on return, this should not be overwritten by the CPU
   savedFrame.ELR  = lr;
 
+
+  MinSerial::force_using_default_output = false;
+  fault_protect_actoin();
+  log_fault_frame();
+  nvic_sys_reset();
+
   // First check if we can resume from this exception to our own handler safely
   // If we can, then we don't need to disable interrupts and the usual serial code
   // can be used
@@ -291,23 +344,25 @@ void CommonHandler_C(ContextStateFrame * frame, unsigned long lr, unsigned long 
   //const bool non_usage_fault_occurred = (CFSR & non_usage_fault_mask) != 0;
   // the bottom 8 bits of the xpsr hold the exception number of the
   // executing exception or 0 if the processor is in Thread mode
-  const bool faulted_from_exception = ((frame->xpsr & 0xFF) != 0);
-  if (!faulted_from_exception) { // Not sure about the non_usage_fault, we want to try anyway, don't we ? && !non_usage_fault_occurred)
-    // Try to resume to our handler here
-    CFSR |= CFSR; // The ARM programmer manual says you must write to 1 all fault bits to clear them so this instruction is correct
-    // The frame will not be valid when returning anymore, let's clean it
-    savedFrame.CFSR = 0;
+  // const bool faulted_from_exception = ((frame->xpsr & 0xFF) != 0);
+  // if (!faulted_from_exception) { // Not sure about the non_usage_fault, we want to try anyway, don't we ? && !non_usage_fault_occurred)
+  //   // Try to resume to our handler here
+  //   CFSR |= CFSR; // The ARM programmer manual says you must write to 1 all fault bits to clear them so this instruction is correct
+  //   // The frame will not be valid when returning anymore, let's clean it
+  //   savedFrame.CFSR = 0;
 
-    frame->pc = (uint32_t)resume_from_fault; // Patch where to return to
-    frame->lr = 0xDEADBEEF;  // If our handler returns (it shouldn't), let's make it trigger an exception immediately
-    frame->xpsr = _BV(24);   // Need to clean the PSR register to thumb II only
-    MinSerial::force_using_default_output = true;
-    return; // The CPU will resume in our handler hopefully, and we'll try to use default serial output
-  }
+  //   frame->pc = (uint32_t)resume_from_fault; // Patch where to return to
+  //   frame->lr = 0xDEADBEEF;  // If our handler returns (it shouldn't), let's make it trigger an exception immediately
+  //   frame->xpsr = _BV(24);   // Need to clean the PSR register to thumb II only
+  //   // MinSerial::force_using_default_output = true;
+  //   MinSerial::force_using_default_output = false;
+  //   resume_from_fault();
+  //   return; // The CPU will resume in our handler hopefully, and we'll try to use default serial output
+  // }
 
   // Sorry, we need to emergency code here since the fault is too dangerous to recover from
-  MinSerial::force_using_default_output = false;
-  resume_from_fault();
+  // MinSerial::force_using_default_output = false;
+  // resume_from_fault();
 }
 
 void hook_cpu_exceptions() {

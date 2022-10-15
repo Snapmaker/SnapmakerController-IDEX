@@ -84,6 +84,17 @@ void usart_disable(usart_dev *dev) {
     usart_reset_tx(dev);
 }
 
+uint32 usart_tx_direct(usart_dev *dev, const uint8 *buf, uint32 len) {
+  usart_reg_map *regs = dev->regs;
+  uint32 txed = 0;
+  regs->CR1 &= ~((uint32)USART_CR1_TXEIE); // disable TXEIE while populating the buffer
+  while ((regs->SR & USART_SR_TXE) && (txed < len)) {
+    regs->DR = buf[txed++];
+    while(!(regs->SR & USART_SR_TC));
+  }
+  return txed;
+}
+
 /**
  * @brief Nonblocking USART transmit
  * @param dev Serial port to transmit over

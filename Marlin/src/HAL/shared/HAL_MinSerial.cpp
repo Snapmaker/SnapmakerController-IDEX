@@ -23,8 +23,9 @@
 
 #if ENABLED(POSTMORTEM_DEBUGGING)
 
-void HAL_min_serial_init_default() {}
-void HAL_min_serial_out_default(char ch) { SERIAL_CHAR(ch); }
+void HAL_min_serial_init_default() { SERIAL_IMPL.begin(115200); }
+// void HAL_min_serial_out_default(char ch) { SERIAL_CHAR(ch); }
+void HAL_min_serial_out_default(char ch) { SERIAL_IMPL.write_byte_direct(ch); }
 void (*HAL_min_serial_init)() = &HAL_min_serial_init_default;
 void (*HAL_min_serial_out)(char) = &HAL_min_serial_out_default;
 

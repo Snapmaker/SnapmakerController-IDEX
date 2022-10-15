@@ -22,7 +22,9 @@
 
 #include "../../event/event.h"
 #include "../../debug/debug.h"
+#include "../../../Marlin/src/core/macros.h"
 #include "../../../Marlin/src/gcode/gcode.h"
+#include <EEPROM.h>
 
 /**
  *  S5 P0/1
@@ -69,16 +71,20 @@ void GcodeSuite::M2000() {
 
     case 101:
       LOG_I("test crash!\n");
-      vTaskDelay(pdMS_TO_TICKS(1000));
+      vTaskDelay(pdMS_TO_TICKS(10));
       *((uint32_t *)0) = 1234;
-
       break;
 
-    // case 8:
-    //   LOG_I("shapper abort\r\n");
-    //   axisManager.abort();
-    //   moveQueue.abort();
-    //   break;
+    case 102:
+      {
+        SERIAL_ECHOLNPGM("\r\n crash ========= dump start ========= \r\n");
+        uint8_t *p_crash_data_char = (uint8_t *)CRASH_DATA_FLASH_ADDR;
+        for (uint32_t i = 0; i < CRASH_DATA_SIZE; i++) {
+          SERIAL_IMPL.write(p_crash_data_char[i]);
+        }
+        SERIAL_ECHOLNPGM("\r\n========= crash dump end ========= \r\n");
+      }
+      break;
 
     default:
       break;
