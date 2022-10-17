@@ -22,7 +22,7 @@
 
 CRASH_CATCHER_TEST_WRITEABLE CrashCatcherReturnCodes g_crashCatcherDumpEndReturn = CRASH_CATCHER_EXIT;
 static                       CrashCatcherInfo        g_info;
-static CrashCatcherMemoryRegion mri_region[2];
+// static CrashCatcherMemoryRegion mri_region[2];
 
 static void printString(const char* pString);
 static void waitForUserInput(void);
