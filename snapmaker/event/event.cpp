@@ -174,8 +174,7 @@ void event_init() {
 
 
   TaskHandle_t thandle_event_recv;
-  ret = xTaskCreate(event_recv_task, "event_recv_task", 1024*3, NULL, 5, &thandle_event_recv);
-
+  ret = xTaskCreate(event_recv_task, "event_recv_task", 1024, NULL, 5, &thandle_event_recv);
   if (ret != pdPASS) {
     SERIAL_ECHO("Failed to create event_recv_task!\n");
   }
