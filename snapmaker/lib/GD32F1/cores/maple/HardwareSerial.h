@@ -148,7 +148,6 @@ public:
     using Print::write;
     void enable_sacp(bool enable) {enable_sacp_ = enable; }
     bool enable_sacp() {return enable_sacp_; }
-    void enable_no_os_log() {no_os_log = true; }
 
     /* Pin accessors */
     int txPin(void) { return this->tx_pin; }
@@ -164,7 +163,6 @@ private:
     uint8 tx_pin;
     uint8 rx_pin;
     bool enable_sacp_ = false;
-    bool no_os_log = false;
   protected:
 #if 0
     volatile uint8_t * const _ubrrh;

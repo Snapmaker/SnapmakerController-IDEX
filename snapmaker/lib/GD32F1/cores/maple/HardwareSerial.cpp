@@ -174,24 +174,24 @@ size_t HardwareSerial::write(unsigned char ch) {
   BaseType_t sta = xTaskGetSchedulerState();
   int ret = 0;
 
-  if (sta == taskSCHEDULER_RUNNING && !no_os_log)
+  if (sta == taskSCHEDULER_RUNNING)
       taskENTER_CRITICAL();
 
   ret = logger.write(ch);
 
-  if (sta == taskSCHEDULER_RUNNING && !no_os_log)
+  if (sta == taskSCHEDULER_RUNNING)
       taskEXIT_CRITICAL();
 
   // if full?
   if (ret < 0) {
 
-      if (sta == taskSCHEDULER_RUNNING && !no_os_log)
+      if (sta == taskSCHEDULER_RUNNING)
           taskENTER_CRITICAL();
 
       logger.set(BB_BUF_SIZE - 1, 0);
       logger.swap();
 
-      if (sta == taskSCHEDULER_RUNNING && !no_os_log)
+      if (sta == taskSCHEDULER_RUNNING)
           taskEXIT_CRITICAL();
 
       LOG_I(logger.get_read());
@@ -201,13 +201,13 @@ size_t HardwareSerial::write(unsigned char ch) {
 
 
   if (ch == '\n') {
-      if (sta == taskSCHEDULER_RUNNING && !no_os_log)
+      if (sta == taskSCHEDULER_RUNNING)
           taskENTER_CRITICAL();
 
       logger.write(0);
       logger.swap();
 
-      if (sta == taskSCHEDULER_RUNNING && !no_os_log)
+      if (sta == taskSCHEDULER_RUNNING)
           taskEXIT_CRITICAL();
 
       LOG_I(logger.get_read());
