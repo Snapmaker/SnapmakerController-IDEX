@@ -21,7 +21,7 @@ uint8_t w_data[4];
 uint32_t w_count;
 
 extern "C" {
-  void fault_protect_actoin(void) {
+  void fault_protect_action(void) {
     // turn off hotends
     // #define HEATER_0_PIN       PE14   // EXTRUDER 1
     // #define HEATER_1_PIN       PE13   // EXTRUDER 2
@@ -36,7 +36,7 @@ extern "C" {
   }
 
   void CrashCatcher_io_init(void) {
-  fault_protect_actoin();
+  fault_protect_action();
   w_count = 0;
   FLASH_Unlock();
   FLASH_ErasePage(CRASH_DATA_FLASH_ADDR);
