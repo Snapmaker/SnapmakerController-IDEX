@@ -77,12 +77,22 @@ void GcodeSuite::M2000() {
 
     case 102:
       {
-        SERIAL_ECHOLNPGM("\r\n crash ========= dump start ========= \r\n");
+        SERIAL_ECHOLNPGM("\r\n ========= dump start ========= \r\n");
         uint8_t *p_crash_data_char = (uint8_t *)CRASH_DATA_FLASH_ADDR;
         for (uint32_t i = 0; i < CRASH_DATA_SIZE; i++) {
           SERIAL_IMPL.write(p_crash_data_char[i]);
         }
         SERIAL_ECHOLNPGM("\r\n========= crash dump end ========= \r\n");
+      }
+      break;
+
+    case 103:
+      {
+        SERIAL_ECHOLNPGM("\r\n ========= erase crash dump ========= \r\n");
+        FLASH_Unlock();
+        FLASH_ErasePage(CRASH_DATA_FLASH_ADDR);
+        FLASH_ErasePage(CRASH_DATA_FLASH_ADDR + APP_FLASH_PAGE_SIZE);
+        FLASH_Lock();
       }
       break;
 

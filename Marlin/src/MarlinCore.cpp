@@ -1690,10 +1690,13 @@ void setup() {
   }
   J1_setup();
 
+<<<<<<< HEAD
   #ifdef DEBUG_IO
   SET_OUTPUT(DEBUG_IO);
   #endif
 
+=======
+>>>>>>> 633820b122 (Feat: add crash dump erase gcode)
   vTaskStartScheduler();
 }
 
