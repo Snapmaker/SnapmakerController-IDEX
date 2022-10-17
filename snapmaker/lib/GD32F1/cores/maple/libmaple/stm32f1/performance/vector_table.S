@@ -39,10 +39,13 @@ __stm32_vector_table:
 	.long	__exc_reset
 	.long	__exc_nmi
 	// .long	__exc_hardfault
+	; .long	__exc_memmanage
+	; .long	__exc_busfault
+	; .long	__exc_usagefault
   .long HardFault_Handler
-	.long	__exc_memmanage
-	.long	__exc_busfault
-	.long	__exc_usagefault
+	.long	HardFault_Handler
+	.long	HardFault_Handler
+	.long	HardFault_Handler
   // .long CommonHandler_ASM
   // .long CommonHandler_ASM
   // .long CommonHandler_ASM
