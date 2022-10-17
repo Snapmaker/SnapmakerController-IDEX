@@ -253,6 +253,7 @@ bool wait_for_heatup = true;
 
 TaskHandle_t thandle_marlin = NULL;
 
+
 void marlin_loop();
 
 
@@ -750,6 +751,7 @@ inline void manage_inactivity(const bool no_stepper_sleep=false) {
 void idle(bool no_stepper_sleep/*=false*/) {
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   // static uint32_t lt = 0;
   // if (ELAPSED(millis(), lt + 100)) {
   //   lt = millis();
@@ -780,6 +782,8 @@ void idle(bool no_stepper_sleep/*=false*/) {
     }
   }
 
+=======
+>>>>>>> 6e2bd25578 (Feat: remove some idle debug code)
   static uint32_t lt = 0;
   if (ELAPSED(millis(), lt + 100)) {
     lt = millis();
@@ -793,16 +797,20 @@ void idle(bool no_stepper_sleep/*=false*/) {
     // LOG_I("calibtration.probe_offset %f\r\n", calibtration.probe_offset);
   }
 
+<<<<<<< HEAD
   // static bool idle_lock = false;
 >>>>>>> 54cc194885 (Feat: add idle debug info)
+=======
+  static bool idle_lock = false;
+>>>>>>> 6e2bd25578 (Feat: remove some idle debug code)
   #if ENABLED(MARLIN_DEV_MODE)
     static uint16_t idle_depth = 0;
     if (++idle_depth > 5) SERIAL_ECHOLNPAIR("idle() call depth: ", idle_depth);
   #endif
-  // if (idle_lock) {
-  //   return;
-  // }
-  // idle_lock = true;
+  if (idle_lock) {
+    return;
+  }
+  idle_lock = true;
   // Core Marlin activities
   manage_inactivity(no_stepper_sleep);
 
@@ -898,14 +906,7 @@ void idle(bool no_stepper_sleep/*=false*/) {
   IDLE_DONE:
   TERN_(MARLIN_DEV_MODE, idle_depth--);
   filament_sensor.check();
-  // idle_lock = false;
-
-  if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
-    if (xSemaphoreTake(idle_call_record_thread_mutex, portMAX_DELAY) == pdPASS) {
-      idle_call_task_handle = NULL;
-      xSemaphoreGive(idle_call_record_thread_mutex);
-    }
-  }
+  idle_lock = false;
 
   return;
 }
