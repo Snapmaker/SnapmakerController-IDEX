@@ -77,6 +77,13 @@
 
         case DXC_FULL_CONTROL_MODE:
         case DXC_AUTO_PARK_MODE:
+          if (!active_extruder_parked && dual_x_carriage_mode == DXC_DUPLICATION_MODE) {
+            inactive_extruder_x = current_position.x + duplicate_extruder_x_offset;
+          } else if (!active_extruder_parked && dual_x_carriage_mode == DXC_MIRRORED_MODE) {
+            inactive_extruder_x = X_BED_SIZE - current_position.x;
+            LOG_I("e_x: %lf\n", inactive_extruder_x);
+          }
+          
           dual_x_carriage_mode = (DualXMode)dual_carriage_mode;
           print_control.set_mode(PRINT_FULL_MODE);
           break;
