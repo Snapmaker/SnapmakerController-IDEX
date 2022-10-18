@@ -208,22 +208,20 @@ ErrCode PrintControl::start() {
     return PRINT_RESULT_START_ERR_E;
   }
 
-
+  // prepare toolhead
+  dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
   if (mode_ >= PRINT_DUPLICATION_MODE) {
-    dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
     tool_change(0);
     dual_x_carriage_mode = (DualXMode)mode_;
     duplicate_extruder_x_offset = (dual_x_carriage_mode == DXC_DUPLICATION_MODE) ? \
-                          DUPLICATION_MODE_X_OFFSET : MIRRORED_MODE_X_OFFSET;
+                                  DUPLICATION_MODE_X_OFFSET : MIRRORED_MODE_X_OFFSET;
     idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
     motion_control.home_x();
-  } else {
-    dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
   }
+
   if (homing_needed()) {
     motion_control.home();
   }
-
 
   power_loss.cur_line = power_loss.line_number_sum = 0;
   power_loss.next_req = 0;
