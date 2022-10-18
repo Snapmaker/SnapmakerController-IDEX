@@ -3,7 +3,6 @@ import sys
 
 #dynamic build flags for generic compile options
 if __name__ == "__main__":
-  print("\r\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 747 dynamic build flags for generic compile options in main\r\n")
   args = " ".join([ "-std=gnu11",
                     "-std=gnu++11",
                     "-Os",
@@ -37,7 +36,6 @@ if __name__ == "__main__":
 
 # extra script for linker options
 else:
-  print("\r\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 747 extra script for linker options\r\n")
   from SCons.Script import DefaultEnvironment
   env = DefaultEnvironment()
   env.Append(
