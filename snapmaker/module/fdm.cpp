@@ -182,9 +182,7 @@ uint16_t FDM_Head::get_nozzle_type(uint8_t e, nozzle_texture_type_e *texture, fl
   }
 
   for (int i = 0; i < NOZZLE_TYPE_SAMPLE_COUNT; i++) {
-    taskENTER_CRITICAL();
     adc_raw = analogRead(pin);
-    taskEXIT_CRITICAL();
     if (adc_raw > adc_max)
       adc_max = adc_raw;
 

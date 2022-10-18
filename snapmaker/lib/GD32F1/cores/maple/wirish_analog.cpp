@@ -39,18 +39,12 @@
  * to INPUT_ANALOG. That's faster, but it does require some extra work
  * on the user's part. Not too much, we think ;). */
 uint16 analogRead(uint8 pin) {
-    static bool lock = false;
     adc_dev *dev = PIN_MAP[pin].adc_device;
     if (dev == NULL) {
         return 0;
     }
-    while (lock) {
-        vTaskDelay(1);
-    }
-    lock = true;
     taskENTER_CRITICAL();
     uint16_t ret = adc_read(dev, PIN_MAP[pin].adc_channel);
     taskEXIT_CRITICAL();
-    lock = false;
     return ret;
 }
