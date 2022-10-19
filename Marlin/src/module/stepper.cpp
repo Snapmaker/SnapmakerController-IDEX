@@ -2085,6 +2085,11 @@ uint32_t Stepper::block_phase_isr() {
       //   axis_stepper.print_time = next_axis_stepper.print_time;
       // }
 
+      if (axis_stepper.dir > 0) {
+        CBI(current_direction_bits, axis_stepper.axis);
+      } else if(axis_stepper.dir < 0) {
+        SBI(current_direction_bits, axis_stepper.axis);
+      }
 
       if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
         || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
