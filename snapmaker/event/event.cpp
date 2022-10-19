@@ -8,10 +8,13 @@
 #include "event_enclouser.h"
 #include "event_update.h"
 #include "event_exception.h"
+#include "../module/calibtration.h"
 #include "../../../../Marlin/src/MarlinCore.h"
 
 EventHandler event_handler;
 static QueueHandle_t event_queue = NULL;
+static local_event_t local_event = LE_NONE;
+static SemaphoreHandle_t le_event_lock = NULL;
 
 event_cb_info_t * get_event_info(uint8_t cmd_set, uint8_t cmd_id) {
   switch (cmd_set) {
@@ -99,6 +102,27 @@ ErrCode EventHandler::parse(recv_data_info_t *recv_info) {
   return E_PARAM;
 }
 
+void gen_local_event(local_event_t event) {
+  if (xSemaphoreTake(le_event_lock, portMAX_DELAY) == pdPASS) {
+    local_event = event;
+    if (local_event == LE_NONE) {
+      xSemaphoreGive(le_event_lock);
+    }
+  }
+}
+
+void local_event_loop() {
+  switch (local_event) {
+    case LE_NONE:
+    return;
+
+    case LE_XY_CALI:
+    calibtration.calibtration_xy();
+    break;
+  }
+  xSemaphoreGive(le_event_lock);
+}
+
 void EventHandler::loop_task() {
   event_cache_node_t *event = NULL;
   while (true) {
@@ -111,6 +135,7 @@ void EventHandler::loop_task() {
     }
     printer_event_loop();
     exception_event_loop();
+    local_event_loop();
   }
 }
 
@@ -161,6 +186,9 @@ void event_init() {
   event_base_init();
   printer_event_init();
   event_queue = xQueueCreate(EVENT_CACHE_COUNT, sizeof(event_cache_node_t *));
+
+  le_event_lock = xSemaphoreCreateMutex();
+  configASSERT(le_event_lock);
 
   TaskHandle_t thandle_event_loop;
   ret = xTaskCreate(event_task, "event_loop", 1024, NULL, 5, &thandle_event_loop);

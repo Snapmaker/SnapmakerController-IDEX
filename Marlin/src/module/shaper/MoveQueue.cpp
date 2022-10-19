@@ -13,7 +13,7 @@ void MoveQueue::calculateMoves(block_t* block) {
     float nominal_speed = block->nominal_speed / 1000.0f;
 
     if (nominal_speed < EPSILON) {
-        LOG_I("error speed: %lf\n", nominal_speed);
+        // LOG_I("error speed: %lf\n", nominal_speed);
         block->shaper_data.is_zero_speed = true;
         return;
     }
@@ -140,7 +140,7 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
 
     float last_end_v = is_first? 0 : last_move.end_v;
     if (!IS_ZERO(last_end_v - move.start_v)) {
-        LOG_I("error v: %lf, %lf\n", last_end_v,  move.start_v);
+        // LOG_I("error v: %lf, %lf\n", last_end_v,  move.start_v);
     }
 
     for (int i = 0; i < AXIS_SIZE; ++i) {
@@ -148,11 +148,11 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
         move.end_pos[i] = move.start_pos[i] + move.distance * move.axis_r[i];
 
         if (IS_ZERO(move.end_pos[i]) && !IS_ZERO(move.start_pos[i])) {
-            LOG_I("debug1: %lf, %lf\n", move.start_pos[i], move.end_pos[i]);
+            // LOG_I("debug1: %lf, %lf\n", move.start_pos[i], move.end_pos[i]);
         }
 
         if (i <= 1 && (move.end_pos[i] < -48000 || move.end_pos[i] > 48000)) {
-            LOG_I("debug: %d, %lf, %lf\n", i, move.distance, move.end_pos[i]);
+            // LOG_I("debug: %d, %lf, %lf\n", i, move.distance, move.end_pos[i]);
         }
     }
 

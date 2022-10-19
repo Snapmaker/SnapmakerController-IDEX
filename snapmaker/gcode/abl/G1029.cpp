@@ -23,8 +23,8 @@
 /**
  * G1029.cpp - Auto calibration
  */
+#include "../../event/event.h"
 #include "../../../Marlin/src/gcode/gcode.h"
-// #include "../../J1/calibration.h"
 #include "../../module/calibtration.h"
 #include "../../module/motion_control.h"
 #include "../../module/fdm.h"
@@ -49,6 +49,7 @@ void GcodeSuite::G1029() {
     calibtration.bed_start_beat_mode();
   } else if (parser.seen('A')) {
     calibtration.calibtration_xy();
+    // gen_local_event(LE_XY_CALI);
   } else if (parser.seen('E')) {
     calibtration.exit();
   } else if (parser.seen('P')) {

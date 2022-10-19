@@ -6,8 +6,27 @@
 #include "src/core/types.h"
 #include "motion_control.h"
 
-#define CAlIBRATIONING_ERR_CODE (10000)
-#define CAlIBRATIONIN_RETRACK_E_MM 5
+#define CAlIBRATIONING_ERR_CODE               (10000)
+#define CAlIBRATIONIN_RETRACK_E_MM            (5)
+
+#define PROBE_FAST_Z_FEEDRATE                 (200)
+#define PROBE_Z_LEAVE_FEEDRATE                (5)
+#define PROBE_FAST_XY_FEEDRATE                (800)
+#define PROBE_MOVE_XY_FEEDRATE                (5000)
+#define PROBE_MOVE_Z_FEEDRATE                 (600)
+#define PROBE_LIFTINT_DISTANCE                (2)  // mm
+#define PROBE_MOVE_XY_LIFTINT_DISTANCE        (5)  // mm
+#define Z_PROBE_TRY_TO_MOVE_DISTANCE          (10)  // mm
+
+#define X1_STANDBY_POS                        (X1_MIN_POS)
+#define X2_STANDBY_POS                        (X2_MAX_POS)
+#define Y_STANDBY_POS                         (Y_MIN_POS)
+#define Z_STANDBY_POS                         (Z_MAX_POS/2)
+#define Z_PREPARE_POS                         (15.0)
+#define XY_CALI_Z_POS                         (-2 - build_plate_thickness)
+#define PROBE_DISTANCE                        (15)
+
+#define X2_MIN_HOTEND_OFFSET (X2_MAX_POS - X2_MIN_POS - 20)
 typedef enum {
   CAlIBRATION_MODE_IDLE,
   CAlIBRATION_MODE_BED,
@@ -53,7 +72,7 @@ class Calibtration {
     void set_calibtration_mode(calibtration_mode_e m) {mode = m;};
     ErrCode goto_calibtration_position(uint8_t pos);
     void bed_preapare(uint8_t extruder_index=0);
-    probe_result_e move_to_probe_trigger(uint8_t axis, float distance, uint16_t feedrate);
+    probe_result_e probe(uint8_t axis, float distance, uint16_t feedrate);
     ErrCode exit(bool is_save=true);
     ErrCode probe_bed_base_hight(calibtration_position_e pos, uint8_t extruder=0);
     ErrCode move_to_porbe_pos(calibtration_position_e pos, uint8_t extruder=0);
@@ -71,6 +90,14 @@ class Calibtration {
     float get_z_offset();
     void retrack_e();
     void extrude_e(float distance, uint16_t feedrate=MOTION_RETRACK_E_FEEDRATE);
+
+    void X1_standby(void);
+    void X2_standby(void);
+    void X_standby(void);
+    void Y_standby(void);
+    void Z_standby(void);
+    void Z_prepare(void);
+
   private:
     ErrCode probe_z_offset(calibtration_position_e pos);
     void reset_xy_calibtration_env();

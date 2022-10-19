@@ -5,10 +5,10 @@
 #include "src/core/types.h"
 #include "src/module/motion.h"
 
-#define MOTION_TRAVEL_FEADRATE 6000
-#define MOTION_EXTRUDE_E_DISTANCE 30
-#define MOTION_RETRACK_E_FEEDRATE 1800
-#define MOTION_EXTRUDE_E_FEEDRATE 100
+#define MOTION_TRAVEL_FEADRATE      (9000)
+#define MOTION_EXTRUDE_E_DISTANCE   (30)
+#define MOTION_RETRACK_E_FEEDRATE   (1800)
+#define MOTION_EXTRUDE_E_FEEDRATE   (100)
 
 typedef enum {
   SG_X,

@@ -14,18 +14,6 @@
 Calibtration calibtration;
 planner_settings_t planner_backup_setting;
 
-#define PROBE_FAST_Z_FEEDRATE                 (200)
-#define PROBE_Z_LEAVE_FEEDRATE                (5)
-#define PROBE_FAST_XY_FEEDRATE                (800)
-#define PROBE_MOVE_XY_FEEDRATE                (5000)
-#define PROBE_MOVE_Z_FEEDRATE                 (600)
-#define PROBE_LIFTINT_DISTANCE                (2)  // mm
-#define PROBE_MOVE_XY_LIFTINT_DISTANCE        (5)  // mm
-#define Z_REMOVE_PLATE_THICKNESS(z)           (z - build_plate_thickness)
-#define Z_PROBE_TRY_TO_MOVE_DISTANCE          (10)  // mm
-
-#define X2_MIN_HOTEND_OFFSET (X2_MAX_POS - X2_MIN_POS - 20)
-
 static uint8_t probe_sg_reg[3] = {20, 20, 80};  // X Y Z1
 static float build_plate_thickness = 5.0;
 
@@ -55,6 +43,9 @@ static float calibration_position_xy[6][2] = {
   /*CAlIBRATION_POS_4*/ {HALF_BED_X - POS_X_L_DIFF, HALF_BED_Y + POS_Y_U_DIFF},
   /*CAlIBRATION_POS_5*/ {HALF_BED_X + POS_X_R_DIFF, HALF_BED_Y + POS_Y_U_DIFF},
 };
+
+// x and y compensation
+static float calibration_position_xy_compensation[2] = {.0, .0};
 
 
 /**
@@ -99,6 +90,43 @@ void Calibtration::extrude_e(float distance, uint16_t feedrate) {
   set_duplication_enabled(false);
 }
 
+void Calibtration::X1_standby(void) {
+  if (active_extruder == 0)
+    motion_control.move_to_x(X1_STANDBY_POS);
+  else {
+    tool_change(0, true);
+    motion_control.move_to_x(X1_STANDBY_POS);
+    tool_change(1, true);
+  }
+}
+
+void Calibtration::X2_standby(void) {
+  if (active_extruder == 1)
+    motion_control.move_to_x(X2_STANDBY_POS);
+  else {
+    tool_change(1, true);
+    motion_control.move_to_x(X2_STANDBY_POS);
+    tool_change(0, true);
+  }
+}
+
+void Calibtration::X_standby(void) {
+  X2_standby();
+  X1_standby();
+}
+
+void Calibtration::Y_standby(void) {
+  motion_control.move_to_y(Y_STANDBY_POS);
+}
+
+void Calibtration::Z_standby(void) {
+  motion_control.move_to_z(Z_STANDBY_POS);
+}
+
+void Calibtration::Z_prepare(void) {
+  motion_control.move_to_z(Z_PREPARE_POS);
+}
+
 void Calibtration::bed_preapare(uint8_t extruder_index) {
   // Store feedrate and feedrate scaling
   remember_feedrate_scaling_off();
@@ -120,33 +148,30 @@ void Calibtration::bed_preapare(uint8_t extruder_index) {
     motion_control.home_x();
   }
   set_duplication_enabled(false);
-  float another_x_home_pos = !extruder_index ? x_home_pos(1) : x_home_pos(0);
-  float another_x_pos = !extruder_index ? x2_position() : x_position();
+  X_standby();
+  // float another_x_home_pos = !extruder_index ? x_home_pos(1) : x_home_pos(0);
+  // float another_x_pos = !extruder_index ? x2_position() : x_position();
 
-  // Make sure the other head is in the home position
-  if (another_x_home_pos != another_x_pos) {
-    if(current_position[Z_AXIS] < 15) {
-      // Avoid damage to hot bed
-      motion_control.move_z(15, PROBE_MOVE_Z_FEEDRATE);
-    }
-    tool_change(!extruder_index, true);
-    motion_control.move_to_x(another_x_home_pos, MOTION_TRAVEL_FEADRATE);
-  }
-  if (active_extruder != extruder_index) {
-    tool_change(extruder_index, true);
-  }
+  // // Make sure the other head is in the home position
+  // if (another_x_home_pos != another_x_pos) {
+  //   if(current_position[Z_AXIS] < 15) {
+  //     // Avoid damage to hot bed
+  //     motion_control.move_z(15, PROBE_MOVE_Z_FEEDRATE);
+  //   }
+  //   tool_change(!extruder_index, true);
+  //   motion_control.move_to_x(another_x_home_pos, MOTION_TRAVEL_FEADRATE);
+  // }
+  // if (active_extruder != extruder_index) {
+  //   tool_change(extruder_index, true);
+  // }
 }
 
 // Run to the specified calibration point
 ErrCode Calibtration::goto_calibtration_position(uint8_t pos) {
-  xyz_pos_t offset0 = hotend_offset[0];
-  xyz_pos_t offset1 = hotend_offset[1];
-  // Reset the Hotend Offsets; otherwise, the moving position will be affected
-  set_hotend_offsets_to_default();
-  motion_control.move_to_xy(calibration_position_xy[pos][0], calibration_position_xy[pos][1], MOTION_TRAVEL_FEADRATE);
-  // recover hotend_offsets
-  set_hotend_offsets(0, offset0);
-  set_hotend_offsets(1, offset1);
+  float x, y;
+  x = calibration_position_xy[pos][0] + calibration_position_xy_compensation[0];
+  y = calibration_position_xy[pos][1] + calibration_position_xy_compensation[1];
+  motion_control.move_to_xy(x, y, MOTION_TRAVEL_FEADRATE);
   return E_SUCCESS;
 }
 
@@ -202,7 +227,7 @@ void reset_move_param() {
   planner.settings.min_travel_feedrate_mm_s = feedRate_t(DEFAULT_MINTRAVELFEEDRATE);
 }
 
-probe_result_e Calibtration::move_to_probe_trigger(uint8_t axis, float distance, uint16_t feedrate) {
+probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
   probe_result_e ret = PROBR_RESULT_SUCCESS;
   float pos_before_probe = current_position[axis];
 
@@ -319,7 +344,7 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
 
   motion_control.move_to_z(last_probe_pos + PROBE_LIFTINT_DISTANCE, PROBE_MOVE_Z_FEEDRATE);
   uint16_t speed = PROBE_FAST_Z_FEEDRATE;
-  probe_result_e probe_result = move_to_probe_trigger(Z_AXIS, -z_probe_distance, speed);
+  probe_result_e probe_result = probe(Z_AXIS, -z_probe_distance, speed);
   if (probe_result != PROBR_RESULT_SUCCESS) {
     probe_offset = CAlIBRATIONING_ERR_CODE;
     ret = E_CAlIBRATION_PRIOBE;
@@ -435,12 +460,8 @@ void Calibtration::reset_xy_calibtration_env() {
     motion_control.home();
     planner.synchronize();
   } else {
-    if(current_position[Z_AXIS] < 30) {
-      motion_control.move_z(15, PROBE_MOVE_Z_FEEDRATE);
-    }
-    motion_control.home_z();
-    motion_control.home_x();
-    motion_control.home_y();
+    X_standby();
+    Y_standby();
   }
 }
 
@@ -449,7 +470,7 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
   float probe_distance = distance;
   float pos = 0;
   for (uint8_t i = 0; i < PROBE_TIMES; i++) {
-    probe_result_e probe_result = move_to_probe_trigger(axis, probe_distance, freerate);
+    probe_result_e probe_result = probe(axis, probe_distance, freerate);
     if (probe_result != PROBR_RESULT_SUCCESS) {
       return CAlIBRATIONING_ERR_CODE;
     }
@@ -463,7 +484,6 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
 ErrCode Calibtration::calibtration_xy() {
   ErrCode ret = E_SUCCESS;
   float xy_center[HOTENDS][XY] = {{0,0}, {0, 0}};
-  float probe_distance = 15;
   uint8_t old_active_extruder = active_extruder;
   if (home_offset[Z_AXIS] == 0) {
     LOG_E("Calibrate XY after calibrating Z offset\n");
@@ -474,19 +494,19 @@ ErrCode Calibtration::calibtration_xy() {
   reset_xy_calibtration_env();
   HOTEND_LOOP() {
     bed_preapare(e);
-    motion_control.logical_move_to_z(15 - build_plate_thickness);
+    Z_prepare();
     goto_calibtration_position(CAlIBRATION_POS_0);
-    motion_control.logical_move_to_z(-2 - build_plate_thickness);
+    motion_control.logical_move_to_z(XY_CALI_Z_POS);
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
       goto_calibtration_position(CAlIBRATION_POS_0);
 
-      float pos = multiple_probe(axis, -probe_distance, PROBE_FAST_XY_FEEDRATE);
+      float pos = multiple_probe(axis, -PROBE_DISTANCE, PROBE_FAST_XY_FEEDRATE);
       if (pos == CAlIBRATIONING_ERR_CODE) {
         ret = E_CAlIBRATION_PRIOBE;
         LOG_E("e:%d axis:%d probe 0 filed\n", e, axis);
         break;
       }
-      float pos_1 = multiple_probe(axis, probe_distance, PROBE_FAST_XY_FEEDRATE);
+      float pos_1 = multiple_probe(axis, PROBE_DISTANCE, PROBE_FAST_XY_FEEDRATE);
       if (pos_1 == CAlIBRATIONING_ERR_CODE) {
         ret = E_CAlIBRATION_PRIOBE;
         LOG_E("e:%d axis:%d probe 1 filed\n", e, axis);
@@ -500,9 +520,9 @@ ErrCode Calibtration::calibtration_xy() {
       break;
     }
   }
-  motion_control.move_z(100);
-  motion_control.home_x();
-  motion_control.home_y();
+  Z_standby();
+  X_standby();
+  Y_standby();
   tool_change(old_active_extruder, true);
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
   if(ret == E_SUCCESS) {
@@ -510,13 +530,18 @@ ErrCode Calibtration::calibtration_xy() {
     LOG_V("JF-XY Extruder1:%f %f\n", xy_center[0][0], xy_center[0][1]);
     LOG_V("JF-XY Extruder2:%f %f\n", xy_center[1][0], xy_center[1][1]);
 
-    set_home_offset(X_AXIS, calibration_position_xy[0][0] - xy_center[0][0]);
-    set_home_offset(Y_AXIS, calibration_position_xy[0][1] - xy_center[0][1]);
-    LOG_I("JF-Extruder1 home offset:%f %f\n", home_offset[X_AXIS], home_offset[Y_AXIS]);
+    // XY center offset from XY home position (0, 0)
+    calibration_position_xy_compensation[0] = calibration_position_xy[0][0] - xy_center[0][0];
+    calibration_position_xy_compensation[1] = calibration_position_xy[0][1] - xy_center[0][1];
+    LOG_I("XY center offset:(%.3f, %.3f)\n", calibration_position_xy_compensation[0], calibration_position_xy_compensation[1]);
 
-    set_hotend_offsets(1, X_AXIS, X2_MAX_POS - (xy_center[1][0] - xy_center[0][0]));
-    set_hotend_offsets(1, Y_AXIS, -(xy_center[1][1] - xy_center[0][1]));
-    LOG_I("JF-Extruder2 hotend offset:%f %f\n", hotend_offset[1].x, hotend_offset[1].y);
+    // extruder_1 offset from extruder_0
+    float extruder_1_offset_to_extruder_0[2];
+    extruder_1_offset_to_extruder_0[0] = xy_center[0][0] - xy_center[1][0];
+    extruder_1_offset_to_extruder_0[1] = xy_center[0][1] - xy_center[1][1];
+    set_hotend_offsets(1, X_AXIS, extruder_1_offset_to_extruder_0[0]);
+    set_hotend_offsets(1, Y_AXIS, extruder_1_offset_to_extruder_0[1]);
+    LOG_I("extruder_1 offset:(%.3f, %.3f)\n", extruder_1_offset_to_extruder_0[0], extruder_1_offset_to_extruder_0[1]);
 
     // Store to eeprom
     settings.save();
@@ -524,7 +549,6 @@ ErrCode Calibtration::calibtration_xy() {
   }
   else {
     LOG_E("JF-XY calibration: Fail!\n");
-    motion_control.home_z();
     return ret;
   }
 }

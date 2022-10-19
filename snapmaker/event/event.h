@@ -14,7 +14,7 @@ typedef enum {
 
 
 typedef struct {
-  event_cache_node_status_e block_status;  // idle,wait, busy
+  event_cache_node_status_e block_status;  // idle, wait, busy
   event_param_t param;  // Parameters to be passed into the callback function
   evevnt_cb_f cb;  // event callback
 } event_cache_node_t;
@@ -48,8 +48,17 @@ class EventHandler {
     event_cache_node_t event_cache[EVENT_CACHE_COUNT];
     recv_data_info_t recv_data_info[EVENT_SOURCE_ALL] = {0};
 };
+
+typedef enum {
+  LE_NONE,
+  LE_XY_CALI,
+} local_event_t;
+
 void event_task(void * arg);
 void event_init();
 void event_port_init();
+void local_event_loop();
+void gen_local_event(local_event_t event);
+
 extern EventHandler event_handler;
 #endif
