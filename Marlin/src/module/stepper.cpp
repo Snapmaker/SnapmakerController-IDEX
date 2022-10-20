@@ -1601,11 +1601,13 @@ void Stepper::isr() {
  */
 void Stepper::pulse_phase_isr() {
   switch_detect.check();
+  endstops.poll();
   // power_loss.check();
   // If we must abort the current block, do so!
   if (abort_current_block) {
+    switch_detect.disable_all();
     current_direction_bits = 0;
-    // axis_did_move = 0;
+    axis_did_move = 0;
     is_start = true;
     abort_current_block = false;
     axisManager.req_abort = true;
@@ -1721,7 +1723,6 @@ void Stepper::pulse_phase_isr() {
       PULSE_PREP(E);
       PULSE_STOP(E);
   }
-
   axis_stepper.axis = -1;
 }
 
@@ -1936,21 +1937,6 @@ uint32_t Stepper::block_phase_isr() {
         #define Z_MOVE_TEST !!current_block->steps.c
       #endif
 
-      uint8_t axis_bits = 0;
-      LINEAR_AXIS_CODE(
-        if (X_MOVE_TEST)            SBI(axis_bits, A_AXIS),
-        if (Y_MOVE_TEST)            SBI(axis_bits, B_AXIS),
-        if (Z_MOVE_TEST)            SBI(axis_bits, C_AXIS),
-        if (current_block->steps.i) SBI(axis_bits, I_AXIS),
-        if (current_block->steps.j) SBI(axis_bits, J_AXIS),
-        if (current_block->steps.k) SBI(axis_bits, K_AXIS)
-      );
-      //if (current_block->steps.e) SBI(axis_bits, E_AXIS);
-      //if (current_block->steps.a) SBI(axis_bits, X_HEAD);
-      //if (current_block->steps.b) SBI(axis_bits, Y_HEAD);
-      //if (current_block->steps.c) SBI(axis_bits, Z_HEAD);
-      axis_did_move = axis_bits;
-
       // No acceleration / deceleration time elapsed so far
       acceleration_time = deceleration_time = 0;
 
@@ -2105,6 +2091,21 @@ uint32_t Stepper::block_phase_isr() {
         set_directions(current_direction_bits);
       }
 
+      uint8_t axis_bits = 0;
+      LINEAR_AXIS_CODE(
+        if (X_MOVE_TEST)            SBI(axis_bits, A_AXIS),
+        if (Y_MOVE_TEST)            SBI(axis_bits, B_AXIS),
+        if (Z_MOVE_TEST)            SBI(axis_bits, C_AXIS),
+        if (current_block->steps.i) SBI(axis_bits, I_AXIS),
+        if (current_block->steps.j) SBI(axis_bits, J_AXIS),
+        if (current_block->steps.k) SBI(axis_bits, K_AXIS)
+      );
+      //if (current_block->steps.e) SBI(axis_bits, E_AXIS);
+      //if (current_block->steps.a) SBI(axis_bits, X_HEAD);
+      //if (current_block->steps.b) SBI(axis_bits, Y_HEAD);
+      //if (current_block->steps.c) SBI(axis_bits, Z_HEAD);
+      axis_did_move = axis_bits;
+
       // At this point, we must ensure the movement about to execute isn't
       // trying to force the head against a limit switch. If using interrupt-
       // driven change detection, and already against a limit then no call to
@@ -2112,7 +2113,7 @@ uint32_t Stepper::block_phase_isr() {
       // done against the endstop. So, check the limits here: If the movement
       // is against the limits, the block will be marked as to be killed, and
       // on the next call to this ISR, will be discarded.
-      // endstops.update();
+      endstops.update();
 
       // interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
 

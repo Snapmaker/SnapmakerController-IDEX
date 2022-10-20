@@ -750,16 +750,22 @@ inline void manage_inactivity(const bool no_stepper_sleep=false) {
  */
 void idle(bool no_stepper_sleep/*=false*/) {
 
+  if (xTaskGetCurrentTaskHandle() != thandle_marlin) {
+    vTaskDelay(1);
+    return;
+  }
 
-  static bool idle_lock = false;
+  // static bool idle_lock = false;
   #if ENABLED(MARLIN_DEV_MODE)
     static uint16_t idle_depth = 0;
     if (++idle_depth > 5) SERIAL_ECHOLNPAIR("idle() call depth: ", idle_depth);
   #endif
-  if (idle_lock) {
-    return;
-  }
-  idle_lock = true;
+
+  // if (idle_lock) {
+  //   return;
+  // }
+  // idle_lock = true;
+
   // Core Marlin activities
   manage_inactivity(no_stepper_sleep);
 
@@ -855,7 +861,7 @@ void idle(bool no_stepper_sleep/*=false*/) {
   IDLE_DONE:
   TERN_(MARLIN_DEV_MODE, idle_depth--);
   filament_sensor.check();
-  idle_lock = false;
+  // idle_lock = false;
 
   return;
 }

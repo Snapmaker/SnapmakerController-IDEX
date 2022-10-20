@@ -587,7 +587,7 @@
     #define DEFAULT_Kp  22.20
     #define DEFAULT_Ki   1.08
     #define DEFAULT_Kd 114.00
-    
+
   #endif
 #endif // PIDTEMP
 
@@ -1344,6 +1344,8 @@
 // @section machine
 
 // The size of the printable area
+
+#define CALIBRATION_INVALID_VALUE   (9999)
 
 #define X_BED_SIZE 324
 #define Y_BED_SIZE 202

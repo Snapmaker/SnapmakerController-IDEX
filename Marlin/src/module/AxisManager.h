@@ -242,7 +242,7 @@ class AxisManager {
     }
 
     bool getCurrentAxisStepper(AxisStepper* axis_stepper);
-    
+
     bool getNextAxisStepper();
 };
 

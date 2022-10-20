@@ -59,7 +59,7 @@ void SwitchDetect::check() {
     trigged = true;
     CBI(status_bits, SW_STALLGUARD_BIT);
   }
-  
+
   if (!trigged) {
     uint32_t max_continue_trigger_cnt = 0;
     do {
@@ -103,8 +103,7 @@ void SwitchDetect::enable_probe(bool trigger_level) {
   WRITE(PROBE_POWER_EN_PIN, 1);
   enable(SW_PROBE0_BIT);
   enable(SW_PROBE1_BIT);
-
-  vTaskDelay(pdMS_TO_TICKS(5));
+  // vTaskDelay(pdMS_TO_TICKS(5));
 }
 
 void SwitchDetect::disable_probe() {

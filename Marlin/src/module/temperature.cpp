@@ -3490,7 +3490,7 @@ void Temperature::isr() {
   #endif
 
   // Poll endstops state, if required
-  endstops.poll();
+  // endstops.poll();
 
   // Periodically call the planner timer service routine
   planner.isr();

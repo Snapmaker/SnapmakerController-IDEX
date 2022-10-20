@@ -36,7 +36,7 @@
  */
 
 // Change EEPROM version if the structure changes
-#define EEPROM_VERSION "V84"
+#define EEPROM_VERSION "V85"
 #define EEPROM_OFFSET 100
 
 // Check the integrity of data offsets.
@@ -138,6 +138,7 @@
 #endif
 
 #include "../../../snapmaker/module/filament_sensor.h"
+#include "../../../snapmaker/module/calibtration.h"
 
 #if ENABLED(PASSWORD_FEATURE)
   #include "../feature/password/password.h"
@@ -488,6 +489,8 @@ typedef struct SettingsDataStruct {
   #if HAS_MULTI_LANGUAGE
     uint8_t ui_language;                                // M414 S
   #endif
+
+  float heat_bed_center_offset[2];
 
 } SettingsData;
 
@@ -1348,6 +1351,16 @@ void MarlinSettings::postprocess() {
     #if CASELIGHT_USES_BRIGHTNESS
       EEPROM_WRITE(caselight.brightness);
     #endif
+
+    //
+    // head bed center offet
+    //
+    {
+      float heat_bed_center_offset[2];
+      _FIELD_TEST(heat_bed_center_offset);
+      calibtration.get_heat_bed_center_offset(heat_bed_center_offset);
+      EEPROM_WRITE(heat_bed_center_offset);
+    }
 
     //
     // Password feature
@@ -2224,6 +2237,16 @@ void MarlinSettings::postprocess() {
       #endif
 
       //
+      // head bed center offet
+      //
+      {
+        float heat_bed_center_offset[2];
+        _FIELD_TEST(heat_bed_center_offset);
+        EEPROM_READ(heat_bed_center_offset);
+        calibtration.set_heat_bed_center_offset(heat_bed_center_offset);
+      }
+
+      //
       // Password feature
       //
       #if ENABLED(PASSWORD_FEATURE)
@@ -2944,7 +2967,10 @@ void MarlinSettings::reset() {
   //
   // MKS UI controller
   //
+
   TERN_(DGUS_LCD_UI_MKS, MKS_reset_settings());
+  const float offset[2] = {CALIBRATION_INVALID_VALUE, CALIBRATION_INVALID_VALUE};
+  calibtration.set_heat_bed_center_offset(offset);
 
   postprocess();
 
@@ -3860,6 +3886,11 @@ void MarlinSettings::reset() {
       CONFIG_ECHO_START();
       M217_report(true);
     #endif
+
+    float hb_center_offset[2];
+    calibtration.get_heat_bed_center_offset(hb_center_offset);
+    SERIAL_ECHOPAIR_P("Heat bed center offset: X", hb_center_offset[0], ", Y", hb_center_offset[1]);
+    SERIAL_EOL();
 
     #if ENABLED(BACKLASH_GCODE)
       CONFIG_ECHO_HEADING("Backlash compensation:");

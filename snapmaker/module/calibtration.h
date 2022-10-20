@@ -14,7 +14,7 @@
 #define PROBE_FAST_XY_FEEDRATE                (800)
 #define PROBE_MOVE_XY_FEEDRATE                (5000)
 #define PROBE_MOVE_Z_FEEDRATE                 (600)
-#define PROBE_LIFTINT_DISTANCE                (2)  // mm
+#define PROBE_LIFTINT_DISTANCE                (0.5)  // mm
 #define PROBE_MOVE_XY_LIFTINT_DISTANCE        (5)  // mm
 #define Z_PROBE_TRY_TO_MOVE_DISTANCE          (10)  // mm
 
@@ -70,17 +70,17 @@ typedef enum {
 class Calibtration {
   public:
     void set_calibtration_mode(calibtration_mode_e m) {mode = m;};
-    ErrCode goto_calibtration_position(uint8_t pos);
+    void goto_calibtration_position(uint8_t pos, uint16_t feedrate = MOTION_TRAVEL_FEADRATE);
     void bed_preapare(uint8_t extruder_index=0);
     probe_result_e probe(uint8_t axis, float distance, uint16_t feedrate);
     ErrCode exit(bool is_save=true);
     ErrCode probe_bed_base_hight(calibtration_position_e pos, uint8_t extruder=0);
-    ErrCode move_to_porbe_pos(calibtration_position_e pos, uint8_t extruder=0);
-    ErrCode bed_manual_calibtration(calibtration_position_e pos);
+    void move_to_porbe_pos(calibtration_position_e pos, uint8_t extruder=0);
     ErrCode bed_start_beat_mode();
     ErrCode bed_end_beat_mode();
     ErrCode nozzle_calibtration_preapare(calibtration_position_e pos);
     ErrCode calibtration_xy();
+    ErrCode calibtration_xy_center_offset();
     ErrCode set_hotend_offset(uint8_t axis, float offset);
     float get_hotend_offset(uint8_t axis);
     float get_probe_offset();
@@ -90,6 +90,11 @@ class Calibtration {
     float get_z_offset();
     void retrack_e();
     void extrude_e(float distance, uint16_t feedrate=MOTION_RETRACK_E_FEEDRATE);
+
+    void set_heat_bed_center_offset(const float offset[2]);
+    void get_heat_bed_center_offset(float *offset);
+    bool head_bed_center_offset_check(void);
+    void head_bed_center_offset_reset(void);
 
     void X1_standby(void);
     void X2_standby(void);
@@ -113,10 +118,10 @@ class Calibtration {
     calibtration_mode_e mode = CAlIBRATION_MODE_IDLE;
     calibtration_status_e status;
     float probe_offset = -CAlIBRATIONING_ERR_CODE;
-    float live_z_offset = 0;
     xyz_pos_t hotend_offset_backup[HOTENDS];
     xyz_pos_t home_offset_backup;
     bool need_extrude = false;
+    bool xy_need_re_home = false;
   private:
     float last_probe_pos = 0;
 };

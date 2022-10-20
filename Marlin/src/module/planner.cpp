@@ -1282,8 +1282,8 @@ static int c2 = 500000;
 static bool log111 = true;
 
 void Planner::shaped_loop() {
-    if (xTaskGetCurrentTaskHandle() != thandle_marlin)
-      return;
+    // if (xTaskGetCurrentTaskHandle() != thandle_marlin)
+    //   return;
 
     const uint8_t nr_moves = movesplanned();
 

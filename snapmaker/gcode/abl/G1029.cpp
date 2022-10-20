@@ -34,7 +34,8 @@ void GcodeSuite::G1029() {
   if(parser.seenval('I')) {
     uint8_t number = parser.value_byte();
     calibtration.goto_calibtration_position(number);
-  } else if (parser.seenval('B')) {
+  }
+  else if (parser.seenval('B')) {
     uint8_t number = parser.value_byte();
     if (number == CAlIBRATION_POS_1) {
       calibtration.probe_bed_base_hight((calibtration_position_e)number);
@@ -43,18 +44,27 @@ void GcodeSuite::G1029() {
       calibtration.move_to_porbe_pos((calibtration_position_e)number);
       calibtration.bed_start_beat_mode();
     }
-  } else if (parser.seenval('N')) {
+  }
+  else if (parser.seenval('N')) {
     uint8_t number = parser.value_byte();
     calibtration.nozzle_calibtration_preapare((calibtration_position_e)number);
     calibtration.bed_start_beat_mode();
-  } else if (parser.seen('A')) {
+  }
+  else if (parser.seen('A')) {
     calibtration.calibtration_xy();
-    // gen_local_event(LE_XY_CALI);
-  } else if (parser.seen('E')) {
+  }
+  else if (parser.seen('E')) {
     calibtration.exit();
-  } else if (parser.seen('P')) {
+  }
+  else if (parser.seen('P')) {
     fdm_head.set_temperature(0, 220);
     fdm_head.set_temperature(1, 220);
     motion_control.move_x_to_relative_home(50);
+  }
+  else if (parser.seen('M')) {
+    calibtration.calibtration_xy_center_offset();
+  }
+  else if (parser.seen('C')) {
+    calibtration.head_bed_center_offset_reset();
   }
 }

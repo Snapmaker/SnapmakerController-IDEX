@@ -79,7 +79,8 @@ static ErrCode calibtration_move_to_pos(event_param_t& event) {
   if (is_probe) {
     event.data[0] = calibtration.probe_bed_base_hight(pos);
   } else {
-    event.data[0] = calibtration.move_to_porbe_pos(pos);
+    calibtration.move_to_porbe_pos(pos);
+    event.data[0] = E_SUCCESS;
   }
   event.length = 1;
   send_event(event);
