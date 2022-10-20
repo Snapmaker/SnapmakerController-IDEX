@@ -47,6 +47,7 @@ class FuncParams {
 
 class FuncManager {
   private:
+    // Fast calculation parameters of average speed section
     int average_index = 0;
     int average_count = 0;
     int average_step = 0;
@@ -54,19 +55,6 @@ class FuncManager {
     time_double_t average_print = 0;
 
   public:
-    int axis;
-    int size;
-    int max_size = 0;
-    time_double_t last_time = 0;
-    float last_pos = 0;
-    bool last_is_zero = false;
-
-    // Consume
-    time_double_t print_time = 0;
-    time_double_t left_time = 0;
-    float print_pos = 0;
-    int print_step = 0;
-
     static FuncParams FUNC_PARAMS_X[FUNC_PARAMS_X_SIZE];
     static FuncParams FUNC_PARAMS_Y[FUNC_PARAMS_Y_SIZE];
     static FuncParams FUNC_PARAMS_Z[FUNC_PARAMS_Z_SIZE];
@@ -83,6 +71,23 @@ class FuncManager {
     volatile int func_params_tail = 0;
     volatile int func_params_use = 0;
     volatile int func_params_head = 0;
+
+    // Axis index
+    int axis;
+    // Piecewise function length
+    int size;
+    // Short time maximum length of piecewise function
+    int max_size = 0;
+
+    time_double_t last_time = 0;
+    float last_pos = 0;
+    bool last_is_zero = false;
+
+    // Consume
+    time_double_t left_time = 0;
+    time_double_t print_time = 0;
+    float print_pos = 0;
+    int print_step = 0;
 
     FuncManager(){};
 
@@ -112,18 +117,19 @@ class FuncManager {
         }
     }
 
-    void abort() {
-        // LOG_I("abort\n");
-        func_params_tail = func_params_use = func_params_head = 0;
+    void reset() {
+        func_params_tail = 0;
+        func_params_use = 0;
+        func_params_head = 0;
+
         last_time = 0;
         last_pos = 0;
         last_is_zero = false;
 
-        print_time = 0;
         left_time = 0;
+        print_time = 0;
         print_pos = 0;
         print_step = 0;
-        func_params_use = 0;
 
         average_index = 0;
         average_count = 0;

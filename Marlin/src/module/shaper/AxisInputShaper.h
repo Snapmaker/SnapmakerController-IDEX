@@ -98,6 +98,10 @@ public:
     this->zeta = zeta;
   };
 
+  void reset() {
+    is_shaper_window_init = false;
+  }
+
   void init();
 
   void logParams();

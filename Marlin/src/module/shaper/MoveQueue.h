@@ -34,7 +34,6 @@ class MoveQueue {
     volatile uint8_t move_tail;
     volatile uint8_t move_head;
 
-    bool is_start = true;
     bool is_first = true;
 
     Move moves[MOVE_SIZE];
@@ -43,11 +42,10 @@ class MoveQueue {
       return moves[prevMoveIndex(move_head)];
     };
 
-    void abort() {
-      is_start = true;
-      is_first = true;
+    void reset() {
       move_tail = 0;
       move_head = 0;
+      is_first = true;
     }
 
     FORCE_INLINE constexpr uint8_t nextMoveIndex(const uint8_t block_index) { return MOVE_MOD(block_index + 1);};

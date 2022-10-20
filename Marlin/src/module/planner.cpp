@@ -1288,10 +1288,7 @@ void Planner::shaped_loop() {
     const uint8_t nr_moves = movesplanned();
 
     if (axisManager.req_abort) {
-      moveQueue.abort();
       axisManager.abort();
-      axisManager.addEmptyMove();
-      axisManager.req_abort = false;
       clear_block_buffer();
       return;
     }
@@ -3030,7 +3027,7 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
  * Add a block to the buffer that just updates the position,
  * or in case of LASER_SYNCHRONOUS_M106_M107 the fan PWM
  */
-void Planner::buffer_sync_block(TERN_(LASER_SYNCHRONOUS_M106_M107, uint8_t sync_flag)) {
+void Planner::buffer_sync_block(bool is_sync_e OPTARG(LASER_SYNCHRONOUS_M106_M107, uint8_t sync_flag)) {
   #if DISABLED(LASER_SYNCHRONOUS_M106_M107)
     constexpr uint8_t sync_flag = BLOCK_FLAG_SYNC_POSITION;
   #endif
@@ -3043,6 +3040,8 @@ void Planner::buffer_sync_block(TERN_(LASER_SYNCHRONOUS_M106_M107, uint8_t sync_
   memset(block, 0, sizeof(block_t));
 
   block->flag = sync_flag;
+
+  block->is_sync_e = is_sync_e;
 
   block->position = position;
 
@@ -3353,7 +3352,7 @@ void Planner::set_position_mm(const xyze_pos_t &xyze) {
     TERN_(IS_KINEMATIC, TERN_(HAS_EXTRUDERS, position_cart.e = e));
 
     if (has_blocks_queued())
-      buffer_sync_block();
+      buffer_sync_block(true);
     else
       stepper.set_axis_position(E_AXIS, position.e);
   }

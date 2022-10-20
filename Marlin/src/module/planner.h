@@ -186,6 +186,7 @@ typedef struct shaper_data_t {
 typedef struct block_t {
 
   volatile uint8_t flag;                    // Block flags (See BlockFlag enum above) - Modified by ISR and main thread!
+  volatile bool is_sync_e;
 
   // Fields used by the motion planner to manage acceleration
   float nominal_speed,                      // The nominal speed for this block in (mm/sec)
@@ -775,7 +776,8 @@ class Planner {
      * case of LASER_SYNCHRONOUS_M106_M107 the fan pwm
      */
     static void buffer_sync_block(
-      TERN_(LASER_SYNCHRONOUS_M106_M107, uint8_t sync_flag=BLOCK_FLAG_SYNC_POSITION)
+      bool is_sync_e = false
+      OPTARG(LASER_SYNCHRONOUS_M106_M107, uint8_t sync_flag=BLOCK_FLAG_SYNC_POSITION)
     );
 
   #if IS_KINEMATIC

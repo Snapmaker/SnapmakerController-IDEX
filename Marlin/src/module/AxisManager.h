@@ -17,18 +17,17 @@ class AxisStepper {
 
 class Axis {
   public:
-    bool is_shaped = false;
+    float mm_to_step;
+    float half_step_mm;
 
     // AxisInputShaper
     AxisInputShaper* axis_input_shaper = nullptr;
+    bool is_shaped = false;
 
     // FuncManager
     FuncManager func_manager;
 
     // Consume
-    float mm_to_step;
-    float half_step_mm;
-
     bool is_consumed = true;
     time_double_t print_time = 0;
     int8_t dir = 0;
@@ -72,7 +71,7 @@ class Axis {
 
     FORCE_INLINE bool generateFuncParams(uint8_t block_index, uint8_t move_start, uint8_t move_end);
 
-    void abort() {
+    void reset() {
         generated_block_index = -1;
         generated_move_index = -1;
 
@@ -84,10 +83,10 @@ class Axis {
         delta_e = 0;
 
         if (axis_input_shaper != nullptr) {
-            axis_input_shaper->is_shaper_window_init = false;
+            axis_input_shaper->reset();
         }
 
-        func_manager.abort();
+        func_manager.reset();
     }
 
     bool getNextStep();
@@ -108,10 +107,7 @@ class AxisManager {
 
     Axis axis[AXIS_SIZE];
 
-    bool req_abort;
-
-    volatile bool req_update_shaped = false;
-    volatile int req_update_index = -1;
+    volatile bool req_abort;
 
     // MoveQueue
     bool need_add_move_start = true;
@@ -177,9 +173,9 @@ class AxisManager {
         }
     }
 
-    void abort() {
+    void reset() {
         for (size_t i = 0; i < AXIS_SIZE; i++) {
-            axis[i].abort();
+            axis[i].reset();
             current_steps[i] = 0;
         }
 
@@ -191,9 +187,14 @@ class AxisManager {
         print_time = 0;
         print_axis = -1;
         print_dir = 0;
+    }
 
-        req_update_shaped = false;
-        req_update_index = -1;
+    void abort() {
+        req_abort = true;
+        moveQueue.reset();
+        reset();
+        addEmptyMove();
+        req_abort = false;
     }
 
     bool isShaped() {

@@ -6,12 +6,6 @@ MoveQueue moveQueue;
 static xyze_float_t ZERO_AXIS_R = {0};
 
 void MoveQueue::calculateMoves(block_t* block) {
-//    if (is_start) {
-//        block.shaper_data.is_start = true;
-//        addMoveStart();
-//        is_start = false;
-//    }
-    // float speed_factor = block->nominal_speed / block->nominal_rate;
     float millimeters = block->millimeters;
 
     float entry_speed = block->initial_speed / 1000.0f;
