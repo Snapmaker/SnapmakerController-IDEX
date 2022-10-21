@@ -28,6 +28,16 @@ void MotionControl::blocking_move_to(float x, float y, float z, float feedrate) 
   feedrate_mm_s = save_feedrate;
 }
 
+void MotionControl::blocking_move_to_no_limit(float x, float y, float z, float feedrate) {
+  float save_feedrate = feedrate_mm_s;
+  xyze_pos_t xyz = current_position;
+  xyz[X_AXIS] = x;
+  xyz[Y_AXIS] = y;
+  xyz[Z_AXIS] = z;
+  do_blocking_move_to(xyz, feedrate);
+  feedrate_mm_s = save_feedrate;
+}
+
 ErrCode MotionControl::move_axis(mobile_instruction_t *move) {
   xyze_pos_t xyze = current_position;
   float save_feedrate = feedrate_mm_s;
@@ -250,6 +260,11 @@ void MotionControl::move_to_y(float y, uint16_t feedrate) {
 
 void MotionControl::move_to_z(float z, uint16_t feedrate) {
   blocking_move_to(current_position.x, current_position.y, z, MMM_TO_MMS(feedrate));
+  planner.synchronize();
+}
+
+void MotionControl::move_to_z_no_limit(float z, uint16_t feedrate) {
+  blocking_move_to_no_limit(current_position.x, current_position.y, z, MMM_TO_MMS(feedrate));
   planner.synchronize();
 }
 

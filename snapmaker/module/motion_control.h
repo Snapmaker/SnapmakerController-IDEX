@@ -31,6 +31,7 @@ class MotionControl {
   public:
     void init_stall_guard();
     void blocking_move_to(float x, float y, float z, float feedrate=0);
+    void blocking_move_to_no_limit(float x, float y, float z, float feedrate=0);
     ErrCode move_axis(mobile_instruction_t *move);
     ErrCode move_axis_to(mobile_instruction_t *move);
     ErrCode home(AxisEnum axis);
@@ -50,6 +51,7 @@ class MotionControl {
     void move_to_x(float x, uint16_t feedrate=0);
     void move_to_y(float y, uint16_t feedrate=0);
     void move_to_z(float z, uint16_t feedrate=0);
+    void move_to_z_no_limit(float z, uint16_t feedrate=0);
     void move_to_xyz(float x, float y, float z, uint16_t feedrate=0);
     void move_to_xyz(xyze_pos_t &pos, uint16_t feedrate=0);
     void move_to_xy(float x, float y, uint16_t feedrate);
