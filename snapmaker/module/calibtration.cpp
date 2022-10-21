@@ -105,9 +105,9 @@ void Calibtration::get_heat_bed_center_offset(float *offset) {
 }
 
 bool Calibtration::head_bed_center_offset_check(void) {
-  if (fabs(heat_bed_center_offset[0]) > 3.0)
+  if (fabs(heat_bed_center_offset[0]) > 5.0)
     return false;
-  if (fabs(heat_bed_center_offset[1]) > 3.0)
+  if (fabs(heat_bed_center_offset[1]) > 5.0)
     return false;
   return true;
 }
@@ -156,11 +156,12 @@ void Calibtration::Y_standby(void) {
 }
 
 void Calibtration::Z_standby(void) {
-  float z_offset_backup;
-  z_offset_backup = home_offset.z;
-  home_offset[Z_AXIS] = 0;
-  motion_control.move_to_z(Z_STANDBY_POS);
-  set_home_offset(Z_AXIS, z_offset_backup);
+  // float z_offset_backup;
+  // z_offset_backup = home_offset.z;
+  // home_offset[Z_AXIS] = 0;
+  // motion_control.move_to_z(Z_STANDBY_POS);
+  motion_control.logical_move_to_z(Z_STANDBY_POS);
+  // set_home_offset(Z_AXIS, z_offset_backup);
 }
 
 void Calibtration::Z_prepare(void) {
@@ -429,13 +430,15 @@ ErrCode Calibtration::wait_and_probe_z_offset(calibtration_position_e pos, uint8
 }
 
 ErrCode Calibtration::probe_bed_base_hight(calibtration_position_e pos, uint8_t extruder) {
-  if (heat_bed_center_offset[0] == CALIBRATION_INVALID_VALUE || heat_bed_center_offset[1] == CALIBRATION_INVALID_VALUE) {
+
+  if (!head_bed_center_offset_check()) {
     if(E_SUCCESS != calibtration_xy_center_offset()) {
       return E_FAILURE;
     }
   }
   set_calibtration_mode(CAlIBRATION_MODE_BED);
   return wait_and_probe_z_offset(pos, extruder);
+
 }
 
 void Calibtration::move_to_porbe_pos(calibtration_position_e pos, uint8_t extruder) {
@@ -542,6 +545,11 @@ ErrCode Calibtration::calibtration_xy() {
   float xy_center[HOTENDS][XY] = {{0,0}, {0, 0}};
   uint8_t old_active_extruder = active_extruder;
 
+  if (home_offset[Z_AXIS] == 0) {
+    LOG_E("Calibrate XY after calibrating Z offset\n");
+    return E_CAlIBRATION_XY;
+  }
+
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_XY_PROBING);
   X_standby();
   backup_offset();
@@ -551,7 +559,7 @@ ErrCode Calibtration::calibtration_xy() {
 
     bed_preapare(e);
     goto_calibtration_position(CAlIBRATION_POS_0);
-    motion_control.move_to_z_no_limit(XY_CALI_Z_POS);
+    motion_control.logical_move_to_z(XY_CALI_Z_POS);
 
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
 
@@ -620,11 +628,13 @@ ErrCode Calibtration::calibtration_xy_center_offset() {
   uint8_t old_active_extruder = active_extruder;
 
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_XY_PROBING);
+  X_standby();
   backup_offset();
   reset_xy_calibtration_env();
+
   bed_preapare(0);
   goto_calibtration_position(CAlIBRATION_POS_0);
-  motion_control.move_to_z(XY_CALI_Z_POS);
+  motion_control.move_to_z_no_limit(XY_CENTER_OFFSET_Z_POS);
 
   for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
 

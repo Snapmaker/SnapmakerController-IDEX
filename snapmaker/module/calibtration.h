@@ -23,9 +23,10 @@
 #define X1_STANDBY_POS                        (X1_MIN_POS)
 #define X2_STANDBY_POS                        (X2_MAX_POS)
 #define Y_STANDBY_POS                         (Y_MIN_POS)
-#define Z_STANDBY_POS                         (Z_MAX_POS/2)
+#define Z_STANDBY_POS                         (100)
 #define Z_PREPARE_POS                         (15.0)  // mm
-#define XY_CALI_Z_POS                         (2.0)
+#define XY_CALI_Z_POS                         (-2.0 - build_plate_thickness)
+#define XY_CENTER_OFFSET_Z_POS                (0.5)
 #define PROBE_DISTANCE                        (15)    // mm
 
 #define X2_MIN_HOTEND_OFFSET (X2_MAX_POS - X2_MIN_POS - 20)
