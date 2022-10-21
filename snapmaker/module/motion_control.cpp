@@ -208,6 +208,7 @@ void MotionControl::move(uint8_t axis, float distance, uint16_t feedrate) {
 
 
 ErrCode MotionControl::move_e(float distance, uint16_t feedrate) {
+  LOG_I("move_e: %lf\n", distance);
   float save_feedrate = feedrate_mm_s;
   feedrate_mm_s = MMM_TO_MMS(feedrate);
   destination = current_position;

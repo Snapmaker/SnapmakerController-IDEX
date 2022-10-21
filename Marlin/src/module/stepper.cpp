@@ -207,6 +207,12 @@ int Stepper::block_move_target_steps[AXIS_SIZE];
 bool Stepper::is_start = true;
 time_double_t Stepper::block_print_time;
 
+// Screen extrude and retrack
+bool Stepper::is_only_extrude;
+uint8_t Stepper::extrude_enable[EXTRUDERS] = {false, false};
+uint32_t Stepper::extrude_interval[EXTRUDERS];
+int Stepper::extrude_count[EXTRUDERS];
+
 #if EITHER(HAS_MULTI_EXTRUDER, MIXING_EXTRUDER)
   uint8_t Stepper::stepper_extruder;
 #else
@@ -567,6 +573,47 @@ void Stepper::set_directions() {
   #endif
 
   DIR_WAIT_AFTER();
+}
+
+bool Stepper::start_only_extrude(uint8_t e, uint8_t dir, float length, float speed) {
+  if (length <= 0 || speed <= 0) {
+    return false;
+  }
+  if (current_block != nullptr) {
+    return false;
+  }
+
+  if (dir == 1) {
+    _NORM_E_DIR(e);
+  } else {
+    _REV_E_DIR(e);
+  }
+
+  extrude_enable[e] = true;
+  extrude_count[e] = FLOOR(length * planner.settings.axis_steps_per_mm[E_AXIS_N(extruder)]);
+  extrude_interval[e] = CEIL(length / speed * 60 * STEPPER_TIMER_RATE / extrude_count[e]);
+
+  is_only_extrude = true;
+}
+
+bool Stepper::stop_only_extrude(uint8_t e) {
+  extrude_enable[e] = false;
+  bool is_only_extrude_tmp = false;
+  for (size_t i = 0; i < EXTRUDERS; i++)
+  {
+    if (extrude_enable[i]) {
+      is_only_extrude_tmp = true;
+    }
+  }
+  is_only_extrude = is_only_extrude_tmp;
+}
+
+bool Stepper::stop_all_only_extrude() {
+  is_only_extrude = false;
+  for (size_t i = 0; i < EXTRUDERS; i++)
+  {
+    extrude_enable[i] = false;
+  }
 }
 
 #if ENABLED(S_CURVE_ACCELERATION)
@@ -1611,7 +1658,24 @@ void Stepper::pulse_phase_isr() {
     is_start = true;
     abort_current_block = false;
     axisManager.req_abort = true;
+
+    is_only_extrude = false;
+    extrude_enable[0] = false;
+    extrude_enable[1] = false;
+
     if (current_block) discard_current_block();
+  }
+
+  if (is_only_extrude) {
+    if (extrude_enable[0]) {
+      _E_STEP_WRITE(0, !INVERT_E_STEP_PIN);
+      _E_STEP_WRITE(0, INVERT_E_STEP_PIN);
+    }
+    if (extrude_enable[1]) {
+      _E_STEP_WRITE(1, !INVERT_E_STEP_PIN);
+      _E_STEP_WRITE(1, INVERT_E_STEP_PIN);
+    }
+    return;
   }
 
   // If there is no current block, do nothing
@@ -1737,6 +1801,25 @@ uint32_t Stepper::block_phase_isr() {
 
   if (axisManager.req_abort)
     return interval;
+
+  if (is_only_extrude) {
+    if (extrude_enable[0] && extrude_count[0] > 0) {
+      extrude_count[0]--;
+      interval = extrude_interval[0];
+      if (extrude_count[0] <= 0) {
+        extrude_enable[0] = false;
+      }
+    }
+    if (extrude_enable[1] && extrude_count[1] > 0) {
+      extrude_count[1]--;
+      interval = extrude_interval[1];
+      if (extrude_count[1] <= 0) {
+        extrude_enable[1] = false;
+      }
+    }
+    is_only_extrude = extrude_enable[0] || extrude_enable[1];
+    return interval;
+  }
 
   // If there is a current block
   if (current_block) {

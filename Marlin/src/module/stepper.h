@@ -325,6 +325,12 @@ class Stepper {
     static bool is_start;
     static time_double_t block_print_time;
 
+    // Screen extrude and retrack
+    static bool is_only_extrude;
+    static uint8_t extrude_enable[EXTRUDERS];
+    static uint32_t extrude_interval[EXTRUDERS];
+    static int extrude_count[EXTRUDERS];
+
     #if EITHER(HAS_MULTI_EXTRUDER, MIXING_EXTRUDER)
       static uint8_t stepper_extruder;
     #else
@@ -540,6 +546,12 @@ class Stepper {
       last_direction_bits = bits;
       set_directions();
     }
+
+    static bool start_only_extrude(uint8_t e, uint8_t dir, float length, float speed);
+
+    static bool stop_only_extrude(uint8_t e);
+
+    static bool stop_all_only_extrude();
 
   private:
 

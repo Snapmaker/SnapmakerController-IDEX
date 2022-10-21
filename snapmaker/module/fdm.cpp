@@ -3,6 +3,7 @@
 #include "../../Marlin/src/module/tool_change.h"
 #include "../../Marlin/src/module/temperature.h"
 #include "../../Marlin/src/module/motion.h"
+#include "../../Marlin/src/module/stepper.h"
 #include "../module/filament_sensor.h"
 #include "../module/power_loss.h"
 #include "motion_control.h"
@@ -54,12 +55,21 @@ ErrCode FDM_Head::change_filamenter(uint8_t e, float feedrate, filamenter_change
   status_bak = change_filamenter_status[!e];
   change_filamenter_status[0] = FILAMENT_CHANGE_STOP;
   change_filamenter_status[1] = FILAMENT_CHANGE_STOP;
-  motion_control.quickstop();
+  if (!stepper.is_only_extrude) {
+    motion_control.quickstop();
+  }
   change_filamenter_status[!e] = status_bak;
   change_filamenter_status[e] = status;
   if (is_change_filamenter()) {
     // The extruded length is arbitrary, and this is just to rotate the e axis
-    motion_control.extrude_e(50, feedrate);
+    // motion_control.extrude_e(50, feedrate);
+    if (status == FILAMENT_CHANGE_STOP) {
+      stepper.stop_only_extrude(e);
+    } else if (status == FILAMENT_CHANGE_EXTRUDER) {
+      stepper.start_only_extrude(e, 1, 50, feedrate);
+    } else if (status == FILAMENT_CHANGE_RETRACK) {
+      stepper.start_only_extrude(e, 0, 50, feedrate);
+    }
   }
   return E_SUCCESS;
 }
