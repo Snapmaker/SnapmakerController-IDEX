@@ -543,6 +543,7 @@ ErrCode Calibtration::calibtration_xy() {
   uint8_t old_active_extruder = active_extruder;
 
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_XY_PROBING);
+  X_standby();
   backup_offset();
   reset_xy_calibtration_env();
 
@@ -550,7 +551,7 @@ ErrCode Calibtration::calibtration_xy() {
 
     bed_preapare(e);
     goto_calibtration_position(CAlIBRATION_POS_0);
-    motion_control.move_to_z(XY_CALI_Z_POS);
+    motion_control.move_to_z_no_limit(XY_CALI_Z_POS);
 
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
 
@@ -569,7 +570,7 @@ ErrCode Calibtration::calibtration_xy() {
       }
 
       xy_center[e][axis] += (pos_1 + pos) / 2;
-      goto_calibtration_position(CAlIBRATION_POS_0);
+      goto_calibtration_position(CAlIBRATION_POS_0, PROBE_FAST_XY_FEEDRATE);
 
     }
 
