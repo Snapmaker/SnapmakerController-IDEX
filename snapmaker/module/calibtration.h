@@ -8,23 +8,25 @@
 
 #define CAlIBRATIONING_ERR_CODE               (10000)
 #define CAlIBRATIONIN_RETRACK_E_MM            (5)
+#define PROBE_TIMES                           (3)
 
 #define PROBE_FAST_Z_FEEDRATE                 (200)
 #define PROBE_Z_LEAVE_FEEDRATE                (5)
 #define PROBE_FAST_XY_FEEDRATE                (800)
 #define PROBE_MOVE_XY_FEEDRATE                (5000)
 #define PROBE_MOVE_Z_FEEDRATE                 (600)
-#define PROBE_LIFTINT_DISTANCE                (0.5)  // mm
-#define PROBE_MOVE_XY_LIFTINT_DISTANCE        (5)  // mm
-#define Z_PROBE_TRY_TO_MOVE_DISTANCE          (10)  // mm
+#define PROBE_LIFTINT_DISTANCE                (0.5)   // mm
+#define PROBE_MOVE_XY_LIFTINT_DISTANCE        (5)     // mm
+#define BACK_OFF_DISTANCE                     (10)    // mm
+#define Z_PROBE_DISTANCE                      (25)    // mm
 
 #define X1_STANDBY_POS                        (X1_MIN_POS)
 #define X2_STANDBY_POS                        (X2_MAX_POS)
 #define Y_STANDBY_POS                         (Y_MIN_POS)
 #define Z_STANDBY_POS                         (Z_MAX_POS/2)
-#define Z_PREPARE_POS                         (15.0)
-#define XY_CALI_Z_POS                         (-2 - build_plate_thickness)
-#define PROBE_DISTANCE                        (15)
+#define Z_PREPARE_POS                         (15.0)  // mm
+#define XY_CALI_Z_POS                         (-1.8 - build_plate_thickness)
+#define PROBE_DISTANCE                        (15)    // mm
 
 #define X2_MIN_HOTEND_OFFSET (X2_MAX_POS - X2_MIN_POS - 20)
 typedef enum {
@@ -111,7 +113,7 @@ class Calibtration {
     void restore_offset();
     ErrCode wait_and_probe_z_offset(calibtration_position_e pos, uint8_t extruder=0);
     ErrCode probe_hight_offset(calibtration_position_e pos, uint8_t extruder);
-    bool move_to_sersor_no_trigger(uint8_t axis, int16_t try_distance);
+    bool move_to_sersor_no_trigger(uint8_t axis, float try_distance);
 
   public:
     calibtration_position_e cur_pos;

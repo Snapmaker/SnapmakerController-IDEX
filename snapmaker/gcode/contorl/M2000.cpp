@@ -24,6 +24,7 @@
 #include "../../debug/debug.h"
 #include "../../../Marlin/src/core/macros.h"
 #include "../../../Marlin/src/gcode/gcode.h"
+#include "../../module/motion_control.h"
 #include <EEPROM.h>
 
 /**
@@ -61,6 +62,7 @@ void GcodeSuite::M2000() {
       WRITE(HEATER_PWR_PIN, 0);
       WRITE(HEATER_BED_PWR_PIN, 0);
       break;
+
     case 100:
       LOG_I("test watch dog!\n");
       vTaskDelay(pdMS_TO_TICKS(1000));
@@ -98,6 +100,11 @@ void GcodeSuite::M2000() {
 
     default:
       break;
+  }
+
+  uint8_t z = (uint8_t)parser.byteval('Z', (uint8_t)0xFF);
+  if (z != 0xFF) {
+    motion_control.move_to_z((float)z, 600);
   }
 }
 

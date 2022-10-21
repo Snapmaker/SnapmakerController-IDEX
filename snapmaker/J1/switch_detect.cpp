@@ -150,7 +150,7 @@ bool get_cal_pin_status(uint8_t pin) {
   bool ret = 0;
   if (!READ(PROBE_POWER_EN_PIN)) {
     WRITE(PROBE_POWER_EN_PIN, 1);
-    vTaskDelay(pdMS_TO_TICKS(5));
+    vTaskDelay(pdMS_TO_TICKS(1));
     ret = READ(pin) == LOW;
     WRITE(PROBE_POWER_EN_PIN, 0);
   } else {
