@@ -1302,8 +1302,8 @@ void Planner::shaped_loop() {
     c2--;
     if (c2 <= 0) {
         c2 = 500000;
-        float t = (float)axisManager.counts[4] / (float)axisManager.counts[3] / 3.0f;
-        float max_t = (float)axisManager.counts[5] / 3.0f;
+        // float t = (float)axisManager.counts[4] / (float)axisManager.counts[3] / 3.0f;
+        // float max_t = (float)axisManager.counts[5] / 3.0f;
         // LOG_I("c0: %d, time: %lf, max_t: %lf, max_size: %d, %d\n",  axisManager.counts[0], t, max_t, axisManager.axis[0].func_manager.max_size, axisManager.axis[1].func_manager.max_size);
         // LOG_I("c0: %d, c1: %d, c2: %d, c6: %d, c7: %d, time: %lf, max_t: %lf, c11: %d, c12: %d\n", axisManager.counts[0], axisManager.counts[1], axisManager.counts[2], axisManager.counts[6],axisManager.counts[7], t, max_t, axisManager.counts[11], axisManager.counts[12]);
         // LOG_I("c10: %d, c11: %d, c12: %d\n", axisManager.counts[10], axisManager.counts[11], axisManager.counts[12]);

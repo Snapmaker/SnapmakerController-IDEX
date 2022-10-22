@@ -98,7 +98,7 @@ class Axis {
     FORCE_INLINE bool generateEAxisFuncParams(uint8_t block_index, uint8_t move_start, uint8_t move_end);
     #endif
 
-    FORCE_INLINE bool generateLineFuncParams(Move* move);
+    FORCE_INLINE void generateLineFuncParams(Move* move);
 };
 
 class AxisManager {

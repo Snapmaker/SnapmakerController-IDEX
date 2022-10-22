@@ -217,7 +217,7 @@ FORCE_INLINE bool Axis::generateAxisFuncParams(uint8_t move_start, uint8_t move_
 }
 
 
-FORCE_INLINE bool Axis::generateLineFuncParams(Move* move) {
+FORCE_INLINE void Axis::generateLineFuncParams(Move* move) {
     float y2 = move->end_pos[axis];
     float dy = move->end_pos[axis] - move->start_pos[axis];
     float x2 = move->t;
