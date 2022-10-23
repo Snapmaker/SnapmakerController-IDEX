@@ -91,17 +91,17 @@ void PrintControl::loop() {
 
 bool PrintControl::get_commands(uint8_t *cmd, uint32_t &line, uint16_t max_len) {
 
-  // if (power_loss.power_loss_status != POWER_LOSS_IDLE) {
-  //   return false;
-  // }
+  if (power_loss.power_loss_status != POWER_LOSS_IDLE) {
+    return false;
+  }
 
   if (system_service.get_status() != SYSTEM_STATUE_PRINTING) {
     return false;
   }
 
-  // if (filament_check()) {
-  //   return false;
-  // }
+  if (filament_check()) {
+    return false;
+  }
 
   if(commands_lock_) {
     return false;
