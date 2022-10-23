@@ -1469,18 +1469,32 @@ void Stepper::isr() {
   // We need this variable here to be able to use it in the following loop
   hal_timer_t min_ticks;
 
-  // if (power_loss.check()) {
-  //   if (abort_current_block) {
-  //     abort_current_block = false;
-  //     planner.cleaning_buffer_counter = 10;
-  //     if (current_block) discard_current_block();
-  //     planner.clear_block_buffer();
-  //   }
-  //   HAL_timer_set_compare(STEP_TIMER_NUM,
-  //       hal_timer_t(HAL_timer_get_count(STEP_TIMER_NUM) + STEPPER_TIMER_TICKS_PER_US));
-  //   ENABLE_ISRS();
-  //   return;
-  // }
+  if (power_loss.check()) {
+    if (abort_current_block) {
+      // abort_current_block = false;
+      // planner.cleaning_buffer_counter = 10;
+      // if (current_block) discard_current_block();
+      // planner.clear_block_buffer();
+
+      switch_detect.disable_all();
+      current_direction_bits = 0;
+      axis_did_move = 0;
+      is_start = true;
+      abort_current_block = false;
+      axisManager.req_abort = true;
+      planner.cleaning_buffer_counter = 10;
+
+      is_only_extrude = false;
+      extrude_enable[0] = false;
+      extrude_enable[1] = false;
+
+      if (current_block) discard_current_block();
+    }
+    HAL_timer_set_compare(  STEP_TIMER_NUM,
+                            hal_timer_t(HAL_timer_get_count(STEP_TIMER_NUM) + STEPPER_TIMER_TICKS_PER_US));
+    ENABLE_ISRS();
+    return;
+  }
 
   do {
     // Enable ISRs to reduce USART processing latency
@@ -1649,7 +1663,7 @@ void Stepper::isr() {
 void Stepper::pulse_phase_isr() {
   switch_detect.check();
   endstops.poll();
-  // power_loss.check();
+  power_loss.check();
   // If we must abort the current block, do so!
   if (abort_current_block) {
     switch_detect.disable_all();
