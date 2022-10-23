@@ -431,11 +431,11 @@ ErrCode Calibtration::wait_and_probe_z_offset(calibtration_position_e pos, uint8
 
 ErrCode Calibtration::probe_bed_base_hight(calibtration_position_e pos, uint8_t extruder) {
 
-  if (!head_bed_center_offset_check()) {
-    if(E_SUCCESS != calibtration_xy_center_offset()) {
-      return E_FAILURE;
-    }
-  }
+  // if (!head_bed_center_offset_check()) {
+  //   if(E_SUCCESS != calibtration_xy_center_offset()) {
+  //     return E_FAILURE;
+  //   }
+  // }
   set_calibtration_mode(CAlIBRATION_MODE_BED);
   return wait_and_probe_z_offset(pos, extruder);
 
