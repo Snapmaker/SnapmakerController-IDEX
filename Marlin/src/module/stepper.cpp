@@ -1818,20 +1818,20 @@ uint32_t Stepper::block_phase_isr() {
 
   if (is_only_extrude) {
     if (extrude_enable[0] && extrude_count[0] > 0) {
-      extrude_count[0]--;
+      // extrude_count[0]--;
       interval = extrude_interval[0];
-      if (extrude_count[0] <= 0) {
-        extrude_enable[0] = false;
-      }
+      // if (extrude_count[0] <= 0) {
+      //   extrude_enable[0] = false;
+      // }
     }
     if (extrude_enable[1] && extrude_count[1] > 0) {
-      extrude_count[1]--;
+      // extrude_count[1]--;
       interval = extrude_interval[1];
-      if (extrude_count[1] <= 0) {
-        extrude_enable[1] = false;
-      }
+      // if (extrude_count[1] <= 0) {
+      //   extrude_enable[1] = false;
+      // }
     }
-    is_only_extrude = extrude_enable[0] || extrude_enable[1];
+    // is_only_extrude = extrude_enable[0] || extrude_enable[1];
     return interval;
   }
 
@@ -2740,6 +2740,10 @@ void Stepper::set_axis_position(const AxisEnum a, const int32_t &v) {
 // when the stepper ISR resumes, we must be very sure that the movement
 // is properly canceled
 void Stepper::endstop_triggered(const AxisEnum axis) {
+
+  if (axis == AxisEnum::Y_AXIS && axisManager.counts[18] == 0) {
+    axisManager.counts[18] = count_position[1];
+  }
 
   const bool was_enabled = suspend();
   endstops_trigsteps[axis] = (

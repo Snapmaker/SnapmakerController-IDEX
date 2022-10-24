@@ -24,6 +24,8 @@
 #include "../../debug/debug.h"
 #include "../../../Marlin/src/core/macros.h"
 #include "../../../Marlin/src/gcode/gcode.h"
+#include "../../../Marlin/src/module/endstops.h"
+#include "../../../Marlin/src/module/stepper.h"
 #include "../../module/motion_control.h"
 #include <EEPROM.h>
 
@@ -62,6 +64,15 @@ void GcodeSuite::M2000() {
       WRITE(HEATER_PWR_PIN, 0);
       WRITE(HEATER_BED_PWR_PIN, 0);
       break;
+
+    case 10:
+      // endstops.echo();
+      LOG_I("X: %d\r\n", stepper.triggered_position(X_AXIS));
+      LOG_I("Y: %d\r\n", stepper.triggered_position(Y_AXIS));
+      LOG_I("Z: %d\r\n", stepper.triggered_position(Z_AXIS));
+      LOG_I("X1: %d\r\n", axisManager.counts[18]);
+      axisManager.counts[18] = 0;
+    break;
 
     case 100:
       LOG_I("test watch dog!\n");

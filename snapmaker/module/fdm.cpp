@@ -60,7 +60,7 @@ ErrCode FDM_Head::change_filamenter(uint8_t e, float feedrate, filamenter_change
   }
   change_filamenter_status[!e] = status_bak;
   change_filamenter_status[e] = status;
-  if (is_change_filamenter()) {
+  // if (is_change_filamenter()) {
     // The extruded length is arbitrary, and this is just to rotate the e axis
     // motion_control.extrude_e(50, feedrate);
     if (status == FILAMENT_CHANGE_STOP) {
@@ -70,7 +70,7 @@ ErrCode FDM_Head::change_filamenter(uint8_t e, float feedrate, filamenter_change
     } else if (status == FILAMENT_CHANGE_RETRACK) {
       stepper.start_only_extrude(e, 0, 50, feedrate);
     }
-  }
+  // }
   return E_SUCCESS;
 }
 
