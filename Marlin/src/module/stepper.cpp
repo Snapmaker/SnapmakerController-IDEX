@@ -1835,6 +1835,8 @@ uint32_t Stepper::block_phase_isr() {
     return interval;
   }
 
+  static uint32_t done_count = 0;
+
   // If there is a current block
   if (current_block) {
     hal_timer_t st = HAL_timer_get_count(STEP_TIMER_NUM);
@@ -1878,13 +1880,15 @@ uint32_t Stepper::block_phase_isr() {
       if (next_axis_stepper.print_time >= block_print_time) {
           discard_current_block();
       }
+
+      done_count = 0;
     } else {
       // axisManager.counts[1]++;
-
+      done_count++;
       bool is_done = true;
       for (size_t i = 0; i < AXIS_SIZE; i++) {
         if (i == 3) {
-          if (axisManager.current_steps[i] != block_move_target_steps[i] + LROUND(axisManager.axis[i].delta_e)) {
+          if (fabs(axisManager.current_steps[i] - block_move_target_steps[i] - LROUND(axisManager.axis[i].delta_e)) > 2.0) {
               is_done = false;
           }
         } else {
@@ -1892,14 +1896,34 @@ uint32_t Stepper::block_phase_isr() {
               is_done = false;
           }
         }
-        // if (axisManager.current_steps[i] != block_move_target_steps[i]) {
-        //   is_done = false;
-        // }
       }
 
-      if (is_done) {
+      if (is_done || done_count > 100) {
         discard_current_block();
+        axisManager.abort();
       }
+      // else {
+      //   done_count++;
+      //   if (done_count > 100) {
+      //     is_done = true;
+      //     for (size_t i = 0; i < AXIS_SIZE; i++) {
+      //       if (i == 3) {
+      //         if (fabs(axisManager.current_steps[i] - block_move_target_steps[i] - LROUND(axisManager.axis[i].delta_e) > 2.0)) {
+      //             is_done = false;
+      //         }
+      //       } else {
+      //         if (axisManager.current_steps[i] != block_move_target_steps[i]) {
+      //             is_done = false;
+      //         }
+      //       }
+      //     }
+      //     done_count = 100;
+      //     if (is_done) {
+      //       discard_current_block();
+      //       axisManager.abort();
+      //     }
+      //   }
+      // }
     }
   }
 
