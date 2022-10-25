@@ -519,7 +519,7 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
   for (uint8_t i = 0; i < PROBE_TIMES; i++) {
 
     probe_result_e probe_result = probe(  axis,
-                                          probe_distance + (probe_distance > 0.000001 ? 0.3 : -0.3),
+                                          probe_distance + (probe_distance > 0.000001 ? 0.5 : -0.5),
                                           freerate );
     planner.synchronize();
 
