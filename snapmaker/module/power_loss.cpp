@@ -59,16 +59,16 @@ bool PowerLoss::wait_temp_resume() {
   SERIAL_EOL();
   log_timeout = millis() + 10 * 1000;
   while (system_service.get_status() == SYSTEM_STATUE_RESUMING) {
-    // if (thermalManager.degHotend(0) >= thermalManager.degTargetHotend(0) &&
-    //     thermalManager.degHotend(1) >= thermalManager.degTargetHotend(1) &&
-    //     thermalManager.degBed() >= thermalManager.degTargetBed()) {
-    //     break;
-    // }
 
-    if (fabs(thermalManager.degHotend(0) - thermalManager.degTargetHotend(0)) < 2.0 &&
-        fabs(thermalManager.degHotend(1) - thermalManager.degTargetHotend(1)) < 2.0 &&
-        fabs(thermalManager.degBed() >= thermalManager.degTargetBed()) < 2.0 ) {
-        break;
+    celsius_float_t ht0, ht1, bt, hc0, hc1, bc;
+    ht0 = thermalManager.degTargetHotend(0);
+    hc0 = thermalManager.degHotend(0);
+    ht1 = thermalManager.degTargetHotend(1);
+    hc1 = thermalManager.degHotend(1);
+    bt = thermalManager.degTargetBed();
+    bc = thermalManager.degBed();
+    if ( hc0 > (ht0 - 2.0) && hc1 > (ht1 - 2.0) && bc > (bt - 2.0) ) {
+      break;
     }
 
     vTaskDelay(pdMS_TO_TICKS(10));
