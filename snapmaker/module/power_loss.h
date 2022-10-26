@@ -69,7 +69,7 @@ class PowerLoss {
     ErrCode power_loss_resume();
     bool change_head();
     ErrCode extrude_before_resume();
-    void stash_print_env(bool save);
+    void stash_print_env();
     void resume_print_env();
     ErrCode   set_file_name(uint8_t *name, uint8_t len);
     ErrCode   set_file_md5(uint8_t *md5, uint8_t len);

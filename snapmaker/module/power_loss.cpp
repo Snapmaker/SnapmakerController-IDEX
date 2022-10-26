@@ -19,23 +19,23 @@ PowerLoss power_loss;
 
 extern feedRate_t fast_move_feedrate;
 
-void PowerLoss::stash_print_env(bool save) {
+void PowerLoss::stash_print_env() {
 
-  if (save) {
+  xyze_pos_t cur_position;
+  cur_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS);
+  cur_position[X_AXIS] = planner.get_axis_position_mm(X_AXIS);
+  cur_position[Y_AXIS] = planner.get_axis_position_mm(Y_AXIS);
+  cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
+  stash_data.position = cur_position;
+  LOG_I("PAUSE: X Y Z mm: (%.3f, %.3f, %.3f), X Y Z count: (%d, %d, %d) \r\n",
+        cur_position[X_AXIS], cur_position[Y_AXIS], cur_position[Z_AXIS],
+        stepper.position(X_AXIS), stepper.position(Y_AXIS), stepper.position(Z_AXIS));
+  LOG_I("Current home_offset: %.3f, %.3f, %.3f\r\n", home_offset.x, home_offset.y, home_offset.z);
 
-    xyze_pos_t cur_position;
-    cur_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS);
-    cur_position[X_AXIS] = planner.get_axis_position_mm(X_AXIS);
-    cur_position[Y_AXIS] = planner.get_axis_position_mm(Y_AXIS);
-    cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
-    uint32_t cur_line = print_control.get_cur_line();
-    stash_data.file_position = cur_line ? cur_line - 1 : 0;  // The requested index starts at 0
-    stash_data.position = cur_position;
-
-  }
+  uint32_t cur_line = print_control.get_cur_line();
+  stash_data.file_position = cur_line ? cur_line - 1 : 0;  // The requested index starts at 0
 
   stash_data.dual_x_carriage_mode = dual_x_carriage_mode;
-  stash_data.bed_temp = thermalManager.degTargetBed();
   stash_data.print_feadrate = feedrate_mm_s;
   stash_data.feedrate_percentage = feedrate_percentage;
   stash_data.active_extruder = active_extruder;
@@ -46,6 +46,8 @@ void PowerLoss::stash_print_env(bool save) {
   stash_data.home_offset = home_offset;
   stash_data.print_offset = print_control.xyz_offset;
   stash_data.work_time = print_control.get_work_time();
+
+  stash_data.bed_temp = thermalManager.degTargetBed();
   HOTEND_LOOP() {
     stash_data.nozzle_temp[e] = thermalManager.degTargetHotend(e);
     stash_data.extruder_dual_enable[e] = fdm_head.is_duplication_enabled(e);
@@ -55,6 +57,7 @@ void PowerLoss::stash_print_env(bool save) {
     }
     stash_data.flow_percentage[e] = planner.flow_percentage[e];
   }
+
 }
 
 bool PowerLoss::wait_temp_resume() {
@@ -123,13 +126,12 @@ ErrCode PowerLoss::extrude_before_resume() {
       fdm_head.set_fan_speed(e, i, stash_data.fan[e][i]);
     }
   }
-
   wait_temp_resume();
 
   if (homing_needed()) {
     motion_control.home();
   } else {
-    // motion_control.home_x();
+    motion_control.home_x();
   }
 
   int16_t move_distance = EXTRUDE_X_MOVE_DISTANCE;
@@ -141,6 +143,7 @@ ErrCode PowerLoss::extrude_before_resume() {
   motion_control.synchronize();
   motion_control.extrude_e(EXTRUDE_E_DISTANCE, CHANGE_FILAMENT_SPEED);
   motion_control.synchronize();
+
   ErrCode ret = E_SUCCESS;
   if (filament_sensor.is_trigger()) {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
@@ -153,13 +156,14 @@ ErrCode PowerLoss::extrude_before_resume() {
   }
   next_req = cur_line = line_number_sum = stash_data.file_position;
 
-  // motion_control.home_x();
-  // motion_control.home_y();
+  motion_control.home_x();
+  motion_control.home_y();
 
   return ret;
 }
 
 void PowerLoss::resume_print_env() {
+
   print_control.set_work_time(stash_data.work_time);
   print_control.mode_ = (print_mode_e)stash_data.print_mode;
   thermalManager.setTargetBed(stash_data.bed_temp);
@@ -181,13 +185,28 @@ void PowerLoss::resume_print_env() {
   gcode.axis_relative = stash_data.axis_relative;
   duplicate_extruder_x_offset = stash_data.duplicate_extruder_x_offset;
   dual_x_carriage_unpark();
+
+  home_offset = stash_data.home_offset;
   motion_control.move_to_z(stash_data.position[Z_AXIS] + Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
   motion_control.move_to_xy(stash_data.position[X_AXIS], stash_data.position[Y_AXIS], PRINT_TRAVEL_FEADRATE);
   motion_control.move_to_z(stash_data.position[Z_AXIS], PRINT_TRAVEL_FEADRATE);
+
   current_position.e = stash_data.position.e;
   print_control.xyz_offset = stash_data.print_offset;
   feedrate_percentage = stash_data.feedrate_percentage;
   sync_plan_position();
+
+    xyze_pos_t cur_position;
+    cur_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS);
+    cur_position[X_AXIS] = planner.get_axis_position_mm(X_AXIS);
+    cur_position[Y_AXIS] = planner.get_axis_position_mm(Y_AXIS);
+    cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
+    LOG_I("RESUME: X Y Z mm: (%.3f, %.3f, %.3f), X Y Z count: (%d, %d, %d) \r\n",
+          cur_position[X_AXIS], cur_position[Y_AXIS], cur_position[Z_AXIS],
+          stepper.position(X_AXIS), stepper.position(Y_AXIS), stepper.position(Z_AXIS));
+
+    LOG_I("Current home_offset: %.3f, %.3f, %.3f\r\n", home_offset.x, home_offset.y, home_offset.z);
+
 }
 
  /**
@@ -395,7 +414,7 @@ bool PowerLoss::check() {
           return true;
         case POWER_LOSS_STOP_MOVE:
           if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
-            stash_print_env(true);
+            stash_print_env();
           }
           write_flash();
           power_loss_status = POWER_LOSS_WAIT_Z_MOVE;

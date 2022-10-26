@@ -1689,7 +1689,6 @@ void marlin_loop() {
       axisManager.abort();
       // Drop all queue entries
       planner.block_buffer_nonbusy = planner.block_buffer_planned = planner.block_buffer_head = planner.block_buffer_tail;
-      LOG_I("clear");
     }
     else {
       queue.advance();
