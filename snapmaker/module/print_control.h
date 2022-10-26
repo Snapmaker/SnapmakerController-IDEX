@@ -31,6 +31,7 @@ typedef struct {
 class PrintControl {
   public:
     void init();
+    void clear_gcode_buf();
     uint32_t get_buf_used();
     uint32_t get_buf_free();
     ErrCode push_gcode(uint32_t start_line, uint32_t end_line, uint8_t *data, uint16_t size);

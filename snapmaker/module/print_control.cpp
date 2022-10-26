@@ -6,6 +6,7 @@
 #include "motion_control.h"
 #include "../../Marlin/src/module/temperature.h"
 #include "../../Marlin/src/module/settings.h"
+#include "../../Marlin/src/module/stepper.h"
 #include "system.h"
 #include "fdm.h"
 #include "power_loss.h"
@@ -31,6 +32,10 @@ bool PrintControl::buffer_is_empty() {
 
 bool PrintControl::is_backup_mode() {
   return mode_ == PRINT_BACKUP_MODE;
+}
+
+void PrintControl::clear_gcode_buf() {
+  buffer_head = buffer_tail;
 }
 
 uint32_t PrintControl::get_buf_used() {
@@ -239,8 +244,26 @@ ErrCode PrintControl::pause() {
   buffer_head = buffer_tail = 0;
   pause_work_time();
   motion_control.wait_G28();
-  motion_control.quickstop();
-  power_loss.stash_print_env();
+
+  // motion_control.quickstop();
+  // xyze_pos_t cur_position;
+  // cur_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS);
+  // cur_position[X_AXIS] = planner.get_axis_position_mm(X_AXIS);
+  // cur_position[Y_AXIS] = planner.get_axis_position_mm(Y_AXIS);
+  // cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
+  // power_loss.stash_data.position = cur_position;
+  // uint32_t cur_line = print_control.get_cur_line();
+  // power_loss.stash_data.file_position = cur_line ? cur_line - 1 : 0;  // The requested index starts at 0
+
+  buffer_head = buffer_tail;
+  stepper.req_pause = true;
+  motion_control.synchronize();
+  power_loss.stash_print_env(true);
+  buffer_head = buffer_tail;
+
+  motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
+  motion_control.synchronize();
+
   idex_set_parked(false);
   if (current_position.z + Z_DOWN_SAFE_DISTANCE < Z_MAX_POS) {
     motion_control.move_z(Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
@@ -248,19 +271,36 @@ ErrCode PrintControl::pause() {
     motion_control.move_to_z(Z_MAX_POS, PRINT_TRAVEL_FEADRATE);
   }
   motion_control.synchronize();
-  motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
+
   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
   set_duplication_enabled(false);
-  motion_control.home_x();
-  motion_control.home_y();
+
+  // motion_control.home_x();
+  // motion_control.home_y();
+  tool_change(1, true);
+  motion_control.move_to_x(x_home_pos(1));
+  tool_change(0, true);
+  motion_control.move_to_x(x_home_pos(0));
+  motion_control.move_to_y(0);
+
   system_service.set_status(SYSTEM_STATUE_PAUSED);
+
   return E_SUCCESS;
 }
 
 ErrCode PrintControl::resume() {
   buffer_head = buffer_tail = 0;
+
   // The print needs to be extruded before resuming
   system_service.set_status(SYSTEM_STATUE_RESUMING);
+
+    power_loss.resume_print_env();
+    if (SYSTEM_STATUE_RESUMING == system_service.get_status()) {
+      system_service.set_status(SYSTEM_STATUE_PRINTING);
+    }
+    resume_work_time();
+    return E_SUCCESS;
+
   if (power_loss.extrude_before_resume() == E_SUCCESS) {
     power_loss.resume_print_env();
     if (SYSTEM_STATUE_RESUMING == system_service.get_status()) {
@@ -342,7 +382,7 @@ void PrintControl::error_and_stop() {
   LOG_E("timeout line:%d\n", print_err_info.err_line);
   buffer_head = buffer_tail = 0;
   motion_control.quickstop();
-  power_loss.stash_print_env();
+  power_loss.stash_print_env(true);
   power_loss.write_flash();
   motion_control.synchronize();
   motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);

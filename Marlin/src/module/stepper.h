@@ -283,6 +283,7 @@ class Stepper {
                     axis_did_move;           // Last Movement in the given direction is not null, as computed when the last movement was fetched from planner
 
     static bool abort_current_block;        // Signals to the stepper that current block should be aborted
+    static uint32_t delta_t;
 
     #if ENABLED(X_DUAL_ENDSTOPS)
       static bool locked_X_motor, locked_X2_motor;
@@ -324,6 +325,9 @@ class Stepper {
     static int block_move_target_steps[AXIS_SIZE];
     static bool is_start;
     static time_double_t block_print_time;
+    static bool req_pause;
+    static bool can_pause;
+    static uint32_t stop_count;
 
     // Screen extrude and retrack
     static bool is_only_extrude;
@@ -477,7 +481,7 @@ class Stepper {
 
     // The last movement direction was not null on the specified axis. Note that motor direction is not necessarily the same.
     FORCE_INLINE static bool axis_is_moving(const AxisEnum axis) { return TEST(axis_did_move, axis); }
-    
+
     FORCE_INLINE static bool axis_is_moving() { return (step_events_completed >= accelerate_until) && (step_events_completed <= decelerate_after); }
 //     FORCE_INLINE static bool axis_is_moving() { return step_events_completed > 5; }
 
@@ -632,6 +636,8 @@ class Stepper {
     #if HAS_MICROSTEPS
       static void microstep_init();
     #endif
+
+    static void up_z_(uint32_t steps);
 
 };
 

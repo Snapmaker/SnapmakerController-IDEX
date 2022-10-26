@@ -19,15 +19,21 @@ PowerLoss power_loss;
 
 extern feedRate_t fast_move_feedrate;
 
-void PowerLoss::stash_print_env() {
-  xyze_pos_t cur_position;
-  cur_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS);
-  cur_position[X_AXIS] = planner.get_axis_position_mm(X_AXIS);
-  cur_position[Y_AXIS] = planner.get_axis_position_mm(Y_AXIS);
-  cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
-  uint32_t cur_line = print_control.get_cur_line();
-  stash_data.file_position = cur_line ? cur_line - 1 : 0;  // The requested index starts at 0
-  stash_data.position = cur_position;
+void PowerLoss::stash_print_env(bool save) {
+
+  if (save) {
+
+    xyze_pos_t cur_position;
+    cur_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS);
+    cur_position[X_AXIS] = planner.get_axis_position_mm(X_AXIS);
+    cur_position[Y_AXIS] = planner.get_axis_position_mm(Y_AXIS);
+    cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
+    uint32_t cur_line = print_control.get_cur_line();
+    stash_data.file_position = cur_line ? cur_line - 1 : 0;  // The requested index starts at 0
+    stash_data.position = cur_position;
+
+  }
+
   stash_data.dual_x_carriage_mode = dual_x_carriage_mode;
   stash_data.bed_temp = thermalManager.degTargetBed();
   stash_data.print_feadrate = feedrate_mm_s;
@@ -59,7 +65,6 @@ bool PowerLoss::wait_temp_resume() {
   SERIAL_EOL();
   log_timeout = millis() + 10 * 1000;
   while (system_service.get_status() == SYSTEM_STATUE_RESUMING) {
-
     celsius_float_t ht0, ht1, bt, hc0, hc1, bc;
     ht0 = thermalManager.degTargetHotend(0);
     hc0 = thermalManager.degHotend(0);
@@ -86,6 +91,7 @@ bool PowerLoss::wait_temp_resume() {
 }
 
 ErrCode PowerLoss::extrude_before_resume() {
+
   filament_sensor.reset();
   HOTEND_LOOP() {
     print_control.temperature_lock(e, stash_data.extruder_temperature_lock[e]);
@@ -123,7 +129,7 @@ ErrCode PowerLoss::extrude_before_resume() {
   if (homing_needed()) {
     motion_control.home();
   } else {
-    motion_control.home_x();
+    // motion_control.home_x();
   }
 
   int16_t move_distance = EXTRUDE_X_MOVE_DISTANCE;
@@ -146,8 +152,10 @@ ErrCode PowerLoss::extrude_before_resume() {
     idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
   }
   next_req = cur_line = line_number_sum = stash_data.file_position;
-  motion_control.home_x();
-  motion_control.home_y();
+
+  // motion_control.home_x();
+  // motion_control.home_y();
+
   return ret;
 }
 
@@ -387,7 +395,7 @@ bool PowerLoss::check() {
           return true;
         case POWER_LOSS_STOP_MOVE:
           if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
-            stash_print_env();
+            stash_print_env(true);
           }
           write_flash();
           power_loss_status = POWER_LOSS_WAIT_Z_MOVE;

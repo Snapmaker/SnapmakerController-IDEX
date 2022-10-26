@@ -160,6 +160,7 @@ uint8_t Stepper::current_direction_bits = 0,
         Stepper::axis_did_move; // = 0
 
 bool Stepper::abort_current_block;
+uint32_t Stepper::delta_t = 0;
 
 #if DISABLED(MIXING_EXTRUDER) && HAS_MULTI_EXTRUDER
   uint8_t Stepper::last_moved_extruder = 0xFF;
@@ -206,6 +207,9 @@ AxisStepper Stepper::next_axis_stepper;
 int Stepper::block_move_target_steps[AXIS_SIZE];
 bool Stepper::is_start = true;
 time_double_t Stepper::block_print_time;
+bool Stepper::req_pause = false;
+bool Stepper::can_pause = false;
+uint32_t Stepper::stop_count = 0;
 
 // Screen extrude and retrack
 bool Stepper::is_only_extrude;
@@ -1471,11 +1475,6 @@ void Stepper::isr() {
 
   if (power_loss.check()) {
     if (abort_current_block) {
-      // abort_current_block = false;
-      // planner.cleaning_buffer_counter = 10;
-      // if (current_block) discard_current_block();
-      // planner.clear_block_buffer();
-
       switch_detect.disable_all();
       current_direction_bits = 0;
       axis_did_move = 0;
@@ -1532,6 +1531,46 @@ void Stepper::isr() {
   // #ifdef DEBUG_IO
   // WRITE(DEBUG_IO, 0);
   // #endif
+
+  #define SLOWDOWN_DELAT_CLOCK (5 * STEPPER_TIMER_TICKS_PER_US)
+  #define STOP_TIME_INTERVAL   (STEPPER_TIMER_TICKS_PER_MS)
+  static uint32_t x_time_interval = STOP_TIME_INTERVAL + 1;
+  static uint32_t y_time_interval = STOP_TIME_INTERVAL + 1;
+  if (req_pause) {
+    if ((!axis_is_moving(X_AXIS) && !axis_is_moving(Y_AXIS)) ||
+        axis_stepper.axis < 0) {
+      req_pause = false;
+      can_pause = true;
+      x_time_interval = STOP_TIME_INTERVAL + 1;
+      y_time_interval = STOP_TIME_INTERVAL + 1;
+    }
+    else {
+      float addi = (nextMainISR / (STEPPER_TIMER_TICKS_PER_US * 100));
+      if (!addi) addi = 5;
+      delta_t += addi;
+      nextMainISR += delta_t;
+      stop_count++;
+      // up_z_(2);
+      if (axis_stepper.axis == X_AXIS) {
+        x_time_interval = nextMainISR;
+      }
+      else if (axis_stepper.axis == Y_AXIS) {
+        y_time_interval = nextMainISR;
+      }
+
+      if (x_time_interval > STOP_TIME_INTERVAL &&
+          y_time_interval > STOP_TIME_INTERVAL) {
+        req_pause = false;
+        can_pause = true;
+        x_time_interval = STOP_TIME_INTERVAL + 1;
+        y_time_interval = STOP_TIME_INTERVAL + 1;
+      }
+    }
+  }
+
+  if (can_pause) {
+    nextMainISR += delta_t;
+  }
 
     #if ENABLED(INTEGRATED_BABYSTEPPING)
       if (is_babystep)                                  // Avoid ANY stepping too soon after baby-stepping
@@ -1661,9 +1700,11 @@ void Stepper::isr() {
  * is to keep pulse timing as regular as possible.
  */
 void Stepper::pulse_phase_isr() {
+
   switch_detect.check();
   endstops.poll();
   power_loss.check();
+
   // If we must abort the current block, do so!
   if (abort_current_block) {
     switch_detect.disable_all();
@@ -1676,6 +1717,8 @@ void Stepper::pulse_phase_isr() {
     is_only_extrude = false;
     extrude_enable[0] = false;
     extrude_enable[1] = false;
+
+    delta_t = 0;
 
     if (current_block) discard_current_block();
   }
@@ -1731,52 +1774,17 @@ void Stepper::pulse_phase_isr() {
     set_directions(current_direction_bits);
   }
 
-  // Count of pending loops and events for this iteration
-  // const uint32_t pending_events = step_event_count - step_events_completed;
-  // uint8_t events_to_do = _MIN(pending_events, steps_per_isr);
-
-  // Just update the value we will get at the end of the loop
-  // step_events_completed += events_to_do;
-
-  // uint8_t events_to_do = 1;
-
-  // Take multiple steps per interrupt (For high speed moves)
-  // #if ISR_MULTI_STEPS
-  //   bool firstStep = true;
-  //   USING_TIMED_PULSE();
-  // #endif
-  // xyze_bool_t step_needed{0};
-
-  // axis_stepper.axis = -1;
   #define _APPLY_STEP(AXIS, INV, ALWAYS) AXIS ##_APPLY_STEP(INV, ALWAYS)
   #define _INVERT_STEP_PIN(AXIS) INVERT_## AXIS ##_STEP_PIN
 
-  // Determine if a pulse is needed using Bresenham
-  // #define PULSE_PREP(AXIS) do{ \
-  //   if (step_needed[_AXIS(AXIS)]) { \
-  //     count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
-  //   } \
-  // }while(0)
   #define PULSE_PREP(AXIS) do{ \
     count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
   }while(0)
 
-  // Start an active pulse if needed
-  // #define PULSE_START(AXIS) do{ \
-  //   if (step_needed[_AXIS(AXIS)]) { \
-  //     _APPLY_STEP(AXIS, !_INVERT_STEP_PIN(AXIS), 0); \
-  //   } \
-  // }while(0)
   #define PULSE_START(AXIS) do{ \
     _APPLY_STEP(AXIS, !_INVERT_STEP_PIN(AXIS), 0); \
   }while(0)
 
-  // Stop an active pulse if needed
-  // #define PULSE_STOP(AXIS) do { \
-  //   if (step_needed[_AXIS(AXIS)]) { \
-  //     _APPLY_STEP(AXIS, _INVERT_STEP_PIN(AXIS), 0); \
-  //   } \
-  // }while(0)
   #define PULSE_STOP(AXIS) do { \
       _APPLY_STEP(AXIS, _INVERT_STEP_PIN(AXIS), 0); \
   }while(0)
@@ -1796,7 +1804,7 @@ void Stepper::pulse_phase_isr() {
       PULSE_PREP(Z);
       PULSE_STOP(Z);
   }
-  else if(3 == axis_stepper.axis) {
+  else if(3 == axis_stepper.axis && !req_pause) {
       PULSE_START(E);
       PULSE_PREP(E);
       PULSE_STOP(E);
@@ -1836,7 +1844,6 @@ uint32_t Stepper::block_phase_isr() {
   }
 
   static uint32_t done_count = 0;
-
   // If there is a current block
   if (current_block) {
     hal_timer_t st = HAL_timer_get_count(STEP_TIMER_NUM);
@@ -1873,17 +1880,14 @@ uint32_t Stepper::block_phase_isr() {
       axis_stepper.dir = next_axis_stepper.dir;
       axis_stepper.print_time = next_axis_stepper.print_time;
 
-      // interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
       interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
 
-      // return interval;
       if (next_axis_stepper.print_time >= block_print_time) {
           discard_current_block();
       }
 
       done_count = 0;
     } else {
-      // axisManager.counts[1]++;
       done_count++;
       bool is_done = true;
       for (size_t i = 0; i < AXIS_SIZE; i++) {
@@ -1902,28 +1906,6 @@ uint32_t Stepper::block_phase_isr() {
         discard_current_block();
         axisManager.abort();
       }
-      // else {
-      //   done_count++;
-      //   if (done_count > 100) {
-      //     is_done = true;
-      //     for (size_t i = 0; i < AXIS_SIZE; i++) {
-      //       if (i == 3) {
-      //         if (fabs(axisManager.current_steps[i] - block_move_target_steps[i] - LROUND(axisManager.axis[i].delta_e) > 2.0)) {
-      //             is_done = false;
-      //         }
-      //       } else {
-      //         if (axisManager.current_steps[i] != block_move_target_steps[i]) {
-      //             is_done = false;
-      //         }
-      //       }
-      //     }
-      //     done_count = 100;
-      //     if (is_done) {
-      //       discard_current_block();
-      //       axisManager.abort();
-      //     }
-      //   }
-      // }
     }
   }
 
@@ -3684,3 +3666,36 @@ void Stepper::report_positions() {
   }
 
 #endif // HAS_MICROSTEPS
+
+void Stepper::up_z_(uint32_t steps) {
+
+  #define _APPLY_STEP(AXIS, INV, ALWAYS) AXIS ##_APPLY_STEP(INV, ALWAYS)
+  #define _INVERT_STEP_PIN(AXIS) INVERT_## AXIS ##_STEP_PIN
+
+  #define PULSE_PREP(AXIS) do{ \
+    count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
+  }while(0)
+
+  #define PULSE_START(AXIS) do{ \
+    _APPLY_STEP(AXIS, !_INVERT_STEP_PIN(AXIS), 0); \
+  }while(0)
+
+  #define PULSE_STOP(AXIS) do { \
+      _APPLY_STEP(AXIS, _INVERT_STEP_PIN(AXIS), 0); \
+  }while(0)
+
+  DIR_WAIT_BEFORE();
+
+  Z_APPLY_DIR(!INVERT_Z_DIR, false);
+  for(uint32_t i = 0; i < steps; i++) {
+    PULSE_START(Z);
+    PULSE_PREP(Z);
+    PULSE_STOP(Z);
+  }
+  if (motor_direction(Z_AXIS)) {
+    Z_APPLY_DIR(INVERT_Z_DIR, false);
+  }
+  else {
+    Z_APPLY_DIR(!INVERT_Z_DIR, false);
+  }
+}

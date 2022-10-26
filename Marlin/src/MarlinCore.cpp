@@ -253,6 +253,8 @@ bool wait_for_heatup = true;
 
 TaskHandle_t thandle_marlin = NULL;
 
+bool marlin_thread_pauing = false;
+
 
 void marlin_loop();
 
@@ -753,6 +755,14 @@ void idle(bool no_stepper_sleep/*=false*/) {
   if (xTaskGetCurrentTaskHandle() != thandle_marlin) {
     vTaskDelay(1);
     return;
+  }
+
+  if (stepper.can_pause) {
+    LOG_I("pausing steps %d\r\n", stepper.stop_count);
+    stepper.stop_count = 0;
+    stepper.can_pause = false;
+    marlin_thread_pauing = true;
+    quickstop_stepper();
   }
 
   // static bool idle_lock = false;
@@ -1673,7 +1683,17 @@ void marlin_loop() {
       if (marlin_state == MF_SD_COMPLETE) finishSDPrinting();
     #endif
 
-    queue.advance();
+    if (marlin_thread_pauing) {
+      marlin_thread_pauing = false;
+      queue.clear();
+      axisManager.abort();
+      // Drop all queue entries
+      planner.block_buffer_nonbusy = planner.block_buffer_planned = planner.block_buffer_head = planner.block_buffer_tail;
+      LOG_I("clear");
+    }
+    else {
+      queue.advance();
+    }
 
     endstops.event_handler();
 
