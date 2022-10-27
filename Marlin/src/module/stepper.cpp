@@ -1536,13 +1536,18 @@ void Stepper::isr() {
   #define STOP_TIME_INTERVAL   (1 * STEPPER_TIMER_TICKS_PER_MS)
   static uint32_t x_time_interval = STOP_TIME_INTERVAL + 1;
   static uint32_t y_time_interval = STOP_TIME_INTERVAL + 1;
+  static uint32_t no_move_count = 0;
   if (req_pause) {
     if ((!axis_is_moving(X_AXIS) && !axis_is_moving(Y_AXIS)) ||
         axis_stepper.axis < 0) {
-      req_pause = false;
-      can_pause = true;
-      x_time_interval = STOP_TIME_INTERVAL + 1;
-      y_time_interval = STOP_TIME_INTERVAL + 1;
+      no_move_count++;
+      if (no_move_count >= 10) {
+        req_pause = false;
+        can_pause = true;
+        x_time_interval = STOP_TIME_INTERVAL + 1;
+        y_time_interval = STOP_TIME_INTERVAL + 1;
+        no_move_count = 0;
+      }
     }
     else {
       // float addi = (nextMainISR / (STEPPER_TIMER_TICKS_PER_US * 100));
@@ -1565,6 +1570,7 @@ void Stepper::isr() {
         can_pause = true;
         x_time_interval = STOP_TIME_INTERVAL + 1;
         y_time_interval = STOP_TIME_INTERVAL + 1;
+        no_move_count = 0;
       }
     }
   }
