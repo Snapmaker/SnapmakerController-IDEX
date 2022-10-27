@@ -157,10 +157,17 @@ ErrCode PrintControl::push_gcode(uint32_t start_line, uint32_t end_line, uint8_t
       gcode_count ++;
     }
   }
+
+  if (power_loss.next_req != start_line) {
+    LOG_E("HIM gcode start line is NOT equal req\r\n");
+    return E_PARAM;
+  }
+
   if ((end_line - start_line + 1) != gcode_count) {
     SERIAL_ECHOLNPAIR("failed line start:", start_line, " end:", end_line, " count:", gcode_count, " next_req:", power_loss.next_req);
     return E_PARAM;
   }
+
   for (uint32_t i = 0; i < size; i++) {
     gcode_buffer[buffer_head] = data[i];
     buffer_head = (buffer_head + 1) % GCODE_BUFFER_SIZE;
@@ -242,15 +249,36 @@ ErrCode PrintControl::start() {
 
 ErrCode PrintControl::pause() {
 
-  buffer_head = buffer_tail = 0;
   pause_work_time();
   motion_control.wait_G28();
 
-  stepper.req_pause = true;
-  motion_control.synchronize();
-  power_loss.stash_print_env();
-  buffer_head = buffer_tail;
+  commands_lock();
+  buffer_head = buffer_tail = 0;
 
+  stepper.req_pause = true;
+  while(1) {
+    if (stepper.can_pause) {
+      LOG_I("pausing steps %d\r\n", stepper.stop_count);
+      stepper.stop_count = 0;
+      stepper.can_pause = false;
+      quickstop_stepper();
+      break;
+    }
+    else {
+      vTaskDelay(1);
+    }
+  }
+
+  LOG_I("gcode buffer buffer_head %d, buffer_tail %d\r\n", buffer_head, buffer_tail);
+  LOG_I("queue ring_buffer empty: %d\r\n", !!queue.ring_buffer.empty());
+  LOG_I("planner buffer movesplanned: %d\r\n", planner.movesplanned());
+  extern AxisManager axisManager;
+  for (uint32_t ai = 0; ai < 4; ai++) {
+    bool empty = axisManager.axis[ai].func_manager.func_params_head == axisManager.axis[ai].func_manager.func_params_tail;
+    LOG_I("Axis func manager: %d\r\n", empty);
+  }
+
+  power_loss.stash_print_env();
   motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
   motion_control.synchronize();
 
@@ -265,15 +293,25 @@ ErrCode PrintControl::pause() {
   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
   set_duplication_enabled(false);
 
-  motion_control.home_x();
-  motion_control.home_y();
+  // motion_control.home_x();
+  // motion_control.home_y();
 
-  // tool_change(1, true);
-  // motion_control.move_to_x(x_home_pos(1));
-  // tool_change(0, true);
-  // motion_control.move_to_x(x_home_pos(0));
-  // motion_control.move_to_y(0);
+  uint8_t save_active_extruder = active_extruder;
+  float x_pack_pos = x_home_pos(active_extruder) + (active_extruder ? -1 : 1);
+  // LOG_I("active extruder %d\r\n", active_extruder);
+  // LOG_I("active extruder pack pos %.3f\r\n", x_pack_pos);
+  // LOG_I("printer offset: %.3f %.3f %.3f\r\n", print_control.xyz_offset.x, print_control.xyz_offset.y, print_control.xyz_offset.z);
+  motion_control.move_to_x(x_pack_pos);
 
+  uint8_t inactive_extruder_x = !active_extruder;
+  tool_change(inactive_extruder_x, true);
+  x_pack_pos = x_home_pos(inactive_extruder_x) + (inactive_extruder_x ? -1 : 1);
+  // LOG_I("inactive extruder %d\r\n", inactive_extruder_x);
+  // LOG_I("inactive extruder pack pos %.3f\r\n", x_pack_pos);
+  motion_control.move_to_x(x_pack_pos);
+  tool_change(save_active_extruder);
+
+  motion_control.move_to_y(1);
   system_service.set_status(SYSTEM_STATUE_PAUSED);
 
   return E_SUCCESS;
@@ -286,6 +324,7 @@ ErrCode PrintControl::resume() {
   system_service.set_status(SYSTEM_STATUE_RESUMING);
   if (power_loss.extrude_before_resume() == E_SUCCESS) {
     power_loss.resume_print_env();
+    commands_unlock();
     if (SYSTEM_STATUE_RESUMING == system_service.get_status()) {
       system_service.set_status(SYSTEM_STATUE_PRINTING);
     }
