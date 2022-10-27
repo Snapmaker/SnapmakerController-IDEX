@@ -27,10 +27,11 @@ void PowerLoss::stash_print_env() {
   cur_position[Y_AXIS] = planner.get_axis_position_mm(Y_AXIS);
   cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
   stash_data.position = cur_position;
-  LOG_I("PAUSE: X Y Z mm: (%.3f, %.3f, %.3f), X Y Z count: (%d, %d, %d) \r\n",
-        cur_position[X_AXIS], cur_position[Y_AXIS], cur_position[Z_AXIS],
-        stepper.position(X_AXIS), stepper.position(Y_AXIS), stepper.position(Z_AXIS));
-  LOG_I("Current home_offset: %.3f, %.3f, %.3f\r\n", home_offset.x, home_offset.y, home_offset.z);
+
+  // LOG_I("PAUSE: X Y Z mm: (%.3f, %.3f, %.3f), X Y Z count: (%d, %d, %d) \r\n",
+  //       cur_position[X_AXIS], cur_position[Y_AXIS], cur_position[Z_AXIS],
+  //       stepper.position(X_AXIS), stepper.position(Y_AXIS), stepper.position(Z_AXIS));
+  // LOG_I("Current home_offset: %.3f, %.3f, %.3f\r\n", home_offset.x, home_offset.y, home_offset.z);
 
   uint32_t cur_line = print_control.get_cur_line();
   stash_data.file_position = cur_line ? cur_line - 1 : 0;  // The requested index starts at 0
@@ -101,14 +102,14 @@ ErrCode PowerLoss::extrude_before_resume() {
   }
   if (stash_data.dual_x_carriage_mode >= DXC_DUPLICATION_MODE) {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-    tool_change(0);
+    tool_change(0, true);
     // Use mirror mode to facilitate both heads extruding together
     dual_x_carriage_mode = DXC_MIRRORED_MODE;
     duplicate_extruder_x_offset = MIRRORED_MODE_X_OFFSET;
     idex_set_mirrored_mode(true);
   } else {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-    tool_change(stash_data.active_extruder);
+    tool_change(stash_data.active_extruder, true);
   }
 
   thermalManager.setTargetBed(stash_data.bed_temp);
@@ -131,7 +132,7 @@ ErrCode PowerLoss::extrude_before_resume() {
   if (homing_needed()) {
     motion_control.home();
   } else {
-    motion_control.home_x();
+    // motion_control.home_x();
   }
 
   int16_t move_distance = EXTRUDE_X_MOVE_DISTANCE;
@@ -156,8 +157,23 @@ ErrCode PowerLoss::extrude_before_resume() {
   }
   next_req = cur_line = line_number_sum = stash_data.file_position;
 
-  motion_control.home_x();
-  motion_control.home_y();
+  // motion_control.home_x();
+  // motion_control.home_y();
+
+  uint8_t save_active_extruder = active_extruder;
+  float x_pack_pos = x_home_pos(active_extruder) + (active_extruder ? -1 : 1);
+  // LOG_I("active extruder %d\r\n", active_extruder);
+  // LOG_I("active extruder pack pos %.3f\r\n", x_pack_pos);
+  // LOG_I("printer offset: %.3f %.3f %.3f\r\n", print_control.xyz_offset.x, print_control.xyz_offset.y, print_control.xyz_offset.z);
+  motion_control.move_to_x(x_pack_pos);
+
+  uint8_t inactive_extruder_x = !active_extruder;
+  tool_change(inactive_extruder_x, true);
+  x_pack_pos = x_home_pos(inactive_extruder_x) + (inactive_extruder_x ? -1 : 1);
+  // LOG_I("inactive extruder %d\r\n", inactive_extruder_x);
+  // LOG_I("inactive extruder pack pos %.3f\r\n", x_pack_pos);
+  motion_control.move_to_x(x_pack_pos);
+  tool_change(save_active_extruder);
 
   return ret;
 }
@@ -196,16 +212,16 @@ void PowerLoss::resume_print_env() {
   feedrate_percentage = stash_data.feedrate_percentage;
   sync_plan_position();
 
-    xyze_pos_t cur_position;
-    cur_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS);
-    cur_position[X_AXIS] = planner.get_axis_position_mm(X_AXIS);
-    cur_position[Y_AXIS] = planner.get_axis_position_mm(Y_AXIS);
-    cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
-    LOG_I("RESUME: X Y Z mm: (%.3f, %.3f, %.3f), X Y Z count: (%d, %d, %d) \r\n",
-          cur_position[X_AXIS], cur_position[Y_AXIS], cur_position[Z_AXIS],
-          stepper.position(X_AXIS), stepper.position(Y_AXIS), stepper.position(Z_AXIS));
+    // xyze_pos_t cur_position;
+    // cur_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS);
+    // cur_position[X_AXIS] = planner.get_axis_position_mm(X_AXIS);
+    // cur_position[Y_AXIS] = planner.get_axis_position_mm(Y_AXIS);
+    // cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
+    // LOG_I("RESUME: X Y Z mm: (%.3f, %.3f, %.3f), X Y Z count: (%d, %d, %d) \r\n",
+    //       cur_position[X_AXIS], cur_position[Y_AXIS], cur_position[Z_AXIS],
+    //       stepper.position(X_AXIS), stepper.position(Y_AXIS), stepper.position(Z_AXIS));
 
-    LOG_I("Current home_offset: %.3f, %.3f, %.3f\r\n", home_offset.x, home_offset.y, home_offset.z);
+    // LOG_I("Current home_offset: %.3f, %.3f, %.3f\r\n", home_offset.x, home_offset.y, home_offset.z);
 
 }
 

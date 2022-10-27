@@ -1532,8 +1532,8 @@ void Stepper::isr() {
   // WRITE(DEBUG_IO, 0);
   // #endif
 
-  #define SLOWDOWN_DELAT_CLOCK (5 * STEPPER_TIMER_TICKS_PER_US)
-  #define STOP_TIME_INTERVAL   (STEPPER_TIMER_TICKS_PER_MS)
+  #define SLOWDOWN_DELAT_CLOCK (1 * STEPPER_TIMER_TICKS_PER_US)
+  #define STOP_TIME_INTERVAL   (1 * STEPPER_TIMER_TICKS_PER_MS)
   static uint32_t x_time_interval = STOP_TIME_INTERVAL + 1;
   static uint32_t y_time_interval = STOP_TIME_INTERVAL + 1;
   if (req_pause) {
@@ -1545,9 +1545,10 @@ void Stepper::isr() {
       y_time_interval = STOP_TIME_INTERVAL + 1;
     }
     else {
-      float addi = (nextMainISR / (STEPPER_TIMER_TICKS_PER_US * 100));
-      if (!addi) addi = 5;
-      delta_t += addi;
+      // float addi = (nextMainISR / (STEPPER_TIMER_TICKS_PER_US * 100));
+      // if (!addi) addi = 5;
+      // delta_t += addi;
+      delta_t += SLOWDOWN_DELAT_CLOCK;
       nextMainISR += delta_t;
       stop_count++;
       // up_z_(2);
@@ -2178,20 +2179,22 @@ uint32_t Stepper::block_phase_isr() {
       //   axis_stepper.print_time = next_axis_stepper.print_time;
       // }
 
-      if (axis_stepper.dir > 0) {
-        CBI(current_direction_bits, axis_stepper.axis);
-      } else if(axis_stepper.dir < 0) {
-        SBI(current_direction_bits, axis_stepper.axis);
-      }
+      if (axis_stepper.axis >= 0) {
+        if (axis_stepper.dir > 0) {
+          CBI(current_direction_bits, axis_stepper.axis);
+        } else if(axis_stepper.dir < 0) {
+          SBI(current_direction_bits, axis_stepper.axis);
+        }
 
-      if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
-        || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
-        || current_direction_bits != last_direction_bits
-        || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
-      ) {
-        TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
-        TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
-        set_directions(current_direction_bits);
+        if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+          || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+          || current_direction_bits != last_direction_bits
+          || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+        ) {
+          TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+          TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+          set_directions(current_direction_bits);
+        }
       }
 
       uint8_t axis_bits = 0;

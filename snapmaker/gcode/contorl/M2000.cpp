@@ -74,6 +74,14 @@ void GcodeSuite::M2000() {
       axisManager.counts[18] = 0;
     break;
 
+    case 11:
+    {
+      quickstop_stepper();
+      dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+      set_duplication_enabled(false);
+    }
+    break;
+
     case 100:
       LOG_I("test watch dog!\n");
       vTaskDelay(pdMS_TO_TICKS(1000));

@@ -1877,7 +1877,8 @@ void Planner::quick_stop() {
   #endif
 
   // Make sure to drop any attempt of queuing moves for 1 second
-  cleaning_buffer_counter = TEMP_TIMER_FREQUENCY;
+  // cleaning_buffer_counter = TEMP_TIMER_FREQUENCY;
+  cleaning_buffer_counter = TEMP_TIMER_FREQUENCY / 10;
 
   // Reenable Stepper ISR
   if (was_enabled) stepper.wake_up();
@@ -1977,8 +1978,6 @@ void Planner::synchronize() {
   while (has_blocks_queued() || cleaning_buffer_counter
       || TERN0(EXTERNAL_CLOSED_LOOP_CONTROLLER, CLOSED_LOOP_WAITING())
       || axisManager.req_abort
-      || stepper.req_pause
-      || stepper.can_pause
   ) idle();
 }
 

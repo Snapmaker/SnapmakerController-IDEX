@@ -253,8 +253,6 @@ bool wait_for_heatup = true;
 
 TaskHandle_t thandle_marlin = NULL;
 
-bool marlin_thread_pauing = false;
-
 
 void marlin_loop();
 
@@ -757,24 +755,11 @@ void idle(bool no_stepper_sleep/*=false*/) {
     return;
   }
 
-  if (stepper.can_pause) {
-    LOG_I("pausing steps %d\r\n", stepper.stop_count);
-    stepper.stop_count = 0;
-    stepper.can_pause = false;
-    marlin_thread_pauing = true;
-    quickstop_stepper();
-  }
-
   // static bool idle_lock = false;
   #if ENABLED(MARLIN_DEV_MODE)
     static uint16_t idle_depth = 0;
     if (++idle_depth > 5) SERIAL_ECHOLNPAIR("idle() call depth: ", idle_depth);
   #endif
-
-  // if (idle_lock) {
-  //   return;
-  // }
-  // idle_lock = true;
 
   // Core Marlin activities
   manage_inactivity(no_stepper_sleep);
@@ -871,7 +856,6 @@ void idle(bool no_stepper_sleep/*=false*/) {
   IDLE_DONE:
   TERN_(MARLIN_DEV_MODE, idle_depth--);
   filament_sensor.check();
-  // idle_lock = false;
 
   return;
 }
@@ -1683,16 +1667,7 @@ void marlin_loop() {
       if (marlin_state == MF_SD_COMPLETE) finishSDPrinting();
     #endif
 
-    if (marlin_thread_pauing) {
-      marlin_thread_pauing = false;
-      queue.clear();
-      axisManager.abort();
-      // Drop all queue entries
-      planner.block_buffer_nonbusy = planner.block_buffer_planned = planner.block_buffer_head = planner.block_buffer_tail;
-    }
-    else {
-      queue.advance();
-    }
+    queue.advance();
 
     endstops.event_handler();
 
