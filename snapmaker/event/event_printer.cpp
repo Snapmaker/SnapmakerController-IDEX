@@ -508,7 +508,7 @@ void pausing_status_deal() {
   switch (system_service.get_source()) {
     case SYSTEM_STATUE_SCOURCE_FILAMENT:
       report_status_info(STATUS_PAUSE_BE_FILAMENT);
-      SERIAL_ECHOLNPAIR("lilament puase done");
+      SERIAL_ECHOLNPAIR("flilament puase done");
       break;
     case SYSTEM_STATUE_SCOURCE_GCODE:
       report_status_info(STATUS_PAUSE_BE_GCODE);
@@ -519,7 +519,7 @@ void pausing_status_deal() {
       power_loss.change_head();
       if (print_control.resume() != E_SUCCESS) {
         report_status_info(STATUS_PAUSE_BE_FILAMENT);
-        SERIAL_ECHOLNPAIR("lilament puase done");
+        SERIAL_ECHOLNPAIR("flilament puase done");
       } else {
         req_gcode_pack();
       }
@@ -596,7 +596,7 @@ void resuming_status_deal() {
     req_gcode_pack();
   } else {
     report_status_info(STATUS_PAUSE_BE_FILAMENT);
-    SERIAL_ECHOLNPAIR("resume be lilament puase");
+    SERIAL_ECHOLNPAIR("resume be flilament puase");
   }
 }
 
