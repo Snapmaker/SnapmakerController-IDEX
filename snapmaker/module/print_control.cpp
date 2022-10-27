@@ -78,7 +78,7 @@ bool PrintControl::filament_check() {
       source = SYSTEM_STATUE_SCOURCE_TOOL_CHANGE;
       break;
   }
-  SERIAL_ECHOLNPAIR("lilament trigger and source:", source);
+  SERIAL_ECHOLNPAIR("flilament trigger and source:", source);
   system_service.set_status(SYSTEM_STATUE_PAUSING, source);
   return true;
 }
