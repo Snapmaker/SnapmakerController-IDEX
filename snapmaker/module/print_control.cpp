@@ -258,7 +258,7 @@ ErrCode PrintControl::pause() {
   stepper.req_pause = true;
   while(1) {
     if (stepper.can_pause) {
-      LOG_I("pausing steps %d\r\n", stepper.stop_count);
+      // LOG_I("pausing steps %d\r\n", stepper.stop_count);
       stepper.stop_count = 0;
       stepper.can_pause = false;
       quickstop_stepper();
@@ -269,15 +269,17 @@ ErrCode PrintControl::pause() {
       vTaskDelay(1);
     }
   }
+  LOG_I("PAUSE: ");
+  stepper.report_positions();
 
-  LOG_I("gcode buffer buffer_head %d, buffer_tail %d\r\n", buffer_head, buffer_tail);
-  LOG_I("queue ring_buffer empty: %d\r\n", !!queue.ring_buffer.empty());
-  LOG_I("planner buffer movesplanned: %d\r\n", planner.movesplanned());
-  extern AxisManager axisManager;
-  for (uint32_t ai = 0; ai < 4; ai++) {
-    bool empty = axisManager.axis[ai].func_manager.func_params_head == axisManager.axis[ai].func_manager.func_params_tail;
-    LOG_I("Axis func manager: %d\r\n", empty);
-  }
+  // LOG_I("gcode buffer buffer_head %d, buffer_tail %d\r\n", buffer_head, buffer_tail);
+  // LOG_I("queue ring_buffer empty: %d\r\n", !!queue.ring_buffer.empty());
+  // LOG_I("planner buffer movesplanned: %d\r\n", planner.movesplanned());
+  // extern AxisManager axisManager;
+  // for (uint32_t ai = 0; ai < 4; ai++) {
+  //   bool empty = axisManager.axis[ai].func_manager.func_params_head == axisManager.axis[ai].func_manager.func_params_tail;
+  //   LOG_I("Axis func manager: %d\r\n", empty);
+  // }
 
   power_loss.stash_print_env();
   motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);

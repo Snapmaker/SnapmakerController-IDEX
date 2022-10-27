@@ -205,12 +205,16 @@ void PowerLoss::resume_print_env() {
   home_offset = stash_data.home_offset;
   motion_control.move_to_z(stash_data.position[Z_AXIS] + Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
   motion_control.move_to_xy(stash_data.position[X_AXIS], stash_data.position[Y_AXIS], PRINT_TRAVEL_FEADRATE);
-  motion_control.move_to_z(stash_data.position[Z_AXIS], PRINT_TRAVEL_FEADRATE);
+  motion_control.move_to_z(stash_data.position[Z_AXIS] + 0.01, PRINT_TRAVEL_FEADRATE);
+  planner.synchronize();
 
   current_position.e = stash_data.position.e;
   print_control.xyz_offset = stash_data.print_offset;
   feedrate_percentage = stash_data.feedrate_percentage;
   sync_plan_position();
+
+  LOG_I("RESUME: ");
+  stepper.report_positions();
 
     // xyze_pos_t cur_position;
     // cur_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS);
