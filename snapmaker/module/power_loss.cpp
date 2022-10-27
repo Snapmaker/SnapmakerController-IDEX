@@ -146,7 +146,7 @@ ErrCode PowerLoss::extrude_before_resume() {
   motion_control.synchronize();
 
   ErrCode ret = E_SUCCESS;
-  if (filament_sensor.is_trigger()) {
+  if (filament_sensor.is_trigger(power_loss.stash_data.active_extruder)) {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
     idex_set_mirrored_mode(false);
     ret = E_COMMON_ERROR;
@@ -205,7 +205,7 @@ void PowerLoss::resume_print_env() {
   home_offset = stash_data.home_offset;
   motion_control.move_to_z(stash_data.position[Z_AXIS] + Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
   motion_control.move_to_xy(stash_data.position[X_AXIS], stash_data.position[Y_AXIS], PRINT_TRAVEL_FEADRATE);
-  motion_control.move_to_z(stash_data.position[Z_AXIS] + 0.01, PRINT_TRAVEL_FEADRATE);
+  motion_control.move_to_z(stash_data.position[Z_AXIS], PRINT_TRAVEL_FEADRATE);
   planner.synchronize();
 
   current_position.e = stash_data.position.e;
