@@ -1719,8 +1719,6 @@ void Stepper::pulse_phase_isr() {
     extrude_enable[0] = false;
     extrude_enable[1] = false;
 
-    delta_t = 0;
-
     if (current_block) discard_current_block();
   }
 

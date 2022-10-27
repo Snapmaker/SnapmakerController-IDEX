@@ -262,6 +262,7 @@ ErrCode PrintControl::pause() {
       stepper.stop_count = 0;
       stepper.can_pause = false;
       quickstop_stepper();
+      stepper.delta_t = 0;
       break;
     }
     else {
