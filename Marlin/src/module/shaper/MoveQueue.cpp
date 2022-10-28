@@ -102,6 +102,8 @@ void MoveQueue::calculateMoves(block_t* block) {
 
     block->shaper_data.move_end = prevMoveIndex(move_head);
 
+    block->curise_speed = nominal_speed * 1000;
+
     Move& end_move = moves[block->shaper_data.move_end];
     for (int i = 0; i < AXIS_SIZE; ++i) {
         float p1 = end_move.end_pos[i];
