@@ -83,18 +83,22 @@ FORCE_INLINE bool Axis::generateFuncParams(uint8_t block_index, uint8_t move_sta
 }
 
 bool Axis::getNextStep() {
-    // if (is_get_next_step_null) {
-        // return false;
-    // }
-    // if (func_manager.max_size < func_manager.getSize()) {
-        // func_manager.max_size = func_manager.getSize();
-    // }
+
     if (!func_manager.getNextPosTime(1, &dir, mm_to_step, half_step_mm)) {
-        is_get_next_step_null = true;
-        return false;
+      is_get_next_step_null = true;
+      return false;
     }
+
     print_time = func_manager.print_time;
+    if (axisManager.T0_T1_simultaneously_move && axis == T0_T1_AXIS_INDEX) {
+      if (!axisManager.T0_T1_start_print_time_got) {
+        axisManager.t0_t1_start_print_time = axisManager.print_time;
+        axisManager.T0_T1_start_print_time_got = true;
+      }
+      print_time += axisManager.t0_t1_start_print_time;
+    }
     is_consumed = false;
+
     return true;
 }
 
@@ -217,25 +221,25 @@ FORCE_INLINE bool Axis::generateAxisFuncParams(uint8_t move_start, uint8_t move_
 }
 
 
-FORCE_INLINE void Axis::generateLineFuncParams(Move* move) {
-    float y2 = move->end_pos[axis];
-    float dy = move->end_pos[axis] - move->start_pos[axis];
-    float x2 = move->t;
-    float dx = move->t;
+// FORCE_INLINE void Axis::generateLineFuncParams(Move* move) {
+//     float y2 = move->end_pos[axis];
+//     float dy = move->end_pos[axis] - move->start_pos[axis];
+//     float x2 = move->t;
+//     float dx = move->t;
 
-    float a = 0.5f * move->accelerate * move->axis_r[axis];
-    float c = move->start_pos[axis];
-    float b = dy / dx - a * x2;
+//     float a = 0.5f * move->accelerate * move->axis_r[axis];
+//     float c = move->start_pos[axis];
+//     float b = dy / dx - a * x2;
 
-    int type;
-    if (IS_ZERO(dy)) {
-        type = 0;
-    } else {
-        type = dy > 0 ? 1 : -1;
-    }
-    time_double_t end_t = move->end_t;
-    func_manager.addFuncParams(a, b, c, type, end_t, y2);
-}
+//     int type;
+//     if (IS_ZERO(dy)) {
+//         type = 0;
+//     } else {
+//         type = dy > 0 ? 1 : -1;
+//     }
+//     time_double_t end_t = move->end_t;
+//     func_manager.addFuncParams(a, b, c, type, end_t, y2);
+// }
 
 float AxisManager::getRemainingConsumeTime() {
     return min_last_time - print_time;
@@ -289,7 +293,8 @@ bool AxisManager::getCurrentAxisStepper(AxisStepper *axis_stepper) {
     axis_stepper->dir = print_dir;
     axis_stepper->print_time = print_time;
 
-    current_steps[print_axis] += print_dir;
+    if (print_axis != T0_T1_AXIS_INDEX)
+      current_steps[print_axis] += print_dir;
 
     is_consumed = true;
     return true;
@@ -300,6 +305,7 @@ bool AxisManager::getCurrentAxisStepper(AxisStepper *axis_stepper) {
  And then return the closest time axis if we have
 */
 bool AxisManager::getNextAxisStepper() {
+
     if (!is_consumed) {
         return false;
     }
@@ -312,7 +318,7 @@ bool AxisManager::getNextAxisStepper() {
     }
 
     // Fine the closest time of all the axes
-    time_double_t min_print_time = 1000000000;
+    time_double_t min_print_time = 2000000000;
     for (int i = 0; i < AXIS_SIZE; ++i) {
         if (!axis[i].is_consumed) {
             if (axis[i].print_time < min_print_time) {
@@ -323,9 +329,30 @@ bool AxisManager::getNextAxisStepper() {
         }
     }
 
+    if (T0_T1_simultaneously_move) {
+
+      if(axis_t0_t1.is_consumed)
+        axis_t0_t1.getNextStep();
+
+      if (!axis_t0_t1.is_consumed) {
+        if (axis_t0_t1.print_time < min_print_time) {
+          min_print_time = axis_t0_t1.print_time;
+          print_axis = T0_T1_AXIS_INDEX;
+          is_consumed = false;
+        }
+      }
+      else {
+        T0_T1_simultaneously_move = false;
+      }
+
+    }
+
     // is_consumed == false, means that we has a steps need to output
     if (!is_consumed) {
-        axis[print_axis].is_consumed = true;
+        if (print_axis < T0_T1_AXIS_INDEX)
+          axis[print_axis].is_consumed = true;
+        else
+          axis_t0_t1.is_consumed = true;
         print_time = min_print_time;
         print_dir = axis[print_axis].dir;
         return true;

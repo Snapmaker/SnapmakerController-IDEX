@@ -1720,6 +1720,7 @@ void Stepper::pulse_phase_isr() {
     is_start = true;
     abort_current_block = false;
     axisManager.req_abort = true;
+    axisManager.T0_T1_simultaneously_move = false;
 
     is_only_extrude = false;
     extrude_enable[0] = false;
@@ -1741,9 +1742,10 @@ void Stepper::pulse_phase_isr() {
   }
 
   // If there is no current block, do nothing
-  if (!current_block) return;
+  // if (!current_block && !axisManager.T0_T1_simultaneously_move) return;
+  // if (!current_block) return;
 
-  step_events_completed++;
+  // step_events_completed++;
   // if (step_events_completed > 5) {
   //   // The stall gread is detected only after the motor is moving
   //   if (motion_control.is_sg_trigger()) {
@@ -1759,24 +1761,24 @@ void Stepper::pulse_phase_isr() {
   // Skipping step processing causes motion to freeze
   if (TERN0(HAS_FREEZE_PIN, frozen)) return;
 
-  if (axis_stepper.axis == -1) {
-    return;
-  }
+  if (axis_stepper.axis == -1) return;
 
-  if (axis_stepper.dir > 0) {
-    CBI(current_direction_bits, axis_stepper.axis);
-  } else if(axis_stepper.dir < 0) {
-    SBI(current_direction_bits, axis_stepper.axis);
-  }
+  if (axis_stepper.axis != T0_T1_AXIS_INDEX) {
+    if (axis_stepper.dir > 0) {
+      CBI(current_direction_bits, axis_stepper.axis);
+    } else if(axis_stepper.dir < 0) {
+      SBI(current_direction_bits, axis_stepper.axis);
+    }
 
-  if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
-    || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
-    || current_direction_bits != last_direction_bits
-    || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
-  ) {
-    TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
-    TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
-    set_directions(current_direction_bits);
+    if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+      || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+      || current_direction_bits != last_direction_bits
+      || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+    ) {
+      TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+      TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+      set_directions(current_direction_bits);
+    }
   }
 
   #define _APPLY_STEP(AXIS, INV, ALWAYS) AXIS ##_APPLY_STEP(INV, ALWAYS)
@@ -1814,7 +1816,36 @@ void Stepper::pulse_phase_isr() {
       PULSE_PREP(E);
       PULSE_STOP(E);
   }
+  else if(T0_T1_AXIS_INDEX == axis_stepper.axis) {
+    static uint32_t volatile wait = 0;
+    if (axisManager.T0_T1_axis) {
+
+      if (axis_stepper.dir > 0)
+        X2_DIR_WRITE(1);
+      else
+        X2_DIR_WRITE(0);
+
+      X2_STEP_WRITE(!_INVERT_STEP_PIN(X));
+      wait++;
+      X2_STEP_WRITE(_INVERT_STEP_PIN(X));
+
+    }
+    else {
+
+      if (axis_stepper.dir > 0)
+        X_DIR_WRITE(1);
+      else
+        X_DIR_WRITE(0);
+
+      X_STEP_WRITE(!_INVERT_STEP_PIN(X));
+      wait++;
+      X_STEP_WRITE(_INVERT_STEP_PIN(X));
+
+    }
+  }
+
   axis_stepper.axis = -1;
+
 }
 
 // This is the last half of the stepper interrupt: This one processes and
@@ -1848,9 +1879,15 @@ uint32_t Stepper::block_phase_isr() {
     return interval;
   }
 
+  if (axisManager.T0_T1_req_simultaneously_move && current_block) {
+    axisManager.T0_T1_req_simultaneously_move = false;
+    axisManager.T0_T1_simultaneously_move = true;
+  }
+
   static uint32_t done_count = 0;
   // If there is a current block
-  if (current_block) {
+  if (current_block || axisManager.T0_T1_simultaneously_move) {
+  // if (current_block) {
     hal_timer_t st = HAL_timer_get_count(STEP_TIMER_NUM);
     if (axisManager.getNextAxisStepper()) {
       hal_timer_t et = HAL_timer_get_count(STEP_TIMER_NUM);
@@ -1875,7 +1912,6 @@ uint32_t Stepper::block_phase_isr() {
         axisManager.counts[11]++;
       }
 
-
       if (delta_time < 0) {
           delta_time = 0;
       }
@@ -1888,10 +1924,10 @@ uint32_t Stepper::block_phase_isr() {
       interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
 
       if (next_axis_stepper.print_time >= block_print_time) {
-          discard_current_block();
+        discard_current_block();
       }
-
       done_count = 0;
+
     } else {
       done_count++;
       bool is_done = true;
@@ -1908,8 +1944,10 @@ uint32_t Stepper::block_phase_isr() {
       }
 
       if (is_done || done_count > 100) {
-        discard_current_block();
-        axisManager.abort();
+        if (current_block) {
+          discard_current_block();
+          axisManager.abort();
+        }
       }
     }
   }
@@ -2183,21 +2221,23 @@ uint32_t Stepper::block_phase_isr() {
       //   axis_stepper.print_time = next_axis_stepper.print_time;
       // }
 
-      if (axis_stepper.axis >= 0) {
-        if (axis_stepper.dir > 0) {
-          CBI(current_direction_bits, axis_stepper.axis);
-        } else if(axis_stepper.dir < 0) {
-          SBI(current_direction_bits, axis_stepper.axis);
-        }
+      if (axis_stepper.axis != T0_T1_AXIS_INDEX) {
+        if (axis_stepper.axis >= 0) {
+          if (axis_stepper.dir > 0) {
+            CBI(current_direction_bits, axis_stepper.axis);
+          } else if(axis_stepper.dir < 0) {
+            SBI(current_direction_bits, axis_stepper.axis);
+          }
 
-        if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
-          || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
-          || current_direction_bits != last_direction_bits
-          || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
-        ) {
-          TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
-          TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
-          set_directions(current_direction_bits);
+          if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+            || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+            || current_direction_bits != last_direction_bits
+            || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+          ) {
+            TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+            TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+            set_directions(current_direction_bits);
+          }
         }
       }
 

@@ -117,6 +117,132 @@ void GcodeSuite::M2000() {
       }
       break;
 
+    case 200:
+    {
+
+      if (axisManager.T0_T1_simultaneously_move) {
+        LOG_I("BUSY\r\n");
+        return;
+      }
+
+      // uint8_t AXIS = (uint8_t)parser.byteval('X', (uint8_t)0);
+      // float L = (float)parser.floatval('L', (float)100.0);
+      axisManager.T0_T1_target_pos = x_home_pos(!active_extruder);
+      float L = axisManager.T0_T1_target_pos - inactive_extruder_x;
+      float V = (float)parser.floatval('V', (float)300.0);
+      float A = (float)parser.floatval('A', (float)6000.0);
+
+      float millimeters     = fabs(L);                    // mm
+      float entry_speed     = 5 / 1000.0f;            // mm / s
+      float leave_speed     = 5 / 1000.0f;            // mm / s
+      float nominal_speed   = fabs(V) / 1000.0f;          // mm / ms
+      float acceleration    = fabs(A) / 1000000.0f;     // mm / ms^2
+      float i_acceleration  = 1.0f / acceleration;
+      float i_nominal_speed = 1.0f / nominal_speed;
+
+      float accelDistance = Planner::estimate_acceleration_distance(entry_speed, nominal_speed, acceleration);
+      float decelDistance = Planner::estimate_acceleration_distance(nominal_speed, leave_speed, -acceleration);
+      if (accelDistance < EPSILON) {
+        accelDistance = 0;
+      }
+      if (decelDistance < EPSILON) {
+        decelDistance = 0;
+      }
+      float plateau = millimeters - accelDistance - decelDistance;
+
+      float accelClocks = (nominal_speed - entry_speed) * i_acceleration;
+      float decelClocks = (nominal_speed - leave_speed) * i_acceleration;
+      float plateauClocks = plateau * i_nominal_speed;
+
+      if (plateau < 0) {
+
+        float newAccelDistance = Planner::intersection_distance(entry_speed, leave_speed, acceleration, millimeters);
+        if (newAccelDistance > millimeters) {
+          newAccelDistance = millimeters;
+        }
+        if (newAccelDistance < EPSILON) {
+          newAccelDistance = 0;
+        }
+        if ((millimeters - newAccelDistance) < EPSILON) {
+          newAccelDistance = millimeters;
+        }
+
+        accelDistance = newAccelDistance;
+        decelDistance = millimeters - accelDistance;
+        if (decelDistance < EPSILON) {
+          decelDistance = 0;
+        }
+
+        nominal_speed = SQRT(2 * acceleration * accelDistance + sq(entry_speed));
+        if (nominal_speed < leave_speed) {
+          nominal_speed = leave_speed;
+        }
+
+        accelClocks = (nominal_speed - entry_speed) * i_acceleration;
+        decelClocks = (nominal_speed - leave_speed) * i_acceleration;
+        plateauClocks = 0;
+        plateau = 0;
+
+      }
+
+      Move move;
+      axisManager.axis_t0_t1.reset();
+      move.start_t = 0;
+      move.axis_r[T0_T1_AXIS_INDEX] = L > 0.0 ? 80 : -80;
+
+      // axisManager.axis_t0_t1.generateLineFuncParams(&move);
+      if (accelDistance > 0) {
+        move.accelerate = acceleration;
+        move.t = accelClocks;
+        move.end_t = move.start_t + move.t;
+        move.start_pos[T0_T1_AXIS_INDEX] = axisManager.axis_t0_t1.func_manager.last_pos;
+        move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX] + accelDistance * move.axis_r[T0_T1_AXIS_INDEX];
+        axisManager.axis_t0_t1.generateLineFuncParams(&move);
+        // LOG_I("acc move time %f ms\r\n", move.t);
+        // LOG_I("acc move len %f mm\r\n", (move.end_pos[T0_T1_AXIS_INDEX] - move.start_pos[T0_T1_AXIS_INDEX]) / 80);
+      }
+      if (plateau > 0.0) {
+        move.accelerate = 0;
+        move.start_t = move.end_t;
+        move.t = plateauClocks;
+        move.end_t = move.start_t + move.t;
+        move.start_pos[T0_T1_AXIS_INDEX] = move.end_pos[T0_T1_AXIS_INDEX];
+        move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX] + plateau * move.axis_r[T0_T1_AXIS_INDEX];
+        axisManager.axis_t0_t1.generateLineFuncParams(&move);
+        // LOG_I("plat move time %f ms\r\n", move.t);
+        // LOG_I("plat move len %f mm\r\n", (move.end_pos[T0_T1_AXIS_INDEX] - move.start_pos[T0_T1_AXIS_INDEX]) / 80);
+      }
+      if (decelDistance > 0) {
+        move.accelerate = -acceleration;
+        move.start_t = move.end_t;
+        move.t = decelClocks;
+        move.end_t = move.start_t + move.t;
+        move.start_pos[T0_T1_AXIS_INDEX] = move.end_pos[T0_T1_AXIS_INDEX];
+        move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX] + decelDistance * move.axis_r[T0_T1_AXIS_INDEX];
+        axisManager.axis_t0_t1.generateLineFuncParams(&move);
+        // LOG_I("decl move time %f ms\r\n", move.t);
+        // LOG_I("decl move len %f mm\r\n", (move.end_pos[T0_T1_AXIS_INDEX] - move.start_pos[T0_T1_AXIS_INDEX]) / 80);
+      }
+
+      axisManager.T0_T1_start_print_time_got = false;
+      axisManager.T0_T1_axis = !active_extruder;
+      inactive_extruder_x = axisManager.T0_T1_target_pos;
+      axisManager.T0_T1_req_simultaneously_move = true;
+      // axisManager.T0_T1_simultaneously_move = true;
+
+      // axisManager.getNextAxisStepper();
+      // time_double_t last_time;
+      // axisManager.axis_t0_t1.getNextStep();
+      // last_time = axisManager.axis_t0_t1.print_time;
+      // while (axisManager.axis_t0_t1.getNextStep()) {
+      //   float delta_time_ms = axisManager.axis_t0_t1.print_time - last_time;
+      //   LOG_I("interval: %.3f ms\r\n", delta_time_ms);
+      //   last_time = axisManager.axis_t0_t1.print_time;
+      // }
+
+    }
+    break;
+
     default:
       break;
   }
