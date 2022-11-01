@@ -218,6 +218,7 @@ void PrintControl::set_work_time(uint32_t time) {
 }
 
 ErrCode PrintControl::start() {
+
   if (!exception_server.is_allow_work()) {
     return E_SYSTEM_EXCEPTION;
   }
@@ -247,8 +248,10 @@ ErrCode PrintControl::start() {
 
   filament_sensor.reset();
   memset(&print_err_info, 0, sizeof(print_err_info));
+  commands_unlock();
   system_service.set_status(SYSTEM_STATUE_PRINTING);
   start_work_time();
+
   return E_SUCCESS;
 }
 
@@ -263,7 +266,6 @@ ErrCode PrintControl::pause() {
   stepper.req_pause = true;
   while(1) {
     if (stepper.can_pause) {
-      // LOG_I("pausing steps %d\r\n", stepper.stop_count);
       stepper.stop_count = 0;
       stepper.can_pause = false;
       quickstop_stepper();
@@ -274,17 +276,6 @@ ErrCode PrintControl::pause() {
       vTaskDelay(1);
     }
   }
-  LOG_I("PAUSE: ");
-  stepper.report_positions();
-
-  // LOG_I("gcode buffer buffer_head %d, buffer_tail %d\r\n", buffer_head, buffer_tail);
-  // LOG_I("queue ring_buffer empty: %d\r\n", !!queue.ring_buffer.empty());
-  // LOG_I("planner buffer movesplanned: %d\r\n", planner.movesplanned());
-  // extern AxisManager axisManager;
-  // for (uint32_t ai = 0; ai < 4; ai++) {
-  //   bool empty = axisManager.axis[ai].func_manager.func_params_head == axisManager.axis[ai].func_manager.func_params_tail;
-  //   LOG_I("Axis func manager: %d\r\n", empty);
-  // }
 
   power_loss.stash_print_env();
   motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
@@ -301,21 +292,13 @@ ErrCode PrintControl::pause() {
   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
   set_duplication_enabled(false);
 
-  // motion_control.home_x();
-  // motion_control.home_y();
-
   uint8_t save_active_extruder = active_extruder;
   float x_pack_pos = x_home_pos(active_extruder) + (active_extruder ? -1 : 1);
-  // LOG_I("active extruder %d\r\n", active_extruder);
-  // LOG_I("active extruder pack pos %.3f\r\n", x_pack_pos);
-  // LOG_I("printer offset: %.3f %.3f %.3f\r\n", print_control.xyz_offset.x, print_control.xyz_offset.y, print_control.xyz_offset.z);
   motion_control.move_to_x(x_pack_pos);
 
   uint8_t inactive_extruder_x = !active_extruder;
   tool_change(inactive_extruder_x, true);
   x_pack_pos = x_home_pos(inactive_extruder_x) + (inactive_extruder_x ? -1 : 1);
-  // LOG_I("inactive extruder %d\r\n", inactive_extruder_x);
-  // LOG_I("inactive extruder pack pos %.3f\r\n", x_pack_pos);
   motion_control.move_to_x(x_pack_pos);
   tool_change(save_active_extruder);
 
