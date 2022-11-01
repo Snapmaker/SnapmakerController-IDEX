@@ -133,7 +133,16 @@ ErrCode PowerLoss::extrude_before_resume() {
     move_distance = -move_distance;
   }
   dual_x_carriage_unpark();
-  motion_control.move_x(move_distance, PRINT_TRAVEL_FEADRATE);
+
+  float x_extrude_pos;
+  if (0 == power_loss.stash_data.active_extruder) {
+    x_extrude_pos = x_home_pos(0) + EXTRUDE_X_MOVE_DISTANCE;
+  }
+  else {
+    x_extrude_pos = x_home_pos(1) - EXTRUDE_X_MOVE_DISTANCE;
+  }
+  // motion_control.move_x(move_distance, PRINT_TRAVEL_FEADRATE);
+  motion_control.move_to_x(x_extrude_pos, PRINT_TRAVEL_FEADRATE);
   motion_control.synchronize();
 
   // motion_control.extrude_e(EXTRUDE_E_DISTANCE, CHANGE_FILAMENT_SPEED);
@@ -154,22 +163,15 @@ ErrCode PowerLoss::extrude_before_resume() {
   }
   next_req = cur_line = line_number_sum = stash_data.file_position;
 
-  // motion_control.home_x();
-  // motion_control.home_y();
-
   uint8_t save_active_extruder = active_extruder;
   float x_pack_pos = x_home_pos(active_extruder) + (active_extruder ? -1 : 1);
-  // LOG_I("active extruder %d\r\n", active_extruder);
-  // LOG_I("active extruder pack pos %.3f\r\n", x_pack_pos);
-  // LOG_I("printer offset: %.3f %.3f %.3f\r\n", print_control.xyz_offset.x, print_control.xyz_offset.y, print_control.xyz_offset.z);
   motion_control.move_to_x(x_pack_pos);
 
   uint8_t inactive_extruder_x = !active_extruder;
   tool_change(inactive_extruder_x, true);
   x_pack_pos = x_home_pos(inactive_extruder_x) + (inactive_extruder_x ? -1 : 1);
-  // LOG_I("inactive extruder %d\r\n", inactive_extruder_x);
-  // LOG_I("inactive extruder pack pos %.3f\r\n", x_pack_pos);
   motion_control.move_to_x(x_pack_pos);
+
   tool_change(save_active_extruder);
 
   return ret;
