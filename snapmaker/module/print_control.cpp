@@ -14,6 +14,8 @@
 #include "exception.h"
 
 
+#define PAUSE_RESUME_MOVE_FEEDRATE_MMM (9000)
+
 PrintControl print_control;
 
 
@@ -294,15 +296,15 @@ ErrCode PrintControl::pause() {
 
   uint8_t save_active_extruder = active_extruder;
   float x_pack_pos = x_home_pos(active_extruder) + (active_extruder ? -1 : 1);
-  motion_control.move_to_x(x_pack_pos);
+  motion_control.move_to_x(x_pack_pos, PAUSE_RESUME_MOVE_FEEDRATE_MMM);
 
   uint8_t inactive_extruder_x = !active_extruder;
   tool_change(inactive_extruder_x, true);
   x_pack_pos = x_home_pos(inactive_extruder_x) + (inactive_extruder_x ? -1 : 1);
-  motion_control.move_to_x(x_pack_pos);
+  motion_control.move_to_x(x_pack_pos, PAUSE_RESUME_MOVE_FEEDRATE_MMM);
   tool_change(save_active_extruder);
 
-  motion_control.move_to_y(1);
+  motion_control.move_to_y(1, PAUSE_RESUME_MOVE_FEEDRATE_MMM);
   system_service.set_status(SYSTEM_STATUE_PAUSED);
 
   return E_SUCCESS;
@@ -331,7 +333,25 @@ ErrCode PrintControl::stop() {
   if (system_service.get_status() != SYSTEM_STATUE_IDLE) {
     motion_control.wait_G28();
     power_loss.clear();
-    motion_control.quickstop();
+
+    // motion_control.quickstop();
+    commands_lock();
+    buffer_head = buffer_tail = 0;
+
+    stepper.req_pause = true;
+    while(1) {
+      if (stepper.can_pause) {
+        stepper.stop_count = 0;
+        stepper.can_pause = false;
+        quickstop_stepper();
+        stepper.delta_t = 0;
+        break;
+      }
+      else {
+        vTaskDelay(1);
+      }
+    }
+
     buffer_head = buffer_tail = 0;
     is_calibretion_mode = false;
     idex_set_parked(false);

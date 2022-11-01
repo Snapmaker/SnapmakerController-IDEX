@@ -10,14 +10,14 @@
 #define PL_WORKING      0x55
 #define PL_WAIT_RESUME  0xAA
 
-#define Z_DOWN_SAFE_DISTANCE 2  // mm
-#define PRINT_RETRACK_DISTANCE 1  // mm
-#define CHANGE_FILAMENT_SPEED 200  // mm/min
-#define PRINT_TRAVEL_FEADRATE 6000
+#define Z_DOWN_SAFE_DISTANCE      2  // mm
+#define PRINT_RETRACK_DISTANCE    1  // mm
+#define CHANGE_FILAMENT_SPEED     200  // mm/min
+#define PRINT_TRAVEL_FEADRATE     9000
 #define POWERLOSS_Z_DOWN_DISTANCE 5  // mm
 
-#define EXTRUDE_X_MOVE_DISTANCE 8  // mm
-#define EXTRUDE_E_DISTANCE 30  // mm
+#define EXTRUDE_X_MOVE_DISTANCE   8  // mm
+#define EXTRUDE_E_DISTANCE        30  // mm
 
 typedef enum {
   POWER_LOSS_IDLE,
