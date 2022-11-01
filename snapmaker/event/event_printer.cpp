@@ -6,6 +6,7 @@
 #include "../module/fdm.h"
 #include "../module/bed_control.h"
 #include "../module/motion_control.h"
+#include "../../../src/module/AxisManager.h"
 
 #define GCODE_MAX_PACK_SIZE 450
 #define GCODE_REQ_TIMEOUT_MS 200
@@ -628,7 +629,8 @@ void printer_event_loop(void) {
       paused_status_deal();
       break;
     case SYSTEM_STATUE_PAUSING:
-      pausing_status_deal();
+      if (!axisManager.T0_T1_simultaneously_move)
+        pausing_status_deal();
       break;
     case SYSTEM_STATUE_RESUMING:
       resuming_status_deal();

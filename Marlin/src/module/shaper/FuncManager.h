@@ -39,6 +39,7 @@ class FuncParams {
 #define FUNC_PARAMS_Y_SIZE 300
 #define FUNC_PARAMS_Z_SIZE 64
 #define FUNC_PARAMS_E_SIZE 64
+#define FUNC_PARAMS_T_SIZE 8
 
 // static FuncParams FUNC_PARAMS_X[FUNC_PARAMS_X_SIZE];
 // static FuncParams FUNC_PARAMS_Y[FUNC_PARAMS_Y_SIZE];
@@ -59,15 +60,17 @@ class FuncManager {
     static FuncParams FUNC_PARAMS_Y[FUNC_PARAMS_Y_SIZE];
     static FuncParams FUNC_PARAMS_Z[FUNC_PARAMS_Z_SIZE];
     static FuncParams FUNC_PARAMS_E[FUNC_PARAMS_E_SIZE];
+    static FuncParams FUNC_PARAMS_T[FUNC_PARAMS_T_SIZE];
 
     static int8_t FUNC_PARAMS_TYPE_X[FUNC_PARAMS_X_SIZE];
     static int8_t FUNC_PARAMS_TYPE_Y[FUNC_PARAMS_Y_SIZE];
     static int8_t FUNC_PARAMS_TYPE_Z[FUNC_PARAMS_Z_SIZE];
     static int8_t FUNC_PARAMS_TYPE_E[FUNC_PARAMS_E_SIZE];
+    static int8_t FUNC_PARAMS_TYPE_T[FUNC_PARAMS_T_SIZE];
 
     FuncParams* funcParams;
     int8_t* funcParamsTypes;
-    
+
     volatile int func_params_tail = 0;
     volatile int func_params_use = 0;
     volatile int func_params_head = 0;
@@ -114,6 +117,11 @@ class FuncManager {
                 funcParams = FUNC_PARAMS_E;
                 funcParamsTypes = FUNC_PARAMS_TYPE_E;
                 break;
+            case 4:
+                size = FUNC_PARAMS_T_SIZE;
+                funcParams = FUNC_PARAMS_T;
+                funcParamsTypes = FUNC_PARAMS_TYPE_T;
+                break;
         }
     }
 
@@ -139,7 +147,7 @@ class FuncManager {
     }
 
     constexpr int getSize() {
-        return FUNC_PARAMS_MOD(func_params_head - func_params_tail, size);
+      return FUNC_PARAMS_MOD(func_params_head - func_params_tail, size);
     }
 
     FORCE_INLINE constexpr int nextFuncParamsIndex(const int func_params_index) { return FUNC_PARAMS_MOD(func_params_index + 1, size); };
@@ -154,7 +162,7 @@ class FuncManager {
     // void addMonotoneDeltaTimeFuncParams(float a, float b, float c, float delta_left_time, int8_t type, time_double_t right_time, float right_pos);
 
     // void addDeltaTimeFuncParams(float a, float b, float c, time_double_t left_time, time_double_t right_time, float right_pos);
-    
+
     void addFuncParams(float a, float b, float c,int type, time_double_t right_time, float right_pos);
 
     float getPos(time_double_t time);

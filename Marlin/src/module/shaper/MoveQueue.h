@@ -21,9 +21,9 @@ class Move {
     float t;
     float accelerate;
     float distance;
-    float start_pos[AXIS_SIZE];
-    float end_pos[AXIS_SIZE];
-    float axis_r[AXIS_SIZE];
+    float start_pos[AXIS_SIZE + 1];
+    float end_pos[AXIS_SIZE + 1];
+    float axis_r[AXIS_SIZE + 1];
 
     time_double_t start_t = 0;
     time_double_t end_t = 0;

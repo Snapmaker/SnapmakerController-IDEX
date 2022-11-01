@@ -6,11 +6,13 @@ FuncParams FuncManager::FUNC_PARAMS_X[FUNC_PARAMS_X_SIZE];
 FuncParams FuncManager::FUNC_PARAMS_Y[FUNC_PARAMS_Y_SIZE];
 FuncParams FuncManager::FUNC_PARAMS_Z[FUNC_PARAMS_Z_SIZE];
 FuncParams FuncManager::FUNC_PARAMS_E[FUNC_PARAMS_E_SIZE];
+FuncParams FuncManager::FUNC_PARAMS_T[FUNC_PARAMS_T_SIZE];
 
 int8_t FuncManager::FUNC_PARAMS_TYPE_X[FUNC_PARAMS_X_SIZE];
 int8_t FuncManager::FUNC_PARAMS_TYPE_Y[FUNC_PARAMS_Y_SIZE];
 int8_t FuncManager::FUNC_PARAMS_TYPE_Z[FUNC_PARAMS_Z_SIZE];
 int8_t FuncManager::FUNC_PARAMS_TYPE_E[FUNC_PARAMS_E_SIZE];
+int8_t FuncManager::FUNC_PARAMS_TYPE_T[FUNC_PARAMS_T_SIZE];
 
 float FuncManager::getPos(time_double_t time) {
     int func_start = func_params_tail;
@@ -84,7 +86,7 @@ FORCE_INLINE float FuncManager::getTimeByFuncParams(FuncParams* f_p, int8_t type
 //     } else {
 //         last_is_zero = false;
 //     }
-    
+
 //     FuncParams &f_p = funcParams[func_params_head];
 
 //     f_p.a = a;
