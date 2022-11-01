@@ -64,8 +64,6 @@ class PrintControl {
     void set_work_time(uint32_t time);
   private:
     void start_work_time();
-    void pause_work_time();
-    void resume_work_time();
     void stop_work_time();
 
   public:
@@ -75,7 +73,9 @@ class PrintControl {
     print_err_info_t print_err_info = {0};
     xyz_pos_t xyz_offset = {0, 0, 0};
     uint32_t work_time_ms = 0;
+    uint32_t set_work_time_ms;
     bool req_clear_work_time = false;
+    bool req_set_work_time = false;
     uint32_t work_start_time = 0;
     bool is_calibretion_mode = false;  // calibretion mode not save powerloss data
 };

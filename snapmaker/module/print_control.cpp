@@ -90,6 +90,12 @@ void PrintControl::loop() {
 
   if (req_clear_work_time) {
     work_time_ms = 0;
+    req_clear_work_time = false;
+  }
+
+  if (req_set_work_time) {
+    work_time_ms = set_work_time_ms;
+    req_set_work_time = false;
   }
 
   if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
@@ -189,14 +195,6 @@ void PrintControl::start_work_time() {
   // work_start_time = millis();
 }
 
-void PrintControl::pause_work_time() {
-  // work_time_ms += millis() - work_start_time;
-}
-
-void PrintControl::resume_work_time() {
-  // work_start_time = millis();
-}
-
 void PrintControl::stop_work_time() {
   // work_time_ms = work_start_time = 0;
   // work_time_ms = 0;
@@ -204,19 +202,17 @@ void PrintControl::stop_work_time() {
 
 
 uint32_t PrintControl::get_work_time() {
-  // if (!system_service.is_working()) {
-  //   return 0;
-  // } else if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
-  //   return work_time_ms + millis() - work_start_time;
-  // } else {
-  //   return work_time_ms;
-  // }
-  return work_time_ms;
+  if (!system_service.is_working()) {
+    return 0;
+  }
+  else {
+    return work_time_ms;
+  }
 }
 
 void PrintControl::set_work_time(uint32_t time) {
-  // work_time_ms = time;
-  // resume_work_time();
+  req_set_work_time = true;
+  set_work_time_ms = time;
 }
 
 ErrCode PrintControl::start() {
@@ -259,7 +255,6 @@ ErrCode PrintControl::start() {
 
 ErrCode PrintControl::pause() {
 
-  pause_work_time();
   motion_control.wait_G28();
 
   commands_lock();
@@ -321,7 +316,6 @@ ErrCode PrintControl::resume() {
     if (SYSTEM_STATUE_RESUMING == system_service.get_status()) {
       system_service.set_status(SYSTEM_STATUE_PRINTING);
     }
-    resume_work_time();
     return E_SUCCESS;
   } else {
     system_service.set_status(SYSTEM_STATUE_PAUSED);
