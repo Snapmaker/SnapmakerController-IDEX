@@ -90,6 +90,7 @@ void PrintControl::loop() {
 
   if (req_clear_work_time) {
     work_time_ms = 0;
+    last_ms = 0;
     req_clear_work_time = false;
   }
 

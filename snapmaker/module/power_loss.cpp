@@ -28,11 +28,6 @@ void PowerLoss::stash_print_env() {
   cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
   stash_data.position = cur_position;
 
-  // LOG_I("PAUSE: X Y Z mm: (%.3f, %.3f, %.3f), X Y Z count: (%d, %d, %d) \r\n",
-  //       cur_position[X_AXIS], cur_position[Y_AXIS], cur_position[Z_AXIS],
-  //       stepper.position(X_AXIS), stepper.position(Y_AXIS), stepper.position(Z_AXIS));
-  // LOG_I("Current home_offset: %.3f, %.3f, %.3f\r\n", home_offset.x, home_offset.y, home_offset.z);
-
   uint32_t cur_line = print_control.get_cur_line();
   stash_data.file_position = cur_line ? cur_line - 1 : 0;  // The requested index starts at 0
 
