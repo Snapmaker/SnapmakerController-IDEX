@@ -27,6 +27,7 @@
 #include "../../../Marlin/src/module/endstops.h"
 #include "../../../Marlin/src/module/stepper.h"
 #include "../../module/motion_control.h"
+#include "../../module/system.h"
 #include <EEPROM.h>
 
 /**
@@ -122,6 +123,11 @@ void GcodeSuite::M2000() {
 
       if (axisManager.T0_T1_simultaneously_move) {
         LOG_I("BUSY\r\n");
+        return;
+      }
+
+      if (system_service.get_status() == SYSTEM_STATUE_PAUSING) {
+        LOG_I("PAUSING, can not move T0 T1 now\r\n");
         return;
       }
 

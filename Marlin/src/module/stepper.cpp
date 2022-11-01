@@ -1879,9 +1879,15 @@ uint32_t Stepper::block_phase_isr() {
     return interval;
   }
 
-  if (axisManager.T0_T1_req_simultaneously_move && current_block) {
-    axisManager.T0_T1_req_simultaneously_move = false;
-    axisManager.T0_T1_simultaneously_move = true;
+  if (axisManager.T0_T1_req_simultaneously_move) {
+
+    if (system_service.get_status() == SYSTEM_STATUE_PAUSING) {
+      axisManager.T0_T1_req_simultaneously_move = false;
+    }
+    else if (current_block) {
+      axisManager.T0_T1_req_simultaneously_move = false;
+      axisManager.T0_T1_simultaneously_move = true;
+    }
   }
 
   static uint32_t done_count = 0;
