@@ -979,8 +979,6 @@ void fast_line_to_current(const AxisEnum fr_axis) { _line_to_current(fr_axis, 0.
  */
 void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
-  LOG_I("no_move %d\r\n", no_move);
-
   if (TERN0(MAGNETIC_SWITCHING_TOOLHEAD, new_tool == active_extruder))
     return;
 

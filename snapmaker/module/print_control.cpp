@@ -86,6 +86,10 @@ bool PrintControl::filament_check() {
 void PrintControl::loop() {
   static uint32_t last_ms = 0;
 
+  if (req_clear_work_time) {
+    work_time_ms = 0;
+  }
+
   if (system_service.get_status() == SYSTEM_STATUE_PRINTING) {
     if (ELAPSED(millis(), last_ms + 10)) {
       work_time_ms += (millis() - last_ms);
@@ -178,7 +182,8 @@ ErrCode PrintControl::push_gcode(uint32_t start_line, uint32_t end_line, uint8_t
 }
 
 void PrintControl::start_work_time() {
-  work_time_ms = 0;
+  // work_time_ms = 0;
+  req_clear_work_time = true;
   // work_start_time = millis();
 }
 
@@ -208,8 +213,8 @@ uint32_t PrintControl::get_work_time() {
 }
 
 void PrintControl::set_work_time(uint32_t time) {
-  work_time_ms = time;
-  resume_work_time();
+  // work_time_ms = time;
+  // resume_work_time();
 }
 
 ErrCode PrintControl::start() {

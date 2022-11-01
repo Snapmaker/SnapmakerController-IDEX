@@ -110,6 +110,7 @@ void FilamentSensor::check() {
 
       if ((err_times[i] & err_mask) == err_mask) {
         triggered[i] = true;
+        LOG_I("extruder %d blocked\r\n", i);
       } else {
         triggered[i] = false;
       }

@@ -6,6 +6,8 @@
 #include "shaper/MoveQueue.h"
 #include "../../../../snapmaker/debug/debug.h"
 
+#define T0_T1_AXIS_INDEX  (4)
+
 class AxisStepper {
   public:
     int8_t axis = -1;
@@ -91,6 +93,28 @@ class Axis {
 
     bool getNextStep();
 
+    FORCE_INLINE void generateLineFuncParams(Move* move) {
+        float y2 = move->end_pos[axis];
+        float dy = move->end_pos[axis] - move->start_pos[axis];
+        float x2 = move->t;
+        float dx = move->t;
+
+        float a = 0.5f * move->accelerate * move->axis_r[axis];
+        float c = move->start_pos[axis];
+        float b = dy / dx - a * x2;
+
+        // LOG_I("a %f b %f c %f\r\n", a, b, c);
+
+        int type;
+        if (IS_ZERO(dy)) {
+            type = 0;
+        } else {
+            type = dy > 0 ? 1 : -1;
+        }
+        time_double_t end_t = move->end_t;
+        func_manager.addFuncParams(a, b, c, type, end_t, y2);
+    }
+
   private:
     FORCE_INLINE bool generateAxisFuncParams(uint8_t move_start, uint8_t move_end);
 
@@ -98,14 +122,21 @@ class Axis {
     FORCE_INLINE bool generateEAxisFuncParams(uint8_t block_index, uint8_t move_start, uint8_t move_end);
     #endif
 
-    FORCE_INLINE void generateLineFuncParams(Move* move);
 };
 
 class AxisManager {
   public:
     int counts[20] = {0};
+    bool T0_T1_req_simultaneously_move = false;
+    bool T0_T1_simultaneously_move = false;
+    bool T0_T1_start_print_time_got = false;
+    time_double_t t0_t1_start_print_time = 0;
+    float T0_T1_target_pos;
+    uint8_t T0_T1_axis = 0;
+    float t0_t1_delta_print_time = 0;
 
     Axis axis[AXIS_SIZE];
+    Axis axis_t0_t1;
 
     volatile bool req_abort;
 
@@ -117,7 +148,6 @@ class AxisManager {
     float shaped_left_delta = 0;
     float shaped_right_delta = 0;
     float shaped_delta_window = 0;
-
 
     // FuncManager Generate
     time_double_t min_last_time = 0;
@@ -138,6 +168,8 @@ class AxisManager {
         for (int i = 0; i < AXIS_SIZE; ++i) {
             axis[i].init(i, planner.settings.axis_steps_per_mm[i]);
         }
+
+        axis_t0_t1.init(T0_T1_AXIS_INDEX, planner.settings.axis_steps_per_mm[X_AXIS]);
 
         initAxisShaper();
 
@@ -178,6 +210,8 @@ class AxisManager {
             axis[i].reset();
             current_steps[i] = 0;
         }
+
+        axis_t0_t1.reset();
 
         need_add_move_start = true;
 
