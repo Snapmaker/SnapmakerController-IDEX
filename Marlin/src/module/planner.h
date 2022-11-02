@@ -195,7 +195,7 @@ typedef struct block_t {
         max_entry_speed_sqr,                // Maximum allowable junction entry speed in (mm/sec)^2
         millimeters,                        // The total travel of this block in mm
         acceleration,                       // acceleration mm/sec^2
-        curise_speed;
+        acceleration_to_deceleration;       
 
   xyze_float_t axis_r;
   shaper_data_t shaper_data;
@@ -241,6 +241,7 @@ typedef struct block_t {
     float e_D_ratio;
   #endif
 
+  float cruise_speed;
   float initial_speed;
   float final_speed;
 
@@ -309,7 +310,8 @@ typedef struct {
  feedRate_t max_feedrate_mm_s[DISTINCT_AXES];   // (mm/s) M203 XYZE - Max speeds
       float acceleration,                       // (mm/s^2) M204 S - Normal acceleration. DEFAULT ACCELERATION for all printing moves.
             retract_acceleration,               // (mm/s^2) M204 R - Retract acceleration. Filament pull-back and push-forward while standing still in the other axes
-            travel_acceleration;                // (mm/s^2) M204 T - Travel acceleration. DEFAULT ACCELERATION for all NON printing moves.
+            travel_acceleration,                // (mm/s^2) M204 T - Travel acceleration. DEFAULT ACCELERATION for all NON printing moves.
+            acceleration_to_deceleration_ratio;
  feedRate_t min_feedrate_mm_s,                  // (mm/s) M205 S - Minimum linear feedrate
             min_travel_feedrate_mm_s;           // (mm/s) M205 T - Minimum travel feedrate
 } planner_settings_t;
@@ -1002,7 +1004,7 @@ class Planner {
       }
     #endif
 
-    static void calculate_trapezoid_for_block(block_t * const block, const_float_t entry_factor, const_float_t exit_factor);
+    static void calculate_trapezoid_for_block(block_t * const block, const_float_t entry_speed, const_float_t exit_speed);
 
     static void reverse_pass_kernel(block_t * const current, const block_t * const next);
     static void forward_pass_kernel(const block_t * const previous, block_t * const current, uint8_t block_index);

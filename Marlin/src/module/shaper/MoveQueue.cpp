@@ -10,36 +10,36 @@ void MoveQueue::calculateMoves(block_t* block) {
 
     float entry_speed = block->initial_speed / 1000.0f;
     float leave_speed = block->final_speed / 1000.0f;
-    float nominal_speed = block->nominal_speed / 1000.0f;
+    float cruise_speed = block->cruise_speed / 1000.0f;
 
-    if (nominal_speed < EPSILON) {
-        // LOG_I("error speed: %lf\n", nominal_speed);
+    if (cruise_speed < EPSILON) {
+        // LOG_I("error speed: %lf\n", cruise_speed);
         block->shaper_data.is_zero_speed = true;
         return;
     }
 
-    float i_nominal_speed = 1000.0f / block->nominal_speed;
+    float i_cruise_speed = 1000.0f / block->cruise_speed;
     float acceleration = LROUND(block->acceleration) / 1000000.0f;
     float i_acceleration = 1000000.0f / LROUND(block->acceleration);
 
-    float accelDistance = Planner::estimate_acceleration_distance(entry_speed, nominal_speed, acceleration);
+    float accelDistance = Planner::estimate_acceleration_distance(entry_speed, cruise_speed, acceleration);
     // if (accelDistance > millimeters + EPSILON) {
         // LOG_I("error accelDistance: %lf, %lf\n", accelDistance, millimeters);
     // }
     if (accelDistance < EPSILON) {
         accelDistance = 0;
     }
-    float accelClocks = (nominal_speed - entry_speed) * i_acceleration;
+    float accelClocks = (cruise_speed - entry_speed) * i_acceleration;
 
     float deceleration = acceleration;
-    float decelDistance = Planner::estimate_acceleration_distance(nominal_speed, leave_speed, -deceleration);
+    float decelDistance = Planner::estimate_acceleration_distance(cruise_speed, leave_speed, -deceleration);
     // if (decelDistance > millimeters + EPSILON) {
         // LOG_I("error decelDistance: %lf, %lf\n", decelDistance, millimeters);
     // }
     if (decelDistance < EPSILON) {
         decelDistance = 0;
     }
-    float decelClocks = (nominal_speed - leave_speed) * i_acceleration;
+    float decelClocks = (cruise_speed - leave_speed) * i_acceleration;
 
     float plateau = millimeters - accelDistance - decelDistance;
 
@@ -58,19 +58,20 @@ void MoveQueue::calculateMoves(block_t* block) {
             newAccelDistance = millimeters;
         }
         accelDistance = newAccelDistance;
-        nominal_speed = SQRT(2 * acceleration * newAccelDistance + sq(entry_speed));
-        if (nominal_speed < leave_speed) {
-            nominal_speed = leave_speed;
+        cruise_speed = SQRT(2 * acceleration * newAccelDistance + sq(entry_speed));
+        i_cruise_speed = 1000.0f / block->cruise_speed;
+        if (cruise_speed < leave_speed) {
+            cruise_speed = leave_speed;
         }
-        accelClocks = (nominal_speed - entry_speed) * i_acceleration;
+        accelClocks = (cruise_speed - entry_speed) * i_acceleration;
         decelDistance = millimeters - accelDistance;
-        decelClocks = (nominal_speed - leave_speed) * i_acceleration;
+        decelClocks = (cruise_speed - leave_speed) * i_acceleration;
         plateau = 0;
     }
 
     block->shaper_data.move_start = move_head;
 
-    float plateauClocks = plateau * i_nominal_speed;
+    float plateauClocks = plateau * i_cruise_speed;
 
     xyze_float_t axis_r;
     axis_r.x = block->axis_r.x;
@@ -80,21 +81,21 @@ void MoveQueue::calculateMoves(block_t* block) {
 
     if (plateau == 0) {
         if (accelDistance > 0) {
-            addMove(entry_speed, nominal_speed, acceleration, accelDistance, axis_r, accelClocks);
+            addMove(entry_speed, cruise_speed, acceleration, accelDistance, axis_r, accelClocks);
         }
         if (decelDistance > 0) {
-            addMove(nominal_speed, leave_speed, -deceleration, decelDistance, axis_r, decelClocks);
+            addMove(cruise_speed, leave_speed, -deceleration, decelDistance, axis_r, decelClocks);
         }
     } else {
         if (accelDistance > 0) {
-            addMove(entry_speed, nominal_speed, acceleration, accelDistance, axis_r, accelClocks);
+            addMove(entry_speed, cruise_speed, acceleration, accelDistance, axis_r, accelClocks);
         }
 
-        // LOG_I("p: %lf, s: %lf, t: %lf\n", plateau, nominal_speed, plateau / nominal_speed);
-        addMove(nominal_speed, nominal_speed, 0, plateau, axis_r, plateauClocks);
+        // LOG_I("p: %lf, s: %lf, t: %lf\n", plateau, cruise_speed, plateau / cruise_speed);
+        addMove(cruise_speed, cruise_speed, 0, plateau, axis_r, plateauClocks);
 
         if (decelDistance > 0) {
-            addMove(nominal_speed, leave_speed, -deceleration, decelDistance, axis_r, decelClocks);
+            addMove(cruise_speed, leave_speed, -deceleration, decelDistance, axis_r, decelClocks);
         }
     }
 
@@ -102,7 +103,7 @@ void MoveQueue::calculateMoves(block_t* block) {
 
     block->shaper_data.move_end = prevMoveIndex(move_head);
 
-    block->curise_speed = nominal_speed * 1000;
+    block->cruise_speed = cruise_speed * 1000;
 
     Move& end_move = moves[block->shaper_data.move_end];
     for (int i = 0; i < AXIS_SIZE; ++i) {
@@ -247,7 +248,7 @@ void MoveQueue::updateMoveTail(uint8_t index) {
 
 void MoveQueue::initMoveTimeAndPos(uint8_t move_shaped_start, uint8_t move_start, uint8_t move_shaped_end) {
     float start_t = 0;
-    float start_pos[AXIS_SIZE] = {0};
+    // float start_pos[AXIS_SIZE] = {0};
 
     uint8_t index = move_start;
     Move *move;

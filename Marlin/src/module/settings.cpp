@@ -1511,6 +1511,7 @@ void MarlinSettings::postprocess() {
         EEPROM_READ(planner.settings.acceleration);
         EEPROM_READ(planner.settings.retract_acceleration);
         EEPROM_READ(planner.settings.travel_acceleration);
+        EEPROM_READ(planner.settings.acceleration_to_deceleration_ratio);
         EEPROM_READ(planner.settings.min_feedrate_mm_s);
         EEPROM_READ(planner.settings.min_travel_feedrate_mm_s);
 
@@ -2543,6 +2544,7 @@ void MarlinSettings::reset() {
   planner.settings.travel_acceleration = DEFAULT_TRAVEL_ACCELERATION;
   planner.settings.min_feedrate_mm_s = feedRate_t(DEFAULT_MINIMUMFEEDRATE);
   planner.settings.min_travel_feedrate_mm_s = feedRate_t(DEFAULT_MINTRAVELFEEDRATE);
+  planner.settings.acceleration_to_deceleration_ratio = DEFAULT_ACCELERATION_TO_DECELERATION_RATIO;
 
   #if HAS_CLASSIC_JERK
     #ifndef DEFAULT_XJERK
@@ -3164,6 +3166,7 @@ void MarlinSettings::reset() {
         PSTR("  M204 P"), LINEAR_UNIT(planner.settings.acceleration)
       , PSTR(" R"), LINEAR_UNIT(planner.settings.retract_acceleration)
       , SP_T_STR, LINEAR_UNIT(planner.settings.travel_acceleration)
+      , PSTR(" D"),  LINEAR_UNIT(planner.settings.acceleration_to_deceleration_ratio)
     );
 
     CONFIG_ECHO_HEADING(
@@ -3183,7 +3186,7 @@ void MarlinSettings::reset() {
       , SP_T_STR, LINEAR_UNIT(planner.settings.min_travel_feedrate_mm_s)
       #if HAS_JUNCTION_DEVIATION
         , PSTR(" J"), LINEAR_UNIT(planner.junction_deviation_mm)
-        , PSTR(" V"), LINEAR_UNIT(planner.corner_velocity_sqr)
+        , PSTR(" V"), LINEAR_UNIT(SQRT(planner.corner_velocity_sqr))
       #endif
       #if HAS_CLASSIC_JERK
         , LIST_N(DOUBLE(LINEAR_AXES),

@@ -797,108 +797,119 @@ block_t* Planner::get_current_block() {
  * is not and will not use the block while we modify it, so it is safe to
  * alter its values.
  */
-void Planner::calculate_trapezoid_for_block(block_t * const block, const_float_t entry_factor, const_float_t exit_factor) {
+void Planner::calculate_trapezoid_for_block(block_t * const block, const_float_t entry_speed, const_float_t exit_speed) {
+  block->initial_speed = entry_speed;
+  block->final_speed = exit_speed;
 
-  uint32_t initial_rate = CEIL(block->nominal_rate * entry_factor),
-           final_rate = CEIL(block->nominal_rate * exit_factor); // (steps per second)
+  float entry_speed_sqr = sq(entry_speed);
+  float exit_speed_sqr = sq(exit_speed);
 
-  // Limit minimal step rate (Otherwise the timer will overflow.)
-  NOLESS(initial_rate, uint32_t(MINIMAL_STEP_RATE));
-  NOLESS(final_rate, uint32_t(MINIMAL_STEP_RATE));
+  float smoothed_cruise_speed_sqr = _MAX(entry_speed_sqr, exit_speed_sqr, (entry_speed_sqr + exit_speed_sqr + 2 * block->acceleration_to_deceleration * block->millimeters) * 0.5);
+  block->cruise_speed = SQRT(_MIN(block->nominal_speed_sqr, smoothed_cruise_speed_sqr));
+  // block->cruise_speed = block->nominal_speed;
 
-  #if ENABLED(S_CURVE_ACCELERATION)
-    uint32_t cruise_rate = initial_rate;
-  #endif
+  // LOG_I("i: %lf, e: %Lf, c: %lf, a: %lf\n", block->initial_speed, block->final_speed, block->cruise_speed, block->acceleration_to_deceleration);
 
-  const int32_t accel = block->acceleration_steps_per_s2;
+  // uint32_t initial_rate = CEIL(block->nominal_rate * entry_factor),
+  //          final_rate = CEIL(block->nominal_rate * exit_factor); // (steps per second)
 
-          // Steps required for acceleration, deceleration to/from nominal rate
-  uint32_t accelerate_steps = CEIL(estimate_acceleration_distance(initial_rate, block->nominal_rate, accel)),
-           decelerate_steps = FLOOR(estimate_acceleration_distance(block->nominal_rate, final_rate, -accel));
-          // Steps between acceleration and deceleration, if any
-  int32_t plateau_steps = block->step_event_count - accelerate_steps - decelerate_steps;
+  // // Limit minimal step rate (Otherwise the timer will overflow.)
+  // NOLESS(initial_rate, uint32_t(MINIMAL_STEP_RATE));
+  // NOLESS(final_rate, uint32_t(MINIMAL_STEP_RATE));
 
-  // Does accelerate_steps + decelerate_steps exceed step_event_count?
-  // Then we can't possibly reach the nominal rate, there will be no cruising.
-  // Use intersection_distance() to calculate accel / braking time in order to
-  // reach the final_rate exactly at the end of this block.
-  if (plateau_steps < 0) {
-    const float accelerate_steps_float = CEIL(intersection_distance(initial_rate, final_rate, accel, block->step_event_count));
-    accelerate_steps = _MIN(uint32_t(_MAX(accelerate_steps_float, 0)), block->step_event_count);
-    plateau_steps = 0;
+  // #if ENABLED(S_CURVE_ACCELERATION)
+  //   uint32_t cruise_rate = initial_rate;
+  // #endif
 
-    #if ENABLED(S_CURVE_ACCELERATION)
-      // We won't reach the cruising rate. Let's calculate the speed we will reach
-      cruise_rate = final_speed(initial_rate, accel, accelerate_steps);
-    #endif
-  }
-  #if ENABLED(S_CURVE_ACCELERATION)
-    else // We have some plateau time, so the cruise rate will be the nominal rate
-      cruise_rate = block->nominal_rate;
-  #endif
+  // const int32_t accel = block->acceleration_steps_per_s2;
 
-  #if ENABLED(S_CURVE_ACCELERATION)
-    // Jerk controlled speed requires to express speed versus time, NOT steps
-    uint32_t acceleration_time = ((float)(cruise_rate - initial_rate) / accel) * (STEPPER_TIMER_RATE),
-             deceleration_time = ((float)(cruise_rate - final_rate) / accel) * (STEPPER_TIMER_RATE),
-    // And to offload calculations from the ISR, we also calculate the inverse of those times here
-             acceleration_time_inverse = get_period_inverse(acceleration_time),
-             deceleration_time_inverse = get_period_inverse(deceleration_time);
-  #endif
+  //         // Steps required for acceleration, deceleration to/from nominal rate
+  // uint32_t accelerate_steps = CEIL(estimate_acceleration_distance(initial_rate, block->nominal_rate, accel)),
+  //          decelerate_steps = FLOOR(estimate_acceleration_distance(block->nominal_rate, final_rate, -accel));
+  //         // Steps between acceleration and deceleration, if any
+  // int32_t plateau_steps = block->step_event_count - accelerate_steps - decelerate_steps;
 
-  // Store new block parameters
-  block->accelerate_until = accelerate_steps;
-  block->decelerate_after = accelerate_steps + plateau_steps;
-  block->initial_rate = initial_rate;
-  #if ENABLED(S_CURVE_ACCELERATION)
-    block->acceleration_time = acceleration_time;
-    block->deceleration_time = deceleration_time;
-    block->acceleration_time_inverse = acceleration_time_inverse;
-    block->deceleration_time_inverse = deceleration_time_inverse;
-    block->cruise_rate = cruise_rate;
-  #endif
-  block->final_rate = final_rate;
+  // // Does accelerate_steps + decelerate_steps exceed step_event_count?
+  // // Then we can't possibly reach the nominal rate, there will be no cruising.
+  // // Use intersection_distance() to calculate accel / braking time in order to
+  // // reach the final_rate exactly at the end of this block.
+  // if (plateau_steps < 0) {
+  //   const float accelerate_steps_float = CEIL(intersection_distance(initial_rate, final_rate, accel, block->step_event_count));
+  //   accelerate_steps = _MIN(uint32_t(_MAX(accelerate_steps_float, 0)), block->step_event_count);
+  //   plateau_steps = 0;
 
-  /**
-   * Laser trapezoid calculations
-   *
-   * Approximate the trapezoid with the laser, incrementing the power every `entry_per` while accelerating
-   * and decrementing it every `exit_power_per` while decelerating, thus ensuring power is related to feedrate.
-   *
-   * LASER_POWER_INLINE_TRAPEZOID_CONT doesn't need this as it continuously approximates
-   *
-   * Note this may behave unreliably when running with S_CURVE_ACCELERATION
-   */
-  #if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
-    if (block->laser.power > 0) { // No need to care if power == 0
-      const uint8_t entry_power = block->laser.power * entry_factor; // Power on block entry
-      #if DISABLED(LASER_POWER_INLINE_TRAPEZOID_CONT)
-        // Speedup power
-        const uint8_t entry_power_diff = block->laser.power - entry_power;
-        if (entry_power_diff) {
-          block->laser.entry_per = accelerate_steps / entry_power_diff;
-          block->laser.power_entry = entry_power;
-        }
-        else {
-          block->laser.entry_per = 0;
-          block->laser.power_entry = block->laser.power;
-        }
-        // Slowdown power
-        const uint8_t exit_power = block->laser.power * exit_factor, // Power on block entry
-                      exit_power_diff = block->laser.power - exit_power;
-        if (exit_power_diff) {
-          block->laser.exit_per = (block->step_event_count - block->decelerate_after) / exit_power_diff;
-          block->laser.power_exit = exit_power;
-        }
-        else {
-          block->laser.exit_per = 0;
-          block->laser.power_exit = block->laser.power;
-        }
-      #else
-        block->laser.power_entry = entry_power;
-      #endif
-    }
-  #endif
+  //   #if ENABLED(S_CURVE_ACCELERATION)
+  //     // We won't reach the cruising rate. Let's calculate the speed we will reach
+  //     cruise_rate = final_speed(initial_rate, accel, accelerate_steps);
+  //   #endif
+  // }
+  // #if ENABLED(S_CURVE_ACCELERATION)
+  //   else // We have some plateau time, so the cruise rate will be the nominal rate
+  //     cruise_rate = block->nominal_rate;
+  // #endif
+
+  // #if ENABLED(S_CURVE_ACCELERATION)
+  //   // Jerk controlled speed requires to express speed versus time, NOT steps
+  //   uint32_t acceleration_time = ((float)(cruise_rate - initial_rate) / accel) * (STEPPER_TIMER_RATE),
+  //            deceleration_time = ((float)(cruise_rate - final_rate) / accel) * (STEPPER_TIMER_RATE),
+  //   // And to offload calculations from the ISR, we also calculate the inverse of those times here
+  //            acceleration_time_inverse = get_period_inverse(acceleration_time),
+  //            deceleration_time_inverse = get_period_inverse(deceleration_time);
+  // #endif
+
+  // // Store new block parameters
+  // block->accelerate_until = accelerate_steps;
+  // block->decelerate_after = accelerate_steps + plateau_steps;
+  // block->initial_rate = initial_rate;
+  // #if ENABLED(S_CURVE_ACCELERATION)
+  //   block->acceleration_time = acceleration_time;
+  //   block->deceleration_time = deceleration_time;
+  //   block->acceleration_time_inverse = acceleration_time_inverse;
+  //   block->deceleration_time_inverse = deceleration_time_inverse;
+  //   block->cruise_rate = cruise_rate;
+  // #endif
+  // block->final_rate = final_rate;
+
+  // /**
+  //  * Laser trapezoid calculations
+  //  *
+  //  * Approximate the trapezoid with the laser, incrementing the power every `entry_per` while accelerating
+  //  * and decrementing it every `exit_power_per` while decelerating, thus ensuring power is related to feedrate.
+  //  *
+  //  * LASER_POWER_INLINE_TRAPEZOID_CONT doesn't need this as it continuously approximates
+  //  *
+  //  * Note this may behave unreliably when running with S_CURVE_ACCELERATION
+  //  */
+  // #if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
+  //   if (block->laser.power > 0) { // No need to care if power == 0
+  //     const uint8_t entry_power = block->laser.power * entry_factor; // Power on block entry
+  //     #if DISABLED(LASER_POWER_INLINE_TRAPEZOID_CONT)
+  //       // Speedup power
+  //       const uint8_t entry_power_diff = block->laser.power - entry_power;
+  //       if (entry_power_diff) {
+  //         block->laser.entry_per = accelerate_steps / entry_power_diff;
+  //         block->laser.power_entry = entry_power;
+  //       }
+  //       else {
+  //         block->laser.entry_per = 0;
+  //         block->laser.power_entry = block->laser.power;
+  //       }
+  //       // Slowdown power
+  //       const uint8_t exit_power = block->laser.power * exit_factor, // Power on block entry
+  //                     exit_power_diff = block->laser.power - exit_power;
+  //       if (exit_power_diff) {
+  //         block->laser.exit_per = (block->step_event_count - block->decelerate_after) / exit_power_diff;
+  //         block->laser.power_exit = exit_power;
+  //       }
+  //       else {
+  //         block->laser.exit_per = 0;
+  //         block->laser.power_exit = block->laser.power;
+  //       }
+  //     #else
+  //       block->laser.power_entry = entry_power;
+  //     #endif
+  //   }
+  // #endif
 }
 
 /*                            PLANNER SPEED DEFINITION
@@ -1202,18 +1213,19 @@ void Planner::recalculate_trapezoids() {
             // Block is not BUSY, we won the race against the Stepper ISR:
 
             // NOTE: Entry and exit factors always > 0 by all previous logic operations.
-            const float current_nominal_speed = SQRT(block->nominal_speed_sqr),
-                        nomr = 1.0f / current_nominal_speed;
-            block->initial_speed = current_entry_speed;
-            block->final_speed = next_entry_speed;
-            calculate_trapezoid_for_block(block, current_entry_speed * nomr, next_entry_speed * nomr);
-            #if ENABLED(LIN_ADVANCE)
-              if (block->use_advance_lead) {
-                const float comp = block->e_D_ratio * extruder_advance_K[active_extruder] * settings.axis_steps_per_mm[E_AXIS];
-                block->max_adv_steps = current_nominal_speed * comp;
-                block->final_adv_steps = next_entry_speed * comp;
-              }
-            #endif
+            // const float current_nominal_speed = SQRT(block->nominal_speed_sqr),
+                        // nomr = 1.0f / current_nominal_speed;
+            // block->initial_speed = current_entry_speed;
+            // block->final_speed = next_entry_speed;
+            calculate_trapezoid_for_block(block, current_entry_speed, next_entry_speed);
+
+            // #if ENABLED(LIN_ADVANCE)
+            //   if (block->use_advance_lead) {
+            //     const float comp = block->e_D_ratio * extruder_advance_K[active_extruder] * settings.axis_steps_per_mm[E_AXIS];
+            //     block->max_adv_steps = current_nominal_speed * comp;
+            //     block->final_adv_steps = next_entry_speed * comp;
+            //   }
+            // #endif
           }
 
           // Reset current only to ensure next trapezoid is computed - The
@@ -1243,18 +1255,18 @@ void Planner::recalculate_trapezoids() {
     if (!stepper.is_block_busy(block)) {
       // Block is not BUSY, we won the race against the Stepper ISR:
 
-      const float next_nominal_speed = SQRT(next->nominal_speed_sqr),
-                  nomr = 1.0f / next_nominal_speed;
-      next->initial_speed = next_entry_speed;
-      next->final_speed = float(MINIMUM_PLANNER_SPEED);
-      calculate_trapezoid_for_block(next, next_entry_speed * nomr, float(MINIMUM_PLANNER_SPEED) * nomr);
-      #if ENABLED(LIN_ADVANCE)
-        if (next->use_advance_lead) {
-          const float comp = next->e_D_ratio * extruder_advance_K[active_extruder] * settings.axis_steps_per_mm[E_AXIS];
-          next->max_adv_steps = next_nominal_speed * comp;
-          next->final_adv_steps = (MINIMUM_PLANNER_SPEED) * comp;
-        }
-      #endif
+      // const float next_nominal_speed = SQRT(next->nominal_speed_sqr),
+      //             nomr = 1.0f / next_nominal_speed;
+      // next->initial_speed = next_entry_speed;
+      // next->final_speed = float(MINIMUM_PLANNER_SPEED);
+      calculate_trapezoid_for_block(next, next_entry_speed, float(MINIMUM_PLANNER_SPEED));
+      // #if ENABLED(LIN_ADVANCE)
+      //   if (next->use_advance_lead) {
+      //     const float comp = next->e_D_ratio * extruder_advance_K[active_extruder] * settings.axis_steps_per_mm[E_AXIS];
+      //     next->max_adv_steps = next_nominal_speed * comp;
+      //     next->final_adv_steps = (MINIMUM_PLANNER_SPEED) * comp;
+      //   }
+      // #endif
     }
 
     // Reset next only to ensure its trapezoid is computed - The stepper is free to use
@@ -2676,6 +2688,12 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
   }
   block->acceleration_steps_per_s2 = accel;
   block->acceleration = accel / steps_per_mm;
+  if (settings.acceleration_to_deceleration_ratio > 20) {
+    block->acceleration_to_deceleration = block->acceleration * settings.acceleration_to_deceleration_ratio * 0.01;
+  } else {
+    block->acceleration_to_deceleration = block->acceleration;
+  }
+
   #if DISABLED(S_CURVE_ACCELERATION)
     block->acceleration_rate = (uint32_t)(accel * (sq(4096.0f) / (STEPPER_TIMER_RATE)));
   #endif

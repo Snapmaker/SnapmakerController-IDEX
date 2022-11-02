@@ -120,10 +120,11 @@ void GcodeSuite::M203() {
  *    T = Travel (non printing) moves
  */
 void GcodeSuite::M204() {
-  if (!parser.seen("PRST")) {
+  if (!parser.seen("PRSTD")) {
     SERIAL_ECHOPAIR("Acceleration: P", planner.settings.acceleration);
     SERIAL_ECHOPAIR(" R", planner.settings.retract_acceleration);
-    SERIAL_ECHOLNPAIR_P(SP_T_STR, planner.settings.travel_acceleration);
+    SERIAL_ECHOPAIR(SP_T_STR, planner.settings.travel_acceleration);
+    SERIAL_ECHOLNPAIR_P(" D", planner.settings.acceleration_to_deceleration_ratio);
   }
   else {
     //planner.synchronize();
@@ -132,6 +133,8 @@ void GcodeSuite::M204() {
     if (parser.seenval('P')) planner.settings.acceleration = parser.value_linear_units();
     if (parser.seenval('R')) planner.settings.retract_acceleration = parser.value_linear_units();
     if (parser.seenval('T')) planner.settings.travel_acceleration = parser.value_linear_units();
+    if (parser.seenval('D')) planner.settings.acceleration_to_deceleration_ratio = parser.value_linear_units();
+
     planner.junction_deviation_mm = planner.corner_velocity_sqr * (SQRT(2.) - 1.) / _MAX(planner.settings.acceleration, planner.settings.travel_acceleration);
   }
 }

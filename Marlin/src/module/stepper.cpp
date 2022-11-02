@@ -598,6 +598,7 @@ bool Stepper::start_only_extrude(uint8_t e, uint8_t dir, float length, float spe
   extrude_interval[e] = CEIL(length / speed * 60 * STEPPER_TIMER_RATE / extrude_count[e]);
 
   is_only_extrude = true;
+  return true;
 }
 
 bool Stepper::stop_only_extrude(uint8_t e) {
@@ -610,6 +611,7 @@ bool Stepper::stop_only_extrude(uint8_t e) {
     }
   }
   is_only_extrude = is_only_extrude_tmp;
+  return true;
 }
 
 bool Stepper::stop_all_only_extrude() {
@@ -618,6 +620,7 @@ bool Stepper::stop_all_only_extrude() {
   {
     extrude_enable[i] = false;
   }
+  return true;
 }
 
 #if ENABLED(S_CURVE_ACCELERATION)
@@ -2103,7 +2106,7 @@ uint32_t Stepper::block_phase_isr() {
         }
         oversampling_factor = oversampling;                 // For all timer interval calculations
       #else
-        constexpr uint8_t oversampling = 0;
+        // constexpr uint8_t oversampling = 0;
       #endif
 
       // Based on the oversampling factor, do the calculations
@@ -2129,7 +2132,7 @@ uint32_t Stepper::block_phase_isr() {
       // accelerate_until = current_block->accelerate_until << oversampling;
       // decelerate_after = current_block->decelerate_after << oversampling;
       power_loss.cur_line = current_block->file_position;
-      motion_control.update_feedrate((uint16_t)current_block->curise_speed);
+      motion_control.update_feedrate((uint16_t)current_block->cruise_speed);
 
       TERN_(MIXING_EXTRUDER, mixer.stepper_setup(current_block->b_color));
       TERN_(HAS_MULTI_EXTRUDER, stepper_extruder = current_block->extruder);
