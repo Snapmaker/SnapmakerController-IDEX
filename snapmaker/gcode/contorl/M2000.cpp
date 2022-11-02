@@ -230,11 +230,11 @@ void GcodeSuite::M2000() {
         // LOG_I("decl move len %f mm\r\n", (move.end_pos[T0_T1_AXIS_INDEX] - move.start_pos[T0_T1_AXIS_INDEX]) / 80);
       }
 
-      axisManager.T0_T1_start_print_time_got = false;
       axisManager.T0_T1_axis = !active_extruder;
       inactive_extruder_x = axisManager.T0_T1_target_pos;
-      axisManager.T0_T1_req_simultaneously_move = true;
-      // axisManager.T0_T1_simultaneously_move = true;
+      axisManager.T0_T1_last_print_time = 0;
+      axisManager.axis_t0_t1.is_consumed = true;
+      axisManager.T0_T1_simultaneously_move = true;
 
       // axisManager.getNextAxisStepper();
       // time_double_t last_time;
