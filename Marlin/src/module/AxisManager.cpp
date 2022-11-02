@@ -90,13 +90,6 @@ bool Axis::getNextStep() {
     }
 
     print_time = func_manager.print_time;
-    if (axisManager.T0_T1_simultaneously_move && axis == T0_T1_AXIS_INDEX) {
-      if (!axisManager.T0_T1_start_print_time_got) {
-        axisManager.t0_t1_start_print_time = axisManager.print_time;
-        axisManager.T0_T1_start_print_time_got = true;
-      }
-      print_time += axisManager.t0_t1_start_print_time;
-    }
     is_consumed = false;
 
     return true;
@@ -329,30 +322,9 @@ bool AxisManager::getNextAxisStepper() {
         }
     }
 
-    if (T0_T1_simultaneously_move) {
-
-      if(axis_t0_t1.is_consumed)
-        axis_t0_t1.getNextStep();
-
-      if (!axis_t0_t1.is_consumed) {
-        if (axis_t0_t1.print_time < min_print_time) {
-          min_print_time = axis_t0_t1.print_time;
-          print_axis = T0_T1_AXIS_INDEX;
-          is_consumed = false;
-        }
-      }
-      else {
-        T0_T1_simultaneously_move = false;
-      }
-
-    }
-
     // is_consumed == false, means that we has a steps need to output
     if (!is_consumed) {
-        if (print_axis < T0_T1_AXIS_INDEX)
-          axis[print_axis].is_consumed = true;
-        else
-          axis_t0_t1.is_consumed = true;
+        axis[print_axis].is_consumed = true;
         print_time = min_print_time;
         print_dir = axis[print_axis].dir;
         return true;

@@ -1451,6 +1451,7 @@ HAL_STEP_TIMER_ISR() {
 void Stepper::isr() {
 
   static uint32_t nextMainISR = 0;  // Interval until the next main Stepper Pulse phase (0 = Now)
+  static uint32_t nextOtherAxisISR = 0;  //
 
   #ifndef __AVR__
     // Disable interrupts, to avoid ISR preemption while we reprogram the period
@@ -1507,6 +1508,8 @@ void Stepper::isr() {
   // #endif
     // pulse_phase_isr();                            // 0 = Do coordinated axes Stepper pulses
     if (!nextMainISR) pulse_phase_isr();
+
+    if (!nextOtherAxisISR) other_axis_puls_phase_isr();
   // #ifdef DEBUG_IO
   // WRITE(DEBUG_IO, 0);
   // #endif
@@ -1534,6 +1537,8 @@ void Stepper::isr() {
   // #ifdef DEBUG_IO
   // WRITE(DEBUG_IO, 0);
   // #endif
+
+  if (!nextOtherAxisISR) nextOtherAxisISR = other_axis_block_phase_isr();
 
   #define SLOWDOWN_DELAT_CLOCK (1 * STEPPER_TIMER_TICKS_PER_US)
   #define STOP_TIME_INTERVAL   (1 * STEPPER_TIMER_TICKS_PER_MS)
@@ -1593,6 +1598,7 @@ void Stepper::isr() {
     // Get the interval to the next ISR call
     const uint32_t interval = _MIN(
       nextMainISR                                       // Time until the next Pulse / Block phase
+      , nextOtherAxisISR
       // #if ENABLED(LIN_ADVANCE)
       //   , nextAdvanceISR                                // Come back early for Linear Advance?
       // #endif
@@ -1610,6 +1616,8 @@ void Stepper::isr() {
     //
 
     nextMainISR -= interval;
+
+    nextOtherAxisISR -= interval;
 
     // #if ENABLED(LIN_ADVANCE)
     //   if (nextAdvanceISR != LA_ADV_NEVER) nextAdvanceISR -= interval;
@@ -1766,22 +1774,20 @@ void Stepper::pulse_phase_isr() {
 
   if (axis_stepper.axis == -1) return;
 
-  if (axis_stepper.axis != T0_T1_AXIS_INDEX) {
-    if (axis_stepper.dir > 0) {
-      CBI(current_direction_bits, axis_stepper.axis);
-    } else if(axis_stepper.dir < 0) {
-      SBI(current_direction_bits, axis_stepper.axis);
-    }
+  if (axis_stepper.dir > 0) {
+    CBI(current_direction_bits, axis_stepper.axis);
+  } else if(axis_stepper.dir < 0) {
+    SBI(current_direction_bits, axis_stepper.axis);
+  }
 
-    if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
-      || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
-      || current_direction_bits != last_direction_bits
-      || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
-    ) {
-      TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
-      TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
-      set_directions(current_direction_bits);
-    }
+  if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+    || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+    || current_direction_bits != last_direction_bits
+    || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+  ) {
+    TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+    TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+    set_directions(current_direction_bits);
   }
 
   #define _APPLY_STEP(AXIS, INV, ALWAYS) AXIS ##_APPLY_STEP(INV, ALWAYS)
@@ -1819,35 +1825,42 @@ void Stepper::pulse_phase_isr() {
       PULSE_PREP(E);
       PULSE_STOP(E);
   }
-  else if(T0_T1_AXIS_INDEX == axis_stepper.axis) {
-    static uint32_t volatile wait = 0;
-    if (axisManager.T0_T1_axis) {
-
-      if (axis_stepper.dir > 0)
-        X2_DIR_WRITE(1);
-      else
-        X2_DIR_WRITE(0);
-
-      X2_STEP_WRITE(!_INVERT_STEP_PIN(X));
-      wait++;
-      X2_STEP_WRITE(_INVERT_STEP_PIN(X));
-
-    }
-    else {
-
-      if (axis_stepper.dir > 0)
-        X_DIR_WRITE(1);
-      else
-        X_DIR_WRITE(0);
-
-      X_STEP_WRITE(!_INVERT_STEP_PIN(X));
-      wait++;
-      X_STEP_WRITE(_INVERT_STEP_PIN(X));
-
-    }
-  }
 
   axis_stepper.axis = -1;
+
+}
+
+void Stepper::other_axis_puls_phase_isr() {
+
+  static uint32_t volatile wait = 0;
+
+  if (!axisManager.T0_T1_simultaneously_move)
+    return;
+
+  if (axisManager.T0_T1_axis) {
+
+    if (axisManager.axis_t0_t1.dir > 0)
+      X2_DIR_WRITE(1);
+    else
+      X2_DIR_WRITE(0);
+
+    X2_STEP_WRITE(!_INVERT_STEP_PIN(X));
+    wait++;
+    X2_STEP_WRITE(_INVERT_STEP_PIN(X));
+
+  }
+  else {
+
+    if (axisManager.axis_t0_t1.dir > 0)
+      X_DIR_WRITE(1);
+    else
+      X_DIR_WRITE(0);
+
+    X_STEP_WRITE(!_INVERT_STEP_PIN(X));
+    wait++;
+    X_STEP_WRITE(_INVERT_STEP_PIN(X));
+
+  }
 
 }
 
@@ -1864,39 +1877,20 @@ uint32_t Stepper::block_phase_isr() {
     return interval;
 
   if (is_only_extrude) {
+
     if (extrude_enable[0] && extrude_count[0] > 0) {
-      // extrude_count[0]--;
       interval = extrude_interval[0];
-      // if (extrude_count[0] <= 0) {
-      //   extrude_enable[0] = false;
-      // }
     }
     if (extrude_enable[1] && extrude_count[1] > 0) {
-      // extrude_count[1]--;
       interval = extrude_interval[1];
-      // if (extrude_count[1] <= 0) {
-      //   extrude_enable[1] = false;
-      // }
     }
-    // is_only_extrude = extrude_enable[0] || extrude_enable[1];
+
     return interval;
-  }
-
-  if (axisManager.T0_T1_req_simultaneously_move) {
-
-    if (system_service.get_status() == SYSTEM_STATUE_PAUSING) {
-      axisManager.T0_T1_req_simultaneously_move = false;
-    }
-    else if (current_block) {
-      axisManager.T0_T1_req_simultaneously_move = false;
-      axisManager.T0_T1_simultaneously_move = true;
-    }
   }
 
   static uint32_t done_count = 0;
   // If there is a current block
-  if (current_block || axisManager.T0_T1_simultaneously_move) {
-  // if (current_block) {
+  if (current_block) {
     hal_timer_t st = HAL_timer_get_count(STEP_TIMER_NUM);
     if (axisManager.getNextAxisStepper()) {
       hal_timer_t et = HAL_timer_get_count(STEP_TIMER_NUM);
@@ -1955,6 +1949,7 @@ uint32_t Stepper::block_phase_isr() {
       if (is_done || done_count > 100) {
         if (current_block) {
           discard_current_block();
+          power_loss.cur_line++; // this block motion finish
           axisManager.abort();
         }
       }
@@ -2230,23 +2225,21 @@ uint32_t Stepper::block_phase_isr() {
       //   axis_stepper.print_time = next_axis_stepper.print_time;
       // }
 
-      if (axis_stepper.axis != T0_T1_AXIS_INDEX) {
-        if (axis_stepper.axis >= 0) {
-          if (axis_stepper.dir > 0) {
-            CBI(current_direction_bits, axis_stepper.axis);
-          } else if(axis_stepper.dir < 0) {
-            SBI(current_direction_bits, axis_stepper.axis);
-          }
+      if (axis_stepper.axis >= 0) {
+        if (axis_stepper.dir > 0) {
+          CBI(current_direction_bits, axis_stepper.axis);
+        } else if(axis_stepper.dir < 0) {
+          SBI(current_direction_bits, axis_stepper.axis);
+        }
 
-          if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
-            || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
-            || current_direction_bits != last_direction_bits
-            || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
-          ) {
-            TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
-            TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
-            set_directions(current_direction_bits);
-          }
+        if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+          || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+          || current_direction_bits != last_direction_bits
+          || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+        ) {
+          TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+          TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+          set_directions(current_direction_bits);
         }
       }
 
@@ -2302,6 +2295,7 @@ uint32_t Stepper::block_phase_isr() {
   return interval;
 }
 
+#if 0
 // #if ENABLED(LIN_ADVANCE)
 
 //   // Timer interrupt for E. LA_steps is set in the main routine
@@ -2428,6 +2422,36 @@ uint32_t Stepper::block_phase_isr() {
 // }
 
 // #endif // LIN_ADVANCE
+#endif
+
+uint32_t Stepper::other_axis_block_phase_isr() {
+
+  uint32_t interval = (STEPPER_TIMER_RATE) / 20UL; // 50 ms
+
+  if (!axisManager.T0_T1_simultaneously_move)
+    return interval;
+
+  if (system_service.get_status() == SYSTEM_STATUE_PAUSING) {
+    axisManager.T0_T1_simultaneously_move = false;
+    return interval;
+  }
+
+  if(axisManager.axis_t0_t1.is_consumed)
+    axisManager.axis_t0_t1.getNextStep();
+
+  if (!axisManager.axis_t0_t1.is_consumed) {
+    float delta_time = axisManager.axis_t0_t1.print_time - axisManager.T0_T1_last_print_time;
+    interval = CEIL(delta_time * STEPPER_TIMER_TICKS_PER_MS);
+    axisManager.T0_T1_last_print_time = axisManager.axis_t0_t1.print_time;
+    axisManager.axis_t0_t1.is_consumed = true;
+  }
+  else {
+    axisManager.T0_T1_simultaneously_move = false;
+  }
+
+  return interval;
+
+}
 
 #if ENABLED(INTEGRATED_BABYSTEPPING)
 

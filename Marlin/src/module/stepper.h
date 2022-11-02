@@ -427,8 +427,12 @@ class Stepper {
     // The stepper pulse ISR phase
     static void pulse_phase_isr();
 
+    static void other_axis_puls_phase_isr();
+
     // The stepper block processing ISR phase
     static uint32_t block_phase_isr();
+
+    static uint32_t other_axis_block_phase_isr();
 
     #if ENABLED(LIN_ADVANCE)
       // The Linear advance ISR phase

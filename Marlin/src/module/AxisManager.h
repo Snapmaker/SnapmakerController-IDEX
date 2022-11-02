@@ -127,13 +127,10 @@ class Axis {
 class AxisManager {
   public:
     int counts[20] = {0};
-    bool T0_T1_req_simultaneously_move = false;
     bool T0_T1_simultaneously_move = false;
-    bool T0_T1_start_print_time_got = false;
-    time_double_t t0_t1_start_print_time = 0;
     float T0_T1_target_pos;
     uint8_t T0_T1_axis = 0;
-    float t0_t1_delta_print_time = 0;
+    time_double_t T0_T1_last_print_time = 0;
 
     Axis axis[AXIS_SIZE];
     Axis axis_t0_t1;
