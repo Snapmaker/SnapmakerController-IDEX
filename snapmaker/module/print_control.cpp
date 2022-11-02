@@ -261,6 +261,11 @@ ErrCode PrintControl::pause() {
   commands_lock();
   buffer_head = buffer_tail = 0;
 
+  // wait for auto park finish
+  while(axisManager.T0_T1_simultaneously_move) {
+    vTaskDelay(1);
+  }
+
   stepper.req_pause = true;
   while(1) {
     if (stepper.can_pause) {
@@ -307,10 +312,10 @@ ErrCode PrintControl::pause() {
 }
 
 ErrCode PrintControl::resume() {
-  buffer_head = buffer_tail = 0;
 
-  // The print needs to be extruded before resuming
+  buffer_head = buffer_tail = 0;
   system_service.set_status(SYSTEM_STATUE_RESUMING);
+
   if (power_loss.extrude_before_resume() == E_SUCCESS) {
     power_loss.resume_print_env();
     commands_unlock();
@@ -318,10 +323,12 @@ ErrCode PrintControl::resume() {
       system_service.set_status(SYSTEM_STATUE_PRINTING);
     }
     return E_SUCCESS;
-  } else {
+  }
+  else {
     system_service.set_status(SYSTEM_STATUE_PAUSED);
     return E_SYSTEM_EXCEPTION;
   }
+
 }
 
 ErrCode PrintControl::stop() {

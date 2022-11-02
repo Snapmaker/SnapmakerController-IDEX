@@ -28,6 +28,10 @@ void PowerLoss::stash_print_env() {
   cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
   stash_data.position = cur_position;
 
+  LOG_I("Pausing x %f\r\n", cur_position[X_AXIS]);
+  LOG_I("Active extruder %d\r\n", active_extruder);
+  LOG_I("current line %d\r\n", print_control.get_cur_line());
+
   uint32_t cur_line = print_control.get_cur_line();
   stash_data.file_position = cur_line ? cur_line - 1 : 0;  // The requested index starts at 0
 
@@ -35,6 +39,7 @@ void PowerLoss::stash_print_env() {
   stash_data.print_feadrate = feedrate_mm_s;
   stash_data.feedrate_percentage = feedrate_percentage;
   stash_data.active_extruder = active_extruder;
+  // stash_data.motion_extruder = cur_extruder;
   stash_data.travel_feadrate = fast_move_feedrate;
   stash_data.axis_relative = gcode.axis_relative;
   stash_data.print_mode = print_control.mode_;
@@ -92,9 +97,11 @@ bool PowerLoss::wait_temp_resume() {
 ErrCode PowerLoss::extrude_before_resume() {
 
   filament_sensor.reset();
+
   HOTEND_LOOP() {
     print_control.temperature_lock(e, stash_data.extruder_temperature_lock[e]);
   }
+
   if (stash_data.dual_x_carriage_mode >= DXC_DUPLICATION_MODE) {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
     tool_change(0, true);
@@ -161,8 +168,8 @@ ErrCode PowerLoss::extrude_before_resume() {
     dual_x_carriage_mode = (DualXMode)stash_data.dual_x_carriage_mode;
     idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
   }
-  next_req = cur_line = line_number_sum = stash_data.file_position;
 
+  tool_change(stash_data.active_extruder, true);
   uint8_t save_active_extruder = active_extruder;
   float x_pack_pos = x_home_pos(active_extruder) + (active_extruder ? -1 : 1);
   motion_control.move_to_x(x_pack_pos);
@@ -173,6 +180,13 @@ ErrCode PowerLoss::extrude_before_resume() {
   motion_control.move_to_x(x_pack_pos);
 
   tool_change(save_active_extruder);
+
+  // pause happen in a NOT motion gcode
+  // if (stash_data.motion_extruder != stash_data.active_extruder) {
+  //   LOG_I(">>>> last motion extruder != active_extruder, next_req++ to %d\r\n", stash_data.file_position + 1);
+  //   stash_data.file_position++;
+  // }
+  next_req = cur_line = line_number_sum = stash_data.file_position;
 
   return ret;
 }
@@ -201,7 +215,13 @@ void PowerLoss::resume_print_env() {
   duplicate_extruder_x_offset = stash_data.duplicate_extruder_x_offset;
   dual_x_carriage_unpark();
 
+  LOG_I("Resume x %f\r\n", stash_data.position[X_AXIS]);
+  LOG_I("current s: %f\r\n", current_position.x);
+  LOG_I("Active extruder %d\r\n", active_extruder);
+
   home_offset = stash_data.home_offset;
+  sync_plan_position();
+
   motion_control.move_to_z(stash_data.position[Z_AXIS] + Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
   motion_control.move_to_xy(stash_data.position[X_AXIS], stash_data.position[Y_AXIS], PRINT_TRAVEL_FEADRATE);
   motion_control.move_to_z(stash_data.position[Z_AXIS], PRINT_TRAVEL_FEADRATE);
