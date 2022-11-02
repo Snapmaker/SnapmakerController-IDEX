@@ -354,6 +354,7 @@ ErrCode PrintControl::stop() {
       }
     }
 
+    vTaskDelay(100);
     buffer_head = buffer_tail = 0;
     is_calibretion_mode = false;
     idex_set_parked(false);
@@ -373,6 +374,7 @@ ErrCode PrintControl::stop() {
     set_print_offset(0, 0, 0);
     stop_work_time();
   }
+
   return E_SUCCESS;
 }
 
