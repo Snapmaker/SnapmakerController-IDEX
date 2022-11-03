@@ -2,7 +2,40 @@
 #include "shaper/MoveQueue.h"
 #include "../gcode/gcode.h"
 
+#include "../../../snapmaker/J1/common_type.h"
+
 AxisManager axisManager;
+
+const char* input_shaper_type_name[] = {"none", "ei", "ei2", "ei3", "mzv", "zv", "zvd", "zvdd", "zvddd"};
+
+ErrCode AxisManager::input_shaper_set(int axis, int type, float freq, float dampe)  {
+
+  if (axis != X_AXIS && axis != Y_AXIS) return E_PARAM;
+
+  AxisInputShaper* axis_input_shaper = axisManager.axis[axis].axis_input_shaper;
+  if (freq != axis_input_shaper->frequency || dampe != axis_input_shaper->zeta || type != (int)axis_input_shaper->type) {
+    axis_input_shaper->setConfig(type, freq, dampe);
+    planner.synchronize();
+    axisManager.initAxisShaper();
+    axisManager.abort();
+  }
+  LOG_I("axis: %d type: %s, frequency: %lf, zeta: %lf\n", axis, input_shaper_type_name[type], freq, dampe);
+
+  return E_SUCCESS;
+}
+
+ErrCode AxisManager::input_shaper_get(int axis, int &type, float &freq, float &dampe) {
+
+  if (axis != X_AXIS && axis != Y_AXIS) return E_PARAM;
+
+  AxisInputShaper* axis_input_shaper = axisManager.axis[axis].axis_input_shaper;
+  type = (int)axis_input_shaper->type;
+  freq = axis_input_shaper->frequency;
+  dampe = axis_input_shaper->zeta;
+  LOG_I("axis: %d type: %s, frequency: %lf, zeta: %lf\n", axis, input_shaper_type_name[type], freq, dampe);
+
+  return E_SUCCESS;
+}
 
 void GcodeSuite::M593() {
     LOG_I("M593\n");
@@ -20,7 +53,7 @@ void GcodeSuite::M593() {
         x = true;
         y = true;
     }
-    const char* input_shaper_type_name[] = {"none", "ei", "ei2", "ei3", "mzv", "zv", "zvd", "zvdd", "zvddd"};
+
     if (x) {
         AxisInputShaper* axis_input_shaper = axisManager.axis[0].axis_input_shaper;
         float frequency = parser.floatval('F', axis_input_shaper->frequency);

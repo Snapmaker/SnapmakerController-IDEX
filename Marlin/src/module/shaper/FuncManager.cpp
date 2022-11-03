@@ -53,95 +53,6 @@ FORCE_INLINE float FuncManager::getTimeByFuncParams(FuncParams* f_p, int8_t type
     }
 }
 
-// void FuncManager::addMonotoneDeltaTimeFuncParams(float a, float b, float c, float delta_left_time, int8_t type, time_double_t right_time, float right_pos) {
-//     // LOG_I("%lf, %lf, %lf, %lf, %d, %lf, %lf\n", a,b ,c, delta_left_time, type, right_time.toFloat(), right_pos);
-//     if (max_size < getSize()) {
-//         max_size = getSize();
-//     }
-//     // x = dx + left_time => f(x) = f(dx + left_time)
-//     if (delta_left_time != 0) {
-//         c = c + a * sq(delta_left_time) + b * delta_left_time;
-//         b = b + 2 * a * delta_left_time;
-//         a = a;
-//     }
-
-//     // if (axis < 2) {
-//         // LOG_I("axis: %d, a: %lf, b: %lf, c: %lf, type: %d, x: %lf, y: %lf\n", axis, a,b,c,type, right_time.toDouble(), right_pos);
-//     // }
-
-//     if (a == 0 && b == 0) {
-//         if (last_is_zero) {
-//             FuncParams &f_p = funcParams[prevFuncParamsIndex(func_params_head)];
-
-//             f_p.right_time = right_time;
-//             f_p.right_pos = right_pos;
-
-//             last_time = right_time;
-//             last_pos = right_pos;
-
-//             return;
-//         } else {
-//             last_is_zero = true;
-//         }
-//     } else {
-//         last_is_zero = false;
-//     }
-
-//     FuncParams &f_p = funcParams[func_params_head];
-
-//     f_p.a = a;
-//     f_p.b = b;
-//     f_p.c = c;
-//     f_p.type = type;
-
-//     f_p.right_time = right_time;
-//     f_p.right_pos = right_pos;
-
-//     last_time = right_time;
-//     last_pos = right_pos;
-
-//     func_params_head = nextFuncParamsIndex(func_params_head);
-// }
-
-// void FuncManager::addDeltaTimeFuncParams(float a, float b, float c, time_double_t  left_time, time_double_t right_time, float right_pos) {
-//     float delta_left_time = 0;
-//     float delta_right_time = right_time - left_time;
-
-//     // LOG_I("add a: %lf, b: %lf, c: %lf, x: %lf, y: %lf\n", a,b,c, right_time.toDouble(), right_pos);
-
-//     if (ABS(a) < EPSILON) {
-//         a = 0;
-//     }
-//     if (ABS(b) < EPSILON) {
-//         b = 0;
-//     }
-
-//     int8_t type = 0;
-//     if (a == 0) {
-//         type = b == 0 ? 0 : b > 0 ? 1 : -1;
-//         addMonotoneDeltaTimeFuncParams(a, b, c, 0, type, right_time, right_pos);
-//     } else {
-//         float middle = -b / 2 / a;
-//         if (delta_left_time < middle && delta_right_time > middle) {
-//             type = a > 0 ? -1 : 1;
-//             float middle_right_pos = getY(middle, a, b, c);
-//             addMonotoneDeltaTimeFuncParams(a,b,c, 0, type, left_time + middle, middle_right_pos);
-//             type = -type;
-//             addMonotoneDeltaTimeFuncParams(a,b,c, middle, type, right_time, right_pos);
-//         } else {
-//             if (a > 0) {
-//                 type = delta_left_time >= middle && delta_right_time >= middle ? 1 : -1;
-//             } else {
-//                 type = delta_left_time >= middle && delta_right_time >= middle ? -1 : 1;
-//             }
-//             addMonotoneDeltaTimeFuncParams(a,b,c, 0, type, right_time, right_pos);
-//         }
-//     }
-
-//     last_time = right_time;
-//     last_pos = right_pos;
-// }
-
 void FuncManager::addFuncParams(float a, float b, float c, int type, time_double_t right_time, float right_pos) {
     if (max_size < getSize()) {
         max_size = getSize();
@@ -173,13 +84,6 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
         last_is_zero = false;
     }
 
-    // LOG_I("%d, %lf %lf %lf %lf %lf\n", axis, a, b, c, right_time.toFloat(), right_pos);
-
-    // if (axis == 0)
-    // {
-        // LOG_I("%d %lf %lf %lf %d %lf %lf\n",func_params_head, a, b, c, type, right_time.toFloat(), right_pos);
-        // LOG_I("%d %lf %lf %lf\n",func_params_head, a, right_time.toFloat(), right_pos);
-    // }
 
     FuncParams &f_p = funcParams[func_params_head];
     funcParamsTypes[func_params_head] = type;
@@ -191,15 +95,15 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
     f_p.right_time = right_time;
     f_p.right_pos = right_pos;
 
-    if (type > 0 && right_pos <= last_pos) {
-        LOG_I("error1 1 for right_pos: %lf, %lf\n", right_pos, last_pos);
-    }
-    if (type == 0 && right_pos != last_pos) {
-        LOG_I("error1 0 for right_pos: %lf, %lf\n", right_pos, last_pos);
-    }
-    if (type < 0 && right_pos >= last_pos) {
-        LOG_I("error1 -1 for right_pos: %lf, %lf\n", right_pos, last_pos);
-    }
+    // if (type > 0 && right_pos <= last_pos) {
+    //     LOG_I("error1 1 for right_pos: %lf, %lf\n", right_pos, last_pos);
+    // }
+    // if (type == 0 && right_pos != last_pos) {
+    //     LOG_I("error1 0 for right_pos: %lf, %lf\n", right_pos, last_pos);
+    // }
+    // if (type < 0 && right_pos >= last_pos) {
+    //     LOG_I("error1 -1 for right_pos: %lf, %lf\n", right_pos, last_pos);
+    // }
 
     last_time = right_time;
     last_pos = right_pos;
@@ -258,13 +162,6 @@ bool FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step,
     if (func_params_use == func_params_head) {
         return false;
     }
-
-    // if (ABS(next_pos - func_params->right_pos) < EPSILON) {
-    //     print_time = func_params->right_time;
-    //     print_pos = func_params->right_pos;
-    //     print_step = next_step;
-    //     return &print_time;
-    // }
 
     time_double_t next_time = left_time + getTimeByFuncParams(func_params, type, next_pos, func_params_use);
 

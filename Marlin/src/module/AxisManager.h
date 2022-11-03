@@ -5,6 +5,7 @@
 #include "shaper/FuncManager.h"
 #include "shaper/MoveQueue.h"
 #include "../../../../snapmaker/debug/debug.h"
+#include "../../../../snapmaker/J1/common_type.h"
 
 #define T0_T1_AXIS_INDEX  (4)
 
@@ -157,6 +158,9 @@ class AxisManager {
     int current_steps[AXIS_SIZE];
 
   public:
+    ErrCode input_shaper_set(int axis, int type, float freq, float dampe);
+    ErrCode input_shaper_get(int axis, int &type, float &freq, float &dampe);
+
     AxisManager() {};
 
     void init() {
@@ -276,6 +280,7 @@ class AxisManager {
 
     bool getNextAxisStepper();
 };
+
 
 extern AxisManager axisManager;
 

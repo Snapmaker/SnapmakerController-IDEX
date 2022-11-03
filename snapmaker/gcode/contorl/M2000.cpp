@@ -27,6 +27,7 @@
 #include "../../../Marlin/src/module/endstops.h"
 #include "../../../Marlin/src/module/stepper.h"
 #include "../../module/motion_control.h"
+#include "../../module/print_control.h"
 #include "../../module/system.h"
 #include <EEPROM.h>
 
@@ -120,6 +121,10 @@ void GcodeSuite::M2000() {
 
     case 200:
     {
+      if (print_control.get_mode() >= PRINT_DUPLICATION_MODE) {
+        LOG_I("work mode do not support this command\r\n");
+        return;
+      }
 
       if (axisManager.T0_T1_simultaneously_move) {
         LOG_I("BUSY\r\n");
