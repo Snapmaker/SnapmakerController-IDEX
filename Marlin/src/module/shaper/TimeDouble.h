@@ -13,9 +13,12 @@ class TimeDouble {
   public:
     TimeDouble(){};
 
-    TimeDouble(int i) : i(i) {}
+    TimeDouble(int i) : i(i) {
+        this->d = 0;
+    }
 
     TimeDouble(float d) : d(d) {
+        this->i = 0;
         checkCarry();
     }
 
@@ -34,10 +37,12 @@ class TimeDouble {
 
     TimeDouble& operator= (int n) {
         i = n;
+        d = 0;
         return *this;
     }
 
     TimeDouble& operator= (float d) {
+        this->i = 0;
         this->d = d;
         checkCarry();
         return *this;
