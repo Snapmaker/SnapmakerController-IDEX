@@ -59,7 +59,7 @@ void MoveQueue::calculateMoves(block_t* block) {
         }
         accelDistance = newAccelDistance;
         cruise_speed = SQRT(2 * acceleration * newAccelDistance + sq(entry_speed));
-        i_cruise_speed = 1000.0f / block->cruise_speed;
+        i_cruise_speed = 1 / cruise_speed;
         if (cruise_speed < leave_speed) {
             cruise_speed = leave_speed;
         }
