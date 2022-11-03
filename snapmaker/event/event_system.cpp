@@ -8,6 +8,8 @@
 #include "../module/enclosure.h"
 #include "event.h"
 #include "../debug/debug.h"
+#include "../../../src/module/AxisManager.h"
+
 #pragma pack(1)
 
 typedef struct {
@@ -172,6 +174,112 @@ static ErrCode move_relative_home(event_param_t& event) {
   return send_event(event);
 }
 
+
+#define DEFAULT_IS_TYPE  (1) //EI
+#define DEFAULT_IS_DAMP  (0.1)
+#pragma pack(1)
+typedef struct {
+  uint8_t axis;
+  float_to_int_t freq;
+} axis_inputshaper_t;
+#pragma pack(0)
+
+static ErrCode inputshaper_set(event_param_t& event) {
+  axis_inputshaper_t *is = (axis_inputshaper_t *)(event.data);
+  uint8_t axis = is->axis - 1;
+  float freq = INT_TO_FLOAT(is->freq);
+  SERIAL_ECHOLNPAIR("SC set inputshaper, axis:", axis, " F:", freq);
+  event.data[0] = axisManager.input_shaper_set(axis, DEFAULT_IS_TYPE, freq, DEFAULT_IS_DAMP);
+  event.length = 1;
+  return send_event(event);
+}
+
+static ErrCode inputshaper_get(event_param_t& event) {
+
+  int axis, type; float freq, damp;
+
+  axis = event.data[0] - 1;
+  event.data[0] = axisManager.input_shaper_get(axis, type, freq, damp);
+
+  int i_freq = FLOAT_TO_INT(freq);
+  event.data[1] = i_freq & 0xff;
+  event.data[2] = (i_freq>>8) & 0xff;
+  event.data[3] = (i_freq>>16) & 0xff;
+  event.data[4] = (i_freq>>24) & 0xff;
+  event.length = 5;
+
+  return send_event(event);
+}
+
+static ErrCode resonance_compensation_set(event_param_t& event) {
+
+  int axis, type; float freq, damp;
+
+  LOG_I("SC resonance compesation set, turn %s \r\n", event.data[0] ? "on" : "off");
+
+  axis = X_AXIS;
+  if (E_SUCCESS != axisManager.input_shaper_get(axis, type, freq, damp)) {
+    event.data[0] = E_FAILURE;
+    event.length = 1;
+    return send_event(event);
+  }
+  type = event.data[0] ? 0 : type;
+  if (E_SUCCESS != axisManager.input_shaper_set(axis, type, freq, damp)) {
+    event.data[0] = E_FAILURE;
+    event.length = 1;
+    return send_event(event);
+  }
+
+  axis = Y_AXIS;
+  if (E_SUCCESS != axisManager.input_shaper_get(axis, type, freq, damp)) {
+    event.data[0] = E_FAILURE;
+    event.length = 1;
+    return send_event(event);
+  }
+  type = event.data[0] ? 0 : type;
+  if (E_SUCCESS != axisManager.input_shaper_set(axis, type, freq, damp)) {
+    event.data[0] = E_FAILURE;
+    event.length = 1;
+    return send_event(event);
+  }
+
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
+}
+
+static ErrCode resonance_compensation_get(event_param_t& event) {
+
+  bool x_on_off, y_on_off;
+  int axis, type; float freq, damp;
+
+  axis = X_AXIS;
+  if (E_SUCCESS != axisManager.input_shaper_get(axis, type, freq, damp)) {
+      LOG_I("SC resonance compesation get E_FAILURE \r\n");
+    event.data[0] = E_FAILURE;
+    event.length = 2;
+    return send_event(event);
+  }
+  x_on_off = type;
+
+  axis = Y_AXIS;
+  if (E_SUCCESS != axisManager.input_shaper_get(axis, type, freq, damp)) {
+    LOG_I("SC resonance compesation get E_FAILURE \r\n");
+    event.data[0] = E_FAILURE;
+    event.length = 2;
+    return send_event(event);
+  }
+  y_on_off = type;
+
+  LOG_I("SC resonance compesation get %d \r\n", x_on_off && y_on_off);
+
+  event.data[0] = E_SUCCESS;
+  event.data[1] = x_on_off && y_on_off;
+  event.length = 2;
+  return send_event(event);
+
+}
+
 static ErrCode move_relative(event_param_t& event) {
   mobile_instruction_t *move = (mobile_instruction_t *)(event.data);
   if (fdm_head.is_change_filamenter()) {
@@ -294,6 +402,12 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_GET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN, get_motor_enable},
   {SYS_ID_SET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN, set_motor_enable},
   {SYS_ID_MOVE_TO_RELATIVE_HOME , EVENT_CB_TASK_RUN  , move_relative_home},
+
+  {SYS_ID_INPUTSHAPER_SET ,             EVENT_CB_TASK_RUN  , inputshaper_set},
+  {SYS_ID_INPUTSHAPER_GET ,             EVENT_CB_TASK_RUN  , inputshaper_get},
+  {SYS_ID_RESONANCE_COMPENSATION_SET ,  EVENT_CB_TASK_RUN  , resonance_compensation_set},
+  {SYS_ID_RESONANCE_COMPENSATION_GET ,  EVENT_CB_TASK_RUN  , resonance_compensation_get},
+
   {SYS_ID_GET_DISTANCE_RELATIVE_HOME , EVENT_CB_TASK_RUN  , req_distance_relative_home},
   {SYS_ID_SUBSCRIBE_MOTOR_ENABLE_STATUS , EVENT_CB_DIRECT_RUN  , get_motor_enable},
 };
