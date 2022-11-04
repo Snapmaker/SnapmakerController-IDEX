@@ -161,6 +161,8 @@
   #include "../lcd/extui/dgus/DGUSDisplayDef.h"
 #endif
 
+#include "AxisManager.h"
+
 #pragma pack(push, 1) // No padding between variables
 
 #if HAS_ETHERNET
@@ -187,6 +189,13 @@ typedef struct {     bool LINEAR_AXIS_LIST(X, Y, Z, I, J, K), X2, Y2, Z2, Z3, Z4
 static const uint32_t   _DMA[] PROGMEM = DEFAULT_MAX_ACCELERATION;
 static const float     _DASU[] PROGMEM = DEFAULT_AXIS_STEPS_PER_UNIT;
 static const feedRate_t _DMF[] PROGMEM = DEFAULT_MAX_FEEDRATE;
+
+typedef struct {
+  uint8_t axis;
+  uint8_t type;
+  float freq;
+  float dampe;
+} is_setting_t;
 
 /**
  * Current EEPROM Layout
@@ -491,6 +500,8 @@ typedef struct SettingsDataStruct {
   #endif
 
   float heat_bed_center_offset[2];
+
+  is_setting_t input_shaper[2];
 
 } SettingsData;
 
@@ -1360,6 +1371,28 @@ void MarlinSettings::postprocess() {
       _FIELD_TEST(heat_bed_center_offset);
       calibtration.get_heat_bed_center_offset(heat_bed_center_offset);
       EEPROM_WRITE(heat_bed_center_offset);
+    }
+
+    // //
+    // // input shapper
+    // //
+    {
+      is_setting_t input_shaper[2];
+      _FIELD_TEST(input_shaper);
+
+      int type; float freq, damp;
+      axisManager.input_shaper_get(X_AXIS, type, freq, damp);
+      input_shaper[X_AXIS].axis = X_AXIS;
+      input_shaper[X_AXIS].type = type;
+      input_shaper[X_AXIS].freq = freq;
+      input_shaper[X_AXIS].dampe = damp;
+      axisManager.input_shaper_get(Y_AXIS, type, freq, damp);
+      input_shaper[Y_AXIS].axis = Y_AXIS;
+      input_shaper[Y_AXIS].type = type;
+      input_shaper[Y_AXIS].freq = freq;
+      input_shaper[Y_AXIS].dampe = damp;
+
+      EEPROM_WRITE(input_shaper);
     }
 
     //
@@ -2247,6 +2280,24 @@ void MarlinSettings::postprocess() {
         calibtration.set_heat_bed_center_offset(heat_bed_center_offset);
       }
 
+      // //
+      // // input shaper
+      //
+      {
+        is_setting_t input_shaper[2];
+        _FIELD_TEST(input_shaper);
+        EEPROM_READ(input_shaper);
+
+        AxisInputShaper::axis_input_shaper_x.type = (InputShaperType)input_shaper[0].type;
+        AxisInputShaper::axis_input_shaper_x.frequency = input_shaper[0].freq;
+        AxisInputShaper::axis_input_shaper_x.zeta = input_shaper[0].dampe;
+
+        AxisInputShaper::axis_input_shaper_y.type = (InputShaperType)input_shaper[1].type;
+        AxisInputShaper::axis_input_shaper_y.frequency = input_shaper[1].freq;
+        AxisInputShaper::axis_input_shaper_y.zeta = input_shaper[1].dampe;
+
+      }
+
       //
       // Password feature
       //
@@ -2965,6 +3016,8 @@ void MarlinSettings::reset() {
       password.is_set = false;
     #endif
   #endif
+
+  axisManager.input_shaper_reset();
 
   //
   // MKS UI controller
@@ -3894,6 +3947,16 @@ void MarlinSettings::reset() {
     calibtration.get_heat_bed_center_offset(hb_center_offset);
     SERIAL_ECHOPAIR_P("Heat bed center offset: X", hb_center_offset[0], ", Y", hb_center_offset[1]);
     SERIAL_EOL();
+
+    {
+      int type; float freq, damp;
+      axisManager.input_shaper_get(X_AXIS, type, freq, damp);
+      SERIAL_ECHOPAIR_P("M593 X P", type, " F", freq, " D", damp);
+      SERIAL_EOL();
+      axisManager.input_shaper_get(Y_AXIS, type, freq, damp);
+      SERIAL_ECHOPAIR_P("M593 Y P", type, " F", freq, " D", damp);
+      SERIAL_EOL();
+    }
 
     #if ENABLED(BACKLASH_GCODE)
       CONFIG_ECHO_HEADING("Backlash compensation:");

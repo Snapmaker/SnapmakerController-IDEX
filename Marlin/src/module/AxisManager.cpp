@@ -4,9 +4,25 @@
 
 #include "../../../snapmaker/J1/common_type.h"
 
+#define DEFAULT_IS_FREQ   (50)
+#define DEFAULT_IS_DAMP   (0.1)
+#define DEFAULT_IS_TYPE   (1)
+
 AxisManager axisManager;
 
 const char* input_shaper_type_name[] = {"none", "ei", "ei2", "ei3", "mzv", "zv", "zvd", "zvdd", "zvddd"};
+
+void AxisManager::input_shaper_reset() {
+
+  axisManager.axis[X_AXIS].axis_input_shaper->type = (InputShaperType)DEFAULT_IS_TYPE;
+  axisManager.axis[X_AXIS].axis_input_shaper->frequency = DEFAULT_IS_FREQ;
+  axisManager.axis[X_AXIS].axis_input_shaper->zeta = DEFAULT_IS_DAMP;
+
+  axisManager.axis[Y_AXIS].axis_input_shaper->type = (InputShaperType)DEFAULT_IS_TYPE;
+  axisManager.axis[Y_AXIS].axis_input_shaper->frequency = DEFAULT_IS_FREQ;
+  axisManager.axis[Y_AXIS].axis_input_shaper->zeta = DEFAULT_IS_DAMP;
+
+}
 
 ErrCode AxisManager::input_shaper_set(int axis, int type, float freq, float dampe)  {
 
@@ -19,7 +35,7 @@ ErrCode AxisManager::input_shaper_set(int axis, int type, float freq, float damp
     axisManager.initAxisShaper();
     axisManager.abort();
   }
-  LOG_I("axis: %d type: %s, frequency: %lf, zeta: %lf\n", axis, input_shaper_type_name[type], freq, dampe);
+  LOG_I("setting: axis: %d type: %s, frequency: %lf, zeta: %lf\n", axis, input_shaper_type_name[type], freq, dampe);
 
   return E_SUCCESS;
 }
@@ -32,7 +48,7 @@ ErrCode AxisManager::input_shaper_get(int axis, int &type, float &freq, float &d
   type = (int)axis_input_shaper->type;
   freq = axis_input_shaper->frequency;
   dampe = axis_input_shaper->zeta;
-  LOG_I("axis: %d type: %s, frequency: %lf, zeta: %lf\n", axis, input_shaper_type_name[type], freq, dampe);
+  // LOG_I("getting: axis: %d type: %s, frequency: %lf, zeta: %lf\n", axis, input_shaper_type_name[type], freq, dampe);
 
   return E_SUCCESS;
 }
