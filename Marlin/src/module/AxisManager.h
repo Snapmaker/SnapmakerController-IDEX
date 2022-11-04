@@ -158,6 +158,7 @@ class AxisManager {
     int current_steps[AXIS_SIZE];
 
   public:
+    void input_shaper_reset();
     ErrCode input_shaper_set(int axis, int type, float freq, float dampe);
     ErrCode input_shaper_get(int axis, int &type, float &freq, float &dampe);
 

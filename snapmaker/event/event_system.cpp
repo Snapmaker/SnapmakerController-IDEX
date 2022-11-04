@@ -188,7 +188,7 @@ static ErrCode inputshaper_set(event_param_t& event) {
   axis_inputshaper_t *is = (axis_inputshaper_t *)(event.data);
   uint8_t axis = is->axis - 1;
   float freq = INT_TO_FLOAT(is->freq);
-  SERIAL_ECHOLNPAIR("SC set inputshaper, axis:", axis, " F:", freq);
+  LOG_I("SC set inputshaper, axis: %d, F: %f", axis, freq);
   event.data[0] = axisManager.input_shaper_set(axis, DEFAULT_IS_TYPE, freq, DEFAULT_IS_DAMP);
   event.length = 1;
   return send_event(event);
