@@ -14,13 +14,13 @@ const char* input_shaper_type_name[] = {"none", "ei", "ei2", "ei3", "mzv", "zv",
 
 void AxisManager::input_shaper_reset() {
 
-  axisManager.axis[X_AXIS].axis_input_shaper->type = (InputShaperType)DEFAULT_IS_TYPE;
-  axisManager.axis[X_AXIS].axis_input_shaper->frequency = DEFAULT_IS_FREQ;
-  axisManager.axis[X_AXIS].axis_input_shaper->zeta = DEFAULT_IS_DAMP;
+  AxisInputShaper::axis_input_shaper_x.type = (InputShaperType)DEFAULT_IS_TYPE;
+  AxisInputShaper::axis_input_shaper_x.frequency = DEFAULT_IS_FREQ;
+  AxisInputShaper::axis_input_shaper_x.zeta = DEFAULT_IS_DAMP;
 
-  axisManager.axis[Y_AXIS].axis_input_shaper->type = (InputShaperType)DEFAULT_IS_TYPE;
-  axisManager.axis[Y_AXIS].axis_input_shaper->frequency = DEFAULT_IS_FREQ;
-  axisManager.axis[Y_AXIS].axis_input_shaper->zeta = DEFAULT_IS_DAMP;
+  AxisInputShaper::axis_input_shaper_y.type = (InputShaperType)DEFAULT_IS_TYPE;
+  AxisInputShaper::axis_input_shaper_y.frequency = DEFAULT_IS_FREQ;
+  AxisInputShaper::axis_input_shaper_y.zeta = DEFAULT_IS_DAMP;
 
 }
 
