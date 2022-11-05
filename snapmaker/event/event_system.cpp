@@ -8,6 +8,7 @@
 #include "../module/enclosure.h"
 #include "event.h"
 #include "../debug/debug.h"
+#include "src/module/settings.h"
 #include "../../../src/module/AxisManager.h"
 
 #pragma pack(1)
@@ -191,6 +192,7 @@ static ErrCode inputshaper_set(event_param_t& event) {
   LOG_I("SC set inputshaper, axis: %d, F: %f", axis, freq);
   event.data[0] = axisManager.input_shaper_set(axis, DEFAULT_IS_TYPE, freq, DEFAULT_IS_DAMP);
   event.length = 1;
+  settings.save();
   return send_event(event);
 }
 
@@ -243,6 +245,7 @@ static ErrCode resonance_compensation_set(event_param_t& event) {
     return send_event(event);
   }
 
+  settings.save();
   event.data[0] = E_SUCCESS;
   event.length = 1;
   return send_event(event);
