@@ -216,7 +216,10 @@ static ErrCode request_stop_single_extrude_work(event_param_t& event) {
     return send_event(event);
   }
 
-  fdm_head.set_duplication_enabled(e, en);
+  // fdm_head.set_duplication_enabled(e, en);
+  fdm_head.stop_single_extruder_e = e;
+  fdm_head.stop_single_extruder_en = en;
+
   system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_STOP_EXTRUDE);
   return E_SUCCESS;
 }

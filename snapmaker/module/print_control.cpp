@@ -281,6 +281,9 @@ ErrCode PrintControl::pause() {
     }
   }
 
+  if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_STOP_EXTRUDE)
+    fdm_head.set_duplication_enabled(fdm_head.stop_single_extruder_e, fdm_head.stop_single_extruder_en);
+
   vTaskDelay(5);
   power_loss.stash_print_env();
   motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);

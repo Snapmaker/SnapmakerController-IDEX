@@ -379,9 +379,9 @@ xyze_int8_t Stepper::count_direction{0};
   }while(0)
   #define X_APPLY_STEP(v,ALWAYS) do{ \
     if (extruder_duplication_enabled || ALWAYS) { \
-      if (fdm_head.is_duplication_enabled(0)) \
+      if (fdm_head.extraduer_enable(0))\
         X_STEP_WRITE(v); \
-      if (fdm_head.is_duplication_enabled(1)) \
+      if (fdm_head.extraduer_enable(1))\
         X2_STEP_WRITE(v); \
     } \
     else if (last_moved_extruder) X2_STEP_WRITE(v); else X_STEP_WRITE(v); \

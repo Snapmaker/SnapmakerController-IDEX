@@ -68,6 +68,10 @@ typedef struct {
 
 class FDM_Head {
   public:
+
+    uint8_t stop_single_extruder_e;
+    uint8_t stop_single_extruder_en;
+
     void    init();
     ErrCode set_temperature(uint8_t e, uint16_t temperature, bool is_save=true);
     float   get_temperature(uint8_t e);
@@ -84,6 +88,7 @@ class FDM_Head {
     uint16_t get_nozzle_type(uint8_t e, nozzle_texture_type_e *texture, float *caliber);
 
     bool is_duplication_enabled(uint8_t e) {return duplication_enabled_move[e] || !system_service.is_working();}
+    bool extraduer_enable(uint8_t e) { return duplication_enabled_move[e]; }
     // Double - head printing will not work after disable
     void set_duplication_enabled(uint8_t e, bool status) {duplication_enabled_move[e] = status;}
     bool is_duplicating();
