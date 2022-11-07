@@ -266,6 +266,7 @@ ErrCode PrintControl::pause() {
     vTaskDelay(1);
   }
 
+  // wait for stepper slow down and stop
   stepper.req_pause = true;
   while(1) {
     if (stepper.can_pause) {
@@ -280,6 +281,7 @@ ErrCode PrintControl::pause() {
     }
   }
 
+  vTaskDelay(5);
   power_loss.stash_print_env();
   motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
   motion_control.synchronize();
@@ -292,22 +294,35 @@ ErrCode PrintControl::pause() {
   }
   motion_control.synchronize();
 
+  // motion_control.home_x();
+  // motion_control.home_y();
+
   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
   set_duplication_enabled(false);
-
+  float active_x_pos = current_position.x;
   uint8_t save_active_extruder = active_extruder;
-  float x_pack_pos = x_home_pos(active_extruder) + (active_extruder ? -1 : 1);
+  uint8_t inactive_extruder = !active_extruder;
+  float x_pack_pos = x_home_pos(active_extruder);
   motion_control.move_to_x(x_pack_pos, PAUSE_RESUME_MOVE_FEEDRATE_MMM);
-
-  uint8_t inactive_extruder_x = !active_extruder;
-  tool_change(inactive_extruder_x, true);
-  x_pack_pos = x_home_pos(inactive_extruder_x) + (inactive_extruder_x ? -1 : 1);
+  LOG_I("Active extruder:%d mvoe to home %f\r\n", active_extruder, x_pack_pos);
+  if (DXC_DUPLICATION_MODE == power_loss.stash_data.dual_x_carriage_mode) {
+    if (active_extruder == 0)
+      inactive_extruder_x = active_x_pos + power_loss.stash_data.duplicate_extruder_x_offset;
+    else
+      inactive_extruder_x = active_x_pos - power_loss.stash_data.duplicate_extruder_x_offset;
+  }
+  else if (DXC_MIRRORED_MODE == power_loss.stash_data.dual_x_carriage_mode) {
+    inactive_extruder_x = (x_home_pos(!active_extruder) + x_home_pos(active_extruder)) - active_x_pos;
+  }
+  LOG_I("inactive_extruder_x %f\r\n", inactive_extruder_x);
+  tool_change(inactive_extruder, true);
+  x_pack_pos = x_home_pos(inactive_extruder);
   motion_control.move_to_x(x_pack_pos, PAUSE_RESUME_MOVE_FEEDRATE_MMM);
+  LOG_I("Inactive extruder:%d mvoe to home %f\r\n", inactive_extruder, x_pack_pos);
   tool_change(save_active_extruder);
+  motion_control.move_to_y(0, PAUSE_RESUME_MOVE_FEEDRATE_MMM);
 
-  motion_control.move_to_y(1, PAUSE_RESUME_MOVE_FEEDRATE_MMM);
   system_service.set_status(SYSTEM_STATUE_PAUSED);
-
   return E_SUCCESS;
 }
 

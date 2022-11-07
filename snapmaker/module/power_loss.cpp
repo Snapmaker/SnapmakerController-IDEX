@@ -109,9 +109,12 @@ ErrCode PowerLoss::extrude_before_resume() {
     dual_x_carriage_mode = DXC_MIRRORED_MODE;
     duplicate_extruder_x_offset = MIRRORED_MODE_X_OFFSET;
     idex_set_mirrored_mode(true);
-  } else {
+    set_duplication_enabled(true);
+  }
+  else {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-    tool_change(stash_data.active_extruder, true);
+    tool_change(stash_data.active_extruder);
+    set_duplication_enabled(false);
   }
 
   thermalManager.setTargetBed(stash_data.bed_temp);
@@ -134,6 +137,9 @@ ErrCode PowerLoss::extrude_before_resume() {
   if (homing_needed()) {
     motion_control.home();
   }
+  // else {
+  //   motion_control.home_x();
+  // }
 
   int16_t move_distance = EXTRUDE_X_MOVE_DISTANCE;
   if (active_extruder) {
@@ -141,45 +147,35 @@ ErrCode PowerLoss::extrude_before_resume() {
   }
   dual_x_carriage_unpark();
 
-  float x_extrude_pos;
-  if (0 == power_loss.stash_data.active_extruder) {
-    x_extrude_pos = x_home_pos(0) + EXTRUDE_X_MOVE_DISTANCE;
-  }
-  else {
-    x_extrude_pos = x_home_pos(1) - EXTRUDE_X_MOVE_DISTANCE;
-  }
-  // motion_control.move_x(move_distance, PRINT_TRAVEL_FEADRATE);
-  motion_control.move_to_x(x_extrude_pos, PRINT_TRAVEL_FEADRATE);
+  motion_control.move_x(move_distance, PRINT_TRAVEL_FEADRATE);
   motion_control.synchronize();
 
   // motion_control.extrude_e(EXTRUDE_E_DISTANCE, CHANGE_FILAMENT_SPEED);
   destination.set(current_position.x, current_position.y, current_position.z, current_position.e + EXTRUDE_E_DISTANCE);
   prepare_internal_move_to_destination(MMM_TO_MMS(CHANGE_FILAMENT_SPEED));
-
   motion_control.synchronize();
 
   ErrCode ret = E_SUCCESS;
-  if (filament_sensor.is_trigger(power_loss.stash_data.active_extruder)) {
-    dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-    idex_set_mirrored_mode(false);
+  if (filament_sensor.is_trigger()) {
+    // dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+    // idex_set_mirrored_mode(false);
     ret = E_COMMON_ERROR;
-  } else {
-    // resume dual_x_carriage_mode
-    dual_x_carriage_mode = (DualXMode)stash_data.dual_x_carriage_mode;
-    idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
   }
+  // else {
+  //   // resume dual_x_carriage_mode
+  //   dual_x_carriage_mode = (DualXMode)stash_data.dual_x_carriage_mode;
+  //   idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
+  // }
 
-  tool_change(stash_data.active_extruder, true);
-  uint8_t save_active_extruder = active_extruder;
-  float x_pack_pos = x_home_pos(active_extruder) + (active_extruder ? -1 : 1);
-  motion_control.move_to_x(x_pack_pos);
+  motion_control.move_x(-move_distance, PRINT_TRAVEL_FEADRATE);
+  motion_control.synchronize();
 
-  uint8_t inactive_extruder_x = !active_extruder;
-  tool_change(inactive_extruder_x, true);
-  x_pack_pos = x_home_pos(inactive_extruder_x) + (inactive_extruder_x ? -1 : 1);
-  motion_control.move_to_x(x_pack_pos);
+  // motion_control.home_x();
+  // motion_control.home_y();
 
-  tool_change(save_active_extruder);
+  // resume dual_x_carriage_mode
+  dual_x_carriage_mode = (DualXMode)stash_data.dual_x_carriage_mode;
+  idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
 
   // pause happen in a NOT motion gcode
   // if (stash_data.motion_extruder != stash_data.active_extruder) {
@@ -213,14 +209,16 @@ void PowerLoss::resume_print_env() {
   fast_move_feedrate = stash_data.travel_feadrate;
   gcode.axis_relative = stash_data.axis_relative;
   duplicate_extruder_x_offset = stash_data.duplicate_extruder_x_offset;
-  dual_x_carriage_unpark();
 
   LOG_I("Resume x %f\r\n", stash_data.position[X_AXIS]);
   LOG_I("current s: %f\r\n", current_position.x);
   LOG_I("Active extruder %d\r\n", active_extruder);
 
-  home_offset = stash_data.home_offset;
-  sync_plan_position();
+  // home_offset = stash_data.home_offset;
+  // sync_plan_position();
+
+  idex_set_parked(true);
+  dual_x_carriage_unpark();
 
   motion_control.move_to_z(stash_data.position[Z_AXIS] + Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
   motion_control.move_to_xy(stash_data.position[X_AXIS], stash_data.position[Y_AXIS], PRINT_TRAVEL_FEADRATE);

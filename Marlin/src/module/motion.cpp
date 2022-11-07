@@ -1259,12 +1259,12 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
             pos_now_x += duplicate_extruder_x_offset;
           }
           else {
-            pos_now_x = LOGICAL_TO_NATIVE(X_BED_SIZE - head0_pos.asLogical().x, X_AXIS);
-            if (pos_now_x > hotend_offset[1].x) {
-              pos_now_x = current_position.x + (pos_now_x - hotend_offset[1].x);
-            } else {
-              tool_change(1);
-            }
+            // pos_now_x = LOGICAL_TO_NATIVE(X_BED_SIZE - head0_pos.asLogical().x, X_AXIS);
+            // if (pos_now_x > hotend_offset[1].x) {
+            //   pos_now_x = current_position.x + (pos_now_x - hotend_offset[1].x);
+            // } else {
+            //   tool_change(1);
+            // }
           }
           xyze_pos_t new_pos = current_position;
           new_pos.x = pos_now_x;
