@@ -1565,6 +1565,14 @@ void Stepper::isr() {
       nextMainISR += delta_t;
       stop_count++;
       // up_z_(2);
+
+      if (!axis_is_moving(X_AXIS)) {
+        x_time_interval = STOP_TIME_INTERVAL + 1;
+      }
+      if (!axis_is_moving(Y_AXIS)) {
+        y_time_interval = STOP_TIME_INTERVAL + 1;
+      }
+
       if (axis_stepper.axis == X_AXIS) {
         x_time_interval = nextMainISR;
       }
