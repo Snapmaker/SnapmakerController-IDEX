@@ -225,7 +225,7 @@ static ErrCode resonance_compensation_set(event_param_t& event) {
     event.length = 1;
     return send_event(event);
   }
-  type = event.data[0] ? 0 : type;
+  type = event.data[0] ? type : 0;
   if (E_SUCCESS != axisManager.input_shaper_set(axis, type, freq, damp)) {
     event.data[0] = E_FAILURE;
     event.length = 1;
@@ -238,7 +238,7 @@ static ErrCode resonance_compensation_set(event_param_t& event) {
     event.length = 1;
     return send_event(event);
   }
-  type = event.data[0] ? 0 : type;
+  type = event.data[0] ? type : 0;
   if (E_SUCCESS != axisManager.input_shaper_set(axis, type, freq, damp)) {
     event.data[0] = E_FAILURE;
     event.length = 1;
