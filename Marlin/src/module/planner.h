@@ -195,7 +195,7 @@ typedef struct block_t {
         max_entry_speed_sqr,                // Maximum allowable junction entry speed in (mm/sec)^2
         millimeters,                        // The total travel of this block in mm
         acceleration,                       // acceleration mm/sec^2
-        acceleration_to_deceleration;       
+        acceleration_to_deceleration;
 
   xyze_float_t axis_r;
   shaper_data_t shaper_data;
