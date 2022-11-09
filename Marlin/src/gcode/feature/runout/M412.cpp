@@ -39,7 +39,9 @@
  *  D<linear> : Extra distance to continue after runout is triggered
  */
 void GcodeSuite::M412() {
+
   bool need_save = false;
+
   if (parser.seenval('S')) {
     bool enable = parser.value_bool();
     uint8_t e = 0;
@@ -59,25 +61,25 @@ void GcodeSuite::M412() {
     need_save = true;
   }
 
-  if (parser.seenval('H')) {
-    uint16_t h = parser.value_ushort();
-    if (h < 1) {
-      h = 1;
-    }
-    filament_sensor.filament_param.threshold = h;
-    need_save = true;
-  }
+  // if (parser.seenval('H')) {
+  //   uint16_t h = parser.value_ushort();
+  //   if (h < 1) {
+  //     h = 1;
+  //   }
+  //   filament_sensor.filament_param.threshold = h;
+  //   need_save = true;
+  // }
 
-  if (parser.seenval('N')) {
-    uint8_t n = parser.value_byte();
-    if (n < 1) {
-      n = 1;
-    } else if (n > 8){
-      n = 8;
-    }
-    filament_sensor.filament_param.check_times = n;
-    need_save = true;
-  }
+  // if (parser.seenval('N')) {
+  //   uint8_t n = parser.value_byte();
+  //   if (n < 1) {
+  //     n = 1;
+  //   } else if (n > 8){
+  //     n = 8;
+  //   }
+  //   filament_sensor.filament_param.check_times = n;
+  //   need_save = true;
+  // }
 
   if (parser.seen('R') || need_save) {
     if (need_save)
@@ -87,9 +89,12 @@ void GcodeSuite::M412() {
 
   SERIAL_ECHOLNPAIR("filament check enable T[0]:", filament_sensor.filament_param.enabled[0],
                     ", T[1]:", filament_sensor.filament_param.enabled[1]);
-  SERIAL_ECHOLNPAIR("filament check param - diatance:", filament_sensor.filament_param.distance,
-                    ", threshold:", filament_sensor.filament_param.threshold,
-                    ", times:", filament_sensor.filament_param.check_times);
+
+  // SERIAL_ECHOLNPAIR("filament check param - diatance:", filament_sensor.filament_param.distance,
+  //                   ", threshold:", filament_sensor.filament_param.threshold,
+  //                   ", times:", filament_sensor.filament_param.check_times);
+  SERIAL_ECHOLNPAIR("filament check param - diatance:", filament_sensor.filament_param.distance);
+
   SERIAL_ECHOLNPAIR("filament sensor value T[0]:", filament_sensor.get_adc_val(0),
                     ", T[1]:", filament_sensor.get_adc_val(1));
 }

@@ -84,6 +84,18 @@ void GcodeSuite::M2000() {
     }
     break;
 
+    case 12:
+    {
+      uint8_t e = (uint8_t)parser.byteval('E', (uint8_t)0);
+      uint8_t dir = (uint8_t)parser.byteval('D', (uint8_t)1);
+      float feedrate_mm_m = (float)parser.byteval('F', (float)20.0);
+      if (fabs(feedrate_mm_m) > 0.000001)
+        stepper.start_only_extrude(e, dir, 50, feedrate_mm_m);
+      else
+        stepper.stop_only_extrude(e);
+    }
+    break;
+
     case 100:
       LOG_I("test watch dog!\n");
       vTaskDelay(pdMS_TO_TICKS(1000));

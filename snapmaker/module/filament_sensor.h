@@ -5,14 +5,16 @@
 
 #define FILAMENT_SENSOR_COUNT 2
 #define FILAMENT_LOOP(i) for (uint8_t i = 0; i < FILAMENT_SENSOR_COUNT; i++)
-#define FILAMENT_CHECK_DISTANCE 2  // mm
+#define FILAMENT_CHECK_DISTANCE 1  // mm
 #define FILAMENT_THRESHOLD 8  // ADC diff value
-#define FILAMENT_THRESHOLD_HW2 15  // ADC diff value
+#define FILAMENT_ROUND_LEN 47 // mm
 #define FILAMENT_CHECK_TIMES 3
 #define SENSOR_DEAD_SPACE_ADC 1433  // > 1.51V
 #define SENSOR_DEAD_SPACE_ADC_HW2 4060
 #define SENSOR_DEAD_SPACE_ADC_MIN_HW2 60
 #define SENSOR_DEAD_SPACE_DISTANCE 4  // mm
+#define FILAMENT_THRESHOLD_HW2 15  // ADC diff value
+
 typedef struct {
   bool enabled[FILAMENT_SENSOR_COUNT];
   float distance;  // Move this distance to detect abnormal sensing deviation
@@ -65,13 +67,19 @@ class FilamentSensor
     uint16_t get_adc_val(uint8_t e);
   public:
     filament_check_param_t filament_param;
+
   private:
     uint8_t err_mask = 0x1;
     int32_t check_step_count[FILAMENT_SENSOR_COUNT];
+    int32_t check_adc_threshold[FILAMENT_SENSOR_COUNT];
     uint8_t err_times[FILAMENT_SENSOR_COUNT] = {0, 0};
     int32_t e_step_count[FILAMENT_SENSOR_COUNT] = {0, 0};
     bool triggered[FILAMENT_SENSOR_COUNT] = {false, false};
     uint16_t start_adc[FILAMENT_SENSOR_COUNT] = {0, 0};
+    int32_t e_step_statics_count[FILAMENT_SENSOR_COUNT] = {0, 0};
+
+    uint32_t dead_space;
+    uint32_t dead_space_min;
 };
 
 extern FilamentSensor filament_sensor;
