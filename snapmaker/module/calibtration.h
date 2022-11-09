@@ -10,6 +10,9 @@
 #define CAlIBRATIONIN_RETRACK_E_MM            (5)
 #define PROBE_TIMES                           (3)
 
+#define CALIBRATION_ACC                       (1000)
+#define CALIBRATION_FEEDRATE                  (5.0)
+
 #define PROBE_FAST_Z_FEEDRATE                 (200)
 #define PROBE_Z_LEAVE_FEEDRATE                (5)
 #define PROBE_FAST_XY_FEEDRATE                (800)

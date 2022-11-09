@@ -270,12 +270,16 @@ void set_calibration_move_param() {
 
   planner_backup_setting = planner.settings;
   planner.settings.min_segment_time_us = DEFAULT_MINSEGMENTTIME;
-  planner.settings.acceleration = DEFAULT_ACCELERATION;
-  planner.settings.retract_acceleration = DEFAULT_RETRACT_ACCELERATION;
-  planner.settings.travel_acceleration = DEFAULT_TRAVEL_ACCELERATION;
-  planner.settings.min_feedrate_mm_s = feedRate_t(DEFAULT_MINIMUMFEEDRATE);
-  planner.settings.min_travel_feedrate_mm_s = feedRate_t(DEFAULT_MINTRAVELFEEDRATE);
+  planner.settings.acceleration = CALIBRATION_ACC;
+  planner.settings.retract_acceleration = CALIBRATION_ACC;
+  planner.settings.travel_acceleration = CALIBRATION_ACC;
+  planner.settings.min_feedrate_mm_s = feedRate_t(CALIBRATION_FEEDRATE);
+  planner.settings.min_travel_feedrate_mm_s = feedRate_t(CALIBRATION_FEEDRATE);
 
+}
+
+void restore_move_param() {
+  planner.settings = planner_backup_setting;
 }
 
 probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
@@ -751,7 +755,7 @@ void Calibtration::loop(void) {
     }
     thermalManager.setTargetBed(0);
 
-    planner.settings = planner_backup_setting;
+    restore_move_param();
     mode = CAlIBRATION_MODE_IDLE;
     system_service.set_status(SYSTEM_STATUE_IDLE);
   }
