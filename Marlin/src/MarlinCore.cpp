@@ -71,6 +71,7 @@
 #include "../snapmaker/module/bed_control.h"
 #include "../snapmaker/module/filament_sensor.h"
 #include "../snapmaker/module/print_control.h"
+#include "../snapmaker/module/system.h"
 #if HAS_TOUCH_BUTTONS
   #include "lcd/touch/touch_buttons.h"
 #endif
@@ -1668,6 +1669,14 @@ void marlin_loop() {
     #endif
 
     queue.advance();
+
+    if (system_service.get_status() >= SYSTEM_STATUE_PAUSING && system_service.get_status() <= SYSTEM_STATUE_STOPPED) {
+      while(!queue.ring_buffer.empty()) {
+        GCodeQueue::CommandLine &command = queue.ring_buffer.peek_next_command();
+        LOG_I("Gcode in queue: %s\r\n", command.buffer);
+        queue.ring_buffer.advance_pos(queue.ring_buffer.index_r, -1);
+      }
+    }
 
     endstops.event_handler();
 
