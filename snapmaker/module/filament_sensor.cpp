@@ -38,7 +38,7 @@ uint16_t FilamentSensor::get_adc_val(uint8_t e) {
 
 void FilamentSensor::reset() {
 
-  LOG_I("filament sensor reset\r\n");
+  // LOG_I("filament sensor reset\r\n");
 
   FILAMENT_LOOP(i) {
     start_adc[i] = 0;
@@ -46,9 +46,9 @@ void FilamentSensor::reset() {
     err_times[i] = 0;
     check_step_count[i] = filament_param.distance * planner.settings.axis_steps_per_mm[E_AXIS_N(i)];
     float adc_per_step = (float)(dead_space - dead_space_min) / (FILAMENT_ROUND_LEN * planner.settings.axis_steps_per_mm[E_AXIS_N(i)]);
-    check_adc_threshold[i] = check_step_count[i] * adc_per_step * 0.7;
-    LOG_I("E%d adc_per_step %f, check_step_count %d, check_adc_threshold %d\r\n",
-          i, adc_per_step, check_step_count[i], check_adc_threshold[i]);
+    check_adc_threshold[i] = check_step_count[i] * adc_per_step * 0.5;
+    // LOG_I("E%d adc_per_step %f, check_step_count %d, check_adc_threshold %d\r\n",
+    //       i, adc_per_step, check_step_count[i], check_adc_threshold[i]);
   }
 
   err_mask = ~(0xff << filament_param.check_times);
@@ -165,12 +165,14 @@ void FilamentSensor::check() {
     bool is_err = diff < check_adc_threshold[i];
     if ((adc > dead_space) || (adc < dead_space_min)) {
       dead_space_times[i]++;
+      LOG_I("E%d filament block in dead space %d\r\n", i, dead_space_times[i]);
       if (dead_space_times[i] >= (2 * SENSOR_DEAD_SPACE_DISTANCE / FILAMENT_CHECK_DISTANCE)) {
         dead_space_times[i] = 0;
         err_times[i] = err_mask;
       }
     }
     else {
+      LOG_I("E%d diff %d\r\n", i, diff);
       dead_space_times[i] = 0;
       err_times[i] = err_times[i] << 1 | is_err;
     }
