@@ -284,8 +284,10 @@ ErrCode PrintControl::pause() {
   uint8_t e_en_0 = fdm_head.extraduer_enable(0);
   uint8_t e_en_1 = fdm_head.extraduer_enable(1);
 
-  if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_STOP_EXTRUDE)
+  if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_STOP_EXTRUDE) {
     fdm_head.set_duplication_enabled(fdm_head.stop_single_extruder_e, fdm_head.stop_single_extruder_en);
+    print_control.temperature_lock(fdm_head.stop_single_extruder_e, !fdm_head.stop_single_extruder_en);
+  }
 
   vTaskDelay(5);
   power_loss.stash_print_env();
