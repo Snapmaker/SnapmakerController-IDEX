@@ -68,7 +68,7 @@ void FilamentSensor::e0_step(uint8_t step) {
     e_step_count[0]++;
     e_step_statics_count[0]++;
   } else {
-    e_step_count[0]--;
+    // e_step_count[0]--;
   }
 }
 
@@ -76,12 +76,13 @@ void FilamentSensor::e1_step(uint8_t step) {
   if (step) {
     e_step_count[1]++;
   } else {
-    e_step_count[1]--;
+    // e_step_count[1]--;
   }
 }
 
 void FilamentSensor::next_sample(uint8_t e) {
-  e_step_count[e] = 0;
+  last_e_step_count[e] = e_step_count[e];
+  // e_step_count[e] = 0;
   start_adc[e] = get_adc_val(e);
 }
 
@@ -151,8 +152,11 @@ void FilamentSensor::check() {
 
     // }
 
-    if (e_step_count[i] < check_step_count[i])
+    if (PENDING(e_step_count[i], last_e_step_count[i] + check_step_count[i]))
       continue;
+
+    // if (e_step_count[i] < check_step_count[i])
+    //   continue;
 
     uint16_t adc = get_adc_val(i);
     int32_t diff = abs(adc - start_adc[i]);
@@ -161,35 +165,37 @@ void FilamentSensor::check() {
     // filament_param.threshold = HW_1_2(FILAMENT_THRESHOLD, FILAMENT_THRESHOLD_HW2);
     LOG_V("T%d adc:%d diff:%d TH:%d DS:%d\n", i, adc, diff, filament_param.threshold, dead_space);
 
-    // bool is_err = (diff < filament_param.threshold);
-    bool is_err = diff < check_adc_threshold[i];
+    bool is_err = (diff < filament_param.threshold);
+    // bool is_err = diff < check_adc_threshold[i];
     if ((adc > dead_space) || (adc < dead_space_min)) {
       dead_space_times[i]++;
-      LOG_I("E%d filament block in dead space %d\r\n", i, dead_space_times[i]);
-      if (dead_space_times[i] >= (2 * SENSOR_DEAD_SPACE_DISTANCE / FILAMENT_CHECK_DISTANCE)) {
+      LOG_I("E%d filament dead space %d\r\n", i, dead_space_times[i]);
+      if (dead_space_times[i] >= (3 * SENSOR_DEAD_SPACE_DISTANCE / FILAMENT_CHECK_DISTANCE)) {
         dead_space_times[i] = 0;
         err_times[i] = err_mask;
       }
     }
     else {
-      LOG_I("E%d diff %d\r\n", i, diff);
+      if (is_err) {
+        LOG_I("E%d diff %d\r\n", i, diff);
+      }
       dead_space_times[i] = 0;
       err_times[i] = err_times[i] << 1 | is_err;
     }
 
-    //   bool is_err = (diff < filament_param.threshold);
-    //   if (is_err &&
-    //       (start_adc[i] > dead_space) || (start_adc[i] < dead_space_min) &&
-    //       (adc > dead_space) || (adc < dead_space_min)) {
-    //     dead_space_times[i]++;
-    //     if (dead_space_times[i] >= (filament_param.check_times + (SENSOR_DEAD_SPACE_DISTANCE / FILAMENT_CHECK_DISTANCE))) {
-    //       dead_space_times[i] = 0;
-    //       err_times[i] = err_mask;
-    //     }
-    //   } else {
+    // bool is_err = (diff < filament_param.threshold);
+    // if (is_err &&
+    //     (start_adc[i] > dead_space) || (start_adc[i] < dead_space_min) &&
+    //     (adc > dead_space) || (adc < dead_space_min)) {
+    //   dead_space_times[i]++;
+    //   if (dead_space_times[i] >= (filament_param.check_times + (SENSOR_DEAD_SPACE_DISTANCE / FILAMENT_CHECK_DISTANCE))) {
     //     dead_space_times[i] = 0;
-    //     err_times[i] = err_times[i] << 1 | is_err;
+    //     err_times[i] = err_mask;
     //   }
+    // } else {
+    //   dead_space_times[i] = 0;
+    //   err_times[i] = err_times[i] << 1 | is_err;
+    // }
 
     if ((err_times[i] & err_mask) == err_mask) {
       triggered[i] = true;
