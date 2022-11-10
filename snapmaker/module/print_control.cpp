@@ -320,13 +320,15 @@ ErrCode PrintControl::pause() {
 
   // parked the inactive extruder
   if (DXC_DUPLICATION_MODE == power_loss.stash_data.dual_x_carriage_mode) {
-    if (active_extruder == 0)
-      inactive_extruder_x = active_x_pos + power_loss.stash_data.duplicate_extruder_x_offset;
-    else
-      inactive_extruder_x = active_x_pos - power_loss.stash_data.duplicate_extruder_x_offset;
+    if (  (abs(active_x_pos - inactive_extruder_x) - power_loss.stash_data.duplicate_extruder_x_offset) < 0.1 ) {
+      if (active_extruder == 0)
+        inactive_extruder_x = active_x_pos + power_loss.stash_data.duplicate_extruder_x_offset;
+      else
+        inactive_extruder_x = active_x_pos - power_loss.stash_data.duplicate_extruder_x_offset;
+    }
   }
   else if (DXC_MIRRORED_MODE == power_loss.stash_data.dual_x_carriage_mode) {
-      inactive_extruder_x = (x_home_pos(!active_extruder) + x_home_pos(active_extruder)) - active_x_pos;
+    inactive_extruder_x = (x_home_pos(!active_extruder) + x_home_pos(active_extruder)) - active_x_pos;
   }
   LOG_I("inactive_extruder_x %f\r\n", inactive_extruder_x);
   tool_change(inactive_extruder, true);

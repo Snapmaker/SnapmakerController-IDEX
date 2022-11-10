@@ -1257,6 +1257,7 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
           if (dual_mode == DXC_DUPLICATION_MODE) {
             tool_change(1);
             pos_now_x += duplicate_extruder_x_offset;
+            LOG_I("DXC_DUPLICATION_MODE, T1 pos update from %f to %f\r\n", pos_now_x - duplicate_extruder_x_offset, pos_now_x);
           }
           else {
             // pos_now_x = LOGICAL_TO_NATIVE(X_BED_SIZE - head0_pos.asLogical().x, X_AXIS);
@@ -1279,6 +1280,8 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
           planner.synchronize();
           current_position = new_pos;
           sync_plan_position();             // Extra sync for good measure
+          LOG_I("dual_x_carriage_unpark position update finish\r\n");
+
           tool_change(0);
           dual_x_carriage_mode = dual_mode;
           set_duplication_enabled(true);    // Enable Duplication
