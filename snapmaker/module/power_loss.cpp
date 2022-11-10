@@ -138,6 +138,9 @@ ErrCode PowerLoss::extrude_before_resume() {
         fdm_head.set_fan_speed(e, i, stash_data.fan[e][i]);
       }
     }
+    else {
+      thermalManager.setTargetHotend(0, e);
+    }
   }
   wait_temp_resume();
 
