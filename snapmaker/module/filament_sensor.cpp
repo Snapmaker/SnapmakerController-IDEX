@@ -180,7 +180,7 @@ void FilamentSensor::check() {
         LOG_I("E%d diff %d\r\n", i, diff);
       }
       dead_space_times[i] = 0;
-      err_times[i] = err_times[i] << 1 | is_err;
+      err_times[i] = (err_times[i] << 1) | is_err;
     }
 
     // bool is_err = (diff < filament_param.threshold);
