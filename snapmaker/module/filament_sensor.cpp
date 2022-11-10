@@ -25,7 +25,7 @@ void FilamentSensor::init() {
 
 uint16_t FilamentSensor::get_adc_val(uint8_t e) {
   uint32_t val = 0;
-  uint8_t times = 5;
+  uint8_t times = 3;
   for (uint8_t i = 0; i < times; i++) {
     if (e == 0) {
       val += analogRead(FILAMENT0_ADC_PIN);
