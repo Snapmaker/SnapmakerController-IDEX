@@ -1781,10 +1781,7 @@ void Stepper::pulse_phase_isr() {
 
   if (axis_stepper.axis == -1) return;
 
-  bool need_x = false;
-  bool need_y = false;
-  bool need_z = false;
-  bool need_e = false;
+  // bool need_stepper[4];
 
   #define _APPLY_STEP(AXIS, INV, ALWAYS) AXIS ##_APPLY_STEP(INV, ALWAYS)
   #define _INVERT_STEP_PIN(AXIS) INVERT_## AXIS ##_STEP_PIN
@@ -1809,61 +1806,69 @@ void Stepper::pulse_phase_isr() {
         SBI(current_direction_bits, axis_stepper.axis);
       }
 
-      if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
-        || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
-        || current_direction_bits != last_direction_bits
-        || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
-      ) {
-        TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
-        TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+      // if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+      //   || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+      //   || current_direction_bits != last_direction_bits
+      //   || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+      // ) {
+      //   TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+      //   TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+      //   set_directions(current_direction_bits);
+      // }
+
+
+      if (current_direction_bits != last_direction_bits) {
+        // TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+        // TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
         set_directions(current_direction_bits);
       }
 
-      if (0 == axis_stepper.axis) {
-        need_x = true;
+      if (axis_stepper.axis == 0) {
+        PULSE_START(X);
         PULSE_PREP(X);
-      }
-      else if(1 == axis_stepper.axis) {
-        need_y = true;
+        PULSE_STOP(X);
+      } else if(axis_stepper.axis == 1) {
+        PULSE_START(Y);
         PULSE_PREP(Y);
-      }
-      else if(2 == axis_stepper.axis) {
-        need_z = true;
+        PULSE_STOP(Y);
+      } else if(axis_stepper.axis == 2) {
+        PULSE_START(Z);
         PULSE_PREP(Z);
-      }
-      else if(3 == axis_stepper.axis && !req_pause) {
-        need_e = true;
+        PULSE_STOP(Z);
+      } else if(axis_stepper.axis == 3 && !req_pause) {
+        PULSE_START(E);
         PULSE_PREP(E);
+        PULSE_STOP(E);
       }
 
       axis_stepper.axis = -1;
   } while (axisManager.getNextZeroAxisStepper(&axis_stepper));
 
-  if (need_x) {
-    PULSE_START(X);
-  }
-  if (need_y) {
-    PULSE_START(Y);
-  }
-  if (need_z) {
-    PULSE_START(Z);
-  }
-  if (need_e) {
-    PULSE_START(E);
-  }
+  // if (need_x) {
+  //   PULSE_START(X);
+  // }
+  // if (need_y) {
+  //   PULSE_START(Y);
+  // }
+  // if (need_z) {
+  //   PULSE_START(Z);
+  // }
+  // if (need_e) {
+  //   PULSE_START(E);
+  // }
   
-  if (need_x) {
-    PULSE_STOP(X);
-  }
-  if (need_y) {
-    PULSE_STOP(Y);
-  }
-  if (need_z) {
-    PULSE_STOP(Z);
-  }
-  if (need_e) {
-    PULSE_STOP(E);
-  }
+  // if (need_x) {
+  //   PULSE_STOP(X);
+  // }
+  // if (need_y) {
+  //   PULSE_STOP(Y);
+  // }
+  // if (need_z) {
+  //   PULSE_STOP(Z);
+  // }
+  // if (need_e) {
+  //   PULSE_STOP(E);
+  // }
 }
 
 void Stepper::other_axis_puls_phase_isr() {
@@ -1950,7 +1955,9 @@ uint32_t Stepper::block_phase_isr() {
         axisManager.counts[6]++;
       }
       
-      if (axis_stepper.delta_time > 0.02) {
+      if (axis_stepper.delta_time > 0.01) {
+        axisManager.calcNextAxisStepper();
+      } else if (axis_stepper.delta_time > 0.02) {
         axisManager.calcNextAxisStepper();
         axisManager.calcNextAxisStepper();
       }

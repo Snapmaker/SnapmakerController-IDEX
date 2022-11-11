@@ -432,8 +432,7 @@ bool PowerLoss::is_power_loss_trigger() {
 }
 
 bool PowerLoss::check() {
-  if (is_inited && power_loss_en && system_service.is_working()) {
-    if (is_trigger && !print_control.is_calibretion_mode) {
+  if (is_trigger && is_inited && power_loss_en && system_service.is_working() && !print_control.is_calibretion_mode) {
       switch (power_loss_status) {
         case POWER_LOSS_TRIGGER:
           close_peripheral_power();
@@ -451,7 +450,6 @@ bool PowerLoss::check() {
         default:
           break;
       }
-    }
   }
   return false;
 }
