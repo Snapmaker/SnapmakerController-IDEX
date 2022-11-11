@@ -28,10 +28,6 @@ void PowerLoss::stash_print_env() {
   cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
   stash_data.position = cur_position;
 
-  LOG_I("Pausing x %f\r\n", cur_position[X_AXIS]);
-  LOG_I("Active extruder %d\r\n", active_extruder);
-  LOG_I("current line %d\r\n", print_control.get_cur_line());
-
   uint32_t cur_line = print_control.get_cur_line();
   stash_data.file_position = cur_line ? cur_line - 1 : 0;  // The requested index starts at 0
 
@@ -484,16 +480,16 @@ void PowerLoss::process() {
     if (power_loss_status == POWER_LOSS_IDLE) {
       power_loss_status = POWER_LOSS_RECONFIRM;
       trigger_wait_time = millis() + 10;
-      SERIAL_ECHOLNPAIR("power loss first trigger");
+      // SERIAL_ECHOLNPAIR("power loss first trigger");
     } else if (power_loss_status == POWER_LOSS_RECONFIRM) {
       if (ELAPSED(millis(), trigger_wait_time)) {
         power_loss_status = POWER_LOSS_TRIGGER;
         is_trigger = true;
-        SERIAL_ECHOLNPAIR("trigger power loss");
+        // SERIAL_ECHOLNPAIR("trigger power loss");
       }
     } else if (power_loss_status == POWER_LOSS_WAIT_Z_MOVE) {
       power_loss_status = POWER_LOSS_DONE;
-      SERIAL_ECHOLNPAIR("trigger power loss done");
+      // SERIAL_ECHOLNPAIR("trigger power loss done");
       motion_control.synchronize();
       sync_plan_position();
       motion_control.move_z(POWERLOSS_Z_DOWN_DISTANCE, 600);

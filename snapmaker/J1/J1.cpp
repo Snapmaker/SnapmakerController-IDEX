@@ -53,7 +53,7 @@ void j1_main_task(void *args) {
 
   while(1) {
     print_control.loop();
-    power_loss.process();
+    // power_loss.process();
 
     if (ELAPSED(millis(), syslog_timeout)) {
       syslog_timeout = millis() + 20000;
