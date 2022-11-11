@@ -154,11 +154,11 @@ enum BlockFlag : char {
 typedef struct shaper_data_t {
     float block_time;
     bool is_create_move;
-    bool is_start = false;
-    bool is_end = false;
-    bool is_zero_speed = false;
-    uint8_t move_start = 0;
-    uint8_t move_end = 0;
+    bool is_start;
+    bool is_end;
+    bool is_zero_speed;
+    uint8_t move_start;
+    uint8_t move_end;
 
     time_double_t last_print_time;
 

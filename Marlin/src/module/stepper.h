@@ -276,7 +276,6 @@ class Stepper {
   public:
 
     static block_t* current_block;          // A pointer to the block currently being traced
-    static block_t* new_current_block;          // A pointer to the block currently being traced
 
     static uint8_t  current_direction_bits,
                     last_direction_bits,     // The next stepping-bits to be output
@@ -321,7 +320,7 @@ class Stepper {
                     step_event_count;       // The total event count for the current block
 
     static AxisStepper axis_stepper;
-    static AxisStepper next_axis_stepper;
+
     static int block_move_target_steps[AXIS_SIZE];
     static bool is_start;
     static time_double_t block_print_time;

@@ -9,6 +9,9 @@
 
 #define T0_T1_AXIS_INDEX  (4)
 
+#define AXIS_STEPPER_SIZE 4
+#define AXIS_STEPPER_MOD(n) ((n)&(AXIS_STEPPER_SIZE-1))
+
 class AxisStepper {
   public:
     int8_t axis = -1;
@@ -151,11 +154,29 @@ class AxisManager {
     time_double_t min_last_time = 0;
 
     // FuncManager Consume
-    bool is_consumed = true;
+    // bool is_consumed = true;
     time_double_t print_time = 0;
     int8_t print_axis = -1;
     int8_t print_dir = 0;
     int current_steps[AXIS_SIZE];
+
+    AxisStepper axis_steppers[AXIS_STEPPER_SIZE];
+    uint8_t axis_steppper_tail;
+    uint8_t axis_steppper_head;
+
+    FORCE_INLINE uint8_t getAxisStepperSize() {
+        return AXIS_STEPPER_MOD(axis_steppper_head - axis_steppper_tail);
+    }
+
+    FORCE_INLINE uint8_t getAxisStepperFreeSize() { return AXIS_STEPPER_SIZE - 1 - getAxisStepperSize(); }
+
+    FORCE_INLINE uint8_t nextAxisStepper(uint8_t index) {
+        return AXIS_STEPPER_MOD(index + 1);
+    }
+
+    FORCE_INLINE uint8_t prevAxisStepper(uint8_t index) {
+        return AXIS_STEPPER_MOD(index - 1);
+    }
 
   public:
     void input_shaper_reset();
@@ -219,10 +240,12 @@ class AxisManager {
 
         min_last_time = 0;
 
-        is_consumed = true;
         print_time = 0;
         print_axis = -1;
         print_dir = 0;
+
+        axis_steppper_tail = 0;
+        axis_steppper_head = 0;
     }
 
     void abort() {
@@ -277,9 +300,50 @@ class AxisManager {
         return moveQueue.addEmptyMove(shaped_delta_window + 0.001f);
     }
 
-    bool getCurrentAxisStepper(AxisStepper* axis_stepper);
+    FORCE_INLINE bool getNextZeroAxisStepper(AxisStepper* axis_stepper) {
+        if (getAxisStepperSize() == 0) { 
+            return false;
+        }
 
-    bool getNextAxisStepper();
+        AxisStepper* current_stepper = &axis_steppers[axis_steppper_tail];
+
+        if (current_stepper->delta_time > 0.005) {
+            return false;
+        }
+
+        axis_stepper->axis = current_stepper->axis;
+        axis_stepper->dir = current_stepper->dir;
+        axis_stepper->delta_time = current_stepper->delta_time;
+        axis_stepper->print_time = current_stepper->print_time;
+
+        if (axis_stepper->axis != T0_T1_AXIS_INDEX) {
+            current_steps[axis_stepper->axis] += axis_stepper->dir;
+        }
+
+        axis_steppper_tail = nextAxisStepper(axis_steppper_tail);
+        return true;
+    };
+
+    FORCE_INLINE bool getNextAxisStepper(AxisStepper* axis_stepper) {
+        if (getAxisStepperSize() == 0 && !calcNextAxisStepper()) { 
+            return false;
+        }
+
+        AxisStepper* current_stepper = &axis_steppers[axis_steppper_tail];
+        axis_stepper->axis = current_stepper->axis;
+        axis_stepper->dir = current_stepper->dir;
+        axis_stepper->delta_time = current_stepper->delta_time;
+        axis_stepper->print_time = current_stepper->print_time;
+
+        if (axis_stepper->axis != T0_T1_AXIS_INDEX) {
+            current_steps[axis_stepper->axis] += axis_stepper->dir;
+        }
+
+        axis_steppper_tail = nextAxisStepper(axis_steppper_tail);
+        return true;
+    };
+
+    bool calcNextAxisStepper();
 };
 
 
