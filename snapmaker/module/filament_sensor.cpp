@@ -135,6 +135,9 @@ void FilamentSensor::check() {
         }
       }
       else {
+        if (is_err) {
+          LOG_I("diff %d\r\n", diff);
+        }
         dead_space_times[i] = 0;
         err_times[i] = err_times[i] << 1 | is_err;
         if ((err_times[i] & err_mask) == err_mask) {
