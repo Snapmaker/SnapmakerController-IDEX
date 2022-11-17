@@ -1886,7 +1886,16 @@ void prepare_line_to_destination() {
     //
     const float move_length = 1.5f * max_length(TERN(DELTA, Z_AXIS, axis)) * axis_home_dir;
     if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Home Fast: ", move_length, "mm");
+
+    if (axis == Z_AXIS) {
+      motion_control.enable_stall_guard_only_axis(axis, 120);
+    }
+
     do_homing_move(axis, move_length, 0.0, !use_probe_bump);
+
+    if (axis == Z_AXIS) {
+      motion_control.disable_stall_guard_all();
+    }
 
     #if BOTH(HOMING_Z_WITH_PROBE, BLTOUCH_SLOW_MODE)
       if (axis == Z_AXIS) bltouch.stow(); // Intermediate STOW (in LOW SPEED MODE)
