@@ -2171,6 +2171,8 @@ uint32_t Stepper::block_phase_isr() {
       // Compute the acceleration and deceleration points
       // accelerate_until = current_block->accelerate_until << oversampling;
       // decelerate_after = current_block->decelerate_after << oversampling;
+      accelerate_until = current_block->accelerate_until;
+      decelerate_after = current_block->decelerate_after;
       power_loss.cur_line = current_block->file_position;
       motion_control.update_feedrate((uint16_t)current_block->cruise_speed);
 

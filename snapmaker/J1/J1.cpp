@@ -11,6 +11,7 @@
 #include "../../Marlin/src/module/temperature.h"
 #include "../module/power_loss.h"
 #include "../module/exception.h"
+#include "../../../src/module/AxisManager.h"
 
 TaskHandle_t thandle_event_loop = NULL;
 TaskHandle_t thandle_event_recv = NULL;
@@ -67,13 +68,23 @@ void j1_main_task(void *args) {
 
     uint32_t starve_dog_time_ms = (uint32_t)(millis() - feed_dog_time);
     if (ELAPSED(millis(), feed_dog_time + 1000)) {
-      LOG_E("Starve dog for %d ms\r\n", starve_dog_time_ms);
+      // LOG_E("Starve dog for %d ms\r\n", starve_dog_time_ms);
     }
 
     if (max_starve_dog_time < starve_dog_time_ms) {
       max_starve_dog_time = starve_dog_time_ms;
       //LOG_E("max_starve_dog_time = %d \r\n", max_starve_dog_time);
     }
+
+    // static float z_speed = .0;
+    // if (fabs(axisManager.axis[2].getCurrentSpeedMMs() - z_speed) > 1) {
+    //   z_speed = axisManager.axis[2].getCurrentSpeedMMs();
+    //   LOG_I("z speed %f\r\n", z_speed);
+    // }
+
+    // {
+    //   LOG_I("%c", switch_detect.read_e0_probe_status() ? 'O' : 'X');
+    // }
 
     watchdog_refresh();
     vTaskDelay(pdMS_TO_TICKS(5));
