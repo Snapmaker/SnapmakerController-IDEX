@@ -135,13 +135,29 @@ bool Axis::getNextStep() {
 
     if (!func_manager.getNextPosTime(1, &dir, mm_to_step, half_step_mm)) {
       is_get_next_step_null = true;
+      time_interval_valid = false;
       return false;
     }
 
     print_time = func_manager.print_time;
+    if (time_interval_valid) {
+      current_interval = print_time - last_print_time;
+    }
+    else {
+      time_interval_valid = true;
+      current_interval = .0;
+    }
+    last_print_time = print_time;
     is_consumed = false;
 
     return true;
+}
+
+float Axis::getCurrentSpeedMMs() {
+  if (time_interval_valid && current_interval > 0.001)
+    return 1000.0 / (current_interval * mm_to_step);
+  else
+    return 0;
 }
 
 #if ENABLED(LIN_ADVANCE)

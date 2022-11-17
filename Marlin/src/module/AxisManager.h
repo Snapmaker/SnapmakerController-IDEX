@@ -38,6 +38,9 @@ class Axis {
     time_double_t print_time = 0;
     int8_t dir = 0;
     bool is_get_next_step_null = false;
+    float current_interval;
+    time_double_t last_print_time = 0;
+    bool time_interval_valid = false;
 
     float delta_e = 0;
 
@@ -93,9 +96,13 @@ class Axis {
         }
 
         func_manager.reset();
+
+        current_interval = .0;
+        time_interval_valid = false;
     }
 
     bool getNextStep();
+    float getCurrentSpeedMMs();
 
     FORCE_INLINE void generateLineFuncParams(Move* move) {
         float y2 = move->end_pos[axis];

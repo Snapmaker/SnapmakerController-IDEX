@@ -131,6 +131,21 @@ void GcodeSuite::M2000() {
       }
       break;
 
+    case 104:
+      {
+        if(parser.seen('X')) {
+          LOG_I("X speed %f mms\r\n", axisManager.axis[0].getCurrentSpeedMMs());
+        }
+        else if(parser.seen('Y')) {
+          LOG_I("Y speed %f mms\r\n", axisManager.axis[1].getCurrentSpeedMMs());
+        }
+        else if(parser.seen('Z')) {
+          LOG_I("Z speed %f mms\r\n", axisManager.axis[2].getCurrentSpeedMMs());
+        }
+      }
+      break;
+
+
     case 200:
     {
       if (print_control.get_mode() >= PRINT_DUPLICATION_MODE) {
