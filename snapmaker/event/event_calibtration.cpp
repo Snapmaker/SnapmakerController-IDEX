@@ -75,7 +75,7 @@ static ErrCode calibtration_set_mode(event_param_t& event) {
 static ErrCode calibtration_move_to_pos(event_param_t& event) {
   calibtration_position_e pos = (calibtration_position_e)event.data[0];
   bool is_probe = event.data[1];
-  LOG_V("move to calibtration pos:%d, probe status:%d\n", pos, is_probe);
+  LOG_I("move to calibtration pos:%d, probe status:%d\n", pos, is_probe);
   if (is_probe) {
     event.data[0] = calibtration.probe_bed_base_hight(pos);
   } else {
