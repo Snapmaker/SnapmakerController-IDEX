@@ -164,13 +164,13 @@ void GcodeSuite::M205() {
     #endif
     if (parser.seenval('V')) {
       const float corner_velocity = parser.value_linear_units();
-      if (WITHIN(corner_velocity, 0.1f, 20.0f)) {
+      if (WITHIN(corner_velocity, 0.0f, 50.0f)) {
         planner.corner_velocity_sqr = corner_velocity * corner_velocity;
         planner.junction_deviation_mm = planner.corner_velocity_sqr * (SQRT(2.) - 1.) / _MAX(planner.settings.acceleration, planner.settings.travel_acceleration);
         TERN_(LIN_ADVANCE, planner.recalculate_max_e_jerk());
       }
       else
-        SERIAL_ERROR_MSG("?J out of range (0.01 to 0.3)");
+        SERIAL_ERROR_MSG("J out of range (0.0 to 50.0)");
 
       // if (WITHIN(junc_dev, 0.01f, 0.3f)) {
       //   planner.junction_deviation_mm = junc_dev;
