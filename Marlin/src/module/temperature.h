@@ -682,7 +682,9 @@ class Temperature {
       }
 
       #if HAS_TEMP_HOTEND
-        static bool wait_for_hotend(const uint8_t target_extruder, const bool no_wait_for_cooling=true
+        static bool wait_for_hotend(const uint8_t target_extruder, const bool no_wait_for_cooling = true,
+          uint32_t wait_seconds = TEMP_RESIDENCY_TIME,
+          float temp_hystersis = TEMP_HYSTERESIS
           OPTARG(G26_CLICK_CAN_CANCEL, const bool click_to_cancel=false)
         );
 

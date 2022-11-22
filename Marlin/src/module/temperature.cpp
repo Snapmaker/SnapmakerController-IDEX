@@ -1029,18 +1029,23 @@ void Temperature::min_temp_error(const heater_id_t heater_id) {
             pid_reset[ee] = false;
           }
 
+          // float ki = PID_PARAM(Ki, ee);
+          // if (fabs(temp_hotend[ee].target - temp_hotend[ee].celsius) > 2) {
+          //   ki = ki * 1.5;
+          // }
+
           work_pid[ee].Kd = work_pid[ee].Kd + PID_K2 * (PID_PARAM(Kd, ee) * (temp_dState[ee] - temp_hotend[ee].celsius) - work_pid[ee].Kd);
           const float max_power_over_i_gain = float(PID_MAX) / PID_PARAM(Ki, ee) - float(MIN_POWER);
           temp_iState[ee] = constrain(temp_iState[ee] + pid_error, 0, max_power_over_i_gain);
           work_pid[ee].Kp = PID_PARAM(Kp, ee) * pid_error;
           work_pid[ee].Ki = PID_PARAM(Ki, ee) * temp_iState[ee];
+          // work_pid[ee].Ki = ki * temp_iState[ee];
 
-          float kd_out = work_pid[ee].Kd;
-          if (kd_out > 0.0) kd_out = kd_out * 7;
+          // float kd_out = work_pid[ee].Kd;
 
-          // pid_output = work_pid[ee].Kp + work_pid[ee].Ki + work_pid[ee].Kd + float(MIN_POWER);
-          pid_output = work_pid[ee].Kp + work_pid[ee].Ki + kd_out + float(MIN_POWER);
-          pid_output += temp_hotend[ee].target / 4 + fan_speed[ee] > 128 ? 30 : 0;
+          pid_output = work_pid[ee].Kp + work_pid[ee].Ki + work_pid[ee].Kd + float(MIN_POWER);
+          // pid_output = work_pid[ee].Kp + work_pid[ee].Ki + kd_out + float(MIN_POWER);
+          pid_output += temp_hotend[ee].target / 4 + fan_speed[ee] > 128 ? 50 : 0;
 
           #if ENABLED(PID_EXTRUSION_SCALING)
             #if HOTENDS == 1
@@ -3632,7 +3637,9 @@ void Temperature::isr() {
       #define MIN_COOLING_SLOPE_TIME 60
     #endif
 
-    bool Temperature::wait_for_hotend(const uint8_t target_extruder, const bool no_wait_for_cooling/*=true*/
+    bool Temperature::wait_for_hotend(const uint8_t target_extruder, const bool no_wait_for_cooling/*=true*/,
+      uint32_t wait_seconds/*=TEMP_RESIDENCY_TIME*/,
+      float temp_hystersis/*TEMP_HYSTERESIS*/
       OPTARG(G26_CLICK_CAN_CANCEL, const bool click_to_cancel/*=false*/)
     ) {
       #if ENABLED(AUTOTEMP)
@@ -3643,7 +3650,8 @@ void Temperature::isr() {
         millis_t residency_start_ms = 0;
         bool first_loop = true;
         // Loop until the temperature has stabilized
-        #define TEMP_CONDITIONS (!residency_start_ms || PENDING(now, residency_start_ms + SEC_TO_MS(TEMP_RESIDENCY_TIME)))
+        // #define TEMP_CONDITIONS (!residency_start_ms || PENDING(now, residency_start_ms + SEC_TO_MS(TEMP_RESIDENCY_TIME)))
+        #define TEMP_CONDITIONS (!residency_start_ms || PENDING(now, residency_start_ms + SEC_TO_MS(wait_seconds)))
       #else
         // Loop until the temperature is very close target
         #define TEMP_CONDITIONS (wants_to_cool ? isCoolingHotend(target_extruder) : isHeatingHotend(target_extruder))
@@ -3705,7 +3713,8 @@ void Temperature::isr() {
             if (temp_diff < TEMP_WINDOW)
               residency_start_ms = now + (first_loop ? SEC_TO_MS(TEMP_RESIDENCY_TIME) / 3 : 0);
           }
-          else if (temp_diff > TEMP_HYSTERESIS) {
+          // else if (temp_diff > TEMP_HYSTERESIS) {
+          else if (temp_diff > temp_hystersis) {
             // Restart the timer whenever the temperature falls outside the hysteresis.
             residency_start_ms = now;
           }
