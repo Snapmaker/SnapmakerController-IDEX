@@ -140,9 +140,15 @@ void GcodeSuite::M104_M109(const bool isM109) {
   TERN_(AUTOTEMP, planner.autotemp_M104_M109());
 
   if (isM109 && got_temp) {
-    (void)thermalManager.wait_for_hotend(target_extruder, no_wait_for_cooling);
+
+    uint32_t time_windown = parser.ulongval('W', TEMP_RESIDENCY_TIME);;
+    float temp_windown = parser.floatval('C', TEMP_HYSTERESIS);;
+    got_temp = no_wait_for_cooling || (isM109 && parser.seenval('R'));
+    if (got_temp) temp = parser.value_celsius();
+
+    (void)thermalManager.wait_for_hotend(target_extruder, no_wait_for_cooling, time_windown, temp_windown);
     if (idex_is_duplicating()) {
-      (void)thermalManager.wait_for_hotend(!target_extruder, no_wait_for_cooling);
+      (void)thermalManager.wait_for_hotend(!target_extruder, no_wait_for_cooling, time_windown, temp_windown);
     }
   }
 }
