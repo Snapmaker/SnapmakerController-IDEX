@@ -1045,7 +1045,7 @@ void Temperature::min_temp_error(const heater_id_t heater_id) {
 
           pid_output = work_pid[ee].Kp + work_pid[ee].Ki + work_pid[ee].Kd + float(MIN_POWER);
           // pid_output = work_pid[ee].Kp + work_pid[ee].Ki + kd_out + float(MIN_POWER);
-          pid_output += temp_hotend[ee].target / 4 + fan_speed[ee] > 128 ? 50 : 0;
+          // pid_output += temp_hotend[ee].target / 4 + fan_speed[ee] > 128 ? 50 : 0;
 
           #if ENABLED(PID_EXTRUSION_SCALING)
             #if HOTENDS == 1
