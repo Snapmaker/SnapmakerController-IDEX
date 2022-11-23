@@ -127,6 +127,7 @@ class Calibtration {
     xyz_pos_t home_offset_backup;
     bool need_extrude = false;
     bool xy_need_re_home = false;
+    bool z_need_re_home = false;
   private:
     float last_probe_pos = 0;
 };

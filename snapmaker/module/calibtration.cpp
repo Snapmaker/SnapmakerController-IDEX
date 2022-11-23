@@ -14,7 +14,7 @@
 Calibtration calibtration;
 planner_settings_t planner_backup_setting;
 
-static uint8_t probe_sg_reg[3] = {20, 20, 100};  // X Y Z1
+static uint8_t probe_sg_reg[3] = {20, 20, 80};  // X Y Z1
 static float build_plate_thickness = 5.0;
 
 #define Y_POS_DIFF 4
@@ -190,6 +190,11 @@ void Calibtration::bed_preapare(uint8_t extruder_index) {
     motion_control.home_x();
     motion_control.home_y();
     xy_need_re_home = false;
+  }
+
+  if (z_need_re_home) {
+    motion_control.home_z();
+    z_need_re_home = false;
   }
 
   // Switch to single-header mode
@@ -410,6 +415,7 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
   if (probe_result != PROBR_RESULT_SUCCESS) {
     probe_offset = CAlIBRATIONING_ERR_CODE;
     ret = E_CAlIBRATION_PRIOBE;
+    z_need_re_home = true;
     LOG_E("CAlIBRATIONING_ERR_CODE\r\n");
   }
   else {
@@ -569,6 +575,9 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
       if (axis == X_AXIS || axis == Y_AXIS) {
         xy_need_re_home = true;
       }
+      else {
+        z_need_re_home = true;
+      }
       return CAlIBRATIONING_ERR_CODE;
     }
 
@@ -601,7 +610,11 @@ ErrCode Calibtration::calibtration_xy() {
 
     bed_preapare(e);
     goto_calibtration_position(CAlIBRATION_POS_0);
+
+    motion_control.clear_trigger();
+    motion_control.enable_stall_guard_only_axis(Z_AXIS, probe_sg_reg[Z_AXIS], active_extruder);
     motion_control.logical_move_to_z(XY_CALI_Z_POS);
+    motion_control.disable_stall_guard_all();
 
     for (uint8_t axis = 0; axis <= Y_AXIS; axis++) {
 
@@ -609,6 +622,7 @@ ErrCode Calibtration::calibtration_xy() {
       if (pos == CAlIBRATIONING_ERR_CODE) {
         ret = E_CAlIBRATION_PRIOBE;
         LOG_E("e:%d axis:%d probe 0 filed\n", e, axis);
+        z_need_re_home = true;
         break;
       }
 
@@ -616,6 +630,7 @@ ErrCode Calibtration::calibtration_xy() {
       if (pos_1 == CAlIBRATIONING_ERR_CODE) {
         ret = E_CAlIBRATION_PRIOBE;
         LOG_E("e:%d axis:%d probe 1 filed\n", e, axis);
+        z_need_re_home = true;
         break;
       }
 
@@ -626,6 +641,7 @@ ErrCode Calibtration::calibtration_xy() {
 
     if (ret != E_SUCCESS) {
       LOG_E("calibtration e[%d] xy filed\n", e);
+      z_need_re_home = true;
       break;
     }
 
@@ -658,6 +674,7 @@ ErrCode Calibtration::calibtration_xy() {
   }
   else {
     LOG_E("JF-XY calibration: Fail!\n");
+    z_need_re_home = true;
   }
 
   return ret;
