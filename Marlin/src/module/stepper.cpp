@@ -1543,7 +1543,7 @@ void Stepper::isr() {
   static uint32_t x_time_interval = STOP_TIME_INTERVAL + 1;
   static uint32_t y_time_interval = STOP_TIME_INTERVAL + 1;
   static uint32_t no_move_count = 0;
-  
+
   if (req_pause) {
     if ((!axis_is_moving(X_AXIS) && !axis_is_moving(Y_AXIS)) ||
         axis_stepper.axis < 0) {
@@ -1739,6 +1739,7 @@ void Stepper::pulse_phase_isr() {
     abort_current_block = false;
     axisManager.req_abort = true;
     axisManager.T0_T1_simultaneously_move = false;
+    planner.cleaning_buffer_counter = TEMP_TIMER_FREQUENCY / 100;
 
     is_only_extrude = false;
     extrude_enable[0] = false;
@@ -1797,7 +1798,7 @@ void Stepper::pulse_phase_isr() {
   #define PULSE_STOP(AXIS) do { \
       _APPLY_STEP(AXIS, _INVERT_STEP_PIN(AXIS), 0); \
   }while(0)
-  
+
   do
     {
       if (axis_stepper.dir > 0) {
@@ -1856,7 +1857,7 @@ void Stepper::pulse_phase_isr() {
   // if (need_e) {
   //   PULSE_START(E);
   // }
-  
+
   // if (need_x) {
   //   PULSE_STOP(X);
   // }
@@ -1954,7 +1955,7 @@ uint32_t Stepper::block_phase_isr() {
         axis_stepper.delta_time = 0;
         axisManager.counts[6]++;
       }
-      
+
       if (axis_stepper.delta_time > 0.01) {
         axisManager.calcNextAxisStepper();
       } else if (axis_stepper.delta_time > 0.02) {
@@ -2251,7 +2252,7 @@ uint32_t Stepper::block_phase_isr() {
       if (is_start) {
         is_start = false;
         while (axisManager.calcNextAxisStepper()) {
-        }    
+        }
         axisManager.getNextAxisStepper(&axis_stepper);
       }
       // else {

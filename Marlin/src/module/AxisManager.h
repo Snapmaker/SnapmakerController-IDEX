@@ -260,7 +260,6 @@ class AxisManager {
         moveQueue.reset();
         reset();
         addEmptyMove();
-        req_abort = false;
     }
 
     bool isShaped() {
@@ -308,7 +307,7 @@ class AxisManager {
     }
 
     FORCE_INLINE bool getNextZeroAxisStepper(AxisStepper* axis_stepper) {
-        if (getAxisStepperSize() == 0) { 
+        if (getAxisStepperSize() == 0) {
             return false;
         }
 
@@ -332,7 +331,7 @@ class AxisManager {
     };
 
     FORCE_INLINE bool getNextAxisStepper(AxisStepper* axis_stepper) {
-        if (getAxisStepperSize() == 0 && !calcNextAxisStepper()) { 
+        if (getAxisStepperSize() == 0 && !calcNextAxisStepper()) {
             return false;
         }
 
