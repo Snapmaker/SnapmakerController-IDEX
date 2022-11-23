@@ -486,7 +486,9 @@ extern "C" {
   void __irq_exti9_5() {
     if(ExitGetITStatus(TMC_STALL_GUARD_Z_PIN)) {
       // if (stepper.axis_is_moving(Z_AXIS) && motion_control.is_sg_enable(SG_Z)) {
-      if (motion_control.is_sg_enable(SG_Z) && axisManager.axis[2].getCurrentSpeedMMs() > 4.8) {
+      if (motion_control.is_sg_enable(SG_Z) &&
+          axisManager.axis[2].getCurrentSpeedMMs() > 4.8 &&
+          stepper.axis_is_moving(Z_AXIS)) {
          trigger_stall_guard_exit(SG_Z);
       }
       ExtiClearITPendingBit(TMC_STALL_GUARD_Z_PIN);

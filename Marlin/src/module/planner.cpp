@@ -1302,6 +1302,7 @@ void Planner::shaped_loop() {
     if (axisManager.req_abort) {
       axisManager.abort();
       clear_block_buffer();
+      axisManager.req_abort = false;
       return;
     }
 

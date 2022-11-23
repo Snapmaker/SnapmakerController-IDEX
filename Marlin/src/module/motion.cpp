@@ -1888,13 +1888,19 @@ void prepare_line_to_destination() {
     if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Home Fast: ", move_length, "mm");
 
     if (axis == Z_AXIS) {
-      motion_control.enable_stall_guard_only_axis(axis, 120);
+      motion_control.clear_trigger();
+      vTaskDelay(10);
+      motion_control.enable_stall_guard_only_axis(axis, 130);
     }
 
     do_homing_move(axis, move_length, 0.0, !use_probe_bump);
 
     if (axis == Z_AXIS) {
+      if (motion_control.is_sg_trigger(SG_Z)) {
+        kill();
+      }
       motion_control.disable_stall_guard_all();
+      motion_control.clear_trigger();
     }
 
     #if BOTH(HOMING_Z_WITH_PROBE, BLTOUCH_SLOW_MODE)
