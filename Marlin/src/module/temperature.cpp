@@ -825,8 +825,21 @@ int16_t Temperature::getHeaterPower(const heater_id_t heater_id) {
         SBI(fanState, pgm_read_byte(&fanBit[e]));
 
     #if HAS_AUTO_CHAMBER_FAN
-      if (temp_chamber.celsius >= CHAMBER_AUTO_FAN_TEMPERATURE)
-        SBI(fanState, pgm_read_byte(&fanBit[CHAMBER_FAN_INDEX]));
+      static bool last_chamber_fan_on = false;
+      if (last_chamber_fan_on) {
+        if (temp_chamber.celsius >= (CHAMBER_AUTO_FAN_TEMPERATURE - 3)) {
+          SBI(fanState, pgm_read_byte(&fanBit[CHAMBER_FAN_INDEX]));
+        }
+        else {
+          last_chamber_fan_on = false;
+        }
+      }
+      else {
+        if (temp_chamber.celsius >= CHAMBER_AUTO_FAN_TEMPERATURE) {
+          SBI(fanState, pgm_read_byte(&fanBit[CHAMBER_FAN_INDEX]));
+          last_chamber_fan_on = true;
+        }
+      }
     #endif
 
     #if HAS_AUTO_COOLER_FAN
