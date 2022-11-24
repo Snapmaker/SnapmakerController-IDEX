@@ -1739,7 +1739,7 @@ void Stepper::pulse_phase_isr() {
     abort_current_block = false;
     axisManager.req_abort = true;
     axisManager.T0_T1_simultaneously_move = false;
-    planner.cleaning_buffer_counter = TEMP_TIMER_FREQUENCY / 100;
+    planner.cleaning_buffer_counter = TEMP_TIMER_FREQUENCY / 10;
 
     is_only_extrude = false;
     extrude_enable[0] = false;
@@ -1799,8 +1799,7 @@ void Stepper::pulse_phase_isr() {
       _APPLY_STEP(AXIS, _INVERT_STEP_PIN(AXIS), 0); \
   }while(0)
 
-  do
-    {
+  do {
       if (axis_stepper.dir > 0) {
         CBI(current_direction_bits, axis_stepper.axis);
       } else if(axis_stepper.dir < 0) {
@@ -1906,6 +1905,8 @@ void Stepper::other_axis_puls_phase_isr() {
 
 }
 
+bool bump_now = false;
+
 // This is the last half of the stepper interrupt: This one processes and
 // properly schedules blocks from the planner. This is executed after creating
 // the step pulses, so it is not time critical, as pulses are already done.
@@ -1975,7 +1976,8 @@ uint32_t Stepper::block_phase_isr() {
       }
 
       done_count = 0;
-    } else {
+    }
+    else {
 
       done_count++;
       bool is_done = true;
@@ -1998,6 +2000,8 @@ uint32_t Stepper::block_phase_isr() {
           axisManager.abort();
           is_start = true;
         }
+
+        return interval;
       }
     }
   }
@@ -2249,12 +2253,12 @@ uint32_t Stepper::block_phase_isr() {
         // acc_step_rate = current_block->initial_rate;
       #endif
 
-      if (is_start) {
-        is_start = false;
-        while (axisManager.calcNextAxisStepper()) {
-        }
-        axisManager.getNextAxisStepper(&axis_stepper);
-      }
+      // if (is_start) {
+      //   is_start = false;
+      //   while (axisManager.calcNextAxisStepper()) {
+      //   }
+      //   axisManager.getNextAxisStepper(&axis_stepper);
+      // }
       // else {
       //   float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
       //   if (delta_time <= -10.0f) {
@@ -2273,53 +2277,19 @@ uint32_t Stepper::block_phase_isr() {
       //   axis_stepper.print_time = next_axis_stepper.print_time;
       // }
 
-      if (axis_stepper.axis >= 0) {
-        if (axis_stepper.dir > 0) {
-          CBI(current_direction_bits, axis_stepper.axis);
-        } else if(axis_stepper.dir < 0) {
-          SBI(current_direction_bits, axis_stepper.axis);
+      if (is_start) {
+        is_start = false;
+        while (axisManager.calcNextAxisStepper()) {
         }
-
-        if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
-          || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
-          || current_direction_bits != last_direction_bits
-          || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
-        ) {
-          TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
-          TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
-          set_directions(current_direction_bits);
-        }
+        axisManager.getNextAxisStepper(&axis_stepper);
       }
-
-      uint8_t axis_bits = 0;
-      LINEAR_AXIS_CODE(
-        if (X_MOVE_TEST)            SBI(axis_bits, A_AXIS),
-        if (Y_MOVE_TEST)            SBI(axis_bits, B_AXIS),
-        if (Z_MOVE_TEST)            SBI(axis_bits, C_AXIS),
-        if (current_block->steps.i) SBI(axis_bits, I_AXIS),
-        if (current_block->steps.j) SBI(axis_bits, J_AXIS),
-        if (current_block->steps.k) SBI(axis_bits, K_AXIS)
-      );
-      //if (current_block->steps.e) SBI(axis_bits, E_AXIS);
-      //if (current_block->steps.a) SBI(axis_bits, X_HEAD);
-      //if (current_block->steps.b) SBI(axis_bits, Y_HEAD);
-      //if (current_block->steps.c) SBI(axis_bits, Z_HEAD);
-      axis_did_move = axis_bits;
-
-      // At this point, we must ensure the movement about to execute isn't
-      // trying to force the head against a limit switch. If using interrupt-
-      // driven change detection, and already against a limit then no call to
-      // the endstop_triggered method will be done and the movement will be
-      // done against the endstop. So, check the limits here: If the movement
-      // is against the limits, the block will be marked as to be killed, and
-      // on the next call to this ISR, will be discarded.
-      endstops.update();
 
       // interval = CEIL(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
 
       // Calculate the initial timer interval
       // interval = calc_timer_interval(current_block->initial_rate, &steps_per_isr);
-    } else {
+    }
+    else {
       motion_control.update_feedrate(0);
     }
     #if ENABLED(LASER_POWER_INLINE_CONTINUOUS)
@@ -2338,6 +2308,53 @@ uint32_t Stepper::block_phase_isr() {
       }
     #endif
   }
+
+
+  if(axis_stepper.axis < 0) {
+    return interval;
+  }
+
+  if (axis_stepper.dir > 0) {
+    CBI(current_direction_bits, axis_stepper.axis);
+  } else if(axis_stepper.dir < 0) {
+    SBI(current_direction_bits, axis_stepper.axis);
+  }
+
+  if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+    || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+    || current_direction_bits != last_direction_bits
+    || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+  ) {
+    TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
+    TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
+    set_directions(current_direction_bits);
+  }
+
+  uint8_t axis_bits = 0;
+  LINEAR_AXIS_CODE(
+    if (X_MOVE_TEST)            SBI(axis_bits, A_AXIS),
+    if (Y_MOVE_TEST)            SBI(axis_bits, B_AXIS),
+    if (Z_MOVE_TEST)            SBI(axis_bits, C_AXIS),
+    if (current_block->steps.i) SBI(axis_bits, I_AXIS),
+    if (current_block->steps.j) SBI(axis_bits, J_AXIS),
+    if (current_block->steps.k) SBI(axis_bits, K_AXIS)
+  );
+  //if (current_block->steps.e) SBI(axis_bits, E_AXIS);
+  //if (current_block->steps.a) SBI(axis_bits, X_HEAD);
+  //if (current_block->steps.b) SBI(axis_bits, Y_HEAD);
+  //if (current_block->steps.c) SBI(axis_bits, Z_HEAD);
+  axis_did_move = axis_bits;
+
+  // At this point, we must ensure the movement about to execute isn't
+  // trying to force the head against a limit switch. If using interrupt-
+  // driven change detection, and already against a limit then no call to
+  // the endstop_triggered method will be done and the movement will be
+  // done against the endstop. So, check the limits here: If the movement
+  // is against the limits, the block will be marked as to be killed, and
+  // on the next call to this ISR, will be discarded.
+  endstops.update();
+
+
 
   // Return the interval to wait
   return interval;
@@ -2816,11 +2833,13 @@ void Stepper::_set_position(const abce_long_t &spos) {
   #else
     // default non-h-bot planning
     count_position = spos;
+    Planner::flow_control_e_delta = 0;
   #endif
 }
 
 void Stepper::_set_e_position(const_float_t spos_e) {
   count_position.e = spos_e;
+  Planner::flow_control_e_delta = 0;
 }
 
 /**
@@ -2833,12 +2852,18 @@ int32_t Stepper::position(const AxisEnum axis) {
     const bool was_enabled = suspend();
   #endif
 
-  const int32_t v = count_position[axis];
+  // const int32_t v = count_position[axis];
+  int32_t v = count_position[axis];
 
   #ifdef __AVR__
     // Reenable Stepper ISR
     if (was_enabled) wake_up();
   #endif
+
+  if (axis == E_AXIS) {
+    v -= (int)(Planner::flow_control_e_delta);
+  }
+
   return v;
 }
 

@@ -132,6 +132,7 @@ volatile uint8_t Planner::block_buffer_head,    // Index of the next block to be
                  Planner::block_buffer_tail;    // Index of the busy block, if any
 uint16_t Planner::cleaning_buffer_counter;      // A counter to disable queuing of blocks
 uint8_t Planner::delay_before_delivering;       // This counter delays delivery of blocks when queue becomes empty to allow the opportunity of merging blocks
+float Planner::flow_control_e_delta = 0.0;
 
 planner_settings_t Planner::settings;           // Initialized by settings.load()
 
@@ -763,6 +764,10 @@ block_t* Planner::get_current_block() {
     if (!block->shaper_data.is_create_move) {
       return nullptr;
     }
+
+    // if (!block->shaper_data.is_create_funParam) {
+    //   return nullptr;
+    // }
 
     // No trapezoid calculated? Don't execute yet.
     if (TEST(block->flag, BLOCK_BIT_RECALCULATE)) return nullptr;
@@ -1478,7 +1483,6 @@ void Planner::shaped_loop() {
         }
 
         // uint8_t move_index = moveQueue.calculateMoveStart(block->shaper_data.move_end, axisManager.shaped_delta);
-
         shaped_index = next_block_index(shaped_index);
     }
 
@@ -2331,7 +2335,9 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
       block->axis_r.x = da / block->millimeters;
       block->axis_r.y = db / block->millimeters;
       block->axis_r.z = dc / block->millimeters;
-      block->axis_r.e = de / block->millimeters;
+      // block->axis_r.e = de / block->millimeters;
+      block->axis_r.e = de * e_factor[extruder] / block->millimeters;
+      flow_control_e_delta += (de * e_factor[extruder] - de);
   } else {
     LINEAR_AXIS_CODE(
       block->axis_r.x = 0,
