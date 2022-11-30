@@ -1934,17 +1934,6 @@ uint32_t Stepper::block_phase_isr() {
   static uint32_t done_count = 0;
   // If there is a current block
   if (current_block) {
-    // hal_timer_t st = HAL_timer_get_count(STEP_TIMER_NUM);
-    // hal_timer_t et = HAL_timer_get_count(STEP_TIMER_NUM);
-    // hal_timer_t dt = et - st;
-
-    // axisManager.counts[3]++;
-    // axisManager.counts[4] += dt;
-
-    // if (axisManager.counts[5] < dt) {
-    //   axisManager.counts[5] = dt;
-    // }
-
     // #ifdef DEBUG_IO
     //   WRITE(DEBUG_IO, 1);
     // #endif
@@ -1954,22 +1943,26 @@ uint32_t Stepper::block_phase_isr() {
     // #endif
       if (axis_stepper.delta_time < 0) {
         axis_stepper.delta_time = 0;
-        axisManager.counts[6]++;
       }
 
-      if (axis_stepper.delta_time > 0.01) {
+      hal_timer_t st = HAL_timer_get_count(STEP_TIMER_NUM);
+      if (axis_stepper.delta_time > 0.02) {
         axisManager.calcNextAxisStepper();
-      } else if (axis_stepper.delta_time > 0.02) {
         axisManager.calcNextAxisStepper();
+      } else if (axis_stepper.delta_time > 0.01) {
         axisManager.calcNextAxisStepper();
-      }
-      if (axis_stepper.delta_time < 0.001) {
-        // #ifdef DEBUG_IO
-        //   WRITE(DEBUG_IO, 1);
-        // #endif
-      }
+      } 
+      hal_timer_t et = HAL_timer_get_count(STEP_TIMER_NUM);
 
       interval = (uint32_t)(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
+
+      hal_timer_t dt = et - st;
+      if (interval > 0 && (hal_timer_t)interval < dt) {
+        axisManager.counts[SHAPER_DBG_CALC_STEP_TIMEOUT_COUNT]++;
+        if ((dt) > axisManager.counts[SHAPER_DBG_CALC_STEP_TIME]) {
+          axisManager.counts[SHAPER_DBG_CALC_STEP_TIME] = dt;
+        }
+      }
 
       if (axis_stepper.print_time >= block_print_time) {
         discard_current_block();
@@ -2002,6 +1995,10 @@ uint32_t Stepper::block_phase_isr() {
         }
 
         return interval;
+      } else {
+        if (done_count <= 1) {
+          axisManager.counts[SHAPER_DBG_NO_STEPS]++;
+        }
       }
     }
   }
@@ -2252,30 +2249,6 @@ uint32_t Stepper::block_phase_isr() {
         // Set as deceleration point the initial rate of the block
         // acc_step_rate = current_block->initial_rate;
       #endif
-
-      // if (is_start) {
-      //   is_start = false;
-      //   while (axisManager.calcNextAxisStepper()) {
-      //   }
-      //   axisManager.getNextAxisStepper(&axis_stepper);
-      // }
-      // else {
-      //   float delta_time = next_axis_stepper.print_time - axis_stepper.print_time;
-      //   if (delta_time <= -10.0f) {
-      //     axisManager.counts[12]++;
-      //   }
-      //   if (delta_time >= 30) {
-      //     axisManager.counts[11]++;
-      //   }
-
-      //   if (delta_time < 0) {
-      //       delta_time = 0;
-      //   }
-      //   axis_stepper.delta_time = delta_time;
-      //   axis_stepper.axis = next_axis_stepper.axis;
-      //   axis_stepper.dir = next_axis_stepper.dir;
-      //   axis_stepper.print_time = next_axis_stepper.print_time;
-      // }
 
       if (is_start) {
         is_start = false;
@@ -2899,10 +2872,6 @@ void Stepper::set_axis_position(const AxisEnum a, const int32_t &v) {
 // when the stepper ISR resumes, we must be very sure that the movement
 // is properly canceled
 void Stepper::endstop_triggered(const AxisEnum axis) {
-
-  if (axis == AxisEnum::Y_AXIS && axisManager.counts[18] == 0) {
-    axisManager.counts[18] = count_position[1];
-  }
 
   const bool was_enabled = suspend();
   endstops_trigsteps[axis] = (

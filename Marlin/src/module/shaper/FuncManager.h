@@ -150,6 +150,10 @@ class FuncManager {
       return FUNC_PARAMS_MOD(func_params_head - func_params_tail, size);
     }
 
+    constexpr int getFreeSize() {
+        return size - 1 - getSize();
+    }
+
     FORCE_INLINE constexpr int nextFuncParamsIndex(const int func_params_index) { return FUNC_PARAMS_MOD(func_params_index + 1, size); };
     FORCE_INLINE constexpr int prevFuncParamsIndex(const int func_params_index) { return FUNC_PARAMS_MOD(func_params_index - 1, size); };
     // static constexpr int nextFuncParamsIndex(const int func_params_index, int s) { return FUNC_PARAMS_MOD(func_params_index + 1, s); };

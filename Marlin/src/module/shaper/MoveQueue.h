@@ -57,6 +57,10 @@ class MoveQueue {
         return MOVE_MOD(move_head - move_tail);
     };
 
+    int getFreeMoveSize() {
+        return MOVE_SIZE - 1 - getMoveSize();
+    }
+
     void calculateMoves(block_t* block);
 
     uint8_t addEmptyMove(float time);

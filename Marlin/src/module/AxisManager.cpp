@@ -12,6 +12,16 @@ AxisManager axisManager;
 
 const char* input_shaper_type_name[] = {"none", "ei", "ei2", "ei3", "mzv", "zv", "zvd", "zvdd", "zvddd"};
 
+static const char *dbg_name[SHAPER_DBG_MAX] = {
+  "EMPTY_MOVES_COUNT",
+  "NO_STEPS",
+  "NOT_ENOUGH_MOVES_RESC",
+  "NOT_ENOUGH_FUNC_LIST_RESC",
+  "CALC_STEP_TIMEOUT_COUNT",
+  "CALC_STEP_TIME"
+};
+
+
 void AxisManager::input_shaper_reset() {
 
   AxisInputShaper::axis_input_shaper_x.type = (InputShaperType)DEFAULT_IS_TYPE;
@@ -53,8 +63,32 @@ ErrCode AxisManager::input_shaper_get(int axis, int &type, float &freq, float &d
   return E_SUCCESS;
 }
 
+void AxisManager::show_debug_info() {
+  LOG_I("debug info for input shaper:\n");
+  for (int i = 0; i < SHAPER_DBG_MAX; i++) {
+    LOG_I("[%s] = %d\n", dbg_name[i], counts[i]);
+  }
+}
+
+
+void AxisManager::reset_debug_info() {
+  for (int i = 0; i < SHAPER_DBG_MAX; i++) {
+    counts[i] = 0;
+  }
+}
+
 void GcodeSuite::M593() {
     LOG_I("M593\n");
+
+    if (parser.seen('I')) {
+        axisManager.show_debug_info();
+        return;
+    }
+
+    if (parser.seen('R')) {
+        axisManager.reset_debug_info();
+        return;
+    }
     // if (axisManager.req_update_shaped) {
     //     LOG_I("Send too many\n");
     //     return;
@@ -330,6 +364,11 @@ bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t* block)
     // LOG_I("start %d, end %d\n", move_start, move_end);
 
     for (int i = 0; i < AXIS_SIZE; ++i) {
+        if (i < 2 && axis[i].func_manager.getFreeSize() < 15) {
+            axisManager.counts[SHAPER_DBG_NOT_ENOUGH_FUNC_LIST_RESC]++;
+        } else if (i >= 2 && axis[i].func_manager.getFreeSize() < 4) {
+            axisManager.counts[SHAPER_DBG_NOT_ENOUGH_FUNC_LIST_RESC]++;
+        }
         if (!axis[i].generateFuncParams(block_index, move_start, move_end)) {
             res = false;
         }

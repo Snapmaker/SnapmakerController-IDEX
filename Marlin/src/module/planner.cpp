@@ -1291,13 +1291,6 @@ void Planner::recalculate() {
   recalculate_trapezoids();
 }
 
-static float last_remaining_consume_time = -1;
-// static float start_t = -1;
-// static float end_t = -1;
-static int count = 10000;
-static int c2 = 500000;
-static bool log111 = true;
-
 void Planner::shaped_loop() {
     // if (xTaskGetCurrentTaskHandle() != thandle_marlin)
     //   return;
@@ -1315,78 +1308,16 @@ void Planner::shaped_loop() {
         return;
     }
 
-    // stepper_isr();
-
-    c2--;
-    if (c2 <= 0) {
-        c2 = 500000;
-        // float t = (float)axisManager.counts[4] / (float)axisManager.counts[3] / 3.0f;
-        // float max_t = (float)axisManager.counts[5] / 3.0f;
-        // LOG_I("c0: %d, time: %lf, max_t: %lf, max_size: %d, %d\n",  axisManager.counts[0], t, max_t, axisManager.axis[0].func_manager.max_size, axisManager.axis[1].func_manager.max_size);
-        // LOG_I("c0: %d, c1: %d, c2: %d, c6: %d, c7: %d, time: %lf, max_t: %lf, c11: %d, c12: %d\n", axisManager.counts[0], axisManager.counts[1], axisManager.counts[2], axisManager.counts[6],axisManager.counts[7], t, max_t, axisManager.counts[11], axisManager.counts[12]);
-        // LOG_I("c10: %d, c11: %d, c12: %d\n", axisManager.counts[10], axisManager.counts[11], axisManager.counts[12]);
-    }
-
     float remaining_consume_time = axisManager.getRemainingConsumeTime();
 
     if (remaining_consume_time > SHAPED_WAITING_MIN_TIME) {
-      if (remaining_consume_time == last_remaining_consume_time) {
-        count--;
-        // if(count == 999) {
-        //   start_t = remaining_consume_time;
-        // }
-        // if(count == 0) {
-        //   end_t = remaining_consume_time;
-        // }
-      } else {
-        count = 10000;
-        log111 = true;
-      }
-      last_remaining_consume_time = remaining_consume_time;
-      if (count <= 0 && log111) {
-        log111 = false;
-        // LOG_I("remaining_t: %lf\n", remaining_consume_time);
-        // LOG_I("m: %d, %d\n", moveQueue.move_tail, moveQueue.move_head);
-        // Move& m = moveQueue.moves[moveQueue.prevMoveIndex(moveQueue.move_head)];
-        // LOG_I("t: %lf, flag: %d\n", m.end_t.toDouble(), m.flag);
-        // for (size_t i = 0; i < 4; i++)
-        // {
-        //   FuncManager& f = axisManager.axis[i].func_manager;
-        //   LOG_I("i: %d, last_time: %lf, last_pos: %lf\n",i, f.last_time.toDouble(), f.last_pos);
-
-        //   FuncParams& p = f.funcParams[f.prevFuncParamsIndex(f.func_params_head)];
-        //   LOG_I("i: %d, right_time: %lf, right_pos: %lf\n",i, p.right_time.toDouble(), p.right_pos);
-
-        //   LOG_I("i: %d, print_time: %lf, print_pos: %lf, print_step: %d, null: %d, is_c: %d\n",i, f.print_time.toDouble(), f.print_pos, f.print_step,
-        //   axisManager.axis[i].is_consumed, axisManager.axis[i].is_get_next_step_null);
-
-        //   int ids = f.func_params_use;
-        //   int ide = f.func_params_head;
-        //   LOG_I("tail: %d, use: %d, head:%d, max_size: %d\n", f.func_params_tail, f.func_params_use, f.func_params_head, f.max_size);
-        //   while (ids != ide)
-        //   {
-        //     LOG_I("id: %d, rx: %lf, rp: %lf, t: %d\n", ids, f.funcParams[ids].right_time.toDouble(), f.funcParams[ids].right_pos, f.funcParams[ids].type);
-        //     ids = f.nextFuncParamsIndex(ids);
-        //   }
-
-        // }
-
-        // LOG_I("print_time: %lf, min_last_time: %lf\n", axisManager.print_time.toDouble(), axisManager.min_last_time.toDouble());
-      }
       return;
     }
 
-    // if (nr_moves < 2 && delay_before_delivering > SHAPED_WAITING_MIN_TIME) {
-    //     delay_before_delivering = 0;
-    //     return;
-    // }
     if (nr_moves < 6 && delay_before_delivering > SHAPED_WAITING_MIN_TIME) {
         return;
     }
-    delay_before_delivering = 0;
-    // LOG_I("r: %lf\n", remaining_consume_time);
 
-    // uint8_t tail_index = block_buffer_tail;
     uint8_t shaped_index = block_buffer_shaped;
     uint8_t planned_index = block_buffer_planned;
     uint8_t head_index = block_buffer_head;
@@ -1397,20 +1328,16 @@ void Planner::shaped_loop() {
       return;
     }
 
-    // LOG_I("t: %lf\n", remaining_consume_time);
-
-    // if (moveQueue.is_start) {
-    //     axisManager.addEmptyMove();
-    //     moveQueue.is_start = false;
-    // }
-
     float planed_time = 0;
     while (index != planned_index) {
         block = &block_buffer[index];
         if (!block->shaper_data.is_create_move) {
-          // LOG_I("b0: %d\n", index);
             if (TEST(block->flag, BLOCK_BIT_RECALCULATE)) {
-              axisManager.counts[7]++;
+              break;
+            }
+
+            if (moveQueue.getFreeMoveSize() < 3) {
+              axisManager.counts[SHAPER_DBG_NOT_ENOUGH_MOVES_RESC]++;
               break;
             }
 
@@ -1420,9 +1347,7 @@ void Planner::shaped_loop() {
         if (!block->shaper_data.is_zero_speed)
         {
           planed_time += block->shaper_data.block_time;
-        } else {
-          axisManager.counts[6]++;
-        }
+        } 
 
         index = next_block_index(index);
     }
@@ -1431,12 +1356,14 @@ void Planner::shaped_loop() {
 
     if (index != head_index && planed_time + remaining_consume_time < need_shaped_time) {
         while (index != head_index) {
-            axisManager.counts[2]++;
             block = &block_buffer[index];
             if (!block->shaper_data.is_create_move) {
-              // LOG_I("b1: %d\n", index);
                 if (TEST(block->flag, BLOCK_BIT_RECALCULATE)) {
-                  axisManager.counts[7]++;
+                  break;
+                }
+
+                if (moveQueue.getFreeMoveSize() < 3) {
+                  axisManager.counts[SHAPER_DBG_NOT_ENOUGH_MOVES_RESC]++;
                   break;
                 }
 
@@ -1447,9 +1374,7 @@ void Planner::shaped_loop() {
             if (!block->shaper_data.is_zero_speed)
             {
               planed_time += block->shaper_data.block_time;
-            } else {
-              axisManager.counts[6]++;
-            }
+            } 
 
             index = next_block_index(index);
 
@@ -1459,8 +1384,9 @@ void Planner::shaped_loop() {
         }
 
         if (index == head_index || planed_time + remaining_consume_time < need_shaped_time) {
-            axisManager.counts[0]++;
-            // LOG_I("addEmptyMove\n");
+            if (index != head_index) {
+              axisManager.counts[SHAPER_DBG_EMPTY_MOVES_COUNT]++;
+            }
             axisManager.addEmptyMove();
             block = &block_buffer[prev_block_index(index)];
             block->shaper_data.last_print_time += axisManager.shaped_left_delta;
@@ -1487,7 +1413,7 @@ void Planner::shaped_loop() {
     }
 
     // LOG_I("remainingConsumeTime: %lf, %d, %d, %d, %d\n", axisManager.getRemainingConsumeTime(), tail_index, shaped_index, planned_index, head_index);
-
+    delay_before_delivering = 0;
     block_buffer_shaped = shaped_index;
 }
 
@@ -2016,8 +1942,6 @@ bool Planner::_buffer_steps(const xyze_long_t &target
   OPTARG(HAS_DIST_MM_ARG, const xyze_float_t &cart_dist_mm)
   , feedRate_t fr_mm_s, const uint8_t extruder, const_float_t millimeters
 ) {
-
-  // axisManager.counts[2]++;
 
   // LOG_I("%d %d %d %d\n", position.x, position.y, position.z, position.e);
 
