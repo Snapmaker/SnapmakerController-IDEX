@@ -28,6 +28,7 @@
 #include "../../../Marlin/src/module/stepper.h"
 #include "../../module/motion_control.h"
 #include "../../module/print_control.h"
+#include "../../module/power_loss.h"
 #include "../../module/system.h"
 #include <EEPROM.h>
 
@@ -144,6 +145,15 @@ void GcodeSuite::M2000() {
         }
       }
       break;
+
+    case 105:
+    {
+      uint32_t gcode_jumper_line = parser.longval('J', 0x0);
+      if (gcode_jumper_line) {
+        power_loss.next_req = gcode_jumper_line;
+      }
+    }
+    break;
 
 
     case 200:
