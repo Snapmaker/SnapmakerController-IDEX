@@ -487,7 +487,7 @@ extern "C" {
     if(ExitGetITStatus(TMC_STALL_GUARD_Z_PIN)) {
       // if (stepper.axis_is_moving(Z_AXIS) && motion_control.is_sg_enable(SG_Z)) {
       if (motion_control.is_sg_enable(SG_Z) &&
-          axisManager.axis[2].getCurrentSpeedMMs() > 4.8 &&
+          axisManager.axis[2].getCurrentSpeedMMs() > 3.0 &&
           stepper.axis_is_moving(Z_AXIS)) {
          trigger_stall_guard_exit(SG_Z);
       }
