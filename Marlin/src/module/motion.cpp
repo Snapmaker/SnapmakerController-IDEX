@@ -1803,7 +1803,8 @@ void prepare_line_to_destination() {
    * Kinematic robots should wait till all axes are homed
    * before updating the current position.
    */
-
+  bool z_stall_guard_setting = false;
+  bool z_homing = false;
   void homeaxis(const AxisEnum axis) {
 
     #if EITHER(MORGAN_SCARA, MP_SCARA)
@@ -1887,21 +1888,35 @@ void prepare_line_to_destination() {
     const float move_length = 1.5f * max_length(TERN(DELTA, Z_AXIS, axis)) * axis_home_dir;
     if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Home Fast: ", move_length, "mm");
 
-    // if (axis == Z_AXIS) {
-    //   motion_control.clear_trigger();
-    //   vTaskDelay(10);
-    //   motion_control.enable_stall_guard_only_axis(axis, 130);
-    // }
+    z_stall_guard_setting = false;
+    if (axis == Z_AXIS) {
+      extern uint16_t z_sg_value;
+      if (z_sg_value) {
+        uint8_t z_sg_value_set = z_sg_value * 1.5;
+        LOG_I("Z home stall gurad set to %d\r\n", z_sg_value_set);
+        z_stall_guard_setting = true;
+        motion_control.clear_trigger();
+        motion_control.enable_stall_guard_only_axis(axis, z_sg_value_set);
+      }
+    }
 
+    if (Z_AXIS == axis) {
+      z_homing = true;
+    }
     do_homing_move(axis, move_length, 0.0, !use_probe_bump);
+    if (Z_AXIS == axis) {
+      z_homing = false;
+    }
 
-    // if (axis == Z_AXIS) {
-    //   if (motion_control.is_sg_trigger(SG_Z)) {
-    //     kill();
-    //   }
-    //   motion_control.disable_stall_guard_all();
-    //   motion_control.clear_trigger();
-    // }
+    if (z_stall_guard_setting) {
+      if (axis == Z_AXIS) {
+        if (motion_control.is_sg_trigger(SG_Z)) {
+          kill();
+        }
+        motion_control.disable_stall_guard_all();
+        motion_control.clear_trigger();
+      }
+    }
 
     #if BOTH(HOMING_Z_WITH_PROBE, BLTOUCH_SLOW_MODE)
       if (axis == Z_AXIS) bltouch.stow(); // Intermediate STOW (in LOW SPEED MODE)
