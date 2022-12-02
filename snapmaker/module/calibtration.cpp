@@ -307,7 +307,17 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
 
   set_calibration_move_param();
   motion_control.clear_trigger();
-  motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
+
+  uint16_t sg_value = probe_sg_reg[axis];
+  if (Z_AXIS == axis) {
+    extern uint16_t z_sg_value;
+    if (z_sg_value)
+      sg_value = z_sg_value;
+  }
+  LOG_I("sg_value set to %d\r\n", sg_value);
+  // motion_control.enable_stall_guard_only_axis(axis, probe_sg_reg[axis], active_extruder);
+  motion_control.enable_stall_guard_only_axis(axis, sg_value, active_extruder);
+
   switch_detect.enable_probe(0);
   vTaskDelay(pdMS_TO_TICKS(5));
   motion_control.clear_trigger();
