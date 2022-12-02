@@ -39,6 +39,7 @@ class Axis {
     int8_t dir = 0;
     bool is_get_next_step_null = false;
     float current_interval;
+    float cur_speed;
     time_double_t last_print_time = 0;
     bool time_interval_valid = false;
 

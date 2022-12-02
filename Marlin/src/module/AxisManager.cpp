@@ -154,10 +154,15 @@ bool Axis::getNextStep() {
 }
 
 float Axis::getCurrentSpeedMMs() {
+  float tem_speed;
   if (time_interval_valid && current_interval > 0.001)
-    return 1000.0 / (current_interval * mm_to_step);
+    tem_speed = 1000.0 / (current_interval * mm_to_step);
   else
-    return 0;
+    tem_speed = 0;
+
+  cur_speed = cur_speed * 0.9 + 0.1 * tem_speed;
+
+  return cur_speed;
 }
 
 #if ENABLED(LIN_ADVANCE)
@@ -344,7 +349,7 @@ bool AxisManager::generateAllAxisFuncParams(uint8_t block_index, block_t* block)
 //  and mark is_consumed = true;
 // */
 // bool AxisManager::getNextAxisStepper(AxisStepper *axis_stepper) {
-//     if (getAxisStepperSize() == 0) { 
+//     if (getAxisStepperSize() == 0) {
 //         return false;
 //     }
 
