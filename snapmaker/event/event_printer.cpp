@@ -9,7 +9,7 @@
 #include "../../../src/module/AxisManager.h"
 
 #define GCODE_MAX_PACK_SIZE 450
-#define GCODE_REQ_TIMEOUT_MS 200
+#define GCODE_REQ_TIMEOUT_MS 500
 
 #pragma pack(1)
 
