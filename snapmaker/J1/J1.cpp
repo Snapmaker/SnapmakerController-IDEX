@@ -8,6 +8,7 @@
 #include "../event/event_printer.h"
 #include "../event/event_exception.h"
 #include "../module/print_control.h"
+#include "src/module/stepper.h"
 #include "../../Marlin/src/module/temperature.h"
 #include "../module/power_loss.h"
 #include "../module/exception.h"
@@ -47,6 +48,23 @@ void log_reset_source(void) {
   }
 }
 
+void axis_speed_update() {
+  static uint32 last_tick = 0;
+
+  if (PENDING(millis(), last_tick + 10)) {
+    return;
+  }
+
+  last_tick = millis();
+  float speed;
+  speed = axisManager.axis[0].getCurrentSpeedMMs();
+  speed = axisManager.axis[1].getCurrentSpeedMMs();
+  speed = axisManager.axis[2].getCurrentSpeedMMs();
+}
+
+static uint32_t z_move_count = 0;
+uint16_t z_sg_value = 0;
+
 void j1_main_task(void *args) {
   uint32_t syslog_timeout = millis();
 
@@ -55,6 +73,21 @@ void j1_main_task(void *args) {
   while(1) {
     print_control.loop();
     // power_loss.process();
+
+    axis_speed_update();
+
+    if (!z_sg_value) {
+      if (axisManager.axis[2].getCurrentSpeedMMs() > 3) {
+        z_move_count++;
+        if (z_move_count > 50) {
+          z_sg_value = (float)(stepperZ.SG_RESULT()) / 3 - 25;
+          LOG_I("z_sg_value set to %d\r\n", z_sg_value);
+        }
+      }
+      else {
+        z_move_count = 0;
+      }
+    }
 
     if (ELAPSED(millis(), syslog_timeout)) {
       syslog_timeout = millis() + 20000;
