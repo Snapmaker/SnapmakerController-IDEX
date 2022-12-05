@@ -475,7 +475,7 @@ extern "C" {
       }
     }
     // else if (stepper.axis_is_moving() && motion_control.is_sg_enable(SG_X2)) {
-    else if (motion_control.is_sg_enable(SG_X2) && axisManager.axis[0].getCurrentSpeedMMs() > 10.0) {
+    else if (motion_control.is_sg_enable(SG_X2) && axisManager.axis[0].getCurrentSpeedMMs() > 10.0 && stepper.axis_is_moving(X_AXIS)) {
       if (active_extruder == 1) {
         trigger_stall_guard_exit(SG_X2);
       }
@@ -496,7 +496,7 @@ extern "C" {
 
     if(ExitGetITStatus(TMC_STALL_GUARD_Y_PIN)) {
       // if (stepper.axis_is_moving() && motion_control.is_sg_enable(SG_Y)) {
-      if (motion_control.is_sg_enable(SG_Y) && axisManager.axis[1].getCurrentSpeedMMs() > 10.0) {
+      if (motion_control.is_sg_enable(SG_Y) && axisManager.axis[1].getCurrentSpeedMMs() > 10.0 && stepper.axis_is_moving(Y_AXIS)) {
          trigger_stall_guard_exit(SG_Y);
       }
       ExtiClearITPendingBit(TMC_STALL_GUARD_Y_PIN);
@@ -506,7 +506,7 @@ extern "C" {
   void __irq_exti15_10() {
     if(ExitGetITStatus(TMC_STALL_GUARD_X_PIN)) {
       // if (stepper.axis_is_moving() && motion_control.is_sg_enable(SG_X)) {
-      if (motion_control.is_sg_enable(SG_X) && axisManager.axis[0].getCurrentSpeedMMs() > 10.0) {
+      if (motion_control.is_sg_enable(SG_X) && axisManager.axis[0].getCurrentSpeedMMs() > 10.0 && stepper.axis_is_moving(X_AXIS)) {
         if (active_extruder == 0) {
           trigger_stall_guard_exit(SG_X);
         }
