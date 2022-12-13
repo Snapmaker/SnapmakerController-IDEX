@@ -177,7 +177,7 @@ void GcodeSuite::M2000() {
       // float L = (float)parser.floatval('L', (float)100.0);
       axisManager.T0_T1_target_pos = x_home_pos(!active_extruder);
       float L = axisManager.T0_T1_target_pos - inactive_extruder_x;
-      float V = (float)parser.floatval('V', (float)300.0);
+      float V = (float)parser.floatval('V', (float)200.0);
       float A = (float)parser.floatval('A', (float)6000.0);
 
       float millimeters     = fabs(L);                    // mm
