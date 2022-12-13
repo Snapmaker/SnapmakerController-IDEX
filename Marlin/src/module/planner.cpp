@@ -119,6 +119,12 @@
 
 Planner planner;
 
+uint32_t statistics_slowdown_cnt = 0;
+uint32_t statistics_abort_cnt = 0;
+uint32_t statistics_gcode_timeout_cnt = 0;
+uint32_t statistics_no_step_but_has_block_cnt = 0;
+uint32_t statistics_funcgen_runout_cnt = 0;
+
 // public:
 
 /**
@@ -2407,6 +2413,7 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
         #if defined(XY_FREQUENCY_LIMIT) || HAS_WIRED_LCD
           segment_time_us = nst;
         #endif
+        statistics_slowdown_cnt++;
       }
     }
   #endif

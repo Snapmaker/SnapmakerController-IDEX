@@ -151,6 +151,12 @@ enum BlockFlag : char {
 
 #endif
 
+extern uint32_t statistics_slowdown_cnt;
+extern uint32_t statistics_abort_cnt;
+extern uint32_t statistics_gcode_timeout_cnt;
+extern uint32_t statistics_no_step_but_has_block_cnt;
+extern uint32_t statistics_funcgen_runout_cnt;
+
 typedef struct shaper_data_t {
     float block_time;
     bool is_create_move;

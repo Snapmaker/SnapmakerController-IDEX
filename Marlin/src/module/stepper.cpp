@@ -1477,6 +1477,7 @@ void Stepper::isr() {
 
   if (power_loss.check()) {
     if (abort_current_block) {
+      statistics_abort_cnt++;
       switch_detect.disable_all();
       current_direction_bits = 0;
       axis_did_move = 0;
@@ -1732,6 +1733,7 @@ void Stepper::pulse_phase_isr() {
 
   // If we must abort the current block, do so!
   if (abort_current_block) {
+    statistics_abort_cnt++;
     switch_detect.disable_all();
     current_direction_bits = 0;
     axis_did_move = 0;
@@ -2042,6 +2044,8 @@ uint32_t Stepper::block_phase_isr() {
 
       if (current_block == nullptr)
       {
+        if (planner.movesplanned())
+          statistics_no_step_but_has_block_cnt++;
         return interval;
       }
 

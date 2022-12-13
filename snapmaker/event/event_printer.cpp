@@ -485,6 +485,8 @@ static void req_gcode_pack() {
 
 static void gcode_req_timeout_deal() {
   if (gcode_req_timeout < millis()) {
+    extern uint32_t statistics_gcode_timeout_cnt;
+    statistics_gcode_timeout_cnt++;
     LOG_E("requst gcode pack timeout!\n");
     req_gcode_pack();
     gcode_req_timeout_times ++;

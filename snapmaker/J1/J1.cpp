@@ -211,8 +211,49 @@ void TMC2209_log(void) {
   }
 }
 
-// int32_t slowdown_cnt = 0;
-// int32_t
+
+void statistics_log(void) {
+
+  extern uint32_t statistics_slowdown_cnt;
+  extern uint32_t statistics_abort_cnt;
+  extern uint32_t statistics_gcode_timeout_cnt;
+  extern uint32_t statistics_no_step_but_has_block_cnt;
+  extern uint32_t statistics_funcgen_runout_cnt;
+
+  static uint32_t last_statistics_slowdown_cnt;
+  static uint32_t last_statistics_abort_cnt;
+  static uint32_t last_statistics_gcode_timeout_cnt;
+  static uint32_t last_statistics_no_step_but_has_block_cnt;
+  static uint32_t last_statistics_funcgen_runout_cnt;
+
+  if (last_statistics_slowdown_cnt != statistics_slowdown_cnt) {
+    LOG_I("statistics_slowdown_cnt %d\r\n", statistics_slowdown_cnt);
+    last_statistics_slowdown_cnt = statistics_slowdown_cnt;
+  }
+
+  if (last_statistics_abort_cnt != statistics_abort_cnt) {
+    LOG_I("statistics_abort_cnt %d\r\n", statistics_abort_cnt);
+    last_statistics_abort_cnt = statistics_abort_cnt;
+  }
+
+
+  if (last_statistics_gcode_timeout_cnt != statistics_gcode_timeout_cnt) {
+    LOG_I("statistics_gcode_timeout_cnt %d\r\n", statistics_gcode_timeout_cnt);
+    last_statistics_gcode_timeout_cnt = statistics_gcode_timeout_cnt;
+  }
+
+
+  if (last_statistics_no_step_but_has_block_cnt != statistics_no_step_but_has_block_cnt) {
+    LOG_I("statistics_no_step_but_has_block_cnt %d\r\n", statistics_no_step_but_has_block_cnt);
+    last_statistics_no_step_but_has_block_cnt = statistics_no_step_but_has_block_cnt;
+  }
+
+  if (last_statistics_funcgen_runout_cnt != statistics_funcgen_runout_cnt) {
+    LOG_I("statistics_funcgen_runout_cnt %d\r\n", statistics_funcgen_runout_cnt);
+    last_statistics_funcgen_runout_cnt = statistics_funcgen_runout_cnt;
+  }
+
+}
 
 
 void j1_main_task(void *args) {
@@ -228,6 +269,7 @@ void j1_main_task(void *args) {
     sg_set();
     // probe_io_log();
     // TMC2209_log();
+    statistics_log();
 
     if (ELAPSED(millis(), syslog_timeout)) {
       syslog_timeout = millis() + 20000;
@@ -263,6 +305,7 @@ void j1_main_task(void *args) {
     vTaskDelay(pdMS_TO_TICKS(5));
   }
 }
+
 
 void J1_setup() {
   update_server.init();

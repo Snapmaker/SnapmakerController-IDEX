@@ -109,6 +109,11 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
     last_pos = right_pos;
 
     func_params_head = nextFuncParamsIndex(func_params_head);
+
+    if (func_params_head == func_params_use) {
+      extern uint32_t statistics_funcgen_runout_cnt;
+      statistics_funcgen_runout_cnt++;
+    }
 }
 
 bool FuncManager::getNextPosTime(int delta_step, int8_t *dir, float& mm_to_step, float& half_step_mm) {
