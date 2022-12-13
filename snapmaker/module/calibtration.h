@@ -15,11 +15,10 @@
 
 #define PROBE_FAST_Z_FEEDRATE                 (300)
 #define PROBE_FAST_XY_FEEDRATE                (800)
-#define PROBE_MOVE_XY_FEEDRATE                (5000)
 #define PROBE_MOVE_Z_FEEDRATE                 (600)
 #define PROBE_LIFTINT_DISTANCE                (0.5)   // mm
 #define PROBE_MOVE_XY_LIFTINT_DISTANCE        (5)     // mm
-#define BACK_OFF_DISTANCE                     (10)    // mm
+#define BACK_OFF_DISTANCE                     (2)     // mm
 #define Z_PROBE_DISTANCE                      (30)    // mm
 
 #define X1_STANDBY_POS                        (X1_MIN_POS)

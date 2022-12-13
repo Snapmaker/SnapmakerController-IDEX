@@ -57,14 +57,163 @@ void axis_speed_update() {
   }
 
   last_tick = millis();
-  float speed;
-  speed = axisManager.axis[0].getCurrentSpeedMMs();
-  speed = axisManager.axis[1].getCurrentSpeedMMs();
-  speed = axisManager.axis[2].getCurrentSpeedMMs();
+  static float dump_speed = 0;
+  dump_speed += axisManager.axis[0].getCurrentSpeedMMs();
+  dump_speed += axisManager.axis[1].getCurrentSpeedMMs();
+  dump_speed += axisManager.axis[2].getCurrentSpeedMMs();
 }
 
 static uint32_t z_move_count = 0;
 uint16_t z_sg_value = 0;
+
+static uint32_t y_move_count = 0;
+uint16_t y_sg_value = 0;
+
+static uint32_t x0_move_count = 0;
+uint16_t x0_sg_value = 0;
+
+static uint32_t x1_move_count = 0;
+uint16_t x1_sg_value = 0;
+
+void z_sg_value_set(void) {
+  if (!z_sg_value) {
+    if (axisManager.axis[2].cur_speed > 3) {
+      z_move_count++;
+      if (z_move_count > 50) {
+        z_sg_value = (float)(stepperZ.SG_RESULT()) / 3 - 25;
+        LOG_I("z_sg_value set to %d\r\n", z_sg_value);
+        extern bool z_homing;
+        extern bool z_stall_guard_setting;
+        if (z_homing) {
+          z_stall_guard_setting = true;
+          uint8_t z_sg_value_set = z_sg_value * 1.5;
+          motion_control.clear_trigger();
+          motion_control.enable_stall_guard_only_axis(Z_AXIS, z_sg_value_set);
+          LOG_I("Z home stall gurad set to %d\r\n", z_sg_value_set);
+        }
+      }
+    }
+    else {
+      z_move_count = 0;
+    }
+  }
+}
+
+void y_sg_value_set(void) {
+  if (!y_sg_value) {
+    // XY calibration move for y: F9000 * 100 / 201
+    if (fabs(axisManager.axis[1].cur_speed - ((MOTION_TRAVEL_FEADRATE) * 100 / 60 / 201)) < 10) {
+      y_move_count++;
+      if (y_move_count > 10) {
+        uint32_t sg = stepperY.SG_RESULT();
+        // if (sg > 120) {
+        //   y_sg_value = 30 + (sg - 120) / 10;
+        // }
+        // else {
+        //   y_sg_value = (float)sg / 4;
+        // }
+        y_sg_value = sg / 8;
+        LOG_I("y_sg_value set to %d\r\n", y_sg_value);
+      }
+    }
+    else {
+      y_move_count = 0;
+    }
+  }
+}
+
+void x0_sg_value_set(void) {
+  if (!x0_sg_value) {
+    // XY calibration move for x: F9000 * 175 / 201
+    if (fabs(axisManager.axis[0].cur_speed - ((MOTION_TRAVEL_FEADRATE) * 175 / 60 / 201)) < 10 && active_extruder == 0) {
+      x0_move_count++;
+      if (x0_move_count > 10) {
+        uint32_t sg = stepperX.SG_RESULT();
+        // if (sg > 120) {
+        //   x0_sg_value = 30 + (sg - 120) / 10;
+        // }
+        // else {
+        //   x0_sg_value = (float)sg / 4;
+        // }
+        x0_sg_value = sg / 12;
+        LOG_I("x0_sg_value set to %d\r\n", x0_sg_value);
+      }
+    }
+    else {
+      x0_move_count = 0;
+    }
+  }
+}
+
+void x1_sg_value_set(void) {
+  if (!x1_sg_value) {
+    if (fabs(axisManager.axis[0].cur_speed - ((MOTION_TRAVEL_FEADRATE)/60)) < 10 && active_extruder == 1) {
+      x1_move_count++;
+      if (x1_move_count > 10) {
+        uint32_t sg = stepperX2.SG_RESULT();
+        // if (sg > 120) {
+        //   x1_sg_value = 30 + (sg - 120) / 10;
+        // }
+        // else {
+        //   x1_sg_value = (float)sg / 4;
+        // }
+        x1_sg_value = sg / 12;
+        LOG_I("x1_sg_value set to %d\r\n", x1_sg_value);
+      }
+    }
+    else {
+      x1_move_count = 0;
+    }
+  }
+}
+
+void sg_set(void) {
+  static uint32 last_tick = 0;
+
+  if (PENDING(millis(), last_tick + 10)) {
+    return;
+  }
+  z_sg_value_set();
+  y_sg_value_set();
+  x0_sg_value_set();
+  x1_sg_value_set();
+}
+
+void probe_io_log(void) {
+  static uint8_t last_probe_0 = 0;
+  static uint8_t last_probe_1 = 0;
+
+  uint8_t t = READ(X0_CAL_PIN);
+  if (t != last_probe_0) {
+    last_probe_0 = t;
+    LOG_I("probe_0 %d\r\n", last_probe_0);
+  }
+  t = READ(X1_CAL_PIN);
+  if (t != last_probe_1) {
+    last_probe_1 = t;
+    LOG_I("probe_1 %d\r\n", last_probe_1);
+  }
+
+}
+
+void TMC2209_log(void) {
+  static uint32_t last_tick = 0;
+  if (PENDING(millis(), last_tick))
+    return;
+
+  last_tick = millis() + 100;
+
+  static uint32_t last_TSTEP = 0;
+  uint32_t t = stepperX.TSTEP();
+  if (last_TSTEP != t) {
+    last_TSTEP = t;
+    LOG_I("last_TSTEP %d\r\n", last_TSTEP);
+  }
+}
+
+// int32_t slowdown_cnt = 0;
+// int32_t
+
 
 void j1_main_task(void *args) {
   uint32_t syslog_timeout = millis();
@@ -76,28 +225,9 @@ void j1_main_task(void *args) {
     // power_loss.process();
 
     axis_speed_update();
-
-    if (!z_sg_value) {
-      if (axisManager.axis[2].getCurrentSpeedMMs() > 3) {
-        z_move_count++;
-        if (z_move_count > 50) {
-          z_sg_value = (float)(stepperZ.SG_RESULT()) / 3 - 25;
-          LOG_I("z_sg_value set to %d\r\n", z_sg_value);
-          extern bool z_homing;
-          extern bool z_stall_guard_setting;
-          if (z_homing) {
-            z_stall_guard_setting = true;
-            uint8_t z_sg_value_set = z_sg_value * 1.5;
-            motion_control.clear_trigger();
-            motion_control.enable_stall_guard_only_axis(Z_AXIS, z_sg_value_set);
-            LOG_I("Z home stall gurad set to %d\r\n", z_sg_value_set);
-          }
-        }
-      }
-      else {
-        z_move_count = 0;
-      }
-    }
+    sg_set();
+    // probe_io_log();
+    // TMC2209_log();
 
     if (ELAPSED(millis(), syslog_timeout)) {
       syslog_timeout = millis() + 20000;

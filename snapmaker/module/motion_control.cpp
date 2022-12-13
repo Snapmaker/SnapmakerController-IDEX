@@ -376,11 +376,13 @@ bool MotionControl::is_motor_enable(uint8_t axis, uint8_t index) {
 }
 
 void MotionControl::init_stall_guard() {
-  #define INIT_SG(AXIS) stepper##AXIS.SGTHRS(60); \
-                        stepper##AXIS.TPWMTHRS(1); \
-                        stepper##AXIS.TCOOLTHRS(0xFFFFF); \
-                        ExtiInit(TMC_STALL_GUARD_##AXIS##_PIN, exti_mode); \
-                        DisableExtiInterrupt(TMC_STALL_GUARD_##AXIS##_PIN);
+  #define INIT_SG(AXIS) do{\
+                          stepper##AXIS.SGTHRS(60); \
+                          stepper##AXIS.TPWMTHRS(1); \
+                          stepper##AXIS.TCOOLTHRS(0xFFFFF); \
+                          ExtiInit(TMC_STALL_GUARD_##AXIS##_PIN, exti_mode); \
+                          DisableExtiInterrupt(TMC_STALL_GUARD_##AXIS##_PIN); \
+                        } while(0)
   EXTI_MODE_E exti_mode = HW_1_2(EXTI_Falling, EXTI_Rising);
   INIT_SG(X);
   INIT_SG(X2);
@@ -390,14 +392,20 @@ void MotionControl::init_stall_guard() {
 }
 
 void MotionControl::enable_stall_guard(uint8_t axis, uint8_t sg_value, uint8_t x_index) {
-  #define ENABLE_SG(AXIS) stepper##AXIS.SGTHRS(sg_value); \
-                          stepper##AXIS.TPWMTHRS(1); \
-                          stepper##AXIS.TCOOLTHRS(0xFFFFF); \
-                          if (system_service.get_hw_version() != HW_VER_1) { \
-                            set_sg_trigger(SG_##AXIS, false); \
-                            set_sg_enable(SG_##AXIS, true); \
-                            EnableExtiInterrupt(TMC_STALL_GUARD_##AXIS##_PIN); \
-                          }
+  #define ENABLE_SG(AXIS) do{\
+                            stepper##AXIS.SGTHRS(sg_value); \
+                            stepper##AXIS.TPWMTHRS(1); \
+                            stepper##AXIS.TCOOLTHRS(0xFFFFF); \
+                            if (system_service.get_hw_version() != HW_VER_1) { \
+                              set_sg_trigger(SG_##AXIS, false); \
+                              set_sg_enable(SG_##AXIS, true); \
+                              EnableExtiInterrupt(TMC_STALL_GUARD_##AXIS##_PIN); \
+                            } \
+                            while (stepper##AXIS.SGTHRS() != sg_value) {\
+                              stepper##AXIS.SGTHRS(sg_value); \
+                              LOG_I("reset sg value\r\n");\
+                            }\
+                          } while(0)
 
   switch (axis) {
     case X_AXIS:
@@ -413,22 +421,24 @@ void MotionControl::enable_stall_guard(uint8_t axis, uint8_t sg_value, uint8_t x
       ENABLE_SG(Z);
       break;
   }
-  if (system_service.get_hw_version() == HW_VER_1) {
-    set_sg_trigger(0);
-    sg_enable_status = 0xf;
-    EnableExtiInterrupt(TMC_STALL_GUARD_PIN);
-  }
+  // if (system_service.get_hw_version() == HW_VER_1) {
+  //   set_sg_trigger(0);
+  //   sg_enable_status = 0xf;
+  //   EnableExtiInterrupt(TMC_STALL_GUARD_PIN);
+  // }
 }
 
 void MotionControl::disable_stall_guard(uint8_t axis) {
-  #define DISABLE_SG(AXIS) DisableExtiInterrupt(TMC_STALL_GUARD_##AXIS##_PIN);\
-                          stepper##AXIS.SGTHRS(0); \
-                          stepper##AXIS.TPWMTHRS(1); \
-                          stepper##AXIS.TCOOLTHRS(0xFFFFF);
-  if (system_service.get_hw_version() == HW_VER_1) {
-    sg_enable_status = 0x0;
-    DisableExtiInterrupt(TMC_STALL_GUARD_PIN);
-  }
+  #define DISABLE_SG(AXIS)  do{\
+                              DisableExtiInterrupt(TMC_STALL_GUARD_##AXIS##_PIN);\
+                              stepper##AXIS.SGTHRS(0); \
+                              stepper##AXIS.TPWMTHRS(1); \
+                              stepper##AXIS.TCOOLTHRS(0xFFFFF); \
+                              if (system_service.get_hw_version() == HW_VER_1) { \
+                                sg_enable_status = 0x0; \
+                                /* DisableExtiInterrupt(TMC_STALL_GUARD_PIN); */ \
+                              }\
+                            } while(0)
 
   switch (axis) {
     case X_AXIS:
@@ -468,52 +478,73 @@ void trigger_stall_guard_exit(sg_axis_e axis) {
 
 extern "C" {
   void __irq_exti3() {
-    if (system_service.get_hw_version() == HW_VER_1) {
-      if (stepper.axis_is_moving()) {
-        motion_control.set_sg_trigger(0xf);
-        stepper.quick_stop();
+    // if (system_service.get_hw_version() == HW_VER_1) {
+    //   if (stepper.axis_is_moving()) {
+    //     motion_control.set_sg_trigger(0xf);
+    //     stepper.quick_stop();
+    //   }
+    // }
+    // // else if (stepper.axis_is_moving() && motion_control.is_sg_enable(SG_X2)) {
+    // else if ( motion_control.is_sg_enable(SG_X2) &&
+    //           axisManager.axis[0].cur_speed > MOTION_STALL_GUARD_XY_SPEED &&
+    //           stepper.axis_is_moving(X_AXIS)) {
+    //   if (active_extruder == 1) {
+    //     trigger_stall_guard_exit(SG_X2);
+    //   }
+    // }
+    // ExtiClearITPendingBit(TMC_STALL_GUARD_X2_PIN);
+
+    if(ExitGetITStatus(TMC_STALL_GUARD_X2_PIN)) {
+      ExtiClearITPendingBit(TMC_STALL_GUARD_X2_PIN);
+      // if (stepper.axis_is_moving() && motion_control.is_sg_enable(SG_X)) {
+      if (motion_control.is_sg_enable(SG_X2) &&
+          axisManager.axis[0].cur_speed > MOTION_STALL_GUARD_XY_SPEED &&
+          stepper.axis_is_moving(X_AXIS)) {
+        if (active_extruder == 1) {
+          trigger_stall_guard_exit(SG_X2);
+        }
       }
     }
-    // else if (stepper.axis_is_moving() && motion_control.is_sg_enable(SG_X2)) {
-    else if (motion_control.is_sg_enable(SG_X2) && axisManager.axis[0].getCurrentSpeedMMs() > 10.0 && stepper.axis_is_moving(X_AXIS)) {
-      if (active_extruder == 1) {
-        trigger_stall_guard_exit(SG_X2);
-      }
-    }
-    ExtiClearITPendingBit(TMC_STALL_GUARD_X2_PIN);
+    // trigger_stall_guard_exit();
+    // ExtiClearITPendingBit(TMC_STALL_GUARD_PIN);
+
   }
 
   void __irq_exti9_5() {
     if(ExitGetITStatus(TMC_STALL_GUARD_Z_PIN)) {
+      ExtiClearITPendingBit(TMC_STALL_GUARD_Z_PIN);
       // if (stepper.axis_is_moving(Z_AXIS) && motion_control.is_sg_enable(SG_Z)) {
       if (motion_control.is_sg_enable(SG_Z) &&
-          axisManager.axis[2].getCurrentSpeedMMs() > 3.0 &&
-          stepper.axis_is_moving(Z_AXIS)) {
-         trigger_stall_guard_exit(SG_Z);
+        axisManager.axis[2].cur_speed > MOTION_STALL_GUARD_Z_SPEED &&
+        stepper.axis_is_moving(Z_AXIS)) {
+        trigger_stall_guard_exit(SG_Z);
       }
-      ExtiClearITPendingBit(TMC_STALL_GUARD_Z_PIN);
     }
 
     if(ExitGetITStatus(TMC_STALL_GUARD_Y_PIN)) {
+      ExtiClearITPendingBit(TMC_STALL_GUARD_Y_PIN);
       // if (stepper.axis_is_moving() && motion_control.is_sg_enable(SG_Y)) {
-      if (motion_control.is_sg_enable(SG_Y) && axisManager.axis[1].getCurrentSpeedMMs() > 10.0 && stepper.axis_is_moving(Y_AXIS)) {
+      if (motion_control.is_sg_enable(SG_Y) &&
+          axisManager.axis[1].cur_speed > MOTION_STALL_GUARD_XY_SPEED &&
+          stepper.axis_is_moving(Y_AXIS)) {
          trigger_stall_guard_exit(SG_Y);
       }
-      ExtiClearITPendingBit(TMC_STALL_GUARD_Y_PIN);
     }
   }
 
   void __irq_exti15_10() {
     if(ExitGetITStatus(TMC_STALL_GUARD_X_PIN)) {
+      ExtiClearITPendingBit(TMC_STALL_GUARD_X_PIN);
       // if (stepper.axis_is_moving() && motion_control.is_sg_enable(SG_X)) {
-      if (motion_control.is_sg_enable(SG_X) && axisManager.axis[0].getCurrentSpeedMMs() > 10.0 && stepper.axis_is_moving(X_AXIS)) {
+      if (motion_control.is_sg_enable(SG_X) &&
+          axisManager.axis[0].cur_speed > MOTION_STALL_GUARD_XY_SPEED &&
+          stepper.axis_is_moving(X_AXIS)) {
         if (active_extruder == 0) {
           trigger_stall_guard_exit(SG_X);
         }
       }
-      ExtiClearITPendingBit(TMC_STALL_GUARD_X_PIN);
     }
     // trigger_stall_guard_exit();
-    ExtiClearITPendingBit(TMC_STALL_GUARD_PIN);
+    // ExtiClearITPendingBit(TMC_STALL_GUARD_PIN);
   }
 }

@@ -100,7 +100,8 @@ void SwitchDetect::disable_all() {
 void SwitchDetect::enable_probe(bool trigger_level) {
   init_probe();
   probe_detect_level = trigger_level;
-  WRITE(PROBE_POWER_EN_PIN, 1);
+  if (debug_probe_poweron_sw)
+    WRITE(PROBE_POWER_EN_PIN, 1);
   enable(SW_PROBE0_BIT);
   enable(SW_PROBE1_BIT);
   // vTaskDelay(pdMS_TO_TICKS(5));
@@ -149,7 +150,8 @@ void SwitchDetect::stall_guard_stop() {
 bool get_cal_pin_status(uint8_t pin) {
   bool ret = 0;
   if (!READ(PROBE_POWER_EN_PIN)) {
-    WRITE(PROBE_POWER_EN_PIN, 1);
+    if (switch_detect.debug_probe_poweron_sw)
+      WRITE(PROBE_POWER_EN_PIN, 1);
     vTaskDelay(pdMS_TO_TICKS(1));
     ret = READ(pin) == LOW;
     WRITE(PROBE_POWER_EN_PIN, 0);

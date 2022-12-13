@@ -20,9 +20,13 @@ public:
   bool read_e0_probe_status();
   bool read_e1_probe_status();
   bool test_trigger();
+
+  bool debug_probe_poweron_sw = true;
+
 private:
   void enable(uint8_t Item);
   void disable(uint8_t Item);
+
 private:
   uint32_t enable_bits;
   uint32_t status_bits;

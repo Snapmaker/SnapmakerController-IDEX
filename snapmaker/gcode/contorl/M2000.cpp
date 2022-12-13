@@ -30,6 +30,7 @@
 #include "../../module/print_control.h"
 #include "../../module/power_loss.h"
 #include "../../module/system.h"
+#include "../../J1/switch_detect.h"
 #include <EEPROM.h>
 
 /**
@@ -288,6 +289,12 @@ void GcodeSuite::M2000() {
       //   last_time = axisManager.axis_t0_t1.print_time;
       // }
 
+    }
+    break;
+
+    case 50:
+    {
+      switch_detect.debug_probe_poweron_sw = parser.byteval('F', 0);
     }
     break;
 
