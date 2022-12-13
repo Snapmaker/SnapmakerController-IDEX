@@ -110,9 +110,10 @@ void FuncManager::addFuncParams(float a, float b, float c, int type, time_double
 
     func_params_head = nextFuncParamsIndex(func_params_head);
 
-    if (func_params_head == func_params_use) {
+    if (!last_is_zero && func_params_head == func_params_use) {
       extern uint32_t statistics_funcgen_runout_cnt;
       statistics_funcgen_runout_cnt++;
+      LOG_E("statistics_funcgen_runout_cnt on axi %d\r\n", axis);
     }
 }
 
