@@ -12,6 +12,7 @@
 
 #define Z_DOWN_SAFE_DISTANCE      2  // mm
 #define PRINT_RETRACK_DISTANCE    1  // mm
+#define Z_LIVE_OFFSET_RETRACE_D   0.2  // mm
 #define CHANGE_FILAMENT_SPEED     200  // mm/min
 #define PRINT_TRAVEL_FEADRATE     9000
 #define POWERLOSS_Z_DOWN_DISTANCE 5  // mm

@@ -270,7 +270,6 @@ ErrCode PrintControl::pause() {
   stepper.req_pause = true;
   while(1) {
     if (stepper.can_pause) {
-      stepper.stop_count = 0;
       stepper.can_pause = false;
       quickstop_stepper();
       stepper.delta_t = 0;
@@ -291,6 +290,13 @@ ErrCode PrintControl::pause() {
 
   vTaskDelay(pdMS_TO_TICKS(5));
   power_loss.stash_print_env();
+
+  if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET) {
+    motion_control.retrack_e(Z_LIVE_OFFSET_RETRACE_D, CHANGE_FILAMENT_SPEED);
+    system_service.set_status(SYSTEM_STATUE_PAUSED);
+    return E_SUCCESS;
+  }
+
   motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
   motion_control.synchronize();
 
@@ -353,6 +359,13 @@ ErrCode PrintControl::resume() {
   buffer_head = buffer_tail = 0;
   system_service.set_status(SYSTEM_STATUE_RESUMING);
 
+  if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET) {
+    power_loss.resume_print_env();
+    commands_unlock();
+    system_service.set_status(SYSTEM_STATUE_PRINTING);
+    return E_SUCCESS;
+  }
+
   if (power_loss.extrude_before_resume() == E_SUCCESS) {
     power_loss.resume_print_env();
     commands_unlock();
@@ -380,7 +393,6 @@ ErrCode PrintControl::stop() {
     stepper.req_pause = true;
     while(1) {
       if (stepper.can_pause) {
-        stepper.stop_count = 0;
         stepper.can_pause = false;
         quickstop_stepper();
         stepper.delta_t = 0;

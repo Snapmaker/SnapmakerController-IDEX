@@ -264,6 +264,9 @@ void j1_main_task(void *args) {
   while(1) {
     print_control.loop();
     // power_loss.process();
+    printer_event_loop();
+    exception_event_loop();
+    local_event_loop();
 
     axis_speed_update();
     sg_set();
@@ -290,16 +293,6 @@ void j1_main_task(void *args) {
       max_starve_dog_time = starve_dog_time_ms;
       //LOG_E("max_starve_dog_time = %d \r\n", max_starve_dog_time);
     }
-
-    // static float z_speed = .0;
-    // if (fabs(axisManager.axis[2].getCurrentSpeedMMs() - z_speed) > 1) {
-    //   z_speed = axisManager.axis[2].getCurrentSpeedMMs();
-    //   LOG_I("z speed %f\r\n", z_speed);
-    // }
-
-    // {
-    //   LOG_I("%c", switch_detect.read_e0_probe_status() ? 'O' : 'X');
-    // }
 
     watchdog_refresh();
     vTaskDelay(pdMS_TO_TICKS(5));

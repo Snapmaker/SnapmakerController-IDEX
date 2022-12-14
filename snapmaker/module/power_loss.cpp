@@ -69,7 +69,8 @@ bool PowerLoss::wait_temp_resume() {
   thermalManager.print_heater_states(active_extruder);
   SERIAL_EOL();
   log_timeout = millis() + 10 * 1000;
-  while (system_service.get_status() == SYSTEM_STATUE_RESUMING) {
+  while (system_service.get_status() == SYSTEM_STATUE_RESUMING || system_service.get_status() == SYSTEM_STATUE_POWER_LOSS_RESUMING)
+  {
     celsius_float_t ht0, ht1, bt, hc0, hc1, bc;
     ht0 = thermalManager.degTargetHotend(0);
     hc0 = thermalManager.degHotend(0);
@@ -188,7 +189,6 @@ ErrCode PowerLoss::extrude_before_resume() {
   //   LOG_I(">>>> last motion extruder != active_extruder, next_req++ to %d\r\n", stash_data.file_position + 1);
   //   stash_data.file_position++;
   // }
-  next_req = cur_line = line_number_sum = stash_data.file_position;
 
   return ret;
 }
@@ -226,9 +226,15 @@ void PowerLoss::resume_print_env() {
   idex_set_parked(true);
   dual_x_carriage_unpark();
 
-  motion_control.move_to_z(stash_data.position[Z_AXIS] + Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
-  motion_control.move_to_xy(stash_data.position[X_AXIS], stash_data.position[Y_AXIS], PRINT_TRAVEL_FEADRATE);
-  motion_control.move_to_z(stash_data.position[Z_AXIS], PRINT_TRAVEL_FEADRATE);
+  if (system_service.get_source() != SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET) {
+    motion_control.move_to_z(stash_data.position[Z_AXIS] + Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
+    motion_control.move_to_xy(stash_data.position[X_AXIS], stash_data.position[Y_AXIS], PRINT_TRAVEL_FEADRATE);
+    motion_control.move_to_z(stash_data.position[Z_AXIS], PRINT_TRAVEL_FEADRATE);
+  }
+  else {
+    motion_control.move_to_xyz(stash_data.position[X_AXIS], stash_data.position[Y_AXIS], stash_data.position[Z_AXIS]);
+  }
+
   planner.synchronize();
 
   current_position.e = stash_data.position.e;
@@ -236,6 +242,7 @@ void PowerLoss::resume_print_env() {
   feedrate_percentage = stash_data.feedrate_percentage;
   sync_plan_position();
 
+  next_req = cur_line = line_number_sum = stash_data.file_position;
 }
 
  /**
@@ -365,7 +372,10 @@ ErrCode PowerLoss::power_loss_resume() {
   if (stash_data.state != PL_WAIT_RESUME || system_service.get_status() != SYSTEM_STATUE_IDLE) {
     return PRINT_RESULT_PL_RESUME_ERR_E;
   }
-  system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_PL);
+
+  // system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_PL);
+  system_service.set_status(SYSTEM_STATUE_POWER_LOSS_RESUMING, SYSTEM_STATUE_SCOURCE_PL);
+
   home_offset = stash_data.home_offset;
   next_req = cur_line = line_number_sum = stash_data.file_position;
   update_workspace_offset(Z_AXIS);
@@ -380,6 +390,7 @@ ErrCode PowerLoss::power_loss_resume() {
     resume_print_env();
     system_service.set_status(SYSTEM_STATUE_PRINTING);
   }
+
   return E_SUCCESS;
 }
 
