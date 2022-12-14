@@ -1568,12 +1568,10 @@ void Stepper::isr() {
       }
 
       if (axis_stepper.axis == X_AXIS) {
-        if (x_time_interval < STOP_TIME_INTERVAL)
-          x_time_interval = nextMainISR;
+        x_time_interval = nextMainISR;
       }
       else if (axis_stepper.axis == Y_AXIS) {
-        if (y_time_interval < STOP_TIME_INTERVAL)
-          y_time_interval = nextMainISR;
+        y_time_interval = nextMainISR;
       }
 
       if (x_time_interval > STOP_TIME_INTERVAL &&
@@ -1583,6 +1581,7 @@ void Stepper::isr() {
         x_time_interval = STOP_TIME_INTERVAL + 1;
         y_time_interval = STOP_TIME_INTERVAL + 1;
         no_move_count = 0;
+        delta_t = 0;
       }
     }
   }
