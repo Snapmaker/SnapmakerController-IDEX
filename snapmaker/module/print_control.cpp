@@ -263,7 +263,7 @@ ErrCode PrintControl::pause() {
 
   // wait for auto park finish
   while(axisManager.T0_T1_simultaneously_move) {
-    vTaskDelay(1);
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 
   // wait for stepper slow down and stop
@@ -277,7 +277,7 @@ ErrCode PrintControl::pause() {
       break;
     }
     else {
-      vTaskDelay(1);
+      vTaskDelay(pdMS_TO_TICKS(1));
     }
   }
 
@@ -289,7 +289,7 @@ ErrCode PrintControl::pause() {
     print_control.temperature_lock(fdm_head.stop_single_extruder_e, !fdm_head.stop_single_extruder_en);
   }
 
-  vTaskDelay(5);
+  vTaskDelay(pdMS_TO_TICKS(5));
   power_loss.stash_print_env();
   motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
   motion_control.synchronize();
@@ -387,11 +387,11 @@ ErrCode PrintControl::stop() {
         break;
       }
       else {
-        vTaskDelay(1);
+        vTaskDelay(pdMS_TO_TICKS(1));
       }
     }
 
-    vTaskDelay(100);
+    vTaskDelay(pdMS_TO_TICKS(100));
     buffer_head = buffer_tail = 0;
     is_calibretion_mode = false;
     idex_set_parked(false);

@@ -250,34 +250,39 @@ void probe_axis_move(uint8_t axis, float distance, uint16_t feedrate) {
 
 }
 
-bool Calibtration::move_to_sersor_no_trigger(uint8_t axis, float try_distance) {
+// bool Calibtration::move_to_sersor_no_trigger(uint8_t axis, float try_distance) {
 
-  bool probe_status = false;
-  float move_distance = 0;
-  uint32_t count = 0;
+//   bool probe_status = false;
+//   float move_distance = 0;
+//   uint32_t count = 0;
 
-  while (abs(move_distance) < BACK_OFF_DISTANCE) {
+//   while (abs(move_distance) < BACK_OFF_DISTANCE) {
 
-    probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
+//     probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
 
-    if (!probe_status) {
-      count++;
-      vTaskDelay(10);
-      if (count >= 5) {
-        return true;
-      }
-      continue;
-    }
+//     if (!probe_status) {
+//       count++;
+//       vTaskDelay(pdMS_TO_TICKS(10));
+//       if (count >= 5) {
+//         return true;
+//       }
+//       continue;
+//     }
+//     else {
+//       vTaskDelay(pdMS_TO_TICKS(1));
+//       probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
+//       if (probe_status) {
+//         count = 0;
+//         LOG_I("The Probe sensor is tigger and try back off %.3f mm\n", try_distance);
+//         probe_axis_move(axis, try_distance, MOTION_TRAVEL_FEADRATE);
+//         move_distance += try_distance;
+//       }
+//     }
 
-    count = 0;
-    LOG_I("The Probe sensor is tigger and try back off %.3f mm\n", try_distance);
-    probe_axis_move(axis, try_distance, MOTION_TRAVEL_FEADRATE);
-    move_distance += try_distance;
+//   }
 
-  }
-
-  return false;
-}
+//   return false;
+// }
 
 void set_calibration_move_param() {
 
@@ -300,9 +305,20 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
   probe_result_e ret = PROBR_RESULT_SUCCESS;
   float pos_before_probe = current_position[axis];
 
-  if (!move_to_sersor_no_trigger(axis, distance >= 0.000001 ? -0.5 : 0.5)) {
-    LOG_E("probe touch all the way!!!, failed\r\n");
-    return PROBR_RESULT_SENSOR_ERROR;
+  // if (!move_to_sersor_no_trigger(axis, distance >= 0.000001 ? -0.5 : 0.5)) {
+  //   LOG_E("probe touch all the way!!!, failed\r\n");
+  //   return PROBR_RESULT_SENSOR_ERROR;
+  // }
+
+  bool probe_status;
+  probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
+  if (probe_status) {
+    vTaskDelay(pdMS_TO_TICKS(10));
+    probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
+    if (probe_status) {
+      LOG_E("probe touch before probe move\r\n");
+      return PROBR_RESULT_SENSOR_ERROR;
+    }
   }
 
   set_calibration_move_param();
@@ -652,6 +668,8 @@ ErrCode Calibtration::calibtration_xy() {
         z_need_re_home = true;
         break;
       }
+
+      goto_calibtration_position(CAlIBRATION_POS_0, PROBE_FAST_XY_FEEDRATE);
 
       float pos_1 = multiple_probe(axis, PROBE_DISTANCE, PROBE_FAST_XY_FEEDRATE);
       if (pos_1 == CAlIBRATIONING_ERR_CODE) {

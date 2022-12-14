@@ -115,7 +115,7 @@ class Calibtration {
     void restore_offset();
     ErrCode wait_and_probe_z_offset(calibtration_position_e pos, uint8_t extruder=0);
     ErrCode probe_hight_offset(calibtration_position_e pos, uint8_t extruder);
-    bool move_to_sersor_no_trigger(uint8_t axis, float try_distance);
+    // bool move_to_sersor_no_trigger(uint8_t axis, float try_distance);
 
   public:
     calibtration_position_e cur_pos;

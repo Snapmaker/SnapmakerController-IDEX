@@ -752,7 +752,7 @@ inline void manage_inactivity(const bool no_stepper_sleep=false) {
 void idle(bool no_stepper_sleep/*=false*/) {
 
   if (xTaskGetCurrentTaskHandle() != thandle_marlin) {
-    vTaskDelay(1);
+    vTaskDelay(pdMS_TO_TICKS(1));
     return;
   }
 
