@@ -172,7 +172,7 @@ ErrCode PrintControl::push_gcode(uint32_t start_line, uint32_t end_line, uint8_t
   }
 
   if (power_loss.next_req != start_line) {
-    LOG_E("HIM gcode start line is NOT equal req\r\n");
+    LOG_E("HIM gcode start line is NOT equal req, req %d, get %d\r\n", power_loss.next_req, start_line);
     return E_PARAM;
   }
 

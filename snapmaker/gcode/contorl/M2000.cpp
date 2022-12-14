@@ -68,6 +68,12 @@ void GcodeSuite::M2000() {
       WRITE(HEATER_PWR_PIN, 0);
       WRITE(HEATER_BED_PWR_PIN, 0);
       break;
+    case 8:
+      {
+        uint8_t dl = parser.byteval('D', SNAP_DEBUG_LEVEL_INFO);
+        debug.set_level((debug_level_e)dl);
+      }
+      break;
 
     case 10:
       // endstops.echo();

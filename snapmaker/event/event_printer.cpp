@@ -8,8 +8,9 @@
 #include "../module/motion_control.h"
 #include "../../../src/module/AxisManager.h"
 
-#define GCODE_MAX_PACK_SIZE 450
-#define GCODE_REQ_TIMEOUT_MS 500
+#define GCODE_MAX_PACK_SIZE     (450)
+#define GCODE_REQ_TIMEOUT_MS    (200)
+#define GCODE_TIMEOUT_MAX_CNT   (5)
 
 #pragma pack(1)
 
@@ -73,6 +74,8 @@ uint16_t source_sequence = 0;
 gcode_req_status_e gcode_req_status = GCODE_PACK_REQ_IDLE;
 uint32_t gcode_req_timeout = 0;
 uint32_t gcode_req_timeout_times = 0;
+uint32_t gcode_req_base_wait_ms = 0;
+
 
 static void req_gcode_pack();
 static void report_status_info(ErrCode status);
@@ -123,14 +126,18 @@ static ErrCode request_file_info(event_param_t& event) {
 }
 
 static ErrCode gcode_pack_deal(event_param_t& event) {
+  ErrCode ret;
   batch_gcode_t *gcode = (batch_gcode_t *)event.data;
-  print_control.push_gcode(gcode->start_line, gcode->end_line, gcode->data, gcode->data_len);
-  gcode_req_timeout_times = 0;
+  ret = print_control.push_gcode(gcode->start_line, gcode->end_line, gcode->data, gcode->data_len);
   if (gcode->flag == PRINT_RESULT_GCODE_RECV_DONE_E) {
     gcode_req_status = GCODE_PACK_REQ_DONE;
     SERIAL_ECHOLN("SC gcoce pack recv done");
   } else {
-    req_gcode_pack();
+    if (E_SUCCESS == ret) {
+      if (gcode_req_timeout_times) gcode_req_timeout_times--;
+      gcode_req_base_wait_ms = 0;
+      req_gcode_pack();
+    }
   }
   return E_SUCCESS;
 }
@@ -154,6 +161,8 @@ static ErrCode request_start_work(event_param_t& event) {
   event.length = 1;
   send_event(event);
   if (result == E_SUCCESS) {
+    gcode_req_timeout_times = 0;
+    gcode_req_base_wait_ms = 2000;
     req_gcode_pack();
   }
   return result;
@@ -476,8 +485,12 @@ static void req_gcode_pack() {
     send_event(print_source, source_recever_id, SACP_ATTR_REQ,
         COMMAND_SET_PRINTER, PRINTER_ID_REQ_GCODE, (uint8_t *)&info, sizeof(info));
     gcode_req_status = GCODE_PACK_REQ_WAIT_RECV;
-    gcode_req_timeout = millis() + GCODE_REQ_TIMEOUT_MS;
-    LOG_V("gcode requst start line:%u ,size:%u\n", info.buf_max_size, info.line_number);
+    gcode_req_timeout = millis() + (GCODE_REQ_TIMEOUT_MS<<gcode_req_timeout_times) + gcode_req_base_wait_ms;
+    LOG_V("gcode requst start line:%u ,size:%u, timeout:%d ms, try: %d count\n",
+          info.line_number,
+          info.buf_max_size,
+          (GCODE_REQ_TIMEOUT_MS<<gcode_req_timeout_times) + gcode_req_base_wait_ms,
+          gcode_req_timeout_times);
   } else {
     gcode_req_status = GCODE_PACK_REQ_WAIT_CACHE;
   }
@@ -489,8 +502,8 @@ static void gcode_req_timeout_deal() {
     statistics_gcode_timeout_cnt++;
     LOG_E("requst gcode pack timeout!\n");
     req_gcode_pack();
-    gcode_req_timeout_times ++;
-    if (gcode_req_timeout_times >= 30) {
+    gcode_req_timeout_times++;
+    if (gcode_req_timeout_times > GCODE_TIMEOUT_MAX_CNT) {
       print_control.error_and_stop();
     }
   }
@@ -599,6 +612,9 @@ void resuming_status_deal() {
   send_event(print_source, source_recever_id, SACP_ATTR_ACK,
     COMMAND_SET_PRINTER, PRINTER_ID_RESUME_WORK, data, 7, source_sequence);
   if (result == E_SUCCESS) {
+    gcode_req_base_wait_ms = (info->line_number / 10000) * 100;
+    NOLESS(gcode_req_base_wait_ms, 2000U);
+    NOMORE(gcode_req_base_wait_ms, 5000U);
     req_gcode_pack();
   } else {
     report_status_info(STATUS_PAUSE_BE_FILAMENT);
