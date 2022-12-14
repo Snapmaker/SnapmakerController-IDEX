@@ -326,7 +326,6 @@ class Stepper {
     static time_double_t block_print_time;
     static bool req_pause;
     static bool can_pause;
-    static uint32_t stop_count;
 
     // Screen extrude and retrack
     static bool is_only_extrude;

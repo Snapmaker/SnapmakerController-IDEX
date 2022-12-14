@@ -207,7 +207,6 @@ bool Stepper::is_start = true;
 time_double_t Stepper::block_print_time;
 bool Stepper::req_pause = false;
 bool Stepper::can_pause = false;
-uint32_t Stepper::stop_count = 0;
 
 // Screen extrude and retrack
 bool Stepper::is_only_extrude;
@@ -1558,13 +1557,8 @@ void Stepper::isr() {
       }
     }
     else {
-      // float addi = (nextMainISR / (STEPPER_TIMER_TICKS_PER_US * 100));
-      // if (!addi) addi = 5;
-      // delta_t += addi;
       delta_t += SLOWDOWN_DELAT_CLOCK;
       nextMainISR += delta_t;
-      stop_count++;
-      // up_z_(2);
 
       if (!axis_is_moving(X_AXIS)) {
         x_time_interval = STOP_TIME_INTERVAL + 1;
@@ -1574,10 +1568,12 @@ void Stepper::isr() {
       }
 
       if (axis_stepper.axis == X_AXIS) {
-        x_time_interval = nextMainISR;
+        if (x_time_interval < STOP_TIME_INTERVAL)
+          x_time_interval = nextMainISR;
       }
       else if (axis_stepper.axis == Y_AXIS) {
-        y_time_interval = nextMainISR;
+        if (y_time_interval < STOP_TIME_INTERVAL)
+          y_time_interval = nextMainISR;
       }
 
       if (x_time_interval > STOP_TIME_INTERVAL &&
@@ -1591,9 +1587,9 @@ void Stepper::isr() {
     }
   }
 
-  if (can_pause) {
-    nextMainISR += delta_t;
-  }
+  // if (can_pause) {
+  //   nextMainISR += delta_t;
+  // }
 
     #if ENABLED(INTEGRATED_BABYSTEPPING)
       if (is_babystep)                                  // Avoid ANY stepping too soon after baby-stepping
@@ -1953,7 +1949,7 @@ uint32_t Stepper::block_phase_isr() {
         axisManager.calcNextAxisStepper();
       } else if (axis_stepper.delta_time > 0.01) {
         axisManager.calcNextAxisStepper();
-      } 
+      }
       hal_timer_t et = HAL_timer_get_count(STEP_TIMER_NUM);
 
       interval = (uint32_t)(axis_stepper.delta_time * STEPPER_TIMER_TICKS_PER_MS);
