@@ -1895,8 +1895,8 @@ void prepare_line_to_destination() {
         uint8_t z_sg_value_set = z_sg_value * 1.5;
         LOG_I("Z home stall gurad set to %d\r\n", z_sg_value_set);
         z_stall_guard_setting = true;
-        motion_control.clear_trigger();
         motion_control.enable_stall_guard_only_axis(axis, z_sg_value_set);
+        motion_control.clear_trigger();
       }
     }
 

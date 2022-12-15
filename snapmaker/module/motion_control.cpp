@@ -421,11 +421,11 @@ void MotionControl::enable_stall_guard(uint8_t axis, uint8_t sg_value, uint8_t x
       ENABLE_SG(Z);
       break;
   }
-  // if (system_service.get_hw_version() == HW_VER_1) {
-  //   set_sg_trigger(0);
-  //   sg_enable_status = 0xf;
-  //   EnableExtiInterrupt(TMC_STALL_GUARD_PIN);
-  // }
+  if (system_service.get_hw_version() == HW_VER_1) {
+    set_sg_trigger(0);
+    sg_enable_status = 0xf;
+    EnableExtiInterrupt(TMC_STALL_GUARD_PIN);
+  }
 }
 
 void MotionControl::disable_stall_guard(uint8_t axis) {
@@ -436,7 +436,7 @@ void MotionControl::disable_stall_guard(uint8_t axis) {
                               stepper##AXIS.TCOOLTHRS(0xFFFFF); \
                               if (system_service.get_hw_version() == HW_VER_1) { \
                                 sg_enable_status = 0x0; \
-                                /* DisableExtiInterrupt(TMC_STALL_GUARD_PIN); */ \
+                                DisableExtiInterrupt(TMC_STALL_GUARD_PIN); \
                               }\
                             } while(0)
 

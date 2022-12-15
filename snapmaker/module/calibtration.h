@@ -8,7 +8,10 @@
 
 #define CAlIBRATIONING_ERR_CODE               (10000)
 #define CAlIBRATIONIN_RETRACK_E_MM            (5)
-#define PROBE_TIMES                           (3)
+#define PROBE_TIMES                           (6)
+#define XY_PROBE_SPEED_SLOW_SCALER            (10)
+#define Z_PROBE_SPEED_SLOW_SCALER             (4)
+#define MAX_DELTA_DISTANCE                    (0.5)
 
 #define CALIBRATION_ACC                       (1000)
 #define CALIBRATION_FEEDRATE                  (0.0)
@@ -16,7 +19,8 @@
 #define PROBE_FAST_Z_FEEDRATE                 (300)
 #define PROBE_FAST_XY_FEEDRATE                (800)
 #define PROBE_MOVE_Z_FEEDRATE                 (600)
-#define PROBE_LIFTINT_DISTANCE                (0.5)   // mm
+#define XY_PROBE_BACKOFF_DISTANCE             (2)     // mm
+#define Z_PROBE_BACKOFF_DISTANCE              (1)     // mm
 #define PROBE_MOVE_XY_LIFTINT_DISTANCE        (5)     // mm
 #define BACK_OFF_DISTANCE                     (2)     // mm
 #define Z_PROBE_DISTANCE                      (30)    // mm
@@ -76,7 +80,7 @@ class Calibtration {
     void set_calibtration_mode(calibtration_mode_e m) {mode = m;};
     void goto_calibtration_position(uint8_t pos, uint16_t feedrate = MOTION_TRAVEL_FEADRATE);
     void bed_preapare(uint8_t extruder_index=0);
-    probe_result_e probe(uint8_t axis, float distance, uint16_t feedrate);
+    probe_result_e probe(uint8_t axis, float distance, uint16_t feedrate, bool do_sg = true);
     ErrCode exit(bool is_save=true);
     ErrCode probe_bed_base_hight(calibtration_position_e pos, uint8_t extruder=0);
     void move_to_porbe_pos(calibtration_position_e pos, uint8_t extruder=0);
@@ -127,6 +131,7 @@ class Calibtration {
     bool need_extrude = false;
     bool xy_need_re_home = false;
     bool z_need_re_home = false;
+    uint32_t z_probe_cnt = 0;
   private:
     float last_probe_pos = 0;
 };
