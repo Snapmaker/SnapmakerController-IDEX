@@ -302,15 +302,10 @@ void restore_move_param() {
 
 probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate) {
 
+  bool probe_status;
   probe_result_e ret = PROBR_RESULT_SUCCESS;
   float pos_before_probe = current_position[axis];
 
-  // if (!move_to_sersor_no_trigger(axis, distance >= 0.000001 ? -0.5 : 0.5)) {
-  //   LOG_E("probe touch all the way!!!, failed\r\n");
-  //   return PROBR_RESULT_SENSOR_ERROR;
-  // }
-
-  bool probe_status;
   probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
   if (probe_status) {
     vTaskDelay(pdMS_TO_TICKS(10));
@@ -352,7 +347,6 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
   LOG_I("axis %d(active_extruder = %d) sg_value set to %d\r\n", axis, active_extruder, sg_value);
 
   switch_detect.enable_probe(0);
-  vTaskDelay(pdMS_TO_TICKS(5));
   motion_control.clear_trigger();
 
   probe_axis_move(axis, distance, feedrate);
@@ -400,8 +394,9 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
   }
   motion_control.disable_stall_guard_all();
 
-  if (abs(pos_before_probe - current_position[axis]) > (abs(distance) - 0.2)) {
-    LOG_E("probe failed, sensor no trigger!!!\n");
+  float move_d = abs(pos_before_probe - current_position[axis]);
+  if (move_d > (abs(distance) - 0.1)) {
+    LOG_E("probe failed, move distance %f >  expect %f\r\n", move_d, abs(distance) - 0.1);
     ret = PROBR_RESULT_NO_TRIGGER;
   }
 
@@ -452,6 +447,7 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
   }
 
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
+  switch_detect.trun_on_probe_pwr();
   probe_result_e probe_result = probe(Z_AXIS, -PROBE_DISTANCE, PROBE_FAST_Z_FEEDRATE);
   planner.synchronize();
 
@@ -473,6 +469,7 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
     tool_change(last_active_extruder, true);
   }
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
+  switch_detect.trun_on_probe_pwr();
 
   return ret;
 }
@@ -501,6 +498,7 @@ ErrCode Calibtration::wait_and_probe_z_offset(calibtration_position_e pos, uint8
   status = CAlIBRATION_STATE_IDLE;
   stop_probe_and_sync();
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
+  switch_detect.trun_on_probe_pwr();
 
   X_standby();
   bed_preapare(extruder);
@@ -515,6 +513,7 @@ ErrCode Calibtration::wait_and_probe_z_offset(calibtration_position_e pos, uint8
     tool_change(last_active_extruder, true);
   }
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
+  switch_detect.trun_on_probe_pwr();
 
   return ret;
 
@@ -645,6 +644,8 @@ ErrCode Calibtration::calibtration_xy() {
   }
 
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_XY_PROBING);
+  switch_detect.trun_on_probe_pwr();
+
   X_standby();
   backup_offset();
   reset_xy_calibtration_env();
@@ -697,6 +698,7 @@ ErrCode Calibtration::calibtration_xy() {
   Y_standby();
   tool_change(old_active_extruder, true);
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
+  switch_detect.trun_on_probe_pwr();
 
   if(ret == E_SUCCESS) {
     LOG_V("JF-XY Extruder1:%f %f\n", xy_center[0][0], xy_center[0][1]);
@@ -732,6 +734,7 @@ ErrCode Calibtration::calibtration_xy_center_offset() {
   uint8_t old_active_extruder = active_extruder;
 
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_XY_PROBING);
+  switch_detect.trun_on_probe_pwr();
   X_standby();
   backup_offset();
   reset_xy_calibtration_env();
@@ -766,6 +769,7 @@ ErrCode Calibtration::calibtration_xy_center_offset() {
   Z_prepare();
   tool_change(old_active_extruder, true);
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
+  switch_detect.trun_on_probe_pwr();
 
   if(ret == E_SUCCESS) {
     // XY center offset from XY home position (0, 0)
@@ -815,6 +819,8 @@ ErrCode Calibtration::exit(bool is_save) {
     probe_offset = -CAlIBRATIONING_ERR_CODE;
   }
 
+  switch_detect.trun_off_probe_pwr();
+
   return E_SUCCESS;
 }
 
@@ -858,6 +864,7 @@ void Calibtration::loop(void) {
     restore_move_param();
     mode = CAlIBRATION_MODE_IDLE;
     system_service.set_status(SYSTEM_STATUE_IDLE);
+    switch_detect.trun_off_probe_pwr();
   }
 
 }

@@ -9,6 +9,8 @@ public:
   void disable_all();
   void enable_filament();
   void disable_filament();
+  void trun_on_probe_pwr() {WRITE(PROBE_POWER_EN_PIN, 1);};
+  void trun_off_probe_pwr() {WRITE(PROBE_POWER_EN_PIN, 0);};
   void enable_probe(bool trigger_level=0);
   void disable_probe();
   void enable_power_lost();

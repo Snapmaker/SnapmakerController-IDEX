@@ -100,17 +100,13 @@ void SwitchDetect::disable_all() {
 void SwitchDetect::enable_probe(bool trigger_level) {
   init_probe();
   probe_detect_level = trigger_level;
-  if (debug_probe_poweron_sw)
-    WRITE(PROBE_POWER_EN_PIN, 1);
   enable(SW_PROBE0_BIT);
   enable(SW_PROBE1_BIT);
-  // vTaskDelay(pdMS_TO_TICKS(5));
 }
 
 void SwitchDetect::disable_probe() {
   disable(SW_PROBE0_BIT);
   disable(SW_PROBE1_BIT);
-  WRITE(PROBE_POWER_EN_PIN, 0);
 }
 
 void SwitchDetect::enable_power_lost() {
@@ -148,17 +144,18 @@ void SwitchDetect::stall_guard_stop() {
 }
 
 bool get_cal_pin_status(uint8_t pin) {
-  bool ret = 0;
-  if (!READ(PROBE_POWER_EN_PIN)) {
-    if (switch_detect.debug_probe_poweron_sw)
-      WRITE(PROBE_POWER_EN_PIN, 1);
-    vTaskDelay(pdMS_TO_TICKS(1));
-    ret = READ(pin) == LOW;
-    WRITE(PROBE_POWER_EN_PIN, 0);
-  } else {
-    ret = READ(pin) == LOW;
-  }
-  return ret;
+  // bool ret = 0;
+  // if (!READ(PROBE_POWER_EN_PIN)) {
+  //   if (switch_detect.debug_probe_poweron_sw)
+  //     WRITE(PROBE_POWER_EN_PIN, 1);
+  //   vTaskDelay(pdMS_TO_TICKS(1));
+  //   ret = READ(pin) == LOW;
+  //   WRITE(PROBE_POWER_EN_PIN, 0);
+  // } else {
+  //   ret = READ(pin) == LOW;
+  // }
+  // return ret;
+  return (READ(pin) == LOW);
 }
 
 bool SwitchDetect::read_e0_probe_status() {
