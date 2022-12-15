@@ -87,8 +87,8 @@ void z_sg_value_set(void) {
         if (z_homing) {
           z_stall_guard_setting = true;
           uint8_t z_sg_value_set = z_sg_value * 1.5;
-          motion_control.clear_trigger();
           motion_control.enable_stall_guard_only_axis(Z_AXIS, z_sg_value_set);
+          motion_control.clear_trigger();
           LOG_I("Z home stall gurad set to %d\r\n", z_sg_value_set);
         }
       }
