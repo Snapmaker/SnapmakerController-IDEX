@@ -264,9 +264,9 @@ void j1_main_task(void *args) {
   while(1) {
     print_control.loop();
     // power_loss.process();
-    printer_event_loop();
-    exception_event_loop();
-    local_event_loop();
+    // printer_event_loop();
+    // exception_event_loop();
+    // local_event_loop();
 
     axis_speed_update();
     sg_set();

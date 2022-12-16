@@ -133,9 +133,9 @@ void EventHandler::loop_task() {
         event->block_status = EVENT_CACHT_STATUS_IDLE;
       }
     }
-    // printer_event_loop();
-    // exception_event_loop();
-    // local_event_loop();
+    printer_event_loop();
+    exception_event_loop();
+    local_event_loop();
   }
 }
 
