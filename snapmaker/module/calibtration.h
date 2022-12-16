@@ -11,7 +11,7 @@
 #define PROBE_TIMES                           (6)
 #define XY_PROBE_SPEED_SLOW_SCALER            (10)
 #define Z_PROBE_SPEED_SLOW_SCALER             (4)
-#define MAX_DELTA_DISTANCE                    (0.5)
+#define MAX_DELTA_DISTANCE                    (0.25)
 
 #define CALIBRATION_ACC                       (1000)
 #define CALIBRATION_FEEDRATE                  (0.0)
@@ -80,7 +80,7 @@ class Calibtration {
     void set_calibtration_mode(calibtration_mode_e m) {mode = m;};
     void goto_calibtration_position(uint8_t pos, uint16_t feedrate = MOTION_TRAVEL_FEADRATE);
     void bed_preapare(uint8_t extruder_index=0);
-    probe_result_e probe(uint8_t axis, float distance, uint16_t feedrate, bool do_sg = true);
+    probe_result_e probe(uint8_t axis, float distance, uint16_t feedrate, float max_delta, bool do_sg);
     ErrCode exit(bool is_save=true);
     ErrCode probe_bed_base_hight(calibtration_position_e pos, uint8_t extruder=0);
     void move_to_porbe_pos(calibtration_position_e pos, uint8_t extruder=0);

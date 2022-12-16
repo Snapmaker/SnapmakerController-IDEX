@@ -300,7 +300,7 @@ void restore_move_param() {
   planner.settings = planner_backup_setting;
 }
 
-probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate, bool do_sg/* = true */) {
+probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate, float max_delta, bool do_sg/* = true */) {
 
   bool probe_status;
   probe_result_e ret = PROBR_RESULT_SUCCESS;
@@ -395,10 +395,12 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
     return PROBR_RESULT_SENSOR_ERROR;
   }
 
-  float move_d = abs(pos_before_probe - current_position[axis]);
-  if (move_d > (abs(distance) - (MAX_DELTA_DISTANCE/2))) {
-    LOG_E("probe failed, move distance %f > expect %f\r\n", move_d, abs(distance) - MAX_DELTA_DISTANCE/2);
-    ret = PROBR_RESULT_NO_TRIGGER;
+  if (max_delta > EPSILON) {
+    float move_d = fabs(pos_before_probe - current_position[axis]);
+    if (move_d > (fabs(distance) + max_delta)) {
+      LOG_E("probe failed, move distance %f > max allrow %f\r\n", move_d, fabs(distance) + max_delta);
+      ret = PROBR_RESULT_NO_TRIGGER;
+    }
   }
 
   motion_control.disable_stall_guard_all();
@@ -451,15 +453,28 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
   bool do_sg;
   uint16_t probe_fr;
   float probe_distance;
+  float max_delta;
+
   do_sg = (z_probe_cnt == 0);
   probe_distance = (z_probe_cnt == 0) ? (-PROBE_DISTANCE) : (-Z_PROBE_BACKOFF_DISTANCE - MAX_DELTA_DISTANCE);
   probe_fr = (z_probe_cnt == 0) ? PROBE_FAST_Z_FEEDRATE : PROBE_FAST_Z_FEEDRATE / Z_PROBE_SPEED_SLOW_SCALER;
+
+  if (0 == z_probe_cnt) {
+    max_delta = 0;
+  }
+  else if (1 == z_probe_cnt) {
+    max_delta = 4 * MAX_DELTA_DISTANCE;
+  }
+  else {
+    max_delta = MAX_DELTA_DISTANCE;
+  }
+
   z_probe_cnt++;
 
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
   switch_detect.trun_on_probe_pwr();
   LOG_I("Probe Z with do_sg = %d, probe_fr = %d, probe_distanc = %f\r\n", do_sg, probe_fr, probe_distance);
-  probe_result_e probe_result = probe(Z_AXIS, probe_distance, probe_fr);
+  probe_result_e probe_result = probe(Z_AXIS, probe_distance, probe_fr, max_delta, do_sg);
   planner.synchronize();
 
   if (probe_result != PROBR_RESULT_SUCCESS) {
@@ -617,11 +632,11 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
 
   float pos = 0;
   uint16_t probe_fr;
-  float probe_distance = distance;
+  float probe_distance;
   bool do_sg;
   float max_ = 0.0;
   float min_ = 10000.0;
-
+  float max_delta;
 
   for (uint8_t i = 0; i < PROBE_TIMES; i++) {
 
@@ -630,10 +645,29 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
     */
     do_sg = (i == 0);
     probe_fr = (i == 0) ? freerate : (freerate / XY_PROBE_SPEED_SLOW_SCALER);
-    probe_result_e probe_result = probe(  axis,
-                                          probe_distance + (probe_distance > 0.000001 ? MAX_DELTA_DISTANCE : -MAX_DELTA_DISTANCE),
-                                          probe_fr,
-                                          do_sg);
+    if (0 == i) {
+      max_delta = 0;
+      probe_distance = distance;
+    }
+    else if (1 == i) {
+      max_delta = 4 * MAX_DELTA_DISTANCE;
+      if (axis == Z_AXIS) {
+        probe_distance =  (distance > EPSILON) ?
+                          Z_PROBE_BACKOFF_DISTANCE + max_delta :
+                          -Z_PROBE_BACKOFF_DISTANCE - max_delta;
+      }
+      else {
+        probe_distance =  (distance > EPSILON) ?
+                          XY_PROBE_BACKOFF_DISTANCE + max_delta:
+                          -XY_PROBE_BACKOFF_DISTANCE - max_delta;
+      }
+    }
+    else {
+      max_delta = MAX_DELTA_DISTANCE;
+      probe_distance += probe_distance > EPSILON ? max_delta : -max_delta;
+    }
+
+    probe_result_e probe_result = probe(axis, probe_distance, probe_fr, max_delta, do_sg);
     planner.synchronize();
 
     if (probe_result != PROBR_RESULT_SUCCESS) {
@@ -653,10 +687,10 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
     }
     else {
       if (axis == Z_AXIS) {
-        probe_distance = (distance > 0.000001) ? Z_PROBE_BACKOFF_DISTANCE : -Z_PROBE_BACKOFF_DISTANCE;
+        probe_distance = (distance > EPSILON) ? Z_PROBE_BACKOFF_DISTANCE : -Z_PROBE_BACKOFF_DISTANCE;
       }
       else {
-        probe_distance = (distance > 0.000001) ? XY_PROBE_BACKOFF_DISTANCE : -XY_PROBE_BACKOFF_DISTANCE;
+        probe_distance = (distance > EPSILON) ? XY_PROBE_BACKOFF_DISTANCE : -XY_PROBE_BACKOFF_DISTANCE;
       }
     }
     motion_control.move(axis, -probe_distance, freerate);
