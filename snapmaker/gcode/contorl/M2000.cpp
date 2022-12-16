@@ -180,12 +180,26 @@ void GcodeSuite::M2000() {
         return;
       }
 
-      // uint8_t AXIS = (uint8_t)parser.byteval('X', (uint8_t)0);
-      // float L = (float)parser.floatval('L', (float)100.0);
       axisManager.T0_T1_target_pos = x_home_pos(!active_extruder);
+
+      // if (fabs(axisManager.T0_T1_target_pos - inactive_extruder_x) > EPSILON) {
+      //   float x_diff = (hotend_offset[0].x + hotend_offset[1].x) - X2_MAX_POS;
+      //   LOG_I("inactive_extruder_x %f, diff.x %f, actual inactive x %f\r\n", inactive_extruder_x, x_diff, inactive_extruder_x + (active_extruder ? -x_diff : x_diff));
+      //   inactive_extruder_x += active_extruder ? -x_diff : x_diff;
+      // }
+
+      int32_t target_steps = (!active_extruder) == 0 ? axisManager.X0_home_step_pos : axisManager.X1_home_step_pos;
+      axisManager.T0_T1_calc_steps = target_steps - axisManager.inactive_x_step_pos;
+      // float L = (float)step_L / planner.settings.axis_steps_per_mm[X_AXIS];
+      // axisManager.T0_T1_target_pos = inactive_extruder_x + L;
+      // LOG_I("### M2000 extruder_%d home step set to %d\r\n", !active_extruder, target_steps);
+
       float L = axisManager.T0_T1_target_pos - inactive_extruder_x;
       float V = (float)parser.floatval('V', (float)200.0);
       float A = (float)parser.floatval('A', (float)6000.0);
+
+      LOG_I("### M2000 S200: axisManager.T0_T1_calc_steps = %d, run float distance %f\r\n", axisManager.T0_T1_calc_steps, L);
+      if (0 == axisManager.T0_T1_calc_steps) return;
 
       float millimeters     = fabs(L);                    // mm
       float entry_speed     = 5 / 1000.0f;            // mm / s
@@ -240,12 +254,12 @@ void GcodeSuite::M2000() {
 
       }
 
+      #if 1
       Move move;
       axisManager.axis_t0_t1.reset();
       move.start_t = 0;
       move.axis_r[T0_T1_AXIS_INDEX] = L > 0.0 ? 80 : -80;
 
-      // axisManager.axis_t0_t1.generateLineFuncParams(&move);
       if (accelDistance > 0) {
         move.accelerate = acceleration;
         move.t = accelClocks;
@@ -253,8 +267,6 @@ void GcodeSuite::M2000() {
         move.start_pos[T0_T1_AXIS_INDEX] = axisManager.axis_t0_t1.func_manager.last_pos;
         move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX] + accelDistance * move.axis_r[T0_T1_AXIS_INDEX];
         axisManager.axis_t0_t1.generateLineFuncParams(&move);
-        // LOG_I("acc move time %f ms\r\n", move.t);
-        // LOG_I("acc move len %f mm\r\n", (move.end_pos[T0_T1_AXIS_INDEX] - move.start_pos[T0_T1_AXIS_INDEX]) / 80);
       }
       if (plateau > 0.0) {
         move.accelerate = 0;
@@ -264,8 +276,6 @@ void GcodeSuite::M2000() {
         move.start_pos[T0_T1_AXIS_INDEX] = move.end_pos[T0_T1_AXIS_INDEX];
         move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX] + plateau * move.axis_r[T0_T1_AXIS_INDEX];
         axisManager.axis_t0_t1.generateLineFuncParams(&move);
-        // LOG_I("plat move time %f ms\r\n", move.t);
-        // LOG_I("plat move len %f mm\r\n", (move.end_pos[T0_T1_AXIS_INDEX] - move.start_pos[T0_T1_AXIS_INDEX]) / 80);
       }
       if (decelDistance > 0) {
         move.accelerate = -acceleration;
@@ -275,26 +285,82 @@ void GcodeSuite::M2000() {
         move.start_pos[T0_T1_AXIS_INDEX] = move.end_pos[T0_T1_AXIS_INDEX];
         move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX] + decelDistance * move.axis_r[T0_T1_AXIS_INDEX];
         axisManager.axis_t0_t1.generateLineFuncParams(&move);
-        // LOG_I("decl move time %f ms\r\n", move.t);
-        // LOG_I("decl move len %f mm\r\n", (move.end_pos[T0_T1_AXIS_INDEX] - move.start_pos[T0_T1_AXIS_INDEX]) / 80);
       }
 
+      axisManager.T0_T1_execute_steps = 0;
       axisManager.T0_T1_axis = !active_extruder;
       inactive_extruder_x = axisManager.T0_T1_target_pos;
       axisManager.T0_T1_last_print_time = 0;
       axisManager.axis_t0_t1.is_consumed = true;
       axisManager.T0_T1_simultaneously_move = true;
+      #endif
 
-      // axisManager.getNextAxisStepper();
-      // time_double_t last_time;
-      // axisManager.axis_t0_t1.getNextStep();
-      // last_time = axisManager.axis_t0_t1.print_time;
-      // while (axisManager.axis_t0_t1.getNextStep()) {
-      //   float delta_time_ms = axisManager.axis_t0_t1.print_time - last_time;
-      //   LOG_I("interval: %.3f ms\r\n", delta_time_ms);
-      //   last_time = axisManager.axis_t0_t1.print_time;
-      // }
+      #if 0
+      uint32_t move_idx = 0;
+      Move moveQueue[5];
 
+      // First empty move
+      Move &move = moveQueue[move_idx++];
+      move.start_t = 0;
+      move.t = axisManager.shaped_delta_window + 0.001;
+      move.end_t = move.start_t + move.t;
+      move.accelerate = 0.0;
+      move.start_pos[T0_T1_AXIS_INDEX] = 0.0;
+      move.end_pos[T0_T1_AXIS_INDEX] = 0.0;
+      move.axis_r[T0_T1_AXIS_INDEX] = L > 0.0 ? 80 : -80;
+
+      // second acc move
+      if (accelDistance > 0) {
+        move = moveQueue[move_idx++];
+        move.accelerate = acceleration;
+        move.t = accelClocks;
+        move.end_t = move.start_t + move.t;
+        move.start_pos[T0_T1_AXIS_INDEX] = moveQueue[move_idx-1].end_pos[T0_T1_AXIS_INDEX];
+        move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX] + accelDistance * move.axis_r[T0_T1_AXIS_INDEX];
+      }
+
+      if (plateau > 0.0) {
+        move = moveQueue[move_idx++];
+        move.accelerate = 0;
+        move.start_t = moveQueue[move_idx-1].end_t;
+        move.t = plateauClocks;
+        move.end_t = move.start_t + move.t;
+        move.start_pos[T0_T1_AXIS_INDEX] = moveQueue[move_idx-1].end_pos[T0_T1_AXIS_INDEX];
+        move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX] + plateau * move.axis_r[T0_T1_AXIS_INDEX];
+      }
+
+      if (decelDistance > 0) {
+        move = moveQueue[move_idx++];
+        move.accelerate = -acceleration;
+        move.start_t = moveQueue[move_idx-1].end_t;
+        move.t = decelClocks;
+        move.end_t = move.start_t + move.t;
+        move.start_pos[T0_T1_AXIS_INDEX] = moveQueue[move_idx-1].end_pos[T0_T1_AXIS_INDEX];
+        move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX] + decelDistance * move.axis_r[T0_T1_AXIS_INDEX];
+      }
+
+      // last pos rlound
+      move = moveQueue[move_idx - 1];
+      move.end_pos[T0_T1_AXIS_INDEX] = LROUND(move.end_pos[T0_T1_AXIS_INDEX]);
+
+      // final empty move
+      move = moveQueue[move_idx++];
+      move.start_t = moveQueue[move_idx-1].end_t;
+      move.t = axisManager.shaped_delta_window + 0.001;
+      move.end_t = move.start_t + move.t;
+      move.accelerate = 0.0;
+      move.start_pos[T0_T1_AXIS_INDEX] = moveQueue[move_idx-1].end_pos[T0_T1_AXIS_INDEX];
+      move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX];
+      move.axis_r[T0_T1_AXIS_INDEX] = L > 0.0 ? 80 : -80;
+
+      axisManager.axis_t0_t1.reset();
+      AxisInputShaper *ais = axisManager.axis_t0_t1.axis_input_shaper;
+      ais->generateShapedFuncParamsMq(  &(axisManager.axis_t0_t1.func_manager),
+                                        moveQueue,
+                                        0,
+                                        move_idx - 1
+                                        );
+      #endif
     }
     break;
 

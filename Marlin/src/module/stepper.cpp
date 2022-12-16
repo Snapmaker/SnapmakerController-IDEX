@@ -1900,6 +1900,13 @@ void Stepper::other_axis_puls_phase_isr() {
 
   }
 
+  if (axisManager.axis_t0_t1.dir > 0) {
+    axisManager.T0_T1_execute_steps++;
+  }
+  else {
+    axisManager.T0_T1_execute_steps--;
+  }
+
 }
 
 bool bump_now = false;
@@ -2463,6 +2470,7 @@ uint32_t Stepper::block_phase_isr() {
 
 uint32_t Stepper::other_axis_block_phase_isr() {
 
+  static float delta_time = 0.0;
   uint32_t interval = (STEPPER_TIMER_RATE) / 20UL; // 50 ms
 
   if (!axisManager.T0_T1_simultaneously_move)
@@ -2473,21 +2481,32 @@ uint32_t Stepper::other_axis_block_phase_isr() {
     return interval;
   }
 
+  if (abs(axisManager.T0_T1_calc_steps) == abs(axisManager.T0_T1_execute_steps)) {
+    axisManager.T0_T1_simultaneously_move = false;
+    return interval;
+  }
+
   if(axisManager.axis_t0_t1.is_consumed)
     axisManager.axis_t0_t1.getNextStep();
 
   if (!axisManager.axis_t0_t1.is_consumed) {
-    float delta_time = axisManager.axis_t0_t1.print_time - axisManager.T0_T1_last_print_time;
+    delta_time = axisManager.axis_t0_t1.print_time - axisManager.T0_T1_last_print_time;
     interval = CEIL(delta_time * STEPPER_TIMER_TICKS_PER_MS);
     axisManager.T0_T1_last_print_time = axisManager.axis_t0_t1.print_time;
     axisManager.axis_t0_t1.is_consumed = true;
   }
   else {
-    axisManager.T0_T1_simultaneously_move = false;
+    // inactive_extruder_x = (float)(axisManager.inactive_x_step_pos + axisManager.T0_T1_execute_steps) / planner.settings.axis_steps_per_mm[X_AXIS];
+    if (axisManager.T0_T1_calc_steps != axisManager.T0_T1_execute_steps) {
+      interval = CEIL(delta_time * STEPPER_TIMER_TICKS_PER_MS);
+      axisManager.axis_t0_t1.is_consumed = true;
+    }
+    else {
+      axisManager.T0_T1_simultaneously_move = false;
+    }
   }
 
   return interval;
-
 }
 
 #if ENABLED(INTEGRATED_BABYSTEPPING)

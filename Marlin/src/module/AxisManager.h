@@ -152,6 +152,11 @@ class AxisManager {
     int counts[20] = {0};
     bool T0_T1_simultaneously_move = false;
     float T0_T1_target_pos;
+    int32_t T0_T1_execute_steps;
+    int32_t T0_T1_calc_steps;
+    int32_t inactive_x_step_pos;
+    int32_t X0_home_step_pos;
+    int32_t X1_home_step_pos;
     uint8_t T0_T1_axis = 0;
     time_double_t T0_T1_last_print_time = 0;
 

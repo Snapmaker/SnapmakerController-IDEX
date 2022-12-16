@@ -878,6 +878,8 @@ void fast_line_to_current(const AxisEnum fr_axis) { _line_to_current(fr_axis, 0.
         current_position.x = inactive_extruder_x;
         // Save the inactive extruder's position (from the old current_position)
         inactive_extruder_x = destination.x;
+        axisManager.inactive_x_step_pos = stepper.position(X_AXIS);
+        LOG_I("inactive_extruder_x %f\r\n", inactive_extruder_x);
         DEBUG_ECHOLNPAIR("DXC Full Control curr.x=", current_position.x, " dest.x=", destination.x);
         break;
       case DXC_AUTO_PARK_MODE:
@@ -1015,6 +1017,7 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
   #elif HAS_MULTI_EXTRUDER
 
     planner.synchronize();
+    while(axisManager.T0_T1_simultaneously_move) {idle();}
 
     #if ENABLED(DUAL_X_CARRIAGE)  // Only T0 allowed if the Printer is in DXC_DUPLICATION_MODE or DXC_MIRRORED_MODE
       if (new_tool != 0 && idex_is_duplicating())
@@ -1181,6 +1184,10 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
       // Tell the planner the new "current position"
       sync_plan_position();
+      // axisManager.set_pos(current_position);
+      // axisManager.axis[0].reset();
+      // axisManager.axis[1].reset();
+      // axisManager.reset();
 
       #if ENABLED(DELTA)
         //LOOP_LINEAR_AXES(i) update_software_endstops(i); // or modify the constrain function

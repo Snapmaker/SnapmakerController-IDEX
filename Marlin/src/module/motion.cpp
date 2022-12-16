@@ -2130,6 +2130,14 @@ void prepare_line_to_destination() {
 
       set_axis_is_at_home(axis);
       sync_plan_position();
+      if (axis == X_AXIS) {
+        if (0 == active_extruder) {
+          axisManager.X0_home_step_pos = stepper.position(X_AXIS);
+        }
+        else {
+          axisManager.X1_home_step_pos = stepper.position(X_AXIS);
+        }
+      }
 
       destination[axis] = current_position[axis];
       if (axis == X_AXIS) {
