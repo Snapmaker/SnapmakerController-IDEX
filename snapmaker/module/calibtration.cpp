@@ -348,12 +348,9 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
     motion_control.clear_trigger();
   }
 
-  LOG_I("probe feed_rate %d\r\n", feedrate);
+  LOG_I("probe distance %f, probe feed_rate %d, max_delta %f\r\n", distance, feedrate, max_delta);
   switch_detect.enable_probe(0);
   probe_axis_move(axis, distance, feedrate);
-  current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
-  sync_plan_position();
-
   if (do_sg && motion_control.is_sg_trigger()) {
     LOG_E("probe failed, axis stall guard!!!\n");
     motion_control.synchronize();
@@ -361,6 +358,8 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
     switch_detect.disable_probe();
     return PROBR_RESULT_STALL_GUARD;
   }
+  current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
+  sync_plan_position();
 
   uint32_t count = 10;
   while(count--) {
@@ -378,8 +377,6 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
 
   switch_detect.enable_probe(1);
   probe_axis_move(axis, -distance, feedrate);
-  current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
-  sync_plan_position();
 
   count = 20;
   while(count--) {
@@ -394,6 +391,8 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
     switch_detect.disable_probe();
     return PROBR_RESULT_SENSOR_ERROR;
   }
+  current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
+  sync_plan_position();
 
   if (max_delta > EPSILON) {
     float move_d = fabs(pos_before_probe - current_position[axis]);
@@ -445,6 +444,7 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
 
   ErrCode ret = E_SUCCESS;
   uint8_t last_active_extruder = active_extruder;
+  static float last_z_probe_distance;
 
   if (pos == CAlIBRATION_POS_0 || pos >= CAlIBRATION_POS_INVALID) {
     return E_PARAM;
@@ -456,24 +456,26 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
   float max_delta;
 
   do_sg = (z_probe_cnt == 0);
-  probe_distance = (z_probe_cnt == 0) ? (-PROBE_DISTANCE) : (-Z_PROBE_BACKOFF_DISTANCE - MAX_DELTA_DISTANCE);
-  probe_fr = (z_probe_cnt == 0) ? PROBE_FAST_Z_FEEDRATE : PROBE_FAST_Z_FEEDRATE / Z_PROBE_SPEED_SLOW_SCALER;
-
   if (0 == z_probe_cnt) {
     max_delta = 0;
+    probe_distance = -PROBE_DISTANCE;
   }
   else if (1 == z_probe_cnt) {
-    max_delta = 4 * MAX_DELTA_DISTANCE;
+    max_delta = 2 * MAX_DELTA_DISTANCE;
+    probe_distance = -PROBE_BACKOFF_DISTANCE - 2 * max_delta;
   }
   else {
-    max_delta = MAX_DELTA_DISTANCE;
+    max_delta = 2 * (PROBE_BACKOFF_DISTANCE - last_z_probe_distance);
+    if (max_delta < MAX_DELTA_DISTANCE) max_delta = MAX_DELTA_DISTANCE;
+    probe_distance = -PROBE_BACKOFF_DISTANCE - 2 * max_delta;
   }
-
+  probe_fr = (z_probe_cnt == 0) ? PROBE_FAST_Z_FEEDRATE : PROBE_FAST_Z_FEEDRATE / Z_PROBE_SPEED_SLOW_SCALER;
   z_probe_cnt++;
 
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
   switch_detect.trun_on_probe_pwr();
   LOG_I("Probe Z with do_sg = %d, probe_fr = %d, probe_distanc = %f\r\n", do_sg, probe_fr, probe_distance);
+  float before_probe_z = current_position[Z_AXIS];
   probe_result_e probe_result = probe(Z_AXIS, probe_distance, probe_fr, max_delta, do_sg);
   planner.synchronize();
 
@@ -488,9 +490,10 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
     probe_offset = current_position[Z_AXIS] + home_offset[Z_AXIS] + build_plate_thickness;
     LOG_I("JF-Z offset height:%f\n", probe_offset);
   }
+  last_z_probe_distance = fabs(current_position[Z_AXIS] - before_probe_z);
 
   last_probe_pos = current_position.z;
-  motion_control.move_z(Z_PROBE_BACKOFF_DISTANCE, PROBE_FAST_Z_FEEDRATE);
+  motion_control.move_z(PROBE_BACKOFF_DISTANCE, PROBE_FAST_Z_FEEDRATE);
 
   if (last_active_extruder != active_extruder) {
     tool_change(last_active_extruder, true);
@@ -650,23 +653,15 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
       probe_distance = distance;
     }
     else if (1 == i) {
-      max_delta = 4 * MAX_DELTA_DISTANCE;
-      if (axis == Z_AXIS) {
-        probe_distance =  (distance > EPSILON) ?
-                          Z_PROBE_BACKOFF_DISTANCE + max_delta :
-                          -Z_PROBE_BACKOFF_DISTANCE - max_delta;
-      }
-      else {
-        probe_distance =  (distance > EPSILON) ?
-                          XY_PROBE_BACKOFF_DISTANCE + max_delta:
-                          -XY_PROBE_BACKOFF_DISTANCE - max_delta;
-      }
+      max_delta = 2 * MAX_DELTA_DISTANCE;
+      probe_distance = (distance > EPSILON) ? PROBE_BACKOFF_DISTANCE + 2 * max_delta : -PROBE_BACKOFF_DISTANCE - 2 * max_delta;
     }
     else {
       max_delta = MAX_DELTA_DISTANCE;
-      probe_distance += probe_distance > EPSILON ? max_delta : -max_delta;
+      probe_distance = (distance > EPSILON) ? PROBE_BACKOFF_DISTANCE + 2 * max_delta : -PROBE_BACKOFF_DISTANCE - 2 * max_delta;
     }
 
+    float before_probe_pos = current_position[axis];
     probe_result_e probe_result = probe(axis, probe_distance, probe_fr, max_delta, do_sg);
     planner.synchronize();
 
@@ -679,21 +674,17 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
       }
       return CAlIBRATIONING_ERR_CODE;
     }
+    float after_probe_pos = current_position[axis];
+    float actrual_probe_distance = fabs(after_probe_pos - before_probe_pos);
+    LOG_I("%dth actrual probe distance %f\r\n", i, actrual_probe_distance);
 
-    if (i != 0) {
+    if (0 != i) {
       pos += current_position[axis];
       if (current_position[axis] > max_) max_ = current_position[axis];
       if (current_position[axis] < min_) min_ = current_position[axis];
     }
-    else {
-      if (axis == Z_AXIS) {
-        probe_distance = (distance > EPSILON) ? Z_PROBE_BACKOFF_DISTANCE : -Z_PROBE_BACKOFF_DISTANCE;
-      }
-      else {
-        probe_distance = (distance > EPSILON) ? XY_PROBE_BACKOFF_DISTANCE : -XY_PROBE_BACKOFF_DISTANCE;
-      }
-    }
-    motion_control.move(axis, -probe_distance, freerate);
+
+    motion_control.move(axis, (distance > EPSILON) ? -PROBE_BACKOFF_DISTANCE : PROBE_BACKOFF_DISTANCE, freerate);
   }
 
   return (pos - max_ - min_) / (PROBE_TIMES - 3);

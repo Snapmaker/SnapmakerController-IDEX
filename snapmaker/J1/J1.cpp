@@ -112,7 +112,7 @@ void y_sg_value_set(void) {
         // else {
         //   y_sg_value = (float)sg / 4;
         // }
-        y_sg_value = sg / 8;
+        y_sg_value = sg / 10;
         LOG_I("y_sg_value set to %d\r\n", y_sg_value);
       }
     }
