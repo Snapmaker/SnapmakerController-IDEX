@@ -181,23 +181,19 @@ void GcodeSuite::M2000() {
       }
 
       axisManager.T0_T1_target_pos = x_home_pos(!active_extruder);
-
-      // if (fabs(axisManager.T0_T1_target_pos - inactive_extruder_x) > EPSILON) {
-      //   float x_diff = (hotend_offset[0].x + hotend_offset[1].x) - X2_MAX_POS;
-      //   LOG_I("inactive_extruder_x %f, diff.x %f, actual inactive x %f\r\n", inactive_extruder_x, x_diff, inactive_extruder_x + (active_extruder ? -x_diff : x_diff));
-      //   inactive_extruder_x += active_extruder ? -x_diff : x_diff;
-      // }
-
-      int32_t target_steps = (!active_extruder) == 0 ? axisManager.X0_home_step_pos : axisManager.X1_home_step_pos;
-      axisManager.T0_T1_calc_steps = target_steps - axisManager.inactive_x_step_pos;
-      // float L = (float)step_L / planner.settings.axis_steps_per_mm[X_AXIS];
-      // axisManager.T0_T1_target_pos = inactive_extruder_x + L;
-      // LOG_I("### M2000 extruder_%d home step set to %d\r\n", !active_extruder, target_steps);
-
       float L = axisManager.T0_T1_target_pos - inactive_extruder_x;
       float V = (float)parser.floatval('V', (float)200.0);
       float A = (float)parser.floatval('A', (float)6000.0);
 
+      int32_t target_steps = (!active_extruder) == 0 ? axisManager.X0_home_step_pos : axisManager.X1_home_step_pos;
+      axisManager.T0_T1_calc_steps = target_steps - axisManager.inactive_x_step_pos;
+      int32_t float_d_to_step_d = L * planner.settings.axis_steps_per_mm[X_AXIS];
+      if (abs(float_d_to_step_d - axisManager.T0_T1_calc_steps) > 5) {
+        LOG_E("Differ of float_d_to_step_d and axisManager.T0_T1_calc_steps too large, the inavtive X may has been move unexpected\r\n");
+        axisManager.T0_T1_calc_steps = L * planner.settings.axis_steps_per_mm[X_AXIS];
+      }
+
+      LOG_I("### M2000 S200: target_step_pos %d, current X step pos\r\n", target_steps, axisManager.inactive_x_step_pos);
       LOG_I("### M2000 S200: axisManager.T0_T1_calc_steps = %d, run float distance %f\r\n", axisManager.T0_T1_calc_steps, L);
       if (0 == axisManager.T0_T1_calc_steps) return;
 
