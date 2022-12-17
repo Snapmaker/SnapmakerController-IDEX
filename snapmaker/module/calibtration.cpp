@@ -300,7 +300,7 @@ void restore_move_param() {
   planner.settings = planner_backup_setting;
 }
 
-probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate, float max_delta, bool do_sg/* = true */) {
+probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate, bool do_sg/* = true */) {
 
   bool probe_status;
   probe_result_e ret = PROBR_RESULT_SUCCESS;
@@ -318,6 +318,7 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
 
   set_calibration_move_param();
 
+  LOG_I("probe: distance %f, feed_rate %d, do_sg %d\r\n", distance, feedrate, do_sg);
   if (do_sg) {
     motion_control.clear_trigger();
     uint16_t sg_value = probe_sg_reg[axis];
@@ -348,7 +349,6 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
     motion_control.clear_trigger();
   }
 
-  LOG_I("probe distance %f, probe feed_rate %d, max_delta %f\r\n", distance, feedrate, max_delta);
   switch_detect.enable_probe(0);
   probe_axis_move(axis, distance, feedrate);
   if (do_sg && motion_control.is_sg_trigger()) {
@@ -361,12 +361,14 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   sync_plan_position();
 
-  uint32_t count = 10;
+  uint32_t count = 20;
+  uint32_t trigger_cnt = 0;
   while(count--) {
-    if(!switch_detect.test_trigger())
-      continue;
-    else
-      break;
+    if(switch_detect.read_active_extruder_status()) {
+      trigger_cnt++;
+      if (trigger_cnt > 10)
+        break;
+    }
   }
   if (!count) {
     LOG_E("no probe trigger in touching!!!\r\n");
@@ -379,11 +381,13 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
   probe_axis_move(axis, -distance, feedrate);
 
   count = 20;
+  trigger_cnt = 0;
   while(count--) {
-    if(!switch_detect.test_trigger())
-      continue;
-    else
-      break;
+    if(switch_detect.read_active_extruder_status()) {
+      trigger_cnt++;
+      if (trigger_cnt > 10)
+        break;
+    }
   }
   if (!count) {
     LOG_E("no probe trigger in leaving!!!\r\n");
@@ -394,12 +398,11 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   sync_plan_position();
 
-  if (max_delta > EPSILON) {
-    float move_d = fabs(pos_before_probe - current_position[axis]);
-    if (move_d > (fabs(distance) + max_delta)) {
-      LOG_E("probe failed, move distance %f > max allrow %f\r\n", move_d, fabs(distance) + max_delta);
-      ret = PROBR_RESULT_NO_TRIGGER;
-    }
+  float move_d = fabs(pos_before_probe - current_position[axis]);
+  LOG_I("Actrual probe distance: %f", move_d);
+  if (move_d >= fabs(distance)) {
+    LOG_E("probe failed, move distance %f >= max allrow %f\r\n", move_d, fabs(distance));
+    ret = PROBR_RESULT_NO_TRIGGER;
   }
 
   motion_control.disable_stall_guard_all();
@@ -458,7 +461,7 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
   do_sg = (z_probe_cnt == 0);
   if (0 == z_probe_cnt) {
     max_delta = 0;
-    probe_distance = -PROBE_DISTANCE;
+    probe_distance = -2 * PROBE_DISTANCE;
   }
   else if (1 == z_probe_cnt) {
     max_delta = 2 * MAX_DELTA_DISTANCE;
@@ -474,9 +477,8 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
 
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
   switch_detect.trun_on_probe_pwr();
-  LOG_I("Probe Z with do_sg = %d, probe_fr = %d, probe_distanc = %f\r\n", do_sg, probe_fr, probe_distance);
   float before_probe_z = current_position[Z_AXIS];
-  probe_result_e probe_result = probe(Z_AXIS, probe_distance, probe_fr, max_delta, do_sg);
+  probe_result_e probe_result = probe(Z_AXIS, probe_distance, probe_fr, do_sg);
   planner.synchronize();
 
   if (probe_result != PROBR_RESULT_SUCCESS) {
@@ -662,7 +664,7 @@ float Calibtration::multiple_probe(uint8_t axis, float distance, uint16_t freera
     }
 
     float before_probe_pos = current_position[axis];
-    probe_result_e probe_result = probe(axis, probe_distance, probe_fr, max_delta, do_sg);
+    probe_result_e probe_result = probe(axis, probe_distance, probe_fr, do_sg);
     planner.synchronize();
 
     if (probe_result != PROBR_RESULT_SUCCESS) {

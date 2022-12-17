@@ -21,7 +21,8 @@ public:
   void stall_guard_stop();
   bool read_e0_probe_status();
   bool read_e1_probe_status();
-  bool test_trigger();
+  bool read_active_extruder_status();
+  // bool test_trigger();
 
   bool debug_probe_poweron_sw = true;
 

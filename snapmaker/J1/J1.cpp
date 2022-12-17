@@ -270,7 +270,7 @@ void j1_main_task(void *args) {
 
     axis_speed_update();
     sg_set();
-    // probe_io_log();
+    probe_io_log();
     // TMC2209_log();
     statistics_log();
 

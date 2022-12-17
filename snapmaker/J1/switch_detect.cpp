@@ -70,7 +70,7 @@ void SwitchDetect::check() {
           trigged = false;
       }
       max_continue_trigger_cnt++;
-    } while(trigged && max_continue_trigger_cnt < 20);
+    } while(trigged && max_continue_trigger_cnt < 10);
   }
 
   if (!trigged) {
@@ -83,7 +83,7 @@ void SwitchDetect::check() {
           trigged = false;
       }
       max_continue_trigger_cnt++;
-    } while(trigged && max_continue_trigger_cnt < 20);
+    } while(trigged && max_continue_trigger_cnt < 10);
   }
 
   if(trigged == true)
@@ -166,22 +166,33 @@ bool SwitchDetect::read_e1_probe_status() {
   return get_cal_pin_status(X1_CAL_PIN);
 }
 
-bool SwitchDetect::test_trigger() {
-  bool trigged = false;
-
-  if(TEST(status_bits, SW_MANUAL_STOP_BIT)) {
-    trigged = true;
-  }
-  if(TEST(status_bits, SW_STALLGUARD_BIT)) {
-    trigged = true;
-  }
-
-  if (TEST(enable_bits, SW_PROBE0_BIT) && READ(X0_CAL_PIN) == probe_detect_level)
-    trigged = true;
-
-  if (TEST(enable_bits, SW_PROBE1_BIT) && READ(X1_CAL_PIN) == probe_detect_level)
-    trigged = true;
-
-  return trigged;
+bool SwitchDetect::read_active_extruder_status() {
+  return  active_extruder ?
+          READ(X1_CAL_PIN) == probe_detect_level :
+          READ(X0_CAL_PIN) == probe_detect_level;
 }
+
+// bool SwitchDetect::test_trigger() {
+//   // bool trigged = false;
+
+//   if(TEST(status_bits, SW_MANUAL_STOP_BIT)) {
+//     // trigged = true;
+//     return true;
+//   }
+//   if(TEST(status_bits, SW_STALLGUARD_BIT)) {
+//     // trigged = true;
+//     return true;
+//   }
+
+//   if (TEST(enable_bits, SW_PROBE0_BIT) && (READ(X0_CAL_PIN) == probe_detect_level))
+//     // trigged = true;
+//     return true;
+
+//   if (TEST(enable_bits, SW_PROBE1_BIT) && (READ(X1_CAL_PIN) == probe_detect_level))
+//     // trigged = true;
+//     return true;
+
+//   // return trigged;
+//   return false;
+// }
 
