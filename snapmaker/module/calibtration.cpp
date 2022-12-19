@@ -358,6 +358,7 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
     switch_detect.disable_probe();
     return PROBR_RESULT_STALL_GUARD;
   }
+
   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   sync_plan_position();
 
@@ -395,11 +396,12 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
     switch_detect.disable_probe();
     return PROBR_RESULT_SENSOR_ERROR;
   }
+
   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   sync_plan_position();
 
   float move_d = fabs(pos_before_probe - current_position[axis]);
-  LOG_I("Actrual probe distance: %f", move_d);
+  LOG_I("Actrual probe distance: %f\r\n", move_d);
   if (move_d >= fabs(distance)) {
     LOG_E("probe failed, move distance %f >= max allrow %f\r\n", move_d, fabs(distance));
     ret = PROBR_RESULT_NO_TRIGGER;
@@ -478,6 +480,14 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
   system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
   switch_detect.trun_on_probe_pwr();
   float before_probe_z = current_position[Z_AXIS];
+
+  LOG_I("before apply motion limit, probe distance %f", probe_distance);
+  xyz_pos_t target = current_position;
+  target[Z_AXIS] += probe_distance;
+  apply_motion_limits(target);
+  probe_distance = target[Z_AXIS] - current_position[Z_AXIS];
+  LOG_I(", after limit, probe distance %f\r\n", probe_distance);
+
   probe_result_e probe_result = probe(Z_AXIS, probe_distance, probe_fr, do_sg);
   planner.synchronize();
 

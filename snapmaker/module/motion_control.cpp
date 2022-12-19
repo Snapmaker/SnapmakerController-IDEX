@@ -24,6 +24,7 @@ void MotionControl::blocking_move_to(float x, float y, float z, float feedrate) 
   xyz[Y_AXIS] = y;
   xyz[Z_AXIS] = z;
   apply_motion_limits(xyz);
+  // LOG_I("after motion limit, xyz: %f %f %f\r\n", xyz.x, xyz.y, xyz.z);
   do_blocking_move_to(xyz, feedrate);
   feedrate_mm_s = save_feedrate;
 }
