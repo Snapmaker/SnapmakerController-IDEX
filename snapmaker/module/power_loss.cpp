@@ -175,21 +175,19 @@ ErrCode PowerLoss::extrude_before_resume() {
   //   idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
   // }
 
-  motion_control.move_x(-move_distance, PRINT_TRAVEL_FEADRATE);
+  motion_control.move_x(-move_distance, PRINT_TRAVEL_FEADRATE / 10);
   motion_control.synchronize();
 
-  // motion_control.home_x();
-  // motion_control.home_y();
+  if (E_SUCCESS == ret) {
+    motion_control.move_x(move_distance, PRINT_TRAVEL_FEADRATE);
+    motion_control.synchronize();
+    motion_control.move_x(-move_distance, PRINT_TRAVEL_FEADRATE / 10);
+    motion_control.synchronize();
+  }
 
   // resume dual_x_carriage_mode
   dual_x_carriage_mode = (DualXMode)stash_data.dual_x_carriage_mode;
   idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
-
-  // pause happen in a NOT motion gcode
-  // if (stash_data.motion_extruder != stash_data.active_extruder) {
-  //   LOG_I(">>>> last motion extruder != active_extruder, next_req++ to %d\r\n", stash_data.file_position + 1);
-  //   stash_data.file_position++;
-  // }
 
   return ret;
 }
