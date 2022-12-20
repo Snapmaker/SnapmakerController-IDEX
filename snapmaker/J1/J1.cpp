@@ -255,6 +255,91 @@ void statistics_log(void) {
 
 }
 
+#define ROUND_MILLIME  (52.1)
+#define FILAMENT_SENSOR_ADC_TO_MM (ROUND_MILLIME / 4096)
+
+void filament_sensor_log(uint8_t e0_e1) {
+  static uint32_t log_tick = 0;
+  static uint32_t last_tick = 0;
+  static int32_t last_e_adc = -1;
+
+  static float e_sum_millimeter = 0.0;
+  static float e_aligne_millimeter = 0.0;
+  static float e_this_round_millimeter = 0.0;
+
+  static bool e_dead_aligned = false;
+  static int32_t e_round_cnt = 0;
+
+  float delta_millims;
+
+  if (PENDING(millis(), last_tick))
+    return;
+
+  last_tick = millis() + 100;
+
+  int32_t e_adc = 0;
+  for (int i = 0; i < 5; i++) {
+    e_adc += e0_e1 ? (4096 - analogRead(FILAMENT1_ADC_PIN)) : analogRead(FILAMENT0_ADC_PIN);
+  }
+  e_adc = e_adc / 5;
+
+  if (-1 == last_e_adc) last_e_adc = e_adc;
+
+  if (abs(e_adc - last_e_adc) < 2048) {
+    delta_millims = (e_adc - last_e_adc) * FILAMENT_SENSOR_ADC_TO_MM;
+    if (e_adc > last_e_adc)
+      delta_millims = -fabs(delta_millims);
+    else
+      delta_millims = fabs(delta_millims);
+    last_e_adc = e_adc;
+  }
+  else {
+    delta_millims = (abs(e_adc - last_e_adc) & 4096) * FILAMENT_SENSOR_ADC_TO_MM;
+    if (e_adc < last_e_adc && e_adc > 30) {
+      if (!e_dead_aligned)
+        e_round_cnt--;
+      delta_millims = -fabs(delta_millims);
+      last_e_adc = e_adc;
+    }
+    else if (e_adc > last_e_adc && e_adc < 4066){
+      if (e_dead_aligned) {
+        if (e_this_round_millimeter > 0.7 * FILAMENT_SENSOR_ADC_TO_MM) {
+          e_this_round_millimeter = 0;
+          e_round_cnt++;
+        }
+      }
+      else {
+        e_round_cnt++;
+      }
+
+      delta_millims = fabs(delta_millims);
+      last_e_adc = e_adc;
+    }
+    else {
+      delta_millims = 0.0;
+    }
+  }
+
+  e_this_round_millimeter += delta_millims;
+
+  if (!e_dead_aligned) {
+    if (0 != e_round_cnt) {
+      e_dead_aligned = true;
+      e_round_cnt = 0;
+      e_aligne_millimeter = e_this_round_millimeter;
+      e_this_round_millimeter = 0;
+    }
+  }
+  e_sum_millimeter = e_aligne_millimeter + e_round_cnt * ROUND_MILLIME + e_this_round_millimeter;
+
+  log_tick++;
+  if (log_tick > 10) {
+    LOG_I("E%d: ADC %d, round %d, millis %f, \r\n", e0_e1, e_adc, e_round_cnt, e_sum_millimeter);
+    log_tick = 0;
+  }
+
+}
+
 
 void j1_main_task(void *args) {
   uint32_t syslog_timeout = millis();
@@ -273,6 +358,8 @@ void j1_main_task(void *args) {
     probe_io_log();
     // TMC2209_log();
     statistics_log();
+    // filament_sensor_log(0);
+    // filament_sensor_log(1);
 
     if (ELAPSED(millis(), syslog_timeout)) {
       syslog_timeout = millis() + 20000;
