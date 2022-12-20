@@ -53,11 +53,11 @@ void GcodeSuite::M218() {
     SERIAL_ECHOPGM(STR_HOTEND_OFFSET);
     HOTEND_LOOP() {
       SERIAL_CHAR(' ');
-      SERIAL_ECHO(hotend_offset[e].x);
+      SERIAL_ECHO_F(hotend_offset[e].x, 6);
       SERIAL_CHAR(',');
-      SERIAL_ECHO(hotend_offset[e].y);
+      SERIAL_ECHO_F(hotend_offset[e].y, 6);
       SERIAL_CHAR(',');
-      SERIAL_ECHO_F(hotend_offset[e].z, 3);
+      SERIAL_ECHO_F(hotend_offset[e].z, 6);
     }
     SERIAL_EOL();
   }
