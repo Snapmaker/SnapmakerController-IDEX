@@ -178,9 +178,12 @@ ErrCode PowerLoss::extrude_before_resume() {
   motion_control.move_x(-move_distance, PRINT_TRAVEL_FEADRATE / 10);
   motion_control.synchronize();
 
+  vTaskDelay(pdMS_TO_TICKS(1000));
+
   if (E_SUCCESS == ret) {
     motion_control.move_x(move_distance, PRINT_TRAVEL_FEADRATE);
     motion_control.synchronize();
+    vTaskDelay(pdMS_TO_TICKS(1000));
     motion_control.move_x(-move_distance, PRINT_TRAVEL_FEADRATE / 10);
     motion_control.synchronize();
   }
