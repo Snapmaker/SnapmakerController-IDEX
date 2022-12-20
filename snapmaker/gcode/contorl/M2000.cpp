@@ -104,6 +104,13 @@ void GcodeSuite::M2000() {
     }
     break;
 
+    case 13:
+    {
+      // stepper.report_a_position(planner.position);
+      LOG_I("E_COUNT: %d\r\n", stepper.position(E_AXIS));
+    }
+    break;
+
     case 100:
       LOG_I("test watch dog!\n");
       vTaskDelay(pdMS_TO_TICKS(1000));
