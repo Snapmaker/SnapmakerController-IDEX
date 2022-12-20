@@ -1180,6 +1180,10 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
       // The newly-selected extruder XYZ is actually at...
       DEBUG_ECHOLNPAIR("Offset Tool XYZ by { ", diff.x, ", ", diff.y, ", ", diff.z, " }");
+
+      int32_t ydiff_scaled = diff * planner.settings.axis_steps_per_mm[Y_AXIS];
+      diff.y = ydiff_scaled / planner.settings.axis_steps_per_mm[Y_AXIS];
+
       current_position += diff;
 
       // Tell the planner the new "current position"
