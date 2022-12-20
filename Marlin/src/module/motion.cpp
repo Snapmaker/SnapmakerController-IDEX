@@ -1892,7 +1892,7 @@ void prepare_line_to_destination() {
     if (axis == Z_AXIS) {
       extern uint16_t z_sg_value;
       if (z_sg_value) {
-        uint8_t z_sg_value_set = z_sg_value * 1.5;
+        uint8_t z_sg_value_set = z_sg_value * 1.4;
         LOG_I("Z home stall gurad set to %d\r\n", z_sg_value_set);
         z_stall_guard_setting = true;
         motion_control.enable_stall_guard_only_axis(axis, z_sg_value_set);
