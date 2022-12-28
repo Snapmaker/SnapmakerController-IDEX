@@ -1638,6 +1638,26 @@ void setup() {
   else {
     SERIAL_ECHO("Created marlin_loop task!\n");
   }
+
+  #if ENABLED(PIDTEMPBED)
+    bool need_save = false;
+    if (fabs(thermalManager.temp_bed.pid.Kp) < 0.001) {
+      thermalManager.temp_bed.pid.Kp = DEFAULT_bedKp;
+      need_save = true;
+    }
+    if (fabs(thermalManager.temp_bed.pid.Ki) < 0.001) {
+      thermalManager.temp_bed.pid.Ki = scalePID_i(DEFAULT_bedKi);
+      need_save = true;
+    }
+    if (fabs(thermalManager.temp_bed.pid.Kd < 0.001)) {
+      thermalManager.temp_bed.pid.Kd = scalePID_d(DEFAULT_bedKd);
+      need_save = true;
+    }
+    if (need_save) {
+      settings.save();
+    }
+  #endif
+
   J1_setup();
 
   #ifdef DEBUG_IO
