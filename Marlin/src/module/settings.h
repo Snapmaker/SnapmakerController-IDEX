@@ -35,8 +35,8 @@ class MarlinSettings {
   public:
     static uint16_t datasize();
 
-    static void reset();
-    static bool save();    // Return 'true' if data was saved
+    AT_END_OF_TEXT static void reset();
+    AT_END_OF_TEXT static bool save();    // Return 'true' if data was saved
 
     FORCE_INLINE static bool init_eeprom() {
       reset();
@@ -56,8 +56,8 @@ class MarlinSettings {
 
     #if ENABLED(EEPROM_SETTINGS)
 
-      static bool load();      // Return 'true' if data was loaded ok
-      static bool validate();  // Return 'true' if EEPROM data is ok
+     AT_END_OF_TEXT static bool load();      // Return 'true' if data was loaded ok
+     AT_END_OF_TEXT static bool validate();  // Return 'true' if EEPROM data is ok
 
       static inline void first_load() {
         static bool loaded = false;
@@ -94,7 +94,7 @@ class MarlinSettings {
     #endif
 
   private:
-    static void postprocess();
+    AT_END_OF_TEXT static void postprocess();
 
     #if ENABLED(EEPROM_SETTINGS)
 

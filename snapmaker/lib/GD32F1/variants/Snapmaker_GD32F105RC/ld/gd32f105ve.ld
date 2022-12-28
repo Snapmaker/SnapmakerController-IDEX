@@ -17,14 +17,17 @@
 MEMORY
 {
   ram (rwx) : ORIGIN = 0x20000000, LENGTH = 96K
-  rom (rx)  : ORIGIN = 0x08002800, LENGTH = 488K-46K
+  /* rom (rx)  : ORIGIN = 0x08002800, LENGTH = 488K-46K */
+  rom_main (rx)  : ORIGIN = 0x08002800, LENGTH = 256-10K
+  rom_last (rx)  : ORIGIN = 0x08061000, LENGTH = 64K
 }
 
 /* Provide memory region aliases for common.inc */
-REGION_ALIAS("REGION_TEXT", rom);
+REGION_ALIAS("REGION_TEXT", rom_main);
 REGION_ALIAS("REGION_DATA", ram);
 REGION_ALIAS("REGION_BSS", ram);
-REGION_ALIAS("REGION_RODATA", rom);
+REGION_ALIAS("REGION_RODATA", rom_main);
+REGION_ALIAS("REGION_LAST", rom_last);
 
 /* Let common.inc handle the real work. */
 INCLUDE common.inc

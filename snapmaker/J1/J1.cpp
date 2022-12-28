@@ -179,22 +179,21 @@ void sg_set(void) {
   x1_sg_value_set();
 }
 
-void probe_io_log(void) {
-  static uint8_t last_probe_0 = 0;
-  static uint8_t last_probe_1 = 0;
+// void probe_io_log(void) {
+//   static uint8_t last_probe_0 = 0;
+//   static uint8_t last_probe_1 = 0;
 
-  uint8_t t = READ(X0_CAL_PIN);
-  if (t != last_probe_0) {
-    last_probe_0 = t;
-    LOG_I("probe_0 %d\r\n", last_probe_0);
-  }
-  t = READ(X1_CAL_PIN);
-  if (t != last_probe_1) {
-    last_probe_1 = t;
-    LOG_I("probe_1 %d\r\n", last_probe_1);
-  }
-
-}
+//   uint8_t t = READ(X0_CAL_PIN);
+//   if (t != last_probe_0) {
+//     last_probe_0 = t;
+//     LOG_I("probe_0 %d\r\n", last_probe_0);
+//   }
+//   t = READ(X1_CAL_PIN);
+//   if (t != last_probe_1) {
+//     last_probe_1 = t;
+//     LOG_I("probe_1 %d\r\n", last_probe_1);
+//   }
+// }
 
 void TMC2209_log(void) {
   static uint32_t last_tick = 0;
@@ -255,96 +254,119 @@ void statistics_log(void) {
 
 }
 
-#define ROUND_MILLIME  (52.1)
-#define FILAMENT_SENSOR_ADC_TO_MM (ROUND_MILLIME / 4096)
+#if ENABLED(DEBUG_ISR_CPU_USAGE)
+void step_isr_usage_log(void) {
+  // char log_str[] = "ISR usage: %.2f%\n";
+  float isr_usage;
+  static uint32_t last_log_tick = 0;
+  static uint16_t max_stepper_isr_delay = 0;
+  static float max_stepper_isr_usage = 0.0;
+  static bool need_log = false;
 
-void filament_sensor_log(uint8_t e0_e1) {
-  static uint32_t log_tick = 0;
-  static uint32_t last_tick = 0;
-  static int32_t last_e_adc = -1;
+  isr_usage = (axisManager.counts[19] * 100.0 / STEPPER_TIMER_RATE);
+  if (isr_usage > max_stepper_isr_usage) {
+    max_stepper_isr_usage = isr_usage;
+    need_log = true;
+  }
 
-  static float e_sum_millimeter = 0.0;
-  static float e_aligne_millimeter = 0.0;
-  static float e_this_round_millimeter = 0.0;
+  if (axisManager.counts[18] > max_stepper_isr_delay) {
+    max_stepper_isr_delay = axisManager.counts[18];
+    need_log = true;
+  }
 
-  static bool e_dead_aligned = false;
-  static int32_t e_round_cnt = 0;
-
-  float delta_millims;
-
-  if (PENDING(millis(), last_tick))
+  // LOG_I(log_str, isr_usage);
+  // if (isr_usage >= 40)
+  //   LOG_I(log_str, isr_usage);
+  if (PENDING(millis(), last_log_tick + 1000))
     return;
 
-  last_tick = millis() + 100;
+  axisManager.counts[19] = 0;
+  last_log_tick = millis();
 
-  int32_t e_adc = 0;
-  for (int i = 0; i < 5; i++) {
-    e_adc += e0_e1 ? (4096 - analogRead(FILAMENT1_ADC_PIN)) : analogRead(FILAMENT0_ADC_PIN);
+  if (need_log) {
+    LOG_E("### max_stepper_isr_usage %.2f%\r\n", max_stepper_isr_usage);
+    LOG_E("### max_stepper_isr_delay %d us\r\n", max_stepper_isr_delay / STEPPER_TIMER_TICKS_PER_US);
+    need_log = false;
   }
-  e_adc = e_adc / 5;
+}
+#endif
 
-  if (-1 == last_e_adc) last_e_adc = e_adc;
+void float_round_test(float diff, uint32_t log_cnt) {
 
-  if (abs(e_adc - last_e_adc) < 2048) {
-    delta_millims = (e_adc - last_e_adc) * FILAMENT_SENSOR_ADC_TO_MM;
-    if (e_adc > last_e_adc)
-      delta_millims = -fabs(delta_millims);
-    else
-      delta_millims = fabs(delta_millims);
-    last_e_adc = e_adc;
-  }
-  else {
-    delta_millims = (abs(e_adc - last_e_adc) & 4096) * FILAMENT_SENSOR_ADC_TO_MM;
-    if (e_adc < last_e_adc && e_adc > 30) {
-      if (!e_dead_aligned)
-        e_round_cnt--;
-      delta_millims = -fabs(delta_millims);
-      last_e_adc = e_adc;
-    }
-    else if (e_adc > last_e_adc && e_adc < 4066){
-      if (e_dead_aligned) {
-        if (e_this_round_millimeter > 0.7 * FILAMENT_SENSOR_ADC_TO_MM) {
-          e_this_round_millimeter = 0;
-          e_round_cnt++;
+  uint32_t lc = 0;
+  LOG_I("LROUND(0.1) = %d, LROUND(0.5) = %d, LROUND(-0.1) = %d, LROUND(-0.5) = %d\n", LROUND(0.1), LROUND(0.5), LROUND(-0.1), LROUND(-0.5));
+
+  for(int i = 0; i < 200 * 80; i++) {
+    float origin_float_y0 = 0.0f + i * 0.0001;
+    float origin_float_y1 = origin_float_y0 + diff;
+
+    int origin_int_y0 = LROUND(origin_float_y0 * 80);
+    int origin_int_y1 = LROUND(origin_float_y1 * 80);
+
+    // int origin_y0_y1_diff_int = abs(origin_int_y0 - origin_int_y1);
+
+    for(int run_step = 0; run_step < 100000; run_step++) {
+      float run_distanc = run_step * 0.001;
+
+      float after_run_float_y0 = origin_float_y0 + run_distanc;
+      float after_run_float_y1 = origin_float_y1 + run_distanc;
+
+      int after_run_int_y0 = LROUND(after_run_float_y0 * 80);
+      int after_run_int_y1 = LROUND(after_run_float_y1 * 80);
+
+      int T1_actual_move_steps = after_run_int_y1 - origin_int_y1;
+      int T0_actual_move_steps = origin_int_y0 - after_run_int_y0;
+      int T0_after_move_step_pos = origin_int_y0 + T1_actual_move_steps + T0_actual_move_steps;
+
+      // if (abs(origin_y0_y1_diff_int) != abs(after_run_y0_y1_diff_int)) {
+      {
+        lc++;
+        LOG_I("\r\n\r\n====================, T0 T1 y axis offset: %f\r\n", diff);
+        LOG_I("1) T0 working, before tool change");
+        LOG_I("float coordinates: T0_float_y: %f, T1_float_y: %f:\n", origin_float_y0, origin_float_y1);
+
+        LOG_I("\r\n2) change to T1, and move to %f, That is: \r\n", after_run_float_y1);
+        LOG_I("T1 target coordinate in float: %f, in step: %d(%f = LROUND(%f * 80)\r\n",
+              after_run_float_y1, after_run_int_y1, after_run_float_y1 * 80, after_run_float_y1);
+        LOG_I("T1 current coordinate in float: %f, in step: %d(%f = LROUND(%f * 80)\r\n",
+              origin_float_y1, origin_int_y1, origin_float_y1 * 80, origin_float_y1);
+        LOG_I("T1 actual move in steps %d = (%d)(target steps) - (%d)(current steps)\r\n", T1_actual_move_steps, after_run_int_y1, origin_int_y1);
+
+        LOG_I("\r\n3) Now change to T0, coordinate of T0(%f) = T1(%f) - offset(%f)\r\n", after_run_float_y0, after_run_float_y1, diff);
+        LOG_I("And T0 move to origin: %f, that is current(%f) --> target(%f)\n", origin_float_y0, after_run_float_y0, origin_float_y0);
+        LOG_I("T0 target coordinate in step: %d(LROUND(%f * 80)\r\n", origin_int_y0, origin_float_y0);
+        LOG_I("T0 current coordinate in step: %d(LROUND(%f * 80)\r\n", after_run_int_y0, after_run_float_y0);
+        LOG_I("T0 actual move in steps %d = %d(target steps) - %d(current steps)\r\n", T0_actual_move_steps, origin_int_y0, after_run_int_y0);
+
+        LOG_I("Before tool change, T0 coordinate map<%f(planner), %d(stepper)>\r\n", origin_float_y0, origin_int_y0);
+        LOG_I("After changing to T1, moving in T1, and than changing to T0 and return to T0 origin\r\n");
+        LOG_I("T0 now coordinate map<%f(planner), %d(stepper)>\r\n", origin_float_y0, T0_after_move_step_pos);
+        LOG_I("stepper position(%d) = T0_origin_step_pos(%d) + T1 move step(%d) + return T0 origin move steps(%d)\r\n",
+              T0_after_move_step_pos, origin_int_y0, T1_actual_move_steps, T0_actual_move_steps);
+
+        if (abs(origin_int_y0) != T0_after_move_step_pos) {
+          LOG_I("\r\nERROR:\r\n");
         }
+        else {
+          LOG_I("\r\nOK:\r\n");
+        }
+
+        if (lc >= log_cnt) return;
       }
-      else {
-        e_round_cnt++;
-      }
-
-      delta_millims = fabs(delta_millims);
-      last_e_adc = e_adc;
-    }
-    else {
-      delta_millims = 0.0;
     }
   }
-
-  e_this_round_millimeter += delta_millims;
-
-  if (!e_dead_aligned) {
-    if (0 != e_round_cnt) {
-      e_dead_aligned = true;
-      e_round_cnt = 0;
-      e_aligne_millimeter = e_this_round_millimeter;
-      e_this_round_millimeter = 0;
-    }
-  }
-  e_sum_millimeter = e_aligne_millimeter + e_round_cnt * ROUND_MILLIME + e_this_round_millimeter;
-
-  log_tick++;
-  if (log_tick > 10) {
-    LOG_I("E%d: ADC %d, round %d, millis %f, \r\n", e0_e1, e_adc, e_round_cnt, e_sum_millimeter);
-    log_tick = 0;
-  }
-
 }
 
 
 void j1_main_task(void *args) {
   uint32_t syslog_timeout = millis();
-
   log_reset_source();
+
+  #if 1
+  // LOG_I("LROUND(0.1) = %d, LROUND(0.5) = %d, LROUND(-0.1) = %d, LROUND(-0.5) = %d\n", LROUND(0.1), LROUND(0.5), LROUND(-0.1), LROUND(-0.5));
+  float_round_test(0.00125f, 1000);
+  // float_round_test(-0.1375f, 20);
+  #endif
 
   while(1) {
     print_control.loop();
@@ -360,6 +382,14 @@ void j1_main_task(void *args) {
     statistics_log();
     // filament_sensor_log(0);
     // filament_sensor_log(1);
+
+    #if ENABLED(DEBUG_ISR_CPU_USAGE)
+    step_isr_usage_log();
+    #endif
+
+    #if ENABLED(DEBUG_ISR_CPU_USAGE)
+    step_isr_usage_log();
+    #endif
 
     if (ELAPSED(millis(), syslog_timeout)) {
       syslog_timeout = millis() + 20000;

@@ -80,8 +80,6 @@ void GcodeSuite::M2000() {
       LOG_I("X: %d\r\n", stepper.triggered_position(X_AXIS));
       LOG_I("Y: %d\r\n", stepper.triggered_position(Y_AXIS));
       LOG_I("Z: %d\r\n", stepper.triggered_position(Z_AXIS));
-      LOG_I("X1: %d\r\n", axisManager.counts[18]);
-      axisManager.counts[18] = 0;
     break;
 
     case 11:

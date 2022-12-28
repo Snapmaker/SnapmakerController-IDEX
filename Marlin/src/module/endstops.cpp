@@ -607,7 +607,7 @@ void _O2 Endstops::report_states() {
   #endif
   print_es_state(switch_detect.read_e0_probe_status(), "PROBE_0");
   print_es_state(switch_detect.read_e1_probe_status(), "PROBE_1");
-  
+
   print_es_state(filament_sensor.is_trigger(0), "filament_0");
   print_es_state(filament_sensor.is_trigger(1), "filament_1");
   print_es_state(power_loss.is_power_220v_pin_trigger(), "220V_power_loss");

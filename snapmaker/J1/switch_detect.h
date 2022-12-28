@@ -17,8 +17,8 @@ public:
   void disable_power_lost();
   void enable_stall_guard();
   void disable_stall_guard();
-  void manual_trig_stop();
-  void stall_guard_stop();
+  // void manual_trig_stop();
+  // void stall_guard_stop();
   bool read_e0_probe_status();
   bool read_e1_probe_status();
   bool read_active_extruder_status();

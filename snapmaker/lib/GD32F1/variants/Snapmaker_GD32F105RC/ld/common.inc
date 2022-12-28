@@ -66,7 +66,11 @@ SECTIONS
         /*
          * Program code and vague linking
          */
-        *(.text .text.* .gnu.linkonce.t.*)
+        /* *(.text .text.* .gnu.linkonce.t.*) */
+        *(.text)
+        *(.text.*)
+        *(.gnu.linkonce.t.*)
+
         *(.plt)
         *(.gnu.warning)
         *(.glue_7t) *(.glue_7) *(.vfp11_veneer)
@@ -109,7 +113,14 @@ SECTIONS
         KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
         KEEP (*(SORT(.dtors.*)))
         KEEP (*crtend.o(.dtors))
+
+        /* *(.oneshot .oneshot.*) */
       } > REGION_TEXT
+
+    .text_last :
+      {
+        *(.oneshot .oneshot.*)
+      } > REGION_LAST
 
     /*
      * End of text

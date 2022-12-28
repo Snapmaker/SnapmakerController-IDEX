@@ -48,17 +48,20 @@ void SwitchDetect::init_probe() {
 }
 
 void SwitchDetect::check() {
+
+  if (!enable_bits) return;
+
   uint32_t tmp_status_bits = 0;
   bool trigged = false;
 
-  if(TEST(status_bits, SW_MANUAL_STOP_BIT)) {
-    trigged = true;
-    CBI(status_bits, SW_MANUAL_STOP_BIT);
-  }
-  if(TEST(status_bits, SW_STALLGUARD_BIT)) {
-    trigged = true;
-    CBI(status_bits, SW_STALLGUARD_BIT);
-  }
+  // if(TEST(status_bits, SW_MANUAL_STOP_BIT)) {
+  //   trigged = true;
+  //   CBI(status_bits, SW_MANUAL_STOP_BIT);
+  // }
+  // if(TEST(status_bits, SW_STALLGUARD_BIT)) {
+  //   trigged = true;
+  //   CBI(status_bits, SW_STALLGUARD_BIT);
+  // }
 
   if (!trigged) {
     uint32_t max_continue_trigger_cnt = 0;
@@ -135,13 +138,13 @@ void SwitchDetect::disable(uint8_t Item) {
   CBI(status_bits, Item);
 }
 
-void SwitchDetect::manual_trig_stop() {
-  SBI(status_bits, SW_MANUAL_STOP_BIT);
-}
+// void SwitchDetect::manual_trig_stop() {
+//   SBI(status_bits, SW_MANUAL_STOP_BIT);
+// }
 
-void SwitchDetect::stall_guard_stop() {
-  SBI(status_bits, SW_STALLGUARD_BIT);
-}
+// void SwitchDetect::stall_guard_stop() {
+//   SBI(status_bits, SW_STALLGUARD_BIT);
+// }
 
 bool get_cal_pin_status(uint8_t pin) {
   // bool ret = 0;

@@ -2908,3 +2908,4 @@
  *
  */
 #define DEBUG_IO PD0
+#define DEBUG_ISR_CPU_USAGE

@@ -592,9 +592,9 @@ private:
     static void M16();
   #endif
 
-  static void M17();
+  AT_END_OF_TEXT static void M17();
 
-  static void M18_M84();
+  AT_END_OF_TEXT static void M18_M84();
 
   #if ENABLED(SDSUPPORT)
     static void M20();
@@ -610,7 +610,7 @@ private:
     static void M30();
   #endif
 
-  static void M31();
+  AT_END_OF_TEXT static void M31();
 
   #if ENABLED(SDSUPPORT)
     #if ENABLED(HAS_MEDIA_SUBCALLS)
@@ -650,15 +650,15 @@ private:
   #if ENABLED(PSU_CONTROL)
     static void M80();
   #endif
-  static void M81();
+  AT_END_OF_TEXT static void M81();
 
   #if HAS_EXTRUDERS
-    static void M82();
-    static void M83();
+  AT_END_OF_TEXT  static void M82();
+  AT_END_OF_TEXT  static void M83();
   #endif
 
-  static void M85();
-  static void M92();
+  AT_END_OF_TEXT static void M85();
+  AT_END_OF_TEXT static void M92();
 
   #if ENABLED(M100_FREE_MEMORY_WATCHER)
     static void M100();
@@ -678,7 +678,7 @@ private:
   #endif
 
   #if DISABLED(EMERGENCY_PARSER)
-    static void M108();
+  AT_END_OF_TEXT  static void M108();
     static void M112();
     static void M410();
     #if ENABLED(HOST_PROMPT_SUPPORT)
@@ -690,17 +690,17 @@ private:
   static void M111();
 
   #if ENABLED(HOST_KEEPALIVE_FEATURE)
-    static void M113();
+  AT_END_OF_TEXT  static void M113();
   #endif
 
   static void M114();
-  static void M115();
+  AT_END_OF_TEXT static void M115();
 
   #if HAS_STATUS_MESSAGE
     static void M117();
   #endif
 
-  static void M118();
+  AT_END_OF_TEXT static void M118();
   static void M119();
   static void M120();
   static void M121();
@@ -936,11 +936,11 @@ private:
     static void M486();
   #endif
 
-  static void M500();
+  AT_END_OF_TEXT static void M500();
   static void M501();
   static void M502();
   #if DISABLED(DISABLE_M503)
-    static void M503();
+  AT_END_OF_TEXT  static void M503();
   #endif
   #if ENABLED(EEPROM_SETTINGS)
     static void M504();

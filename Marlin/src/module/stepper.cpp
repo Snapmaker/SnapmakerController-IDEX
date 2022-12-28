@@ -1434,7 +1434,19 @@ bool Stepper::stop_all_only_extrude() {
 HAL_STEP_TIMER_ISR() {
   HAL_timer_isr_prologue(STEP_TIMER_NUM);
 
+  #if ENABLED(DEBUG_ISR_CPU_USAGE)
+    static uint16_t isr_delay = 0;
+    isr_delay = HAL_timer_get_count(STEP_TIMER_NUM);
+    if (isr_delay > uint16_t(axisManager.counts[18])) {
+      axisManager.counts[18] = isr_delay;
+    }
+  #endif
+
   Stepper::isr();
+
+  #if ENABLED(DEBUG_ISR_CPU_USAGE)
+    axisManager.counts[19] += HAL_timer_get_count(STEP_TIMER_NUM);
+  #endif
 
   HAL_timer_isr_epilogue(STEP_TIMER_NUM);
 }
@@ -1723,7 +1735,7 @@ void Stepper::isr() {
 void Stepper::pulse_phase_isr() {
 
   switch_detect.check();
-  endstops.poll();
+  // endstops.poll();
   power_loss.check();
 
   // If we must abort the current block, do so!
