@@ -397,7 +397,7 @@ void j1_main_task(void *args) {
 
     if (ELAPSED(millis(), syslog_timeout)) {
       syslog_timeout = millis() + 20000;
-      LOG_I("c0: %d/t0: %d, c1: %d/t1: %d, cb: %d/tb: %d, ",
+      LOG_I("%s: c0: %d/t0: %d, c1: %d/t1: %d, cb: %d/tb: %d, ", J1_BUILD_VERSION,
         (int)thermalManager.degHotend(0), thermalManager.degTargetHotend(0),
         (int)thermalManager.degHotend(1), thermalManager.degTargetHotend(1),
         (int)thermalManager.degBed(), thermalManager.degTargetBed());
