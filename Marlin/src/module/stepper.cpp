@@ -2006,7 +2006,8 @@ uint32_t Stepper::block_phase_isr() {
         if (current_block) {
           discard_current_block();
           power_loss.cur_line++; // this block motion finish
-          axisManager.abort();
+          // axisManager.abort();
+          axisManager.req_abort = true;
           is_start = true;
         }
 
