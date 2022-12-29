@@ -403,7 +403,7 @@ class Stepper {
 
   public:
     // Initialize stepper hardware
-    static void init();
+    AT_END_OF_TEXT static void init();
 
     // Interrupt Service Routine and phases
 

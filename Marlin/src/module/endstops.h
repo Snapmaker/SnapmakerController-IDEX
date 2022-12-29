@@ -127,7 +127,7 @@ class Endstops {
     /**
      * Initialize the endstop pins
      */
-    static void init();
+    AT_END_OF_TEXT static void init();
 
     /**
      * Are endstops or the probe set to abort the move?

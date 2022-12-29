@@ -65,7 +65,7 @@ typedef struct {
 
 class PowerLoss {
   public:
-    void init();
+    AT_END_OF_TEXT void init();
     ErrCode is_power_loss_data();
     ErrCode power_loss_resume();
     bool change_head();

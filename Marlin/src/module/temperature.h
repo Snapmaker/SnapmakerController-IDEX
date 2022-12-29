@@ -500,7 +500,7 @@ class Temperature {
      * Instance Methods
      */
 
-    void init();
+    AT_END_OF_TEXT void init();
 
     /**
      * Static (class) methods

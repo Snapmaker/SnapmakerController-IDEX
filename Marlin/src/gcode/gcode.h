@@ -1040,7 +1040,7 @@ private:
 
   #if HAS_TRINAMIC_CONFIG
     static void M122();
-    static void M906();
+    AT_END_OF_TEXT static void M906();
     #if ENABLED(HAS_STEALTHCHOP)
       static void M569();
     #endif

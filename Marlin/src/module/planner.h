@@ -514,7 +514,7 @@ class Planner {
 
     Planner();
 
-    void init();
+    AT_END_OF_TEXT void init();
 
     /**
      * Static (class) Methods

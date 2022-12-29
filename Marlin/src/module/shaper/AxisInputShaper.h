@@ -102,7 +102,7 @@ public:
     is_shaper_window_init = false;
   }
 
-  void init();
+  AT_END_OF_TEXT void init();
 
   void logParams();
 
