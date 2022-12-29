@@ -267,11 +267,15 @@ ErrCode PrintControl::pause() {
   }
 
   // wait for stepper slow down and stop
+  // LOG_I("--- req_pause\r\n");
   stepper.req_pause = true;
+
   while(1) {
     if (stepper.can_pause) {
+      // LOG_I("--- can_pause\r\n");
       stepper.can_pause = false;
       quickstop_stepper();
+      // LOG_I("--- pause done\r\n");
       stepper.delta_t = 0;
       break;
     }
@@ -291,11 +295,11 @@ ErrCode PrintControl::pause() {
   vTaskDelay(pdMS_TO_TICKS(5));
   power_loss.stash_print_env();
 
-  // if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET) {
-  //   motion_control.retrack_e(Z_LIVE_OFFSET_RETRACE_D, CHANGE_FILAMENT_SPEED);
-  //   system_service.set_status(SYSTEM_STATUE_PAUSED);
-  //   return E_SUCCESS;
-  // }
+  if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET) {
+    motion_control.retrack_e(Z_LIVE_OFFSET_RETRACE_D, CHANGE_FILAMENT_SPEED);
+    system_service.set_status(SYSTEM_STATUE_PAUSED);
+    return E_SUCCESS;
+  }
 
   motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
   motion_control.synchronize();
@@ -359,12 +363,30 @@ ErrCode PrintControl::resume() {
   buffer_head = buffer_tail = 0;
   system_service.set_status(SYSTEM_STATUE_RESUMING);
 
-  // if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET) {
-  //   power_loss.resume_print_env();
-  //   commands_unlock();
-  //   system_service.set_status(SYSTEM_STATUE_PRINTING);
-  //   return E_SUCCESS;
-  // }
+  if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET) {
+    // if (power_loss.stash_data.dual_x_carriage_mode >= DXC_DUPLICATION_MODE) {
+    //   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+    //   tool_change(0, true);
+    //   dual_x_carriage_mode = DXC_MIRRORED_MODE;
+    //   duplicate_extruder_x_offset = MIRRORED_MODE_X_OFFSET;
+    //   idex_set_mirrored_mode(true);
+    //   set_duplication_enabled(true);
+    // }
+    // else {
+    //   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
+    //   tool_change(power_loss.stash_data.active_extruder);
+    //   set_duplication_enabled(false);
+    // }
+    // dual_x_carriage_unpark();
+
+    dual_x_carriage_mode = (DualXMode)power_loss.stash_data.dual_x_carriage_mode;
+    idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
+
+    power_loss.resume_print_env();
+    commands_unlock();
+    system_service.set_status(SYSTEM_STATUE_PRINTING);
+    return E_SUCCESS;
+  }
 
   if (power_loss.extrude_before_resume() == E_SUCCESS) {
     power_loss.resume_print_env();

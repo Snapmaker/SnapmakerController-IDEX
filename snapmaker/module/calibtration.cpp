@@ -975,15 +975,15 @@ void Calibtration::loop(void) {
  */
 void Calibtration::set_z_offset(float offset, bool is_moved) {
 
-  // motion_control.wait_G28();
-  // system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET);
-  // while(system_service.get_status() != SYSTEM_STATUE_PAUSED) {
-  //   vTaskDelay(pdMS_TO_TICKS(10));
-  // }
-  // motion_control.synchronize();
-
-  print_control.commands_lock();
+  motion_control.wait_G28();
+  system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET);
+  while(system_service.get_status() != SYSTEM_STATUE_PAUSED) {
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
   motion_control.synchronize();
+
+  // print_control.commands_lock();
+  // motion_control.synchronize();
 
   LOG_I("Set z offset: after synchronize\r\n");
   xyze_pos_t lpos = current_position.asLogical();
@@ -1003,12 +1003,13 @@ void Calibtration::set_z_offset(float offset, bool is_moved) {
       power_loss.stash_data.position[Z_AXIS] -= diff;
     }
   }
-  print_control.commands_unlock();
 
-  // system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET);
-  // while(system_service.get_status() == SYSTEM_STATUE_RESUMING) {
-  //   vTaskDelay(pdMS_TO_TICKS(10));
-  // }
+  // print_control.commands_unlock();
+
+  system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET);
+  while(system_service.get_status() == SYSTEM_STATUE_RESUMING) {
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
 
   LOG_I("Apply Z offset: %f\n", home_offset[Z_AXIS]);
 

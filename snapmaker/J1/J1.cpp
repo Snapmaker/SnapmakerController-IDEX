@@ -291,6 +291,7 @@ void step_isr_usage_log(void) {
 }
 #endif
 
+#if 0
 void float_round_test(float diff, uint32_t log_cnt) {
 
   uint32_t lc = 0;
@@ -356,13 +357,14 @@ void float_round_test(float diff, uint32_t log_cnt) {
     }
   }
 }
-
+#endif
 
 void j1_main_task(void *args) {
+
   uint32_t syslog_timeout = millis();
   log_reset_source();
 
-  #if 1
+  #if 0
   // LOG_I("LROUND(0.1) = %d, LROUND(0.5) = %d, LROUND(-0.1) = %d, LROUND(-0.5) = %d\n", LROUND(0.1), LROUND(0.5), LROUND(-0.1), LROUND(-0.5));
   // float_round_test(0.00125f, 1000);
   // float_round_test(-0.1375f, 20);
@@ -370,18 +372,20 @@ void j1_main_task(void *args) {
 
   while(1) {
     print_control.loop();
-    // power_loss.process();
-    // printer_event_loop();
-    // exception_event_loop();
-    // local_event_loop();
+    printer_event_loop();
+    exception_event_loop();
+    local_event_loop();
 
     axis_speed_update();
     sg_set();
+    statistics_log();
+
+    #if 0
     // probe_io_log();
     // TMC2209_log();
-    statistics_log();
     // filament_sensor_log(0);
     // filament_sensor_log(1);
+    #endif
 
     #if ENABLED(DEBUG_ISR_CPU_USAGE)
     step_isr_usage_log();
