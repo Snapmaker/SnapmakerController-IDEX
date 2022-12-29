@@ -364,7 +364,7 @@ void j1_main_task(void *args) {
 
   #if 1
   // LOG_I("LROUND(0.1) = %d, LROUND(0.5) = %d, LROUND(-0.1) = %d, LROUND(-0.5) = %d\n", LROUND(0.1), LROUND(0.5), LROUND(-0.1), LROUND(-0.5));
-  float_round_test(0.00125f, 1000);
+  // float_round_test(0.00125f, 1000);
   // float_round_test(-0.1375f, 20);
   #endif
 
@@ -377,7 +377,7 @@ void j1_main_task(void *args) {
 
     axis_speed_update();
     sg_set();
-    probe_io_log();
+    // probe_io_log();
     // TMC2209_log();
     statistics_log();
     // filament_sensor_log(0);
