@@ -741,7 +741,7 @@ ErrCode Calibtration::calibtration_xy() {
     // motion_control.enable_stall_guard_only_axis(Z_AXIS, probe_sg_reg[Z_AXIS], active_extruder);
     // motion_control.clear_trigger();
 
-    motion_control.logical_move_to_z(XY_CALI_Z_POS);
+    motion_control.logical_move_to_z(XY_CALI_Z_POS, PROBE_FAST_Z_FEEDRATE);
 
     switch_detect.enable_probe(0);
     if (motion_control.is_sg_trigger()) {
