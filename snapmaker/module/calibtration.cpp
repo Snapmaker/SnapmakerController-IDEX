@@ -725,20 +725,18 @@ ErrCode Calibtration::calibtration_xy() {
     bed_preapare(e);
     goto_calibtration_position(CAlIBRATION_POS_0);
 
-    uint8_t sg_value;
-    extern uint16_t z_sg_value;
-    if (z_sg_value)
-      sg_value = z_sg_value;
-    else
-      sg_value = probe_sg_reg[Z_AXIS];
+    // uint8_t sg_value;
+    // extern uint16_t z_sg_value;
+    // if (z_sg_value)
+    //   sg_value = z_sg_value;
+    // else
+    //   sg_value = probe_sg_reg[Z_AXIS];
 
     set_calibration_move_param();
 
-    motion_control.clear_trigger();
-    motion_control.enable_stall_guard_only_axis(Z_AXIS, sg_value, active_extruder);
-    LOG_I("axis %d(active_extruder = %d) sg_value set to %d\r\n", Z_AXIS, active_extruder, sg_value);
-    motion_control.clear_trigger();
-    // motion_control.enable_stall_guard_only_axis(Z_AXIS, probe_sg_reg[Z_AXIS], active_extruder);
+    // motion_control.clear_trigger();
+    // motion_control.enable_stall_guard_only_axis(Z_AXIS, sg_value, active_extruder);
+    // LOG_I("axis %d(active_extruder = %d) sg_value set to %d\r\n", Z_AXIS, active_extruder, sg_value);
     // motion_control.clear_trigger();
 
     motion_control.logical_move_to_z(XY_CALI_Z_POS, PROBE_FAST_Z_FEEDRATE);
