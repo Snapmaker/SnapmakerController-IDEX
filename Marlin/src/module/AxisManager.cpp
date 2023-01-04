@@ -194,7 +194,7 @@ float Axis::getCurrentSpeedMMs() {
   else
     tem_speed = 0;
 
-  cur_speed = cur_speed * 0.7 + 0.3 * tem_speed;
+  cur_speed = cur_speed * 0.9 + 0.1 * tem_speed;
 
   return cur_speed;
 }
