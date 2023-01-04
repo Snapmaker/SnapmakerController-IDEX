@@ -1693,7 +1693,7 @@ void marlin_loop() {
     if (system_service.get_status() >= SYSTEM_STATUE_PAUSING && system_service.get_status() <= SYSTEM_STATUE_STOPPED) {
       while(!queue.ring_buffer.empty()) {
         GCodeQueue::CommandLine &command = queue.ring_buffer.peek_next_command();
-        LOG_I("Gcode in queue: %s\r\n", command.buffer);
+        LOG_I("Clear GCodeQueue: %s\r\n", command.buffer);
         queue.ring_buffer.advance_pos(queue.ring_buffer.index_r, -1);
       }
     }

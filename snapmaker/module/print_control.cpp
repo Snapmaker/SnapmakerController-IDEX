@@ -412,6 +412,14 @@ ErrCode PrintControl::stop() {
     commands_lock();
     buffer_head = buffer_tail = 0;
 
+    // // set to 0, do not waiting in M109 or M190
+    HOTEND_LOOP() {
+      thermalManager.setTargetHotend(0, e);
+      fdm_head.set_fan_speed(e, 0, 0);
+      set_work_flow_percentage(e, 100);
+    }
+    thermalManager.setTargetBed(0);
+
     stepper.req_pause = true;
     while(1) {
       if (stepper.can_pause) {
@@ -435,12 +443,14 @@ ErrCode PrintControl::stop() {
     mode_ = PRINT_FULL_MODE;
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
     set_duplication_enabled(false);
+
     HOTEND_LOOP() {
       thermalManager.setTargetHotend(0, e);
       fdm_head.set_fan_speed(e, 0, 0);
        set_work_flow_percentage(e, 100);
     }
     thermalManager.setTargetBed(0);
+
     set_feedrate_percentage(100);
     set_print_offset(0, 0, 0);
     stop_work_time();
