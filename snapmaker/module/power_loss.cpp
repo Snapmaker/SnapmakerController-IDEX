@@ -148,6 +148,9 @@ ErrCode PowerLoss::extrude_before_resume() {
   // else {
   //   motion_control.home_x();
   // }
+  if(fabs(current_position.x - x_home_pos(active_extruder)) > 0.1) {
+    motion_control.home_x();
+  }
 
   int16_t move_distance = EXTRUDE_X_MOVE_DISTANCE;
   if (active_extruder) {
