@@ -13,6 +13,9 @@
 
 MotionControl motion_control;
 
+bool z_first_sg = false;
+int32_t z_first_sg_pos;
+
 void MotionControl::synchronize() {
   planner.synchronize();
 }
@@ -419,6 +422,7 @@ void MotionControl::enable_stall_guard(uint8_t axis, uint8_t sg_value, uint8_t x
       ENABLE_SG(Y);
       break;
     case Z_AXIS:
+      z_first_sg = false;
       ENABLE_SG(Z);
       break;
   }
@@ -518,7 +522,15 @@ extern "C" {
       if (motion_control.is_sg_enable(SG_Z) &&
         axisManager.axis[2].cur_speed > MOTION_STALL_GUARD_Z_SPEED &&
         stepper.axis_is_moving(Z_AXIS)) {
-        trigger_stall_guard_exit(SG_Z);
+        if (!z_first_sg) {
+          z_first_sg = true;
+          z_first_sg_pos = stepper.position(Z_AXIS);
+        }
+        else {
+          int32_t cur_z_pos = stepper.position(Z_AXIS);
+          if (abs(z_first_sg_pos - cur_z_pos) > 8)
+            trigger_stall_guard_exit(SG_Z);
+        }
       }
     }
 

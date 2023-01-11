@@ -1888,17 +1888,17 @@ void prepare_line_to_destination() {
     const float move_length = 1.5f * max_length(TERN(DELTA, Z_AXIS, axis)) * axis_home_dir;
     if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Home Fast: ", move_length, "mm");
 
-    // z_stall_guard_setting = false;
-    // if (axis == Z_AXIS) {
-    //   extern uint16_t z_sg_value;
-    //   if (z_sg_value) {
-    //     uint8_t z_sg_value_set = z_sg_value * 1.2;
-    //     LOG_I("Z home stall gurad set to %d\r\n", z_sg_value_set);
-    //     z_stall_guard_setting = true;
-    //     motion_control.enable_stall_guard_only_axis(axis, z_sg_value_set);
-    //     motion_control.clear_trigger();
-    //   }
-    // }
+    z_stall_guard_setting = false;
+    if (axis == Z_AXIS) {
+      extern uint16_t z_sg_value;
+      if (z_sg_value) {
+        uint8_t z_sg_value_set = z_sg_value * 1.4;
+        LOG_I("Z home stall gurad set to %d\r\n", z_sg_value_set);
+        z_stall_guard_setting = true;
+        motion_control.enable_stall_guard_only_axis(axis, z_sg_value_set);
+        motion_control.clear_trigger();
+      }
+    }
 
     if (Z_AXIS == axis) {
       z_homing = true;
@@ -1908,15 +1908,15 @@ void prepare_line_to_destination() {
       z_homing = false;
     }
 
-    // if (z_stall_guard_setting) {
-    //   if (axis == Z_AXIS) {
-    //     if (motion_control.is_sg_trigger(SG_Z)) {
-    //       kill();
-    //     }
-    //     motion_control.disable_stall_guard_all();
-    //     motion_control.clear_trigger();
-    //   }
-    // }
+    if (z_stall_guard_setting) {
+      if (axis == Z_AXIS) {
+        if (motion_control.is_sg_trigger(SG_Z)) {
+          kill();
+        }
+        motion_control.disable_stall_guard_all();
+        motion_control.clear_trigger();
+      }
+    }
 
     #if BOTH(HOMING_Z_WITH_PROBE, BLTOUCH_SLOW_MODE)
       if (axis == Z_AXIS) bltouch.stow(); // Intermediate STOW (in LOW SPEED MODE)
