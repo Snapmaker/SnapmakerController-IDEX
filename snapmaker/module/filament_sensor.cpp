@@ -96,7 +96,7 @@ void FilamentSensor::check() {
     //   }
     // }
 
-    if (e_step_count[i] >= check_step_count[i]) {
+    if (e_step_count[i] > check_step_count[i]) {
       uint16_t adc = get_adc_val(i);
       int32_t diff = abs(adc - start_adc[i]);
       uint32_t dead_space = HW_1_2(SENSOR_DEAD_SPACE_ADC, SENSOR_DEAD_SPACE_ADC_HW2);
