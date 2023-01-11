@@ -428,6 +428,7 @@ void J1_setup() {
   debug.init();
   subscribe_init();
   event_init();
+  system_service.init();
 
   TaskHandle_t thandle_j1_main = NULL;
   BaseType_t ret = xTaskCreate(j1_main_task, "j1_main_task", 1024, NULL, 5, &thandle_j1_main);

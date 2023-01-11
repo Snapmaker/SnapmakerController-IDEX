@@ -477,7 +477,11 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
   probe_fr = (z_probe_cnt == 0) ? PROBE_FAST_Z_FEEDRATE : PROBE_FAST_Z_FEEDRATE / Z_PROBE_SPEED_SLOW_SCALER;
   z_probe_cnt++;
 
-  system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_CAlIBRATION_Z_PROBING\r\n");
+    return E_PARAM;
+  }
+
   switch_detect.trun_on_probe_pwr();
   float before_probe_z = current_position[Z_AXIS];
 
@@ -510,7 +514,10 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
   if (last_active_extruder != active_extruder) {
     tool_change(last_active_extruder, true);
   }
-  system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_CAlIBRATION)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_CAlIBRATION\r\n");
+    ret = E_PARAM;
+  }
   switch_detect.trun_on_probe_pwr();
 
   return ret;
@@ -539,9 +546,12 @@ ErrCode Calibtration::wait_and_probe_z_offset(calibtration_position_e pos, uint8
   cur_pos = pos;
   status = CAlIBRATION_STATE_IDLE;
   stop_probe_and_sync();
-  system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING);
-  switch_detect.trun_on_probe_pwr();
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_CAlIBRATION_Z_PROBING)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_CAlIBRATION_Z_PROBING\r\n");
+    return E_PARAM;
+  }
 
+  switch_detect.trun_on_probe_pwr();
   X_standby();
   bed_preapare(extruder);
 
@@ -554,7 +564,10 @@ ErrCode Calibtration::wait_and_probe_z_offset(calibtration_position_e pos, uint8
   if (last_active_extruder != active_extruder) {
     tool_change(last_active_extruder, true);
   }
-  system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_CAlIBRATION)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_CAlIBRATION\r\n");
+    ret = E_PARAM;
+  }
   switch_detect.trun_on_probe_pwr();
 
   return ret;
@@ -713,9 +726,12 @@ ErrCode Calibtration::calibtration_xy() {
     return E_CAlIBRATION_XY;
   }
 
-  system_service.set_status(SYSTEM_STATUE_CAlIBRATION_XY_PROBING);
-  switch_detect.trun_on_probe_pwr();
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_CAlIBRATION_XY_PROBING)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_CAlIBRATION_XY_PROBING\r\n");
+    return E_PARAM;
+  }
 
+  switch_detect.trun_on_probe_pwr();
   X_standby();
   backup_offset();
   reset_xy_calibtration_env();
@@ -790,9 +806,13 @@ ErrCode Calibtration::calibtration_xy() {
   X_standby();
   Y_standby();
   tool_change(old_active_extruder, true);
-  system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
-  switch_detect.trun_on_probe_pwr();
 
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_CAlIBRATION)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_CAlIBRATION\r\n");
+    ret = E_PARAM;
+  }
+
+  switch_detect.trun_on_probe_pwr();
   if(ret == E_SUCCESS) {
     LOG_V("JF-XY Extruder1:%f %f\n", xy_center[0][0], xy_center[0][1]);
     LOG_V("JF-XY Extruder2:%f %f\n", xy_center[1][0], xy_center[1][1]);
@@ -826,7 +846,11 @@ ErrCode Calibtration::calibtration_xy_center_offset() {
   float xy_center[XY] = {0, 0};
   uint8_t old_active_extruder = active_extruder;
 
-  system_service.set_status(SYSTEM_STATUE_CAlIBRATION_XY_PROBING);
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_CAlIBRATION_XY_PROBING)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_CAlIBRATION_XY_PROBING\r\n");
+    return E_PARAM;
+  }
+
   switch_detect.trun_on_probe_pwr();
   X_standby();
   backup_offset();
@@ -861,9 +885,13 @@ ErrCode Calibtration::calibtration_xy_center_offset() {
 
   Z_prepare();
   tool_change(old_active_extruder, true);
-  system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
-  switch_detect.trun_on_probe_pwr();
 
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_CAlIBRATION)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_CAlIBRATION\r\n");
+    ret = E_PARAM;
+  }
+
+  switch_detect.trun_on_probe_pwr();
   if(ret == E_SUCCESS) {
     // XY center offset from XY home position (0, 0)
     heat_bed_center_offset[0] = xy_center[0] - calibration_position_xy[0][0];
@@ -979,7 +1007,10 @@ void Calibtration::set_z_offset(float offset, bool is_moved) {
   system_status_e cur_work_status = system_service.get_status();
 
   if (SYSTEM_STATUE_PRINTING == cur_work_status) {
-    system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET);
+    if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET)) {
+      LOG_E("can NOT set to SYSTEM_STATUE_PAUSING\r\n");
+      return;
+    }
     while(system_service.get_status() != SYSTEM_STATUE_PAUSED) {
       vTaskDelay(pdMS_TO_TICKS(10));
     }
@@ -1011,13 +1042,21 @@ void Calibtration::set_z_offset(float offset, bool is_moved) {
 
   // print_control.commands_unlock();
   if (SYSTEM_STATUE_PRINTING == cur_work_status) {
-    system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET);
+    if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET)) {
+      LOG_E("can NOT set to SYSTEM_STATUE_RESUMING\r\n");
+      system_service.return_to_idle();
+      return;
+    }
     while(system_service.get_status() == SYSTEM_STATUE_RESUMING) {
       vTaskDelay(pdMS_TO_TICKS(10));
     }
   }
   else {
-    system_service.set_status(cur_work_status, cur_pause_sorce);
+    if (E_SUCCESS != system_service.set_status(cur_work_status, cur_pause_sorce)) {
+      LOG_E("can NOT set to %d\r\n", cur_work_status);
+      system_service.return_to_idle();
+      return;
+    }
   }
 
   LOG_I("Apply Z offset: %f\n", home_offset[Z_AXIS]);

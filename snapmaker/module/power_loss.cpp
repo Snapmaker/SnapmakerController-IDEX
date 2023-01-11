@@ -381,8 +381,10 @@ ErrCode PowerLoss::power_loss_resume() {
     return PRINT_RESULT_PL_RESUME_ERR_E;
   }
 
-  // system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_PL);
-  system_service.set_status(SYSTEM_STATUE_POWER_LOSS_RESUMING, SYSTEM_STATUE_SCOURCE_PL);
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_POWER_LOSS_RESUMING, SYSTEM_STATUE_SCOURCE_PL)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_POWER_LOSS_RESUMING\r\n");
+    return PRINT_RESULT_PL_RESUME_ERR_E;
+  }
 
   home_offset = stash_data.home_offset;
   next_req = cur_line = line_number_sum = stash_data.file_position;
@@ -390,13 +392,20 @@ ErrCode PowerLoss::power_loss_resume() {
   clear();
   print_control.set_work_time(stash_data.work_time);
   print_control.mode_ = (print_mode_e)stash_data.print_mode;
+
   // The print needs to be extruded before resuming
   if (extrude_before_resume() != E_SUCCESS) {
-    system_service.set_status(SYSTEM_STATUE_PAUSED);
+    if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PAUSED)) {
+      LOG_E("can NOT set to SYSTEM_STATUE_PAUSED\r\n");
+      system_service.return_to_idle();
+    }
     return E_SYSTEM_EXCEPTION;
   } else {
     resume_print_env();
-    system_service.set_status(SYSTEM_STATUE_PRINTING);
+    if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PRINTING)) {
+      LOG_E("can NOT set to SYSTEM_STATUE_PRINTING\r\n");
+      system_service.return_to_idle();
+    }
   }
 
   return E_SUCCESS;

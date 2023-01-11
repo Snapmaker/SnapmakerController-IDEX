@@ -14,6 +14,7 @@ typedef enum {
   PRINT_RESULT_PL_RESUME_ERR_E = 208,
   PRINT_RESULT_SER_MODE_ERR_E = 209,
   PRINT_RESULT_NO_FILE_INFO_E = 210,
+  PRINT_RESULT_STOP_E = 211,
 } print_result_e;
 
 typedef enum : uint8_t{

@@ -94,6 +94,7 @@ typedef struct {
 #pragma pack()
 class SystemService {
   public:
+    void init(void);
     void get_coordinate_system_info(coordinate_system_t * info, bool is_logical=false);
     void get_machine_info(machine_info_t *info);
     void get_machine_size(machine_size_t *size);
@@ -101,7 +102,7 @@ class SystemService {
     system_status_e get_status() {return status_;}
     uint8_t *get_sn_addr(uint16_t *sn_len);
     system_status_source_e get_source() {return source_;}
-    void set_status(system_status_e status, system_status_source_e source=SYSTEM_STATUE_SCOURCE_NONE);
+    ErrCode set_status(system_status_e status, system_status_source_e source=SYSTEM_STATUE_SCOURCE_NONE);
     bool is_calibtration_status() { return (status_ >= SYSTEM_STATUE_CAlIBRATION) && (status_ <= SYSTEM_STATUE_CAlIBRATION_XY_PROBING);}
     bool is_working();
     bool is_printing();
@@ -109,7 +110,10 @@ class SystemService {
     void factory_reset(void);
     uint8_t get_hw_version(bool is_refresh = false);
     void save_setting();
+    void return_to_idle();
+
   private:
+    SemaphoreHandle_t lock_;
     system_status_e status_ = SYSTEM_STATUE_IDLE;
     system_status_source_e source_ = SYSTEM_STATUE_SCOURCE_NONE;
     uint8_t hw_version = 0xff;

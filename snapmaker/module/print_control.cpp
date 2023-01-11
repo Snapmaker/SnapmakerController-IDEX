@@ -81,7 +81,10 @@ bool PrintControl::filament_check() {
       break;
   }
   SERIAL_ECHOLNPAIR("flilament trigger and source:", source);
-  system_service.set_status(SYSTEM_STATUE_PAUSING, source);
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PAUSING, source)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_PAUSING\r\n");
+    system_service.return_to_idle();
+  }
   return true;
 }
 
@@ -224,6 +227,11 @@ ErrCode PrintControl::start() {
   if (system_service.is_working()) {
     return PRINT_RESULT_START_ERR_E;
   }
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PRINTING)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_PRINTING\r\n");
+    system_service.return_to_idle();
+    return PRINT_RESULT_START_ERR_E;
+  }
 
   // prepare toolhead
   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
@@ -248,7 +256,6 @@ ErrCode PrintControl::start() {
   filament_sensor.reset();
   memset(&print_err_info, 0, sizeof(print_err_info));
   commands_unlock();
-  system_service.set_status(SYSTEM_STATUE_PRINTING);
   start_work_time();
 
   return E_SUCCESS;
@@ -297,8 +304,14 @@ ErrCode PrintControl::pause() {
 
   if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET) {
     motion_control.retrack_e(Z_LIVE_OFFSET_RETRACE_D, CHANGE_FILAMENT_SPEED);
-    system_service.set_status(SYSTEM_STATUE_PAUSED);
-    return E_SUCCESS;
+    if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PAUSED)) {
+      LOG_E("can NOT set to SYSTEM_STATUE_PAUSED\r\n");
+      system_service.return_to_idle();
+      return E_FAILURE;
+    }
+    else {
+      return E_SUCCESS;
+    }
   }
 
   motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
@@ -354,53 +367,64 @@ ErrCode PrintControl::pause() {
   tool_change(save_active_extruder);
   motion_control.move_to_y(0, PAUSE_RESUME_MOVE_FEEDRATE_MMM);
 
-  system_service.set_status(SYSTEM_STATUE_PAUSED);
-  return E_SUCCESS;
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PAUSED)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_PAUSED\r\n");
+    system_service.return_to_idle();
+    return E_FAILURE;
+  }
+  else {
+    return E_SUCCESS;
+  }
 }
 
 ErrCode PrintControl::resume() {
 
   buffer_head = buffer_tail = 0;
-  system_service.set_status(SYSTEM_STATUE_RESUMING);
+
+  if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_RESUMING)) {
+    LOG_E("can NOT set to SYSTEM_STATUE_RESUMING\r\n");
+    system_service.return_to_idle();
+    return E_FAILURE;
+  }
 
   if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET) {
-    // if (power_loss.stash_data.dual_x_carriage_mode >= DXC_DUPLICATION_MODE) {
-    //   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-    //   tool_change(0, true);
-    //   dual_x_carriage_mode = DXC_MIRRORED_MODE;
-    //   duplicate_extruder_x_offset = MIRRORED_MODE_X_OFFSET;
-    //   idex_set_mirrored_mode(true);
-    //   set_duplication_enabled(true);
-    // }
-    // else {
-    //   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-    //   tool_change(power_loss.stash_data.active_extruder);
-    //   set_duplication_enabled(false);
-    // }
-    // dual_x_carriage_unpark();
-
     dual_x_carriage_mode = (DualXMode)power_loss.stash_data.dual_x_carriage_mode;
     idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
 
     power_loss.resume_print_env();
     commands_unlock();
-    system_service.set_status(SYSTEM_STATUE_PRINTING);
-    return E_SUCCESS;
+    if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PRINTING)) {
+      LOG_E("can NOT set to SYSTEM_STATUE_PRINTING\r\n");
+      system_service.return_to_idle();
+      return E_FAILURE;
+    }
+    else {
+      return E_SUCCESS;
+    }
   }
 
   if (power_loss.extrude_before_resume() == E_SUCCESS) {
     power_loss.resume_print_env();
     commands_unlock();
     if (SYSTEM_STATUE_RESUMING == system_service.get_status()) {
-      system_service.set_status(SYSTEM_STATUE_PRINTING);
+      if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PRINTING)) {
+        LOG_E("can NOT set to SYSTEM_STATUE_PRINTING\r\n");
+        system_service.return_to_idle();
+        return E_FAILURE;
+      }
     }
     return E_SUCCESS;
   }
   else {
-    system_service.set_status(SYSTEM_STATUE_PAUSED);
-    return E_SYSTEM_EXCEPTION;
+    if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PAUSED)) {
+      LOG_E("can NOT set to SYSTEM_STATUE_PAUSED\r\n");
+      system_service.return_to_idle();
+      return E_FAILURE;
+    }
+    else {
+      return E_SYSTEM_EXCEPTION;
+    }
   }
-
 }
 
 ErrCode PrintControl::stop() {

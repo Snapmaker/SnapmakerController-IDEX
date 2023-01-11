@@ -169,38 +169,50 @@ static ErrCode request_start_work(event_param_t& event) {
 }
 
 static ErrCode request_pause_work(event_param_t& event) {
-  if (system_service.get_status() != SYSTEM_STATUE_PRINTING) {
+  SERIAL_ECHOLNPAIR("SC req pause working...");
+  if (E_SUCCESS == system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_SACP)) {
+    gcode_req_status = GCODE_PACK_REQ_IDLE;
+    save_event_suorce_info(event);
+    return E_SUCCESS;
+  }
+  else {
+    LOG_E("can NOT set to SYSTEM_STATUE_PAUSING\r\n");
     event.data[0] = PRINT_RESULT_PAUSE_ERR_E;
     event.length = 1;
     SERIAL_ECHOLNPAIR("SC req pause work failed");
     return send_event(event);
   }
-  system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_SACP);
-  gcode_req_status = GCODE_PACK_REQ_IDLE;
-  save_event_suorce_info(event);
-  SERIAL_ECHOLNPAIR("SC req pause working...");
-  return E_SUCCESS;
 }
 
 static ErrCode request_resume_work(event_param_t& event) {
-   if (system_service.get_status() != SYSTEM_STATUE_PAUSED) {
+  SERIAL_ECHOLNPAIR("SC req resume work");
+  if (E_SUCCESS == system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_SACP)) {
+    save_event_suorce_info(event);
+    return E_SUCCESS;
+  }
+  else {
+    LOG_E("can NOT set to SYSTEM_STATUE_RESUMING\r\n");
     event.data[0] = PRINT_RESULT_RESUME_ERR_E;
     event.length = 1;
     SERIAL_ECHOLNPAIR("SC req pause work failed");
     return send_event(event);
   }
-  save_event_suorce_info(event);
-  system_service.set_status(SYSTEM_STATUE_RESUMING, SYSTEM_STATUE_SCOURCE_SACP);
-  SERIAL_ECHOLNPAIR("SC req resume work");
-  return E_SUCCESS;
 }
 
 static ErrCode request_stop_work(event_param_t& event) {
   SERIAL_ECHOLNPAIR("SC req stop work");
-  system_service.set_status(SYSTEM_STATUE_STOPPING, SYSTEM_STATUE_SCOURCE_SACP);
-  gcode_req_status = GCODE_PACK_REQ_IDLE;
-  save_event_suorce_info(event);
-  return E_SUCCESS;
+  if (E_SUCCESS == system_service.set_status(SYSTEM_STATUE_STOPPING, SYSTEM_STATUE_SCOURCE_SACP)) {
+    gcode_req_status = GCODE_PACK_REQ_IDLE;
+    save_event_suorce_info(event);
+    return E_SUCCESS;
+  }
+  else {
+    LOG_E("can NOT set to SYSTEM_STATUE_STOPPING\r\n");
+    event.data[0] = PRINT_RESULT_STOP_E;
+    event.length = 1;
+    SERIAL_ECHOLNPAIR("SC req stop work failed");
+    return send_event(event);
+  }
 }
 
 static ErrCode request_stop_single_extrude_work(event_param_t& event) {
@@ -215,22 +227,22 @@ static ErrCode request_stop_single_extrude_work(event_param_t& event) {
     return send_event(event);
   }
 
-  // Printing can only be stopped.
-  // This function will be enabled again when printing ends
-  save_event_suorce_info(event);
-  if (system_service.get_status() != SYSTEM_STATUE_PRINTING) {
+  if (E_SUCCESS == system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_STOP_EXTRUDE)) {
+    // Printing can only be stopped.
+    // This function will be enabled again when printing ends
+    save_event_suorce_info(event);
+    // fdm_head.set_duplication_enabled(e, en);
+    fdm_head.stop_single_extruder_e = e;
+    fdm_head.stop_single_extruder_en = en;
+    return E_SUCCESS;
+  }
+  else {
+    LOG_E("can NOT set to SYSTEM_STATUE_PAUSING\r\n");
     power_loss.stash_data.extruder_dual_enable[e] = en;
     event.data[0] = E_SUCCESS;
     event.length = 1;
     return send_event(event);
   }
-
-  // fdm_head.set_duplication_enabled(e, en);
-  fdm_head.stop_single_extruder_e = e;
-  fdm_head.stop_single_extruder_en = en;
-
-  system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_STOP_EXTRUDE);
-  return E_SUCCESS;
 }
 
 static ErrCode request_power_loss_status(event_param_t& event) {
@@ -518,7 +530,10 @@ void wait_print_end(void) {
   if (print_control.buffer_is_empty()) {
     SERIAL_ECHOLNPAIR("print done and will stop");
     gcode_req_status = GCODE_PACK_REQ_IDLE;
-    system_service.set_status(SYSTEM_STATUE_STOPPING, SYSTEM_STATUE_SCOURCE_DONE);
+    if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_STOPPING, SYSTEM_STATUE_SCOURCE_DONE)) {
+      LOG_E("can NOT set to SYSTEM_STATUE_STOPPING\r\n");
+      system_service.return_to_idle();
+    }
   }
 }
 
@@ -618,7 +633,7 @@ void resuming_status_deal() {
     req_gcode_pack();
   } else {
     report_status_info(STATUS_PAUSE_BE_FILAMENT);
-    SERIAL_ECHOLNPAIR("resume be flilament puase");
+    SERIAL_ECHOLNPAIR("resume be flilament pause");
   }
 }
 

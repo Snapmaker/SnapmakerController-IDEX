@@ -65,7 +65,10 @@ static ErrCode calibtration_set_mode(event_param_t& event) {
         event.data[0] = E_COMMON_ERROR;
     }
     if (event.data[0] == E_SUCCESS) {
-      system_service.set_status(SYSTEM_STATUE_CAlIBRATION);
+      if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_CAlIBRATION)) {
+        LOG_E("can NOT set to SYSTEM_STATUE_CAlIBRATION\r\n");
+        event.data[0] = E_COMMON_ERROR;
+      }
     }
   }
   event.length = 1;

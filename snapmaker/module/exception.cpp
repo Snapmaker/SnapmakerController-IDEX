@@ -66,20 +66,29 @@ void Exception::trigger_behavior(exception_behavior_e e, bool same_sta) {
     case EXCEPTION_BAN_BED_POWER :
       OUT_WRITE(HEATER_BED_PWR_PIN, LOW);
       break;
+
     case EXCEPTION_BAN_MOVE :
       if (system_service.is_printing()) {
         if (!same_sta)
           LOG_I("pause working cause exception!");
-        system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_EXCEPTION);
+        if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_EXCEPTION)) {
+          LOG_E("can NOT set to SYSTEM_STATUE_PAUSING\r\n");
+          system_service.return_to_idle();
+        }
       }
       break;
+
     case EXCEPTION_BAN_WORK :
       if (system_service.is_printing()) {
         if (!same_sta)
           LOG_I("pause working cause exception!");
-        system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_EXCEPTION);
+        if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_EXCEPTION)) {
+          LOG_E("can NOT set to SYSTEM_STATUE_PAUSING\r\n");
+          system_service.return_to_idle();
+        }
       }
       break;
+
     case EXCEPTION_BAN_HEAT_NOZZLE :
       if (!same_sta)
         LOG_I("stop heating hotend cause exception! c0: %d / t0: %d, c1: %d / t1: %d\n",
@@ -88,17 +97,22 @@ void Exception::trigger_behavior(exception_behavior_e e, bool same_sta) {
       fdm_head.set_temperature(0, 0);
       fdm_head.set_temperature(1, 0);
       break;
+
     case EXCEPTION_BAN_HEAT_BED :
       if (!same_sta)
         LOG_I("stop heating bed cause exception! c: %d / t: %d\n",
             (int)thermalManager.degBed(), thermalManager.degTargetBed());
       bed_control.set_temperature(0);
       break;
+
     case EXCEPTION_BAN_WORK_AND_STOP :
       if (system_service.is_working()) {
         if (!same_sta)
           LOG_I("stop working cause exception!");
-        system_service.set_status(SYSTEM_STATUE_STOPPING, SYSTEM_STATUE_SCOURCE_EXCEPTION);
+        if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_STOPPING, SYSTEM_STATUE_SCOURCE_EXCEPTION)) {
+          LOG_E("can NOT set to SYSTEM_STATUE_STOPPING\r\n");
+          system_service.return_to_idle();
+        }
       }
       break;
   }

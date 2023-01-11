@@ -2,7 +2,11 @@
 #include "../../Marlin/src/inc/Version.h"
 #include "../../Marlin/src/module/motion.h"
 #include "../../Marlin/src/module/settings.h"
+#include "../../Marlin/src/module/temperature.h"
 #include "power_loss.h"
+#include "fdm.h"
+#include "../module/motion_control.h"
+
 SystemService system_service;
 
 #define SN_LENGHT 30
@@ -87,6 +91,14 @@ uint8_t *SystemService::get_sn_addr(uint16_t *sn_len) {
   }
 }
 
+void SystemService::init() {
+  lock_ = xSemaphoreCreateMutex();
+  if (!lock_) {
+    LOG_E("Can NOT create a mutex for system service\r\n");
+    while(1) vTaskDelay(pdMS_TO_TICKS(100));
+  }
+}
+
 void SystemService::get_coordinate_system_info(coordinate_system_t * info, bool is_logical) {
   xyze_pos_t position = current_position;
   float x0 = x_position();
@@ -156,20 +168,189 @@ ErrCode SystemService::set_origin(coordinate_info_t axis) {
   return E_SUCCESS;
 }
 
-void SystemService::set_status(system_status_e status, system_status_source_e source) {
-  switch (status) {
+ErrCode SystemService::set_status(system_status_e req_status, system_status_source_e source) {
+
+  ErrCode ret = E_FAILURE;
+
+  LOG_I("Current system status %d, request status %d\r\n", status_, req_status);
+  if (req_status == status_) return E_SUCCESS;
+
+  xSemaphoreTake(lock_, 0xFFFFFFFF);
+  switch (req_status) {
+    case SYSTEM_STATUE_IDLE:
+      status_ = req_status;
+      ret = E_SUCCESS;
+      break;
+
+    case SYSTEM_STATUE_STARTING:
+      if (SYSTEM_STATUE_IDLE == status_ ||
+          SYSTEM_STATUE_CAlIBRATION == status_) {
+        status_ = req_status;
+        ret = E_SUCCESS;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
+    case SYSTEM_STATUE_PRINTING:
+      if (SYSTEM_STATUE_STARTING == status_ ||
+          SYSTEM_STATUE_RESUMING == status_ ||
+          SYSTEM_STATUE_IDLE == status_ ||
+          SYSTEM_STATUE_POWER_LOSS_RESUMING == status_ ||
+          SYSTEM_STATUE_CAlIBRATION == status_) {
+        status_ = req_status;
+        ret = E_SUCCESS;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
     case SYSTEM_STATUE_PAUSING:
+      if (SYSTEM_STATUE_PRINTING == status_ ||
+          SYSTEM_STATUE_CAlIBRATION == status_) {
+        status_ = req_status;
+        ret = E_SUCCESS;
+        wait_for_heatup = false;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
+    case SYSTEM_STATUE_PAUSED:
+      if (SYSTEM_STATUE_PAUSING == status_ ||
+          SYSTEM_STATUE_RESUMING == status_ ||
+          SYSTEM_STATUE_PRINTING == status_ ||
+          SYSTEM_STATUE_CAlIBRATION == status_) {
+        status_ = req_status;
+        ret = E_SUCCESS;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
     case SYSTEM_STATUE_STOPPING:
+      if (SYSTEM_STATUE_PRINTING == status_ ||
+          SYSTEM_STATUE_PAUSED == status_ ||
+          SYSTEM_STATUE_PAUSING == status_ ||
+          SYSTEM_STATUE_FINISHING == status_ ||
+          SYSTEM_STATUE_CAlIBRATION == status_) {
+        status_ = req_status;
+        wait_for_heatup = false;
+        ret = E_SUCCESS;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
+    case SYSTEM_STATUE_STOPPED:
+      if (SYSTEM_STATUE_STOPPING == status_ ||
+          SYSTEM_STATUE_CAlIBRATION == status_) {
+        status_ = req_status;
+        ret = E_SUCCESS;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
     case SYSTEM_STATUE_FINISHING:
+      if (SYSTEM_STATUE_PRINTING == status_) {
+        status_ = req_status;
+        ret = E_SUCCESS;
+        wait_for_heatup = false;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
+    case SYSTEM_STATUE_COMPLETED:
       wait_for_heatup = false;
+      status_ = req_status;
+      ret = E_SUCCESS;
       break;
+
+    case SYSTEM_STATUE_RECOVERING:
+      status_ = req_status;
+      ret = E_SUCCESS;
+      break;
+
+    case SYSTEM_STATUE_RESUMING:
+      if (SYSTEM_STATUE_PAUSED == status_ || SYSTEM_STATUE_RECOVERING == status_ ||
+          SYSTEM_STATUE_CAlIBRATION == status_) {
+        status_ = req_status;
+        ret = E_SUCCESS;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
+    case SYSTEM_STATUE_POWER_LOSS_RESUMING:
+      if (SYSTEM_STATUE_IDLE == status_) {
+        status_ = req_status;
+        ret = E_SUCCESS;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
+    case SYSTEM_STATUE_CAlIBRATION:
+      if (SYSTEM_STATUE_IDLE == status_ ||
+          SYSTEM_STATUE_CAlIBRATION_Z_PROBING == status_ ||
+          SYSTEM_STATUE_CAlIBRATION_XY_PROBING == status_) {
+        status_ = req_status;
+        ret = E_SUCCESS;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
+    case SYSTEM_STATUE_CAlIBRATION_Z_PROBING:
+      if (SYSTEM_STATUE_IDLE == status_ ||
+          SYSTEM_STATUE_CAlIBRATION == status_ ||
+          SYSTEM_STATUE_CAlIBRATION_XY_PROBING == status_) {
+        status_ = req_status;
+        ret = E_SUCCESS;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
+    case SYSTEM_STATUE_CAlIBRATION_XY_PROBING:
+      if (SYSTEM_STATUE_IDLE == status_ ||
+          SYSTEM_STATUE_CAlIBRATION == status_ ||
+          SYSTEM_STATUE_CAlIBRATION_Z_PROBING == status_) {
+        status_ = req_status;
+        ret = E_SUCCESS;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
     default:
+      status_ = req_status;
+      ret = E_SUCCESS;
       break;
   }
-  status_ = status;
-  if (source != SYSTEM_STATUE_SCOURCE_NONE) {
-    source_ = source;
+
+  if (E_SUCCESS == ret) {
+    if (source != SYSTEM_STATUE_SCOURCE_NONE) {
+      source_ = source;
+    }
   }
+
+  xSemaphoreGive(lock_);
+  return ret;
 }
 
 
@@ -232,4 +413,21 @@ void SystemService::factory_reset() {
 
 void SystemService::save_setting() {
   settings.save();
+}
+
+void SystemService::return_to_idle() {
+  LOG_I("System return to idle\r\n");
+  // stop hotends and bed, stop fan, disable motor
+  HOTEND_LOOP() {
+    thermalManager.setTargetHotend(0, e);
+    fdm_head.set_fan_speed(e, 0, 0);
+  }
+  thermalManager.setTargetBed(0);
+
+  /*
+  for (uint8_t i = 0; i <= E_AXIS; i++) {
+    motion_control.motor_disable(i);
+    if (i == X_AXIS || i == E_AXIS) motion_control.motor_disable(i, 1);
+  }
+  */
 }
