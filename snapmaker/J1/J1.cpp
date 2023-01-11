@@ -82,15 +82,15 @@ void z_sg_value_set(void) {
       if (z_move_count > 50) {
         z_sg_value = (float)(stepperZ.SG_RESULT()) / 3 - 25;
         LOG_I("z_sg_value set to %d\r\n", z_sg_value);
-        extern bool z_homing;
-        extern bool z_stall_guard_setting;
-        if (z_homing) {
-          z_stall_guard_setting = true;
-          uint8_t z_sg_value_set = z_sg_value * 1.5;
-          motion_control.enable_stall_guard_only_axis(Z_AXIS, z_sg_value_set);
-          motion_control.clear_trigger();
-          LOG_I("Z home stall gurad set to %d\r\n", z_sg_value_set);
-        }
+        // extern bool z_homing;
+        // extern bool z_stall_guard_setting;
+        // if (z_homing) {
+        //   z_stall_guard_setting = true;
+        //   uint8_t z_sg_value_set = z_sg_value * 1.5;
+        //   motion_control.enable_stall_guard_only_axis(Z_AXIS, z_sg_value_set);
+        //   motion_control.clear_trigger();
+        //   LOG_I("Z home stall gurad set to %d\r\n", z_sg_value_set);
+        // }
       }
     }
     else {
@@ -179,21 +179,21 @@ void sg_set(void) {
   x1_sg_value_set();
 }
 
-// void probe_io_log(void) {
-//   static uint8_t last_probe_0 = 0;
-//   static uint8_t last_probe_1 = 0;
+void probe_io_log(void) {
+  static uint8_t last_probe_0 = 0;
+  static uint8_t last_probe_1 = 0;
 
-//   uint8_t t = READ(X0_CAL_PIN);
-//   if (t != last_probe_0) {
-//     last_probe_0 = t;
-//     LOG_I("probe_0 %d\r\n", last_probe_0);
-//   }
-//   t = READ(X1_CAL_PIN);
-//   if (t != last_probe_1) {
-//     last_probe_1 = t;
-//     LOG_I("probe_1 %d\r\n", last_probe_1);
-//   }
-// }
+  uint8_t t = READ(X0_CAL_PIN);
+  if (t != last_probe_0) {
+    last_probe_0 = t;
+    LOG_I("probe_0 %d\r\n", last_probe_0);
+  }
+  t = READ(X1_CAL_PIN);
+  if (t != last_probe_1) {
+    last_probe_1 = t;
+    LOG_I("probe_1 %d\r\n", last_probe_1);
+  }
+}
 
 void TMC2209_log(void) {
   static uint32_t last_tick = 0;
@@ -380,6 +380,7 @@ void j1_main_task(void *args) {
     sg_set();
     statistics_log();
 
+    probe_io_log();
     #if 0
     // probe_io_log();
     // TMC2209_log();
