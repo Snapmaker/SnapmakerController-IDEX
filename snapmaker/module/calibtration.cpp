@@ -303,6 +303,8 @@ void restore_move_param() {
 probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedrate, bool do_sg/* = true */) {
 
   bool probe_status;
+  // int32_t count;
+  // uint32_t trigger_cnt;
   probe_result_e ret = PROBR_RESULT_SUCCESS;
   float pos_before_probe = current_position[axis];
 
@@ -350,7 +352,13 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
   }
 
   switch_detect.enable_probe(0);
-  probe_axis_move(axis, distance, feedrate);
+  if (Z_AXIS ==  axis) {
+    motion_control.move_to_z_no_limit(current_position.z + distance, feedrate);
+    motion_control.synchronize();
+  }
+  else {
+    probe_axis_move(axis, distance, feedrate);
+  }
   if (do_sg && motion_control.is_sg_trigger()) {
     LOG_E("probe failed, axis stall guard!!!\n");
     motion_control.synchronize();
@@ -359,43 +367,53 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
     return PROBR_RESULT_STALL_GUARD;
   }
 
+  // count = 20;
+  // trigger_cnt = 0;
+  // while(--count) {
+  //   if(switch_detect.read_active_extruder_status()) {
+  //     trigger_cnt++;
+  //     LOG_I("trigger_cnt %d\r\n", trigger_cnt);
+  //     if (trigger_cnt >= 10)
+  //       break;
+  //   }
+  //   vTaskDelay(pdMS_TO_TICKS(1));
+  // }
+  // if (trigger_cnt < 10) {
+  //   LOG_E("no probe trigger in touching!!!\r\n");
+  //   motion_control.disable_stall_guard_all();
+  //   switch_detect.disable_probe();
+  //   return PROBR_RESULT_SENSOR_ERROR;
+  // }
+
   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   sync_plan_position();
 
-  uint32_t count = 20;
-  uint32_t trigger_cnt = 0;
-  while(count--) {
-    if(switch_detect.read_active_extruder_status()) {
-      trigger_cnt++;
-      if (trigger_cnt > 10)
-        break;
-    }
-  }
-  if (!count) {
-    LOG_E("no probe trigger in touching!!!\r\n");
-    motion_control.disable_stall_guard_all();
-    switch_detect.disable_probe();
-    return PROBR_RESULT_SENSOR_ERROR;
-  }
-
   switch_detect.enable_probe(1);
-  probe_axis_move(axis, -distance, feedrate);
+  if (Z_AXIS ==  axis) {
+    motion_control.move_to_z_no_limit(current_position.z - distance, feedrate);
+    motion_control.synchronize();
+  }
+  else {
+    probe_axis_move(axis, -distance, feedrate);
+  }
 
-  count = 20;
-  trigger_cnt = 0;
-  while(count--) {
-    if(switch_detect.read_active_extruder_status()) {
-      trigger_cnt++;
-      if (trigger_cnt > 10)
-        break;
-    }
-  }
-  if (!count) {
-    LOG_E("no probe trigger in leaving!!!\r\n");
-    motion_control.disable_stall_guard_all();
-    switch_detect.disable_probe();
-    return PROBR_RESULT_SENSOR_ERROR;
-  }
+  // count = 20;
+  // trigger_cnt = 0;
+  // while(--count) {
+  //   if(switch_detect.read_active_extruder_status()) {
+  //     trigger_cnt++;
+  //     LOG_I("trigger_cnt %d\r\n", trigger_cnt);
+  //     if (trigger_cnt >= 10)
+  //       break;
+  //   }
+  //   vTaskDelay(pdMS_TO_TICKS(1));
+  // }
+  // if (trigger_cnt < 10) {
+  //   LOG_E("no probe trigger in leaving!!!\r\n");
+  //   motion_control.disable_stall_guard_all();
+  //   switch_detect.disable_probe();
+  //   return PROBR_RESULT_SENSOR_ERROR;
+  // }
 
   current_position[axis] = stepper.position((AxisEnum)axis) / planner.settings.axis_steps_per_mm[axis];
   sync_plan_position();
@@ -484,7 +502,6 @@ ErrCode Calibtration::probe_hight_offset(calibtration_position_e pos, uint8_t ex
 
   switch_detect.trun_on_probe_pwr();
   float before_probe_z = current_position[Z_AXIS];
-
   LOG_I("before apply motion limit, probe distance %f", probe_distance);
   xyz_pos_t target = current_position;
   target[Z_AXIS] += probe_distance;
