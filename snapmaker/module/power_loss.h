@@ -86,6 +86,7 @@ class PowerLoss {
     void write_flash(void);
   private:
     bool wait_temp_resume();
+
   public:
     uint32_t cur_line = 0;
     uint32_t line_number_sum = 0;

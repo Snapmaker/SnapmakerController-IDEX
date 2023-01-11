@@ -248,6 +248,7 @@ ErrCode PrintControl::start() {
     motion_control.home();
   }
 
+  power_loss.stash_data.file_position = 0;
   power_loss.cur_line = power_loss.line_number_sum = 0;
   power_loss.next_req = 0;
   buffer_head = buffer_tail = 0;
@@ -303,7 +304,7 @@ ErrCode PrintControl::pause() {
   power_loss.stash_print_env();
 
   if (system_service.get_source() == SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET) {
-    motion_control.retrack_e(Z_LIVE_OFFSET_RETRACE_D, CHANGE_FILAMENT_SPEED);
+    // motion_control.retrack_e(Z_LIVE_OFFSET_RETRACE_D, CHANGE_FILAMENT_SPEED);
     if (E_SUCCESS != system_service.set_status(SYSTEM_STATUE_PAUSED)) {
       LOG_E("can NOT set to SYSTEM_STATUE_PAUSED\r\n");
       system_service.return_to_idle();

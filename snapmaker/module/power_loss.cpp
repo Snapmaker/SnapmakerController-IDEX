@@ -29,7 +29,14 @@ void PowerLoss::stash_print_env() {
   stash_data.position = cur_position;
 
   uint32_t cur_line = print_control.get_cur_line();
-  stash_data.file_position = cur_line ? cur_line - 1 : 0;  // The requested index starts at 0
+  if (cur_line) {
+    if (cur_line > stash_data.file_position) {
+      stash_data.file_position = cur_line - 1;
+    }
+  }
+  else {
+    stash_data.file_position = 0;
+  }
 
   stash_data.dual_x_carriage_mode = dual_x_carriage_mode;
   stash_data.print_feadrate = feedrate_mm_s;
