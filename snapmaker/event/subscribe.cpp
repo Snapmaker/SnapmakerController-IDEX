@@ -16,11 +16,11 @@ static event_param_t event_public_param;
 
 ErrCode Subscribe::enable(event_param_t &event) {
   if (sub_count >= MAX_SUBSCRIBE_COUNT) {
-    SERIAL_ECHOLNPAIR("ERROR: subscribe count to max:", sub_count);
+    SERIAL_ECHOLNPAIR("SNMK_ERROR: subscribe count to max:", sub_count);
     return E_NO_MEM;
   }
   if (event.length < 4) {
-    SERIAL_ECHOLNPAIR("ERROR: subscribe param len faile:", event.length);
+    SERIAL_ECHOLNPAIR("SNMK_ERROR: subscribe param len faile:", event.length);
     return E_PARAM;
   }
   uint8_t *data = event.data;
@@ -29,7 +29,7 @@ ErrCode Subscribe::enable(event_param_t &event) {
 
   event_cb_info_t *tmp_cb = get_event_info(cmd_set, cmd_id);
   if (!tmp_cb) {
-    SERIAL_ECHOLNPAIR("ERROR:heve no cmd_set:", cmd_set, ", cmd_id:", cmd_id);
+    SERIAL_ECHOLNPAIR("SNMK_ERROR:heve no cmd_set:", cmd_set, ", cmd_id:", cmd_id);
     return E_PARAM;
   }
   uint8_t index = 0;
@@ -61,7 +61,7 @@ ErrCode Subscribe::enable(event_param_t &event) {
 
 ErrCode Subscribe::disable(event_param_t &event) {
   if (event.length < 2) {
-    SERIAL_ECHOLNPAIR("ERROR: unsubscribe param len faile:", event.length);
+    SERIAL_ECHOLNPAIR("SNMK_ERROR: unsubscribe param len faile:", event.length);
     return E_PARAM;
   }
   uint8_t *data = event.data;

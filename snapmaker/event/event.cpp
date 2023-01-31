@@ -68,7 +68,7 @@ event_cache_node_t * EventHandler::get_event_cache() {
 ErrCode EventHandler::parse(recv_data_info_t *recv_info) {
   event_cache_node_t *event = get_event_cache();
   if (!event) {
-    SERIAL_ECHO("ERROR:event no cache\n");
+    SERIAL_ECHO("SNMK_ERROR:event no cache\n");
     parse_event_info(recv_info, &err_result_event);
     send_result(err_result_event.param, E_NO_MEM);
     return E_NO_MEM;
@@ -81,7 +81,7 @@ ErrCode EventHandler::parse(recv_data_info_t *recv_info) {
   event_cb_info_t * cb_info = get_event_info(event->param.info.command_set, event->param.info.command_id);
   if (!cb_info) {
     event->block_status = EVENT_CACHT_STATUS_IDLE;
-    LOG_E("ERROR: find no event cb: cmd_set[0x%x] cmd_id[0x%x]\n", event->param.info.command_set, event->param.info.command_id);
+    LOG_E("SNMK_ERROR: find no event cb: cmd_set[0x%x] cmd_id[0x%x]\n", event->param.info.command_set, event->param.info.command_id);
     return E_PARAM;
   }
 
