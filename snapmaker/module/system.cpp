@@ -236,6 +236,7 @@ ErrCode SystemService::set_status(system_status_e req_status, system_status_sour
       if (SYSTEM_STATUE_PRINTING == status_ ||
           SYSTEM_STATUE_PAUSED == status_ ||
           SYSTEM_STATUE_PAUSING == status_ ||
+          SYSTEM_STATUE_RESUMING == status_ ||
           SYSTEM_STATUE_FINISHING == status_ ||
           SYSTEM_STATUE_CAlIBRATION == status_) {
         status_ = req_status;
