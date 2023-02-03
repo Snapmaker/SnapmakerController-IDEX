@@ -7,6 +7,8 @@
 #include "../module/bed_control.h"
 #include "../module/motion_control.h"
 #include "../../../src/module/AxisManager.h"
+#include "../../Marlin/src/module/temperature.h"
+
 
 #define GCODE_MAX_PACK_SIZE     (450)
 #define GCODE_REQ_TIMEOUT_MS    (200)
@@ -75,6 +77,10 @@ gcode_req_status_e gcode_req_status = GCODE_PACK_REQ_IDLE;
 uint32_t gcode_req_timeout = 0;
 uint32_t gcode_req_timeout_times = 0;
 uint32_t gcode_req_base_wait_ms = 0;
+
+bool start_pause_record = false;
+uint32_t start_pause_time_ms = 0;
+bool pause_hotend_tmp_down = 0;
 
 
 static void req_gcode_pack();
@@ -593,6 +599,10 @@ void printer_event_init(void) {
 }
 
 void printing_status_deal() {
+
+  start_pause_record = false;
+  pause_hotend_tmp_down = false;
+
   switch (gcode_req_status) {
     case GCODE_PACK_REQ_WAIT_CACHE:
       req_gcode_pack();
@@ -609,7 +619,25 @@ void printing_status_deal() {
 }
 
 void paused_status_deal() {
-  // 如果5分钟没有操作就关闭电机进入休眠状态
+
+  if (pause_hotend_tmp_down)
+    return;
+
+  if (!start_pause_record) {
+    start_pause_time_ms = millis();
+    start_pause_record = true;
+  }
+
+  if (ELAPSED(millis(), start_pause_time_ms + (10 * 1000))) {
+    HOTEND_LOOP() {
+      if (fdm_head.extraduer_enable(e)) {
+        thermalManager.setTargetHotend(0, e);
+      }
+    }
+    LOG_I("Hotend thermal set to 0 as paused for a long time\r\n");
+    pause_hotend_tmp_down = true;
+  }
+
 }
 
 void resuming_status_deal() {
