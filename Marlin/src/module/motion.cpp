@@ -1358,7 +1358,10 @@ void prepare_line_to_destination() {
 
   #endif // PREVENT_COLD_EXTRUSION || PREVENT_LENGTHY_EXTRUDE
 
-  if (TERN0(DUAL_X_CARRIAGE, dual_x_carriage_unpark())) return;
+  extern bool x_first_move;
+  if (x_first_move) {
+    if (TERN0(DUAL_X_CARRIAGE, dual_x_carriage_unpark())) return;
+  }
 
   if (
     #if UBL_SEGMENTED

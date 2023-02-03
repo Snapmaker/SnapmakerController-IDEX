@@ -236,8 +236,8 @@ void PowerLoss::resume_print_env() {
   // sync_plan_position();
 
   if (system_service.get_source() != SYSTEM_STATUE_SCOURCE_Z_LIVE_OFFSET) {
-  idex_set_parked(true);
-  dual_x_carriage_unpark();
+    idex_set_parked(true);
+    dual_x_carriage_unpark();
     motion_control.move_to_z(stash_data.position[Z_AXIS] + Z_DOWN_SAFE_DISTANCE, PRINT_TRAVEL_FEADRATE);
     motion_control.move_to_xy(stash_data.position[X_AXIS], stash_data.position[Y_AXIS], PRINT_TRAVEL_FEADRATE);
     motion_control.move_to_z(stash_data.position[Z_AXIS], PRINT_TRAVEL_FEADRATE);

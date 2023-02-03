@@ -79,6 +79,7 @@ class PrintControl {
     bool req_set_work_time = false;
     uint32_t work_start_time = 0;
     bool is_calibretion_mode = false;  // calibretion mode not save powerloss data
+    bool first_start_gcode = false;
 };
 
 extern PrintControl print_control;

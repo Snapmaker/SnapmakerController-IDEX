@@ -233,6 +233,10 @@ ErrCode PrintControl::start() {
     return PRINT_RESULT_START_ERR_E;
   }
 
+  if (homing_needed()) {
+    motion_control.home();
+  }
+
   // prepare toolhead
   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
   if (mode_ >= PRINT_DUPLICATION_MODE) {
@@ -241,11 +245,10 @@ ErrCode PrintControl::start() {
     duplicate_extruder_x_offset = (dual_x_carriage_mode == DXC_DUPLICATION_MODE) ? \
                                   DUPLICATION_MODE_X_OFFSET : MIRRORED_MODE_X_OFFSET;
     idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
-    motion_control.home_x();
-  }
-
-  if (homing_needed()) {
-    motion_control.home();
+    first_start_gcode = true;
+    extern bool x_first_move;
+    x_first_move = false;
+    // motion_control.home_x();
   }
 
   power_loss.stash_data.file_position = 0;
