@@ -628,7 +628,7 @@ void paused_status_deal() {
     start_pause_record = true;
   }
 
-  if (ELAPSED(millis(), start_pause_time_ms + (10 * 1000))) {
+  if (ELAPSED(millis(), start_pause_time_ms + (2 * 60 * 1000))) {
     HOTEND_LOOP() {
       if (fdm_head.extraduer_enable(e)) {
         thermalManager.setTargetHotend(0, e);
