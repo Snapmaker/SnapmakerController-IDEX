@@ -1892,7 +1892,7 @@ void prepare_line_to_destination() {
     if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Home Fast: ", move_length, "mm");
 
     z_stall_guard_setting = false;
-    if (axis == Z_AXIS) {
+    if (axis == Z_AXIS && print_control.get_z_home_sg()) {
       extern uint16_t z_sg_value;
       if (z_sg_value) {
         uint8_t z_sg_value_set = z_sg_value * 1.4;

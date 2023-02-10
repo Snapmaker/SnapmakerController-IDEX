@@ -29,11 +29,13 @@ enum : uint8_t {
   SYS_ID_INPUTSHAPER_GET              = 0x3F,
   SYS_ID_RESONANCE_COMPENSATION_SET   = 0x40,
   SYS_ID_RESONANCE_COMPENSATION_GET   = 0x41,
-  SYS_ID_GET_DISTANCE_RELATIVE_HOME  = 0xA3,
+  SYS_ID_SET_Z_HOME_SG                = 0x42,
+  SYS_ID_GET_Z_HOME_SG                = 0x43,
+  SYS_ID_GET_DISTANCE_RELATIVE_HOME   = 0xA3,
   SYS_ID_SUBSCRIBE_MOTOR_ENABLE_STATUS  = 0xA4,
 };
 
-#define SYS_ID_CB_COUNT 27
+#define SYS_ID_CB_COUNT 30
 
 extern event_cb_info_t system_cb_info[SYS_ID_CB_COUNT];
 

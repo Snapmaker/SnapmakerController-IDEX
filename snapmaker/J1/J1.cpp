@@ -15,6 +15,7 @@
 #include "../module/exception.h"
 #include "../../../src/module/AxisManager.h"
 
+
 TaskHandle_t thandle_event_loop = NULL;
 TaskHandle_t thandle_event_recv = NULL;
 TaskHandle_t thandle_j1_main = NULL;
@@ -84,7 +85,7 @@ void z_sg_value_set(void) {
         LOG_I("z_sg_value set to %d\r\n", z_sg_value);
         extern bool z_homing;
         extern bool z_stall_guard_setting;
-        if (z_homing) {
+        if (z_homing && print_control.get_z_home_sg()) {
           z_stall_guard_setting = true;
           uint8_t z_sg_value_set = z_sg_value * 1.5;
           motion_control.enable_stall_guard_only_axis(Z_AXIS, z_sg_value_set);

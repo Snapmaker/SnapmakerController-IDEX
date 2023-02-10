@@ -10,6 +10,7 @@
 #include "../debug/debug.h"
 #include "src/module/settings.h"
 #include "../../../src/module/AxisManager.h"
+#include "../module/print_control.h"
 
 #pragma pack(1)
 
@@ -283,6 +284,24 @@ static ErrCode resonance_compensation_get(event_param_t& event) {
 
 }
 
+static ErrCode set_z_home_sg(event_param_t& event) {
+
+  LOG_I("SC set z home sg: %s \r\n", event.data[0] ? "on" : "off");
+  print_control.set_z_home_sg(event.data[0]);
+  event.data[0] = E_SUCCESS;
+  event.length = 1;
+  return send_event(event);
+}
+
+static ErrCode get_z_home_sg(event_param_t& event) {
+
+  event.data[0] = E_SUCCESS;
+  event.data[1] = print_control.get_z_home_sg();
+  event.length = 2;
+  return send_event(event);
+
+}
+
 static ErrCode move_relative(event_param_t& event) {
   mobile_instruction_t *move = (mobile_instruction_t *)(event.data);
   if (fdm_head.is_change_filamenter()) {
@@ -410,6 +429,8 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_INPUTSHAPER_GET ,             EVENT_CB_TASK_RUN  , inputshaper_get},
   {SYS_ID_RESONANCE_COMPENSATION_SET ,  EVENT_CB_TASK_RUN  , resonance_compensation_set},
   {SYS_ID_RESONANCE_COMPENSATION_GET ,  EVENT_CB_TASK_RUN  , resonance_compensation_get},
+  {SYS_ID_SET_Z_HOME_SG ,               EVENT_CB_TASK_RUN  , set_z_home_sg},
+  {SYS_ID_GET_Z_HOME_SG ,               EVENT_CB_TASK_RUN  , get_z_home_sg},
 
   {SYS_ID_GET_DISTANCE_RELATIVE_HOME , EVENT_CB_TASK_RUN  , req_distance_relative_home},
   {SYS_ID_SUBSCRIBE_MOTOR_ENABLE_STATUS , EVENT_CB_DIRECT_RUN  , get_motor_enable},

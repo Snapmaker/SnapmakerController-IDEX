@@ -63,6 +63,10 @@ class PrintControl {
     void error_and_stop();
     uint32_t get_work_time();
     void set_work_time(uint32_t time);
+
+    void set_z_home_sg(bool sg) { z_home_sg = sg; }
+    bool get_z_home_sg(void) { return z_home_sg; }
+
   private:
     void start_work_time();
     void stop_work_time();
@@ -80,6 +84,7 @@ class PrintControl {
     uint32_t work_start_time = 0;
     bool is_calibretion_mode = false;  // calibretion mode not save powerloss data
     bool first_start_gcode = false;
+    bool z_home_sg = false;
 };
 
 extern PrintControl print_control;
