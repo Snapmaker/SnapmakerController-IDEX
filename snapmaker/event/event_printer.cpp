@@ -12,7 +12,7 @@
 
 #define GCODE_MAX_PACK_SIZE     (450)
 #define GCODE_REQ_TIMEOUT_MS    (200)
-#define GCODE_TIMEOUT_MAX_CNT   (5)
+#define GCODE_TIMEOUT_MAX_CNT   (8)  // 25.6 second
 
 #pragma pack(1)
 
