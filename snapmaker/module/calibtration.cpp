@@ -94,7 +94,7 @@ void Calibtration::set_heat_bed_center_offset(const float offset[2]) {
   heat_bed_center_offset[0] = offset[0];
   heat_bed_center_offset[1] = offset[1];
   if(!head_bed_center_offset_check()) {
-    LOG_I("Head bed center offset check failed, reset\r\n");
+    // LOG_I("Head bed center offset check failed, reset\r\n");
     head_bed_center_offset_reset();
   }
 }

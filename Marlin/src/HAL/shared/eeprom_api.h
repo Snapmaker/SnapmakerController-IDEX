@@ -36,6 +36,9 @@ public:
   // Prepare to read or write
   static bool access_start();
 
+  //
+  static bool load(uint32_t len);
+
   // Housecleaning after read or write
   static bool access_finish();
 

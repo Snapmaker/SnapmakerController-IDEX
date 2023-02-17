@@ -109,6 +109,13 @@ void GcodeSuite::M2000() {
     }
     break;
 
+    case 14:
+    {
+      print_control.z_home_sg = (uint8_t)parser.byteval('Z', (uint8_t)0);
+      LOG_I("Z home sg set to %d\r\n", print_control.z_home_sg);
+    }
+    break;
+
     case 100:
       LOG_I("test watch dog!\n");
       vTaskDelay(pdMS_TO_TICKS(1000));
@@ -375,9 +382,9 @@ void GcodeSuite::M2000() {
       break;
   }
 
-  uint8_t z = (uint8_t)parser.byteval('Z', (uint8_t)0xFF);
-  if (z != 0xFF) {
-    motion_control.move_to_z((float)z, 600);
-  }
+  // uint8_t z = (uint8_t)parser.byteval('Z', (uint8_t)0xFF);
+  // if (z != 0xFF) {
+  //   motion_control.move_to_z((float)z, 600);
+  // }
 }
 

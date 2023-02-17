@@ -61,6 +61,18 @@ bool PersistentStore::access_start() {
   return true;
 }
 
+bool PersistentStore::load(uint32_t len) {
+  uint32_t Address;
+  uint8_t *pBuff;
+  Address = pageBase;
+  pBuff = (uint8_t*)HAL_GD32F1_eeprom_content;
+  for (uint32_t i=0; i<len; i++) {
+      *pBuff++ = *((uint8_t*)Address);
+      Address++;
+  }
+  return true;
+}
+
 bool PersistentStore::access_finish() {
   uint32_t Address;
   uint16_t *pu16value;
@@ -70,7 +82,7 @@ bool PersistentStore::access_finish() {
   pu16value = (uint16_t*)HAL_GD32F1_eeprom_content;
   FLASH_Unlock();
   FLASH_ErasePage(EEPROM_PAGE0_BASE);
-  FLASH_ErasePage(EEPROM_PAGE1_BASE); 
+  FLASH_ErasePage(EEPROM_PAGE1_BASE);
   for (int i=0;i<HAL_GD32F1_EEPROM_SIZE;i=i+2) {
     FLASH_ProgramHalfWord(Address, *pu16value++);
     Address += 2;

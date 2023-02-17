@@ -31,11 +31,15 @@
   #include "../HAL/shared/eeprom_api.h"
 #endif
 
+#define EXISTING_DATA_SEARCH_LEN    (2048)
+#define SETTING_DATA_HEADER_SIZE    (6)
+
 class MarlinSettings {
   public:
     static uint16_t datasize();
 
     AT_END_OF_TEXT static void reset();
+    AT_END_OF_TEXT static void _update_to_eeprom_buffer();
     AT_END_OF_TEXT static bool save();    // Return 'true' if data was saved
 
     FORCE_INLINE static bool init_eeprom() {
@@ -56,8 +60,16 @@ class MarlinSettings {
 
     #if ENABLED(EEPROM_SETTINGS)
 
-     AT_END_OF_TEXT static bool load();      // Return 'true' if data was loaded ok
-     AT_END_OF_TEXT static bool validate();  // Return 'true' if EEPROM data is ok
+     AT_END_OF_TEXT static bool load();           // Return 'true' if data was loaded ok
+     AT_END_OF_TEXT static bool validate();       // Return 'true' if EEPROM data is ok
+
+    static uint16_t _stored_crc;
+    static int _existing_data_len;
+    static int _extend_len;
+
+     AT_END_OF_TEXT static int _find_existing_data();                   // Return the exiting data len, <= 0 means there is no valid data
+     AT_END_OF_TEXT static bool _constructe_new_data();                 // Constructe new setting data, with the existing data and new RESET_VALUDE data
+     AT_END_OF_TEXT static bool _extend_setting();                      // Return 'true' if extending data is ok
 
       static inline void first_load() {
         static bool loaded = false;
@@ -106,6 +118,7 @@ class MarlinSettings {
                                           // live at the very end of the eeprom
       #endif
 
+      static void _just_read_data(bool valid);
       static bool _load();
       static bool size_error(const uint16_t size);
 
