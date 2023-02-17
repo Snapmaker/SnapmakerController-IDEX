@@ -1931,6 +1931,11 @@ void prepare_line_to_destination() {
       if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Move Away: ", -bump, "mm");
       do_homing_move(axis, -bump, TERN(HOMING_Z_WITH_PROBE, (axis == Z_AXIS ? z_probe_fast_mm_s : 0), 0), false);
 
+      if (READ(Z_MAX_PIN) != Z_MAX_ENDSTOP_INVERTING) {
+        LOG_E("Endstops runnig fault as bumpping keep trigger\r\n");
+        kill();
+      }
+
       #if ENABLED(DETECT_BROKEN_ENDSTOP)
         // Check for a broken endstop
         EndstopEnum es;
