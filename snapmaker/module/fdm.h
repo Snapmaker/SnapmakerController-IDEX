@@ -6,6 +6,8 @@
 
 #pragma pack(1)
 
+#define HOTEND_MAX_TEMP  (400)
+
 enum {
   FAN_TYPE_COLD_MODULE = 0,
   FAN_TYPE_COLD_EXTRUDER = 2,

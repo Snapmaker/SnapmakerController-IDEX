@@ -4,6 +4,7 @@
 #include "../J1/common_type.h"
 #include "module_base.h"
 
+#define BED_MAX_TEMP  (200)
 
 #pragma pack(1)
 typedef struct {

@@ -34,6 +34,9 @@ ErrCode FDM_Head::set_temperature(uint8_t e, uint16_t temperature, bool is_save)
   if (temperature > 0 && !exception_server.is_allow_heat_nozzle()) {
     return E_SYSTEM_EXCEPTION;
   }
+  if (temperature > HOTEND_MAX_TEMP) {
+    return E_PARAM;
+  }
   if (is_save) {
     power_loss.stash_data.nozzle_temp[e] = temperature;
   }
