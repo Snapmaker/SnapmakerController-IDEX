@@ -436,6 +436,11 @@ ErrCode PrintControl::stop() {
     motion_control.wait_G28();
     power_loss.clear();
 
+    // wait for auto park finish
+    while(axisManager.T0_T1_simultaneously_move || axisManager.T0_T1_simultaneously_move_req) {
+      vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
     // motion_control.quickstop();
     commands_lock();
     buffer_head = buffer_tail = 0;
