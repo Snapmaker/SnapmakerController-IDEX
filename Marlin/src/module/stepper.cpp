@@ -2489,10 +2489,10 @@ uint32_t Stepper::other_axis_block_phase_isr() {
   if (!axisManager.T0_T1_simultaneously_move)
     return interval;
 
-  if (system_service.get_status() == SYSTEM_STATUE_PAUSING) {
-    axisManager.T0_T1_simultaneously_move = false;
-    return interval;
-  }
+  // if (system_service.get_status() == SYSTEM_STATUE_PAUSING) {
+  //   axisManager.T0_T1_simultaneously_move = false;
+  //   return interval;
+  // }
 
   if (abs(axisManager.T0_T1_calc_steps) == abs(axisManager.T0_T1_execute_steps)) {
     axisManager.T0_T1_simultaneously_move = false;

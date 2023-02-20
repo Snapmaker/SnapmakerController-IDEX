@@ -150,6 +150,7 @@ class Axis {
 class AxisManager {
   public:
     int counts[20] = {0};
+    bool T0_T1_simultaneously_move_req = false;
     bool T0_T1_simultaneously_move = false;
     float T0_T1_target_pos;
     int32_t T0_T1_execute_steps;

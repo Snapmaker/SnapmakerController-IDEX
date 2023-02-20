@@ -187,11 +187,12 @@ void GcodeSuite::M2000() {
         return;
       }
 
-      if (system_service.get_status() == SYSTEM_STATUE_PAUSING) {
-        LOG_I("PAUSING, can not move T0 T1 now\r\n");
+      if (SYSTEM_STATUE_PRINTING != system_service.get_status()) {
+        LOG_I("Not printing, can not move T0 T1 now\r\n");
         return;
       }
 
+      axisManager.T0_T1_simultaneously_move_req = true;
       axisManager.T0_T1_target_pos = x_home_pos(!active_extruder);
       float L = axisManager.T0_T1_target_pos - inactive_extruder_x;
       float V = (float)parser.floatval('V', (float)200.0);
@@ -207,7 +208,10 @@ void GcodeSuite::M2000() {
 
       LOG_I("### M2000 S200: target_step_pos %d, current X step pos\r\n", target_steps, axisManager.inactive_x_step_pos);
       LOG_I("### M2000 S200: axisManager.T0_T1_calc_steps = %d, run float distance %f\r\n", axisManager.T0_T1_calc_steps, L);
-      if (0 == axisManager.T0_T1_calc_steps) return;
+      if (0 == axisManager.T0_T1_calc_steps){
+        axisManager.T0_T1_simultaneously_move_req = false;
+        return;
+      }
 
       float millimeters     = fabs(L);                    // mm
       float entry_speed     = 5 / 1000.0f;            // mm / s
@@ -262,7 +266,6 @@ void GcodeSuite::M2000() {
 
       }
 
-      #if 1
       Move move;
       axisManager.axis_t0_t1.reset();
       move.start_t = 0;
@@ -301,74 +304,7 @@ void GcodeSuite::M2000() {
       axisManager.T0_T1_last_print_time = 0;
       axisManager.axis_t0_t1.is_consumed = true;
       axisManager.T0_T1_simultaneously_move = true;
-      #endif
-
-      #if 0
-      uint32_t move_idx = 0;
-      Move moveQueue[5];
-
-      // First empty move
-      Move &move = moveQueue[move_idx++];
-      move.start_t = 0;
-      move.t = axisManager.shaped_delta_window + 0.001;
-      move.end_t = move.start_t + move.t;
-      move.accelerate = 0.0;
-      move.start_pos[T0_T1_AXIS_INDEX] = 0.0;
-      move.end_pos[T0_T1_AXIS_INDEX] = 0.0;
-      move.axis_r[T0_T1_AXIS_INDEX] = L > 0.0 ? 80 : -80;
-
-      // second acc move
-      if (accelDistance > 0) {
-        move = moveQueue[move_idx++];
-        move.accelerate = acceleration;
-        move.t = accelClocks;
-        move.end_t = move.start_t + move.t;
-        move.start_pos[T0_T1_AXIS_INDEX] = moveQueue[move_idx-1].end_pos[T0_T1_AXIS_INDEX];
-        move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX] + accelDistance * move.axis_r[T0_T1_AXIS_INDEX];
-      }
-
-      if (plateau > 0.0) {
-        move = moveQueue[move_idx++];
-        move.accelerate = 0;
-        move.start_t = moveQueue[move_idx-1].end_t;
-        move.t = plateauClocks;
-        move.end_t = move.start_t + move.t;
-        move.start_pos[T0_T1_AXIS_INDEX] = moveQueue[move_idx-1].end_pos[T0_T1_AXIS_INDEX];
-        move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX] + plateau * move.axis_r[T0_T1_AXIS_INDEX];
-      }
-
-      if (decelDistance > 0) {
-        move = moveQueue[move_idx++];
-        move.accelerate = -acceleration;
-        move.start_t = moveQueue[move_idx-1].end_t;
-        move.t = decelClocks;
-        move.end_t = move.start_t + move.t;
-        move.start_pos[T0_T1_AXIS_INDEX] = moveQueue[move_idx-1].end_pos[T0_T1_AXIS_INDEX];
-        move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX] + decelDistance * move.axis_r[T0_T1_AXIS_INDEX];
-      }
-
-      // last pos rlound
-      move = moveQueue[move_idx - 1];
-      move.end_pos[T0_T1_AXIS_INDEX] = LROUND(move.end_pos[T0_T1_AXIS_INDEX]);
-
-      // final empty move
-      move = moveQueue[move_idx++];
-      move.start_t = moveQueue[move_idx-1].end_t;
-      move.t = axisManager.shaped_delta_window + 0.001;
-      move.end_t = move.start_t + move.t;
-      move.accelerate = 0.0;
-      move.start_pos[T0_T1_AXIS_INDEX] = moveQueue[move_idx-1].end_pos[T0_T1_AXIS_INDEX];
-      move.end_pos[T0_T1_AXIS_INDEX] = move.start_pos[T0_T1_AXIS_INDEX];
-      move.axis_r[T0_T1_AXIS_INDEX] = L > 0.0 ? 80 : -80;
-
-      axisManager.axis_t0_t1.reset();
-      AxisInputShaper *ais = axisManager.axis_t0_t1.axis_input_shaper;
-      ais->generateShapedFuncParamsMq(  &(axisManager.axis_t0_t1.func_manager),
-                                        moveQueue,
-                                        0,
-                                        move_idx - 1
-                                        );
-      #endif
+      axisManager.T0_T1_simultaneously_move_req = false;
     }
     break;
 

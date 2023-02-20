@@ -273,8 +273,8 @@ ErrCode PrintControl::pause() {
   buffer_head = buffer_tail = 0;
 
   // wait for auto park finish
-  while(axisManager.T0_T1_simultaneously_move) {
-    vTaskDelay(pdMS_TO_TICKS(1));
+  while(axisManager.T0_T1_simultaneously_move || axisManager.T0_T1_simultaneously_move_req) {
+    vTaskDelay(pdMS_TO_TICKS(10));
   }
 
   // wait for stepper slow down and stop

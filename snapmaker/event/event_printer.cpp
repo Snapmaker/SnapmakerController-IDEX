@@ -490,7 +490,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_GET_WORK_FEEDRATE    , EVENT_CB_DIRECT_RUN, get_work_feedrate},
   {PRINTER_ID_SUBSCRIBE_FLOW_PERCENTAGE    , EVENT_CB_DIRECT_RUN, subscribe_flow_percentage},
   {PRINTER_ID_SUBSCRIBE_WORK_PERCENTAGE    , EVENT_CB_DIRECT_RUN, subscribe_work_feedrate_percentage},
-  {PRINTER_ID_SUBSCRIBE_WORK_time    , EVENT_CB_DIRECT_RUN, subscribe_work_time},
+  {PRINTER_ID_SUBSCRIBE_WORK_TIME    , EVENT_CB_DIRECT_RUN, subscribe_work_time},
 };
 
 static void req_gcode_pack() {
@@ -693,8 +693,7 @@ void printer_event_loop(void) {
       paused_status_deal();
       break;
     case SYSTEM_STATUE_PAUSING:
-      if (!axisManager.T0_T1_simultaneously_move)
-        pausing_status_deal();
+      pausing_status_deal();
       break;
     case SYSTEM_STATUE_RESUMING:
       resuming_status_deal();
