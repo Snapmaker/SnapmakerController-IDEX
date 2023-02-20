@@ -22,6 +22,20 @@
 
 #include "../../../inc/MarlinConfig.h"
 
+#include "../../gcode.h"
+#include "../../../feature/pause.h"
+#include "../../../module/motion.h"
+#include "../../../module/printcounter.h"
+#include "../../../lcd/marlinui.h"
+#include "../../../../../snapmaker/debug/debug.h"
+#include "../../../../../snapmaker/module/print_control.h"
+#include "../../../../../snapmaker/module/system.h"
+
+
+void GcodeSuite::M600() {
+  system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_SACP);
+}
+
 #if ENABLED(ADVANCED_PAUSE_FEATURE)
 
 #include "../../gcode.h"

@@ -974,8 +974,9 @@ private:
     static void M575();
   #endif
 
-  #if ENABLED(ADVANCED_PAUSE_FEATURE)
+
     static void M600();
+  #if ENABLED(ADVANCED_PAUSE_FEATURE)
     static void M603();
   #endif
 
