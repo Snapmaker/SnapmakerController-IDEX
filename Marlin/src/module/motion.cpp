@@ -1358,8 +1358,17 @@ void prepare_line_to_destination() {
 
   #endif // PREVENT_COLD_EXTRUSION || PREVENT_LENGTHY_EXTRUDE
 
-  extern bool x_first_move;
-  if (x_first_move) {
+  // extern bool x_first_move;
+  // if (x_first_move || dual_x_carriage_mode == DXC_MIRRORED_MODE) {
+  //   if (TERN0(DUAL_X_CARRIAGE, dual_x_carriage_unpark())) return;
+  // }
+  if (DXC_DUPLICATION_MODE == dual_x_carriage_mode) {
+    extern bool x_first_move;
+    if (x_first_move) {
+      if (TERN0(DUAL_X_CARRIAGE, dual_x_carriage_unpark())) return;
+    }
+  }
+  else {
     if (TERN0(DUAL_X_CARRIAGE, dual_x_carriage_unpark())) return;
   }
 

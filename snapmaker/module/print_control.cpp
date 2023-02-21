@@ -247,7 +247,10 @@ ErrCode PrintControl::start() {
     idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
     first_start_gcode = true;
     extern bool x_first_move;
-    x_first_move = false;
+    if (DXC_DUPLICATION_MODE == dual_x_carriage_mode)
+      x_first_move = false;
+    else
+      x_first_move = true;
     // motion_control.home_x();
   }
 
