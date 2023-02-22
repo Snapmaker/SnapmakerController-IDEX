@@ -1941,7 +1941,26 @@ void prepare_line_to_destination() {
       do_homing_move(axis, -bump, TERN(HOMING_Z_WITH_PROBE, (axis == Z_AXIS ? z_probe_fast_mm_s : 0), 0), false);
 
       if (axis == Z_AXIS && READ(Z_MAX_PIN) != Z_MAX_ENDSTOP_INVERTING) {
-        LOG_E("Endstops runnig fault as bumpping keep trigger\r\n");
+        LOG_E("Z home runnig fault as endstop keep trigger when bump out\r\n");
+        kill();
+      }
+
+      if (0 == active_extruder) {
+        if (axis == X_AXIS && READ(X_MIN_PIN) != X_MIN_ENDSTOP_INVERTING) {
+          LOG_E("X1 home runnig fault as endstop keep trigger when bump out\r\n");
+          kill();
+        }
+      }
+
+      if (1 == active_extruder) {
+        if (axis == X_AXIS && READ(X_MAX_PIN) != X_MAX_ENDSTOP_INVERTING) {
+          LOG_E("X2 home runnig fault as endstop keep trigger when bump out\r\n");
+          kill();
+        }
+      }
+
+      if (axis == Y_AXIS && READ(Y_MIN_PIN) != Y_MIN_ENDSTOP_INVERTING) {
+        LOG_E("Y home runnig fault as endstop keep trigger when bump out\r\n");
         kill();
       }
 
@@ -1981,6 +2000,30 @@ void prepare_line_to_destination() {
       #if BOTH(HOMING_Z_WITH_PROBE, BLTOUCH)
         if (axis == Z_AXIS) bltouch.stow(); // The final STOW
       #endif
+
+      if (axis == Z_AXIS && READ(Z_MAX_PIN) == Z_MAX_ENDSTOP_INVERTING) {
+        LOG_E("Z home runing fault as endstop not trigger when second bump\r\n");
+        kill();
+      }
+
+      if (0 == active_extruder) {
+        if (axis == X_AXIS && READ(X_MIN_PIN) == X_MIN_ENDSTOP_INVERTING) {
+          LOG_E("X1 home runing fault as endstop not trigger when second bump\r\n");
+          kill();
+        }
+      }
+
+      if (1 == active_extruder) {
+        if (axis == X_AXIS && READ(X_MAX_PIN) == X_MAX_ENDSTOP_INVERTING) {
+          LOG_E("X2 home runing fault as endstop not trigger when second bump\r\n");
+          kill();
+        }
+      }
+
+      if (axis == Y_AXIS && READ(Y_MIN_PIN) == Y_MIN_ENDSTOP_INVERTING) {
+        LOG_E("Y home runing fault as endstop not trigger when second bump\r\n");
+        kill();
+      }
     }
 
     #if HAS_EXTRA_ENDSTOPS
