@@ -290,6 +290,7 @@ static ErrCode set_z_home_sg(event_param_t& event) {
   print_control.set_z_home_sg(event.data[0]);
   event.data[0] = E_SUCCESS;
   event.length = 1;
+  settings.save();
   return send_event(event);
 }
 
