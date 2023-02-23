@@ -1252,7 +1252,7 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
           // Restore planner to parked head (T1) X position
           float pos_now_x = current_position.x;
           // pos_now.x = inactive_extruder_x;
-          xyze_pos_t head0_pos = current_position;
+          // xyze_pos_t head0_pos = current_position;
           // Keep the same X or add the duplication X offset
           if (dual_mode == DXC_DUPLICATION_MODE) {
             tool_change(1);
@@ -1666,6 +1666,8 @@ void prepare_line_to_destination() {
         const xyze_float_t cart_dist_mm{0};
       #endif
 
+      endstops.validate_homing_move();
+
       // Set delta/cartesian axes directly
       target[axis] = distance;                  // The move will be towards the endstop
       planner.buffer_segment(target OPTARG(HAS_DIST_MM_ARG, cart_dist_mm), home_fr_mm_s, active_extruder);
@@ -1678,6 +1680,32 @@ void prepare_line_to_destination() {
       #if HOMING_Z_WITH_PROBE && HAS_QUIET_PROBING
         if (axis == Z_AXIS && final_approach) probe.set_probing_paused(false);
       #endif
+
+      uint16_t endstops_status = endstops.trigger_state();
+
+      if (axis == Z_AXIS && !(endstops_status & 0x08)) {
+        LOG_E("Z home runing fault as endstop not trigger when second bump\r\n");
+        kill();
+      }
+
+      if (0 == active_extruder) {
+        if (axis == X_AXIS && !(endstops_status & 0x01)) {
+          LOG_E("X1 home runing fault as endstop not trigger when second bump\r\n");
+          kill();
+        }
+      }
+
+      if (1 == active_extruder) {
+        if (axis == X_AXIS && !(endstops_status & 0x02)) {
+          LOG_E("X2 home runing fault as endstop not trigger when second bump\r\n");
+          kill();
+        }
+      }
+
+      if (axis == Y_AXIS && !(endstops_status & 0x04)) {
+        LOG_E("Y home runing fault as endstop not trigger when second bump\r\n");
+        kill();
+      }
 
       endstops.validate_homing_move();
 
@@ -2000,30 +2028,6 @@ void prepare_line_to_destination() {
       #if BOTH(HOMING_Z_WITH_PROBE, BLTOUCH)
         if (axis == Z_AXIS) bltouch.stow(); // The final STOW
       #endif
-
-      if (axis == Z_AXIS && READ(Z_MAX_PIN) == Z_MAX_ENDSTOP_INVERTING) {
-        LOG_E("Z home runing fault as endstop not trigger when second bump\r\n");
-        kill();
-      }
-
-      if (0 == active_extruder) {
-        if (axis == X_AXIS && READ(X_MIN_PIN) == X_MIN_ENDSTOP_INVERTING) {
-          LOG_E("X1 home runing fault as endstop not trigger when second bump\r\n");
-          kill();
-        }
-      }
-
-      if (1 == active_extruder) {
-        if (axis == X_AXIS && READ(X_MAX_PIN) == X_MAX_ENDSTOP_INVERTING) {
-          LOG_E("X2 home runing fault as endstop not trigger when second bump\r\n");
-          kill();
-        }
-      }
-
-      if (axis == Y_AXIS && READ(Y_MIN_PIN) == Y_MIN_ENDSTOP_INVERTING) {
-        LOG_E("Y home runing fault as endstop not trigger when second bump\r\n");
-        kill();
-      }
     }
 
     #if HAS_EXTRA_ENDSTOPS

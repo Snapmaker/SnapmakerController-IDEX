@@ -364,6 +364,7 @@ bool SystemService::is_working() {
   case SYSTEM_STATUE_PAUSED:
   case SYSTEM_STATUE_RESUMING:
   case SYSTEM_STATUE_RECOVERING:
+  case SYSTEM_STATUE_POWER_LOSS_RESUMING:
     return true;
     break;
 

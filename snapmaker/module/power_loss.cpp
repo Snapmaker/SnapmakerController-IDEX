@@ -301,6 +301,8 @@ void PowerLoss::show_power_loss_info() {
                            " z:", stash_data.position.z,
                            " e:", stash_data.position.e);
   SERIAL_ECHOLNPAIR("active_extruder:", stash_data.active_extruder);
+  SERIAL_ECHOLNPAIR("extruder_dual_enable[0]:", stash_data.extruder_dual_enable[0]);
+  SERIAL_ECHOLNPAIR("extruder_dual_enable[1]:", stash_data.extruder_dual_enable[1]);
   SERIAL_ECHOLNPAIR("print feadrate:", stash_data.print_feadrate);
   SERIAL_ECHOLNPAIR("travel feadrate:", stash_data.travel_feadrate);
   SERIAL_ECHOLNPAIR("accumulator:", stash_data.accumulator);
