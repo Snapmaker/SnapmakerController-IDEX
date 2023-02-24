@@ -326,7 +326,7 @@ void PowerLoss::init() {
   if (stash_data.state == PL_WAIT_RESUME) {
     if (check_num == stash_data.check_num) {
       SERIAL_ECHOLNPAIR("PL: Got available data!");
-      show_power_loss_info();
+      // show_power_loss_info();
     } else {
       stash_data.state = PL_NO_DATE;
       SERIAL_ECHOLNPAIR("PL: Unavailable data!, checknum:", check_num, "-", stash_data.check_num);
