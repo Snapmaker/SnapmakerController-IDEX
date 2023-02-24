@@ -471,9 +471,14 @@ void MotionControl::disable_stall_guard_all() {
 }
 
 void MotionControl::wait_G28() {
-  while (motion_is_homing) {
-    vTaskDelay(pdMS_TO_TICKS(5));
-  }
+  do {
+    if (!motion_is_homing) {
+      vTaskDelay(pdMS_TO_TICKS(10));
+      if (!motion_is_homing)
+        return;
+    }
+    vTaskDelay(pdMS_TO_TICKS(10));
+  } while(1);
 }
 
 void trigger_stall_guard_exit(sg_axis_e axis) {

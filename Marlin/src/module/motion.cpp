@@ -1846,10 +1846,10 @@ void prepare_line_to_destination() {
   bool z_stall_guard_setting = false;
   bool z_homing = false;
   void homeaxis(const AxisEnum axis) {
-
+    motion_is_homing = true;
     #if EITHER(MORGAN_SCARA, MP_SCARA)
       // Only Z homing (with probe) is permitted
-      if (axis != Z_AXIS) { BUZZ(100, 880); return; }
+      if (axis != Z_AXIS) { BUZZ(100, 880); motion_is_homing = false; return; }
     #else
       #define _CAN_HOME(A) (axis == _AXIS(A) && ( \
            ENABLED(A##_SPI_SENSORLESS) \
@@ -1864,7 +1864,10 @@ void prepare_line_to_destination() {
         && !_CAN_HOME(I),
         && !_CAN_HOME(J),
         && !_CAN_HOME(K))
-      ) return;
+      ) {
+        motion_is_homing = false;
+        return;
+      }
     #endif
 
     if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR(">>> homeaxis(", AS_CHAR(AXIS_CHAR(axis)), ")");
@@ -1875,8 +1878,10 @@ void prepare_line_to_destination() {
     //
     // Homing Z with a probe? Raise Z (maybe) and deploy the Z probe.
     //
-    if (TERN0(HOMING_Z_WITH_PROBE, axis == Z_AXIS && probe.deploy()))
+    if (TERN0(HOMING_Z_WITH_PROBE, axis == Z_AXIS && probe.deploy())) {
+      motion_is_homing = false;
       return;
+    }
 
     // Set flags for X, Y, Z motor locking
     #if HAS_EXTRA_ENDSTOPS
@@ -1898,8 +1903,8 @@ void prepare_line_to_destination() {
     //
     #if HOMING_Z_WITH_PROBE
       if (axis == Z_AXIS) {
-        if (TERN0(BLTOUCH, bltouch.deploy())) return;   // BLTouch was deployed above, but get the alarm state.
-        if (TERN0(PROBE_TARE, probe.tare())) return;
+        if (TERN0(BLTOUCH, bltouch.deploy())) {motion_is_homing = false; return;}   // BLTouch was deployed above, but get the alarm state.
+        if (TERN0(PROBE_TARE, probe.tare())) {motion_is_homing = false; return};
       }
     #endif
 
@@ -2017,7 +2022,7 @@ void prepare_line_to_destination() {
       #endif
 
       #if BOTH(HOMING_Z_WITH_PROBE, BLTOUCH_SLOW_MODE)
-        if (axis == Z_AXIS && bltouch.deploy()) return; // Intermediate DEPLOY (in LOW SPEED MODE)
+        if (axis == Z_AXIS && bltouch.deploy()) {motion_is_homing = false; return;} // Intermediate DEPLOY (in LOW SPEED MODE)
       #endif
 
       // Slow move towards endstop until triggered
@@ -2232,7 +2237,7 @@ void prepare_line_to_destination() {
 
     // Put away the Z probe
     #if HOMING_Z_WITH_PROBE
-      if (axis == Z_AXIS && probe.stow()) return;
+      if (axis == Z_AXIS && probe.stow()) {motion_is_homing = false; return;}
     #endif
 
     #if DISABLED(DELTA) && defined(HOMING_BACKOFF_POST_MM)
@@ -2264,6 +2269,7 @@ void prepare_line_to_destination() {
 
     if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("<<< homeaxis(", AS_CHAR(AXIS_CHAR(axis)), ")");
 
+    motion_is_homing = false;
   } // homeaxis()
 
 #endif // HAS_ENDSTOPS

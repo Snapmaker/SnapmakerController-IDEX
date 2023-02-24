@@ -236,6 +236,10 @@ ErrCode PrintControl::start() {
   if (homing_needed()) {
     motion_control.home();
   }
+  if (SYSTEM_STATUE_PRINTING != system_service.get_status()) {
+    LOG_I("Work start abort\r\n");
+    return PRINT_RESULT_START_ERR_E;
+  }
 
   // prepare toolhead
   dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
