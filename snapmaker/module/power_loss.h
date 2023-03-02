@@ -89,6 +89,7 @@ class PowerLoss {
 
   public:
     uint32_t cur_line = 0;
+    int32_t m600_cur_line = -1;
     uint32_t line_number_sum = 0;
     uint32_t next_req = 0;
     bool power_loss_en = true;

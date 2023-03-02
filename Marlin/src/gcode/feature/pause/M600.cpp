@@ -25,15 +25,20 @@
 #include "../../gcode.h"
 #include "../../../feature/pause.h"
 #include "../../../module/motion.h"
+#include "../../../module/planner.h"
 #include "../../../module/printcounter.h"
 #include "../../../lcd/marlinui.h"
 #include "../../../../../snapmaker/debug/debug.h"
 #include "../../../../../snapmaker/module/print_control.h"
+#include "../../../../../snapmaker/module/power_loss.h"
 #include "../../../../../snapmaker/module/system.h"
 
 
 void GcodeSuite::M600() {
-  system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_SACP);
+  planner.synchronize();
+  power_loss.m600_cur_line = queue.file_line_number();
+  LOG_I("power_loss.m600_cur_line set to %d\r\n", power_loss.cur_line);
+  system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_M600);
 }
 
 #if ENABLED(ADVANCED_PAUSE_FEATURE)

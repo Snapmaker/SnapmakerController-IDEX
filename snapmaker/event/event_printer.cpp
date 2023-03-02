@@ -546,6 +546,10 @@ void wait_print_end(void) {
 void pausing_status_deal() {
   ErrCode result = print_control.pause();
   switch (system_service.get_source()) {
+    case SYSTEM_STATUE_SCOURCE_M600:
+      report_status_info(STATUS_PAUSE_BE_GCODE);
+      SERIAL_ECHOLNPAIR("M600 pause done");
+      break;
     case SYSTEM_STATUE_SCOURCE_FILAMENT:
       report_status_info(STATUS_PAUSE_BE_FILAMENT);
       SERIAL_ECHOLNPAIR("flilament puase done");

@@ -257,6 +257,12 @@ void PowerLoss::resume_print_env() {
   feedrate_percentage = stash_data.feedrate_percentage;
   sync_plan_position();
 
+  if (power_loss.m600_cur_line >= 0) {
+    stash_data.file_position = power_loss.m600_cur_line + 1;
+    power_loss.m600_cur_line = -1;
+    LOG_I(">>>> stash_data.file_position %d\r\n", stash_data.file_position);
+  }
+
   next_req = cur_line = line_number_sum = stash_data.file_position;
 }
 
