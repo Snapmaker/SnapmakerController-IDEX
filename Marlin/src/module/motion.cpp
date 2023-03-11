@@ -1923,7 +1923,7 @@ void prepare_line_to_destination() {
     // Determine if a homing bump will be done and the bumps distance
     // When homing Z with probe respect probe clearance
     const bool use_probe_bump = TERN0(HOMING_Z_WITH_PROBE, axis == Z_AXIS && home_bump_mm(axis));
-    const float bump = axis_home_dir * (
+    float bump = axis_home_dir * (
       use_probe_bump ? _MAX(TERN0(HOMING_Z_WITH_PROBE, Z_CLEARANCE_BETWEEN_PROBES), home_bump_mm(axis)) : home_bump_mm(axis)
     );
 
@@ -1948,6 +1948,27 @@ void prepare_line_to_destination() {
     if (Z_AXIS == axis) {
       z_homing = true;
     }
+
+    // uint32_t first_home_move_start_tick = millis();
+    uint16_t endstops_status = endstops.trigger_state();
+    bool on_endstops_position = false;
+    // if (axis == Z_AXIS && !(endstops_status & 0x08)) {
+    //   on_endstops_position = true;
+    // }
+    if (0 == active_extruder) {
+      if (axis == X_AXIS && !(endstops_status & 0x01)) {
+        on_endstops_position = true;
+      }
+    }
+    if (1 == active_extruder) {
+      if (axis == X_AXIS && !(endstops_status & 0x02)) {
+        on_endstops_position = true;
+      }
+    }
+    if (axis == Y_AXIS && !(endstops_status & 0x04)) {
+      on_endstops_position = true;
+    }
+
     do_homing_move(axis, move_length, 0.0, !use_probe_bump);
     if (Z_AXIS == axis) {
       z_homing = false;
@@ -1971,6 +1992,7 @@ void prepare_line_to_destination() {
     if (bump) {
       // Move away from the endstop by the axis HOMING_BUMP_MM
       if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Move Away: ", -bump, "mm");
+      if (on_endstops_position) bump = bump * 3;
       do_homing_move(axis, -bump, TERN(HOMING_Z_WITH_PROBE, (axis == Z_AXIS ? z_probe_fast_mm_s : 0), 0), false);
 
       if (axis == Z_AXIS && READ(Z_MAX_PIN) != Z_MAX_ENDSTOP_INVERTING) {
