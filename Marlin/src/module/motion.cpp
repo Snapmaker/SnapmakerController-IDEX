@@ -1951,22 +1951,26 @@ void prepare_line_to_destination() {
 
     // uint32_t first_home_move_start_tick = millis();
     uint16_t endstops_status = endstops.trigger_state();
-    bool on_endstops_position = false;
-    // if (axis == Z_AXIS && !(endstops_status & 0x08)) {
-    //   on_endstops_position = true;
-    // }
+    // bool on_endstops_position = false;
+    if (axis == Z_AXIS && !(endstops_status & 0x08)) {
+      // on_endstops_position = true;
+      bump = bump * 1.5;
+    }
     if (0 == active_extruder) {
       if (axis == X_AXIS && !(endstops_status & 0x01)) {
-        on_endstops_position = true;
+        // on_endstops_position = true;
+        bump = bump * 3;
       }
     }
     if (1 == active_extruder) {
       if (axis == X_AXIS && !(endstops_status & 0x02)) {
-        on_endstops_position = true;
+        // on_endstops_position = true;
+        bump = bump * 3;
       }
     }
     if (axis == Y_AXIS && !(endstops_status & 0x04)) {
-      on_endstops_position = true;
+      // on_endstops_position = true;
+      bump = bump * 3;
     }
 
     do_homing_move(axis, move_length, 0.0, !use_probe_bump);
@@ -1992,7 +1996,7 @@ void prepare_line_to_destination() {
     if (bump) {
       // Move away from the endstop by the axis HOMING_BUMP_MM
       if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Move Away: ", -bump, "mm");
-      if (on_endstops_position) bump = bump * 3;
+      // if (on_endstops_position) bump = bump * 3;
       do_homing_move(axis, -bump, TERN(HOMING_Z_WITH_PROBE, (axis == Z_AXIS ? z_probe_fast_mm_s : 0), 0), false);
 
       if (axis == Z_AXIS && READ(Z_MAX_PIN) != Z_MAX_ENDSTOP_INVERTING) {
