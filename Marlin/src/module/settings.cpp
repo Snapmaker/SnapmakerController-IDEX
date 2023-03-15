@@ -2391,6 +2391,7 @@ void MarlinSettings::postprocess() {
       uint8_t temp_brightness;
       _FIELD_TEST(caselight_brightness);
       EEPROM_READ(temp_brightness);
+      caselight.brightness = temp_brightness;
     #endif
 
     //
