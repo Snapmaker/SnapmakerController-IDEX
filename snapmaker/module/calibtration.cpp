@@ -90,6 +90,10 @@ void Calibtration::extrude_e(float distance, uint16_t feedrate) {
   set_duplication_enabled(false);
 }
 
+void Calibtration::updateBuildPlateThickness(float bpt) {
+  build_plate_thickness = bpt;
+}
+
 void Calibtration::set_heat_bed_center_offset(const float offset[2]) {
   heat_bed_center_offset[0] = offset[0];
   heat_bed_center_offset[1] = offset[1];

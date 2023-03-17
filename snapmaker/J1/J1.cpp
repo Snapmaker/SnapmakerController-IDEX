@@ -14,6 +14,8 @@
 #include "../module/motion_control.h"
 #include "../module/exception.h"
 #include "../../../src/module/AxisManager.h"
+#include "../module/factory_data.h"
+#include "../module/calibtration.h"
 
 
 TaskHandle_t thandle_event_loop = NULL;
@@ -371,6 +373,9 @@ void j1_main_task(void *args) {
   // float_round_test(0.00125f, 1000);
   // float_round_test(-0.1375f, 20);
   #endif
+
+  fd_srv.init();
+  calibtration.updateBuildPlateThickness(fd_srv.getBuildPlateThickness());
 
   while(1) {
     print_control.loop();

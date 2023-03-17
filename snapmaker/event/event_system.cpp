@@ -11,6 +11,8 @@
 #include "src/module/settings.h"
 #include "../../../src/module/AxisManager.h"
 #include "../module/print_control.h"
+#include "../module/factory_data.h"
+#include "../module/calibtration.h"
 
 #pragma pack(1)
 
@@ -285,7 +287,6 @@ static ErrCode resonance_compensation_get(event_param_t& event) {
 }
 
 static ErrCode set_z_home_sg(event_param_t& event) {
-
   LOG_I("SC set z home sg: %s \r\n", event.data[0] ? "on" : "off");
   print_control.set_z_home_sg(event.data[0]);
   event.data[0] = E_SUCCESS;
@@ -295,12 +296,38 @@ static ErrCode set_z_home_sg(event_param_t& event) {
 }
 
 static ErrCode get_z_home_sg(event_param_t& event) {
-
   event.data[0] = E_SUCCESS;
   event.data[1] = print_control.get_z_home_sg();
   event.length = 2;
   return send_event(event);
+}
 
+static ErrCode set_build_plate_thickness(event_param_t& event) {
+  float_to_int_t rx_bpt;
+  memcpy(&rx_bpt, event.data, sizeof(float_to_int_t));
+  float bpt = INT_TO_FLOAT(rx_bpt);
+  LOG_I("SC set build plate thickness: %f\r\n", bpt);
+  if (fd_srv.setBuildPlateThickness(bpt)) {
+    calibtration.updateBuildPlateThickness(bpt);
+    event.data[0] = E_SUCCESS;
+  }
+  else {
+    event.data[0] = E_PARAM;
+  }
+  event.length = 1;
+  settings.save();
+  return send_event(event);
+}
+
+static ErrCode get_build_plate_thickness(event_param_t& event) {
+  int bpt = FLOAT_TO_INT(fd_srv.getBuildPlateThickness());
+  event.data[0] = E_SUCCESS;
+  event.data[1] = bpt & 0xff;
+  event.data[2] = (bpt>>8) & 0xff;
+  event.data[3] = (bpt>>16) & 0xff;
+  event.data[4] = (bpt>>24) & 0xff;
+  event.length = 5;
+  return send_event(event);
 }
 
 static ErrCode move_relative(event_param_t& event) {
@@ -426,13 +453,14 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_SET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN, set_motor_enable},
   {SYS_ID_MOVE_TO_RELATIVE_HOME , EVENT_CB_TASK_RUN  , move_relative_home},
 
-  {SYS_ID_INPUTSHAPER_SET ,             EVENT_CB_TASK_RUN  , inputshaper_set},
-  {SYS_ID_INPUTSHAPER_GET ,             EVENT_CB_TASK_RUN  , inputshaper_get},
-  {SYS_ID_RESONANCE_COMPENSATION_SET ,  EVENT_CB_TASK_RUN  , resonance_compensation_set},
-  {SYS_ID_RESONANCE_COMPENSATION_GET ,  EVENT_CB_TASK_RUN  , resonance_compensation_get},
-  {SYS_ID_SET_Z_HOME_SG ,               EVENT_CB_TASK_RUN  , set_z_home_sg},
-  {SYS_ID_GET_Z_HOME_SG ,               EVENT_CB_TASK_RUN  , get_z_home_sg},
-
-  {SYS_ID_GET_DISTANCE_RELATIVE_HOME , EVENT_CB_TASK_RUN  , req_distance_relative_home},
-  {SYS_ID_SUBSCRIBE_MOTOR_ENABLE_STATUS , EVENT_CB_DIRECT_RUN  , get_motor_enable},
+  {SYS_ID_INPUTSHAPER_SET ,               EVENT_CB_TASK_RUN,      inputshaper_set},
+  {SYS_ID_INPUTSHAPER_GET ,               EVENT_CB_TASK_RUN,      inputshaper_get},
+  {SYS_ID_RESONANCE_COMPENSATION_SET ,    EVENT_CB_TASK_RUN,      resonance_compensation_set},
+  {SYS_ID_RESONANCE_COMPENSATION_GET ,    EVENT_CB_TASK_RUN,      resonance_compensation_get},
+  {SYS_ID_SET_Z_HOME_SG ,                 EVENT_CB_TASK_RUN,      set_z_home_sg},
+  {SYS_ID_GET_Z_HOME_SG ,                 EVENT_CB_TASK_RUN,      get_z_home_sg},
+  {SYS_ID_SET_BUILD_PLATE_TKNESS ,        EVENT_CB_TASK_RUN,      set_z_home_sg},
+  {SYS_ID_GET_BUILD_PLATE_TKNESS ,        EVENT_CB_TASK_RUN,      get_z_home_sg},
+  {SYS_ID_GET_DISTANCE_RELATIVE_HOME ,    EVENT_CB_TASK_RUN,      req_distance_relative_home},
+  {SYS_ID_SUBSCRIBE_MOTOR_ENABLE_STATUS , EVENT_CB_DIRECT_RUN,    get_motor_enable},
 };

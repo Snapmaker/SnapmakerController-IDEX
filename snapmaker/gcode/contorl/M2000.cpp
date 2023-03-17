@@ -31,6 +31,8 @@
 #include "../../module/power_loss.h"
 #include "../../module/system.h"
 #include "../../J1/switch_detect.h"
+#include "../../module/factory_data.h"
+#include "../../module/calibtration.h"
 #include <EEPROM.h>
 
 /**
@@ -174,6 +176,30 @@ void GcodeSuite::M2000() {
     }
     break;
 
+    case 110:
+    {
+      LOG_I("Erase factory data\r\n");
+      // fd_srv.reset();
+      // fd_srv.save();
+      // fd_srv.log();
+      fd_srv.erase();
+    }
+    break;
+
+    case 111:
+    {
+      LOG_I("Set factory build plate thickness data\r\n");
+      float bpt = (float)parser.floatval('B', (float)5.0);
+      if (fd_srv.setBuildPlateThickness(bpt)) {
+        fd_srv.save();
+        fd_srv.log();
+        calibtration.updateBuildPlateThickness(fd_srv.getBuildPlateThickness());
+      }
+      else {
+        LOG_W("Build plate thickness is not valid\n\n");
+      }
+    }
+    break;
 
     case 200:
     {
