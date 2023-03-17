@@ -459,8 +459,8 @@ event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
   {SYS_ID_RESONANCE_COMPENSATION_GET ,    EVENT_CB_TASK_RUN,      resonance_compensation_get},
   {SYS_ID_SET_Z_HOME_SG ,                 EVENT_CB_TASK_RUN,      set_z_home_sg},
   {SYS_ID_GET_Z_HOME_SG ,                 EVENT_CB_TASK_RUN,      get_z_home_sg},
-  {SYS_ID_SET_BUILD_PLATE_TKNESS ,        EVENT_CB_TASK_RUN,      set_z_home_sg},
-  {SYS_ID_GET_BUILD_PLATE_TKNESS ,        EVENT_CB_TASK_RUN,      get_z_home_sg},
+  {SYS_ID_SET_BUILD_PLATE_TKNESS ,        EVENT_CB_TASK_RUN,      set_build_plate_thickness},
+  {SYS_ID_GET_BUILD_PLATE_TKNESS ,        EVENT_CB_TASK_RUN,      get_build_plate_thickness},
   {SYS_ID_GET_DISTANCE_RELATIVE_HOME ,    EVENT_CB_TASK_RUN,      req_distance_relative_home},
   {SYS_ID_SUBSCRIBE_MOTOR_ENABLE_STATUS , EVENT_CB_DIRECT_RUN,    get_motor_enable},
 };
