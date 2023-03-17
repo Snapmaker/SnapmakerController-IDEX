@@ -307,7 +307,7 @@ static ErrCode set_build_plate_thickness(event_param_t& event) {
   memcpy(&rx_bpt, event.data, sizeof(float_to_int_t));
   float bpt = INT_TO_FLOAT(rx_bpt);
   LOG_I("SC set build plate thickness: %f\r\n", bpt);
-  if (fd_srv.setBuildPlateThickness(bpt)) {
+  if (fd_srv.setBuildPlateThickness(bpt) && fd_srv.save()) {
     calibtration.updateBuildPlateThickness(bpt);
     event.data[0] = E_SUCCESS;
   }
