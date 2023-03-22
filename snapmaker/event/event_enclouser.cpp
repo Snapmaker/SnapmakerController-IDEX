@@ -1,6 +1,7 @@
 #include "event_base.h"
 #include "event_enclouser.h"
 #include "../module/enclosure.h"
+#include "../../../Marlin/src/module/settings.h"
 
 
 #pragma pack(1)
@@ -38,6 +39,7 @@ static ErrCode enclouser_set_light(event_param_t& event) {
   uint8_t power = event.data[1];
   SERIAL_ECHOLNPAIR("SC set enclouser light power:", power);
   enclosure.set_light_power(power);
+  settings.save();
   event.data[0] = E_SUCCESS;
   event.length = 1;
   return send_event(event);

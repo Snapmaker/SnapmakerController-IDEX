@@ -24,7 +24,6 @@ uint8_t Enclosure::get_light_power() {
 
 void Enclosure::set_light_power(uint8_t power) {
   caselight.set_power(power);
-  settings.save();
 }
 
 uint8_t Enclosure::get_fan_power() {
