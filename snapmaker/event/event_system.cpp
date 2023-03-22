@@ -315,7 +315,6 @@ static ErrCode set_build_plate_thickness(event_param_t& event) {
     event.data[0] = E_PARAM;
   }
   event.length = 1;
-  settings.save();
   return send_event(event);
 }
 
