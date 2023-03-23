@@ -195,7 +195,9 @@ static ErrCode inputshaper_set(event_param_t& event) {
   LOG_I("SC set inputshaper, axis: %d, F: %f", axis, freq);
   event.data[0] = axisManager.input_shaper_set(axis, DEFAULT_IS_TYPE, freq, DEFAULT_IS_DAMP);
   event.length = 1;
-  settings.save();
+  extern bool ml_setting_need_save;
+  ml_setting_need_save = true;
+  // settings.save();
   return send_event(event);
 }
 
@@ -248,7 +250,9 @@ static ErrCode resonance_compensation_set(event_param_t& event) {
     return send_event(event);
   }
 
-  settings.save();
+  extern bool ml_setting_need_save;
+  ml_setting_need_save = true;
+  // settings.save();
   event.data[0] = E_SUCCESS;
   event.length = 1;
   return send_event(event);
@@ -291,7 +295,9 @@ static ErrCode set_z_home_sg(event_param_t& event) {
   print_control.set_z_home_sg(event.data[0]);
   event.data[0] = E_SUCCESS;
   event.length = 1;
-  settings.save();
+  extern bool ml_setting_need_save;
+  ml_setting_need_save = true;
+  // settings.save();
   return send_event(event);
 }
 

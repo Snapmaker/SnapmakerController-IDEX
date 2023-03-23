@@ -10,6 +10,7 @@
 #include "../module/print_control.h"
 #include "src/module/stepper.h"
 #include "../../Marlin/src/module/temperature.h"
+#include "../../Marlin/src/module/settings.h"
 #include "../module/power_loss.h"
 #include "../module/motion_control.h"
 #include "../module/exception.h"
@@ -25,6 +26,7 @@ TaskHandle_t thandle_subscribe = NULL;
 
 uint32_t feed_dog_time = 0;
 uint32_t max_starve_dog_time = 0;
+bool ml_setting_need_save = false;
 
 void log_reset_source(void) {
   extern unsigned int ahbrst_reg;
@@ -362,6 +364,22 @@ void float_round_test(float diff, uint32_t log_cnt) {
 }
 #endif
 
+void setting_save_loop() {
+  static uint32_t last_mills;
+  if (PENDING(millis(), last_mills + 1000)) {
+    return;
+  }
+  last_mills = millis();
+
+  if (  ml_setting_need_save &&
+        (!system_service.is_working()) &&
+        (stepper.axis_did_move == 0)) {\
+    LOG_I("J1 DELAY SAVE...\r\n");
+    settings.save();
+    ml_setting_need_save = false;
+  }
+}
+
 void j1_main_task(void *args) {
 
   uint32_t syslog_timeout = millis();
@@ -386,6 +404,7 @@ void j1_main_task(void *args) {
     axis_speed_update();
     sg_set();
     statistics_log();
+    setting_save_loop();
 
     #if 0
     // probe_io_log();

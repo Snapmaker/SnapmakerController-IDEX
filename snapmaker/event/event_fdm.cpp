@@ -87,7 +87,9 @@ static ErrCode fdm_enable_filament_sensor(event_param_t& event) {
   uint8_t enable = event.data[2];
   SERIAL_ECHOLNPAIR("SC set filament_sensor[", e, "]:", enable);
   filament_sensor.filament_param.enabled[e] = enable;
-  (void)settings.save();
+  extern bool ml_setting_need_save;
+  ml_setting_need_save = true;
+  // settings.save();
   event.length = 1;
   event.data[0] = E_SUCCESS;
   return send_event(event);

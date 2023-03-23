@@ -1048,6 +1048,8 @@ void Calibtration::set_z_offset(float offset, bool is_moved) {
   float diff = offset - home_offset[Z_AXIS];
   home_offset[Z_AXIS] = offset;
   update_workspace_offset(Z_AXIS);
+  extern bool ml_setting_need_save;
+  ml_setting_need_save = true;
   if (!is_moved) {
     current_position[Z_AXIS] += diff;
   } else {
