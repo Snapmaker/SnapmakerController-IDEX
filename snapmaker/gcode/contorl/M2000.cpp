@@ -201,6 +201,12 @@ void GcodeSuite::M2000() {
     }
     break;
 
+    case 112:
+    {
+      fd_srv.log();
+    }
+    break;
+
     case 200:
     {
       if (print_control.get_mode() >= PRINT_DUPLICATION_MODE) {
