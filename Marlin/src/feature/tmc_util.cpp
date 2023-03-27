@@ -1044,6 +1044,25 @@
     // tmc_enable_stallguard(stepperZ);
   }
 
+  void tmc_set_stealthChop(uint8_t axis, bool sw) {
+    switch (axis) {
+      case X_AXIS:
+        stepperX.set_stealthChop(sw);
+        stepperX2.set_stealthChop(sw);
+        break;
+      case Y_AXIS:
+        stepperY.set_stealthChop(sw);
+        break;
+      case Z_AXIS:
+        stepperZ.set_stealthChop(sw);
+        break;
+      case E_AXIS:
+        stepperE0.set_stealthChop(sw);
+        stepperE1.set_stealthChop(sw);
+        break;
+    }
+  }
+
   void tmc_report_sg_result(uint8_t axis) {
     SERIAL_ECHOPGM("sg_result_");
     report_axis_tmc_status(axis, TMC_SG_RESULT);

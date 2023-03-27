@@ -24,6 +24,8 @@ enum {
   PRINTER_ID_SET_TEMPERATURE_LOCK = 0x12,
   PRINTER_ID_GET_TEMPERATURE_LOCK = 0x13,
   PRINTER_ID_GET_FDM_ENABLE       = 0x19,
+  PRINTER_ID_SET_NOISE_MODE       = 0x1c,
+  PRINTER_ID_GET_NOISE_ENABLE     = 0x1d,
   PRINTER_ID_REQ_LINE             = 0xA0,
   PRINTER_ID_SUBSCRIBE_PRINT_MODE = 0xA1,
   PRINTER_ID_GET_WORK_FEEDRATE    = 0xA2,
@@ -32,7 +34,7 @@ enum {
   PRINTER_ID_SUBSCRIBE_WORK_TIME        = 0xA5,
 };
 
-#define PRINTER_ID_CB_COUNT 26
+#define PRINTER_ID_CB_COUNT 28
 
 extern event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT];
 void printer_event_init(void);

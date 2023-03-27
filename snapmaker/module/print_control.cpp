@@ -7,6 +7,7 @@
 #include "../../Marlin/src/module/temperature.h"
 #include "../../Marlin/src/module/settings.h"
 #include "../../Marlin/src/module/stepper.h"
+#include "../../Marlin/src/feature/tmc_util.h"
 #include "system.h"
 #include "fdm.h"
 #include "power_loss.h"
@@ -219,6 +220,60 @@ void PrintControl::set_work_time(uint32_t time) {
   set_work_time_ms = time;
 }
 
+bool PrintControl::set_noise_mode(print_noise_mode_e pnm) {
+  if (NOISE_NOIMAL_MODE <= pnm && pnm <= NOISE_LOUD_MODE) {
+    print_noise_mode = pnm;
+    noise_mode_apply();
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+print_noise_mode_e PrintControl::get_noise_mode() {
+  return print_noise_mode;
+}
+
+void PrintControl::noise_mode_apply() {
+  LOG_I("apply print noise mode: %d\n", print_noise_mode);
+  switch (print_noise_mode) {
+    case NOISE_NOIMAL_MODE:
+    /*
+    Enable XY TMC stealChop; M203 X200 Y200; M201 X8000 Y8000;
+    */
+    pnm_param.XY_tmc_stealChop = true;
+    pnm_param.max_speed = 200;
+    pnm_param.max_acc = 8000;
+    break;
+
+    case NOISE_SILENT_MODE:
+    /*
+    Enable XY TMC stealChop; M203 X105 Y105; M201 X3000 Y3000
+    */
+    pnm_param.XY_tmc_stealChop = true;
+    pnm_param.max_speed = 105;
+    pnm_param.max_acc = 3000;
+    break;
+
+    case NOISE_LOUD_MODE:
+    /*
+    Disable XY TMC stealChop(Z enable); M203 X350 Y350; M201 X10000 Y10000
+    */
+    pnm_param.XY_tmc_stealChop = true;
+    pnm_param.max_speed = 350;
+    pnm_param.max_acc = 10000;
+    break;
+
+    default:
+    break;
+  }
+
+  tmc_set_stealthChop(X_AXIS, pnm_param.XY_tmc_stealChop); tmc_set_stealthChop(Y_AXIS, pnm_param.XY_tmc_stealChop);
+  // planner.set_max_feedrate(X_AXIS, pnm_param.max_speed); planner.set_max_feedrate(Y_AXIS, pnm_param.max_speed);
+  // planner.set_max_acceleration(X_AXIS, pnm_param.max_acc); planner.set_max_feedrate(Y_AXIS, pnm_param.max_acc);
+}
+
 ErrCode PrintControl::start() {
 
   if (!exception_server.is_allow_work()) {
@@ -268,6 +323,12 @@ ErrCode PrintControl::start() {
   memset(&print_err_info, 0, sizeof(print_err_info));
   commands_unlock();
   start_work_time();
+
+  /*
+  Allways reset to noimal mode
+  */
+  print_noise_mode = NOISE_NOIMAL_MODE;
+  noise_mode_apply();
 
   return E_SUCCESS;
 }

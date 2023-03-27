@@ -59,6 +59,7 @@ typedef struct {
   xyz_pos_t print_offset;
   uint32_t work_time;
   uint32_t check_num;
+  uint8_t noise_mode;
 } power_loss_t;
 
 #pragma pack()

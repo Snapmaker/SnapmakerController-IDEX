@@ -70,6 +70,8 @@
 #include "../gcode/parser.h"
 #include "AxisManager.h"
 #include "../../../../snapmaker/debug/debug.h"
+#include "../../../../snapmaker/module/print_control.h"
+#include "../../../../snapmaker/module/system.h"
 
 #include "../MarlinCore.h"
 
@@ -1353,7 +1355,7 @@ void Planner::shaped_loop() {
         if (!block->shaper_data.is_zero_speed)
         {
           planed_time += block->shaper_data.block_time;
-        } 
+        }
 
         index = next_block_index(index);
     }
@@ -1380,7 +1382,7 @@ void Planner::shaped_loop() {
             if (!block->shaper_data.is_zero_speed)
             {
               planed_time += block->shaper_data.block_time;
-            } 
+            }
 
             index = next_block_index(index);
 
@@ -2445,8 +2447,16 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
   // Linear axes first with less logic
   LOOP_LINEAR_AXES(i) {
     current_speed[i] = steps_dist_mm[i] * inverse_secs;
-    const feedRate_t cs = ABS(current_speed[i]),
-                 max_fr = settings.max_feedrate_mm_s[i];
+    const feedRate_t cs = ABS(current_speed[i]);
+    feedRate_t max_fr;
+                 // max_fr = settings.max_feedrate_mm_s[i];
+                 // Limite the max speed by print noise mode
+                if (system_service.is_working() && (i == X_AXIS || i == Y_AXIS)) {
+                  max_fr = min(settings.max_feedrate_mm_s[i], print_control.pnm_param.max_speed);
+                }
+                else {
+                  max_fr = settings.max_feedrate_mm_s[i];
+                }
     if (cs > max_fr) NOMORE(speed_factor, max_fr / cs);
   }
 
@@ -2626,6 +2636,12 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
   }
   block->acceleration_steps_per_s2 = accel;
   block->acceleration = accel / steps_per_mm;
+
+  // Limite the max speed by print noise mode
+  if (system_service.is_working()) {
+    NOMORE(block->acceleration, print_control.pnm_param.max_acc);
+  }
+
   if (settings.acceleration_to_deceleration_ratio > 20) {
     block->acceleration_to_deceleration = block->acceleration * settings.acceleration_to_deceleration_ratio * 0.01;
   } else {

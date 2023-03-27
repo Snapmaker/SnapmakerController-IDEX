@@ -348,6 +348,7 @@ void test_tmc_connection(LOGICAL_AXIS_DECL(const bool, true));
   void set_sgthrs(uint8_t axis, uint8_t val);
   void set_tpwmthrs(uint8_t axis, uint32_t val);
   void report_tpwmthrs(uint8_t axis);
+  void tmc_set_stealthChop(uint8_t axis, bool sw);
 #endif
 
 /**

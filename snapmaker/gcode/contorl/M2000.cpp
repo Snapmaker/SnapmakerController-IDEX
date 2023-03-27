@@ -207,6 +207,19 @@ void GcodeSuite::M2000() {
     }
     break;
 
+    case 113:
+    {
+      uint8_t pnm = parser.byteval('M', 0xFF);
+      print_control.set_noise_mode(print_noise_mode_e(pnm));
+    }
+    break;
+
+    case 114:
+    {
+      LOG_I("print noise mode %u\n", (uint8_t)print_control.get_noise_mode());
+    }
+    break;
+
     case 200:
     {
       if (print_control.get_mode() >= PRINT_DUPLICATION_MODE) {

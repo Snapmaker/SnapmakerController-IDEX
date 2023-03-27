@@ -60,6 +60,15 @@ void GcodeSuite::M122() {
     }
     return;
   }
+
+  if (parser.seen('C')) {
+    bool sw = parser.value_bool();
+    if (parser.seen('X')) tmc_set_stealthChop(X_AXIS, sw);
+    if (parser.seen('Y')) tmc_set_stealthChop(Y_AXIS, sw);
+    if (parser.seen('Z')) tmc_set_stealthChop(Z_AXIS, sw);
+    if (parser.seen('E')) tmc_set_stealthChop(E_AXIS, sw);
+  }
+
   if (parser.seen('G')) {
     LOOP_LOGICAL_AXES(i) {
       if (print_axis[i]) {
@@ -69,6 +78,7 @@ void GcodeSuite::M122() {
     }
     return;
   }
+
   if (parser.seen('W')) {
     uint8_t thrs = parser.value_byte();
     LOOP_LOGICAL_AXES(i) {
@@ -79,7 +89,6 @@ void GcodeSuite::M122() {
     }
     return;
   }
-
 
   if (parser.boolval('I')) restore_stepper_drivers();
 

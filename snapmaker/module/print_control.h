@@ -24,6 +24,18 @@ typedef enum : uint8_t{
   PRINT_MIRRORED_MODE
 } print_mode_e;
 
+typedef enum : uint8_t {
+  NOISE_NOIMAL_MODE = 1,
+  NOISE_SILENT_MODE,
+  NOISE_LOUD_MODE,
+} print_noise_mode_e;
+
+typedef struct {
+  bool XY_tmc_stealChop;
+  float max_speed;
+  float max_acc;
+} print_noise_mode_param_t;
+
 typedef struct {
   bool is_err;
   uint32_t err_line;
@@ -66,6 +78,13 @@ class PrintControl {
 
     void set_z_home_sg(bool sg) { z_home_sg = sg; }
     bool get_z_home_sg(void) { return z_home_sg; }
+
+    bool set_noise_mode(print_noise_mode_e pnm);
+    print_noise_mode_e get_noise_mode();
+    void noise_mode_apply();
+
+    print_noise_mode_e print_noise_mode;
+    print_noise_mode_param_t pnm_param;
 
   private:
     void start_work_time();
