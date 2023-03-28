@@ -260,7 +260,7 @@ void PrintControl::noise_mode_apply() {
     /*
     Disable XY TMC stealChop(Z enable); M203 X350 Y350; M201 X10000 Y10000
     */
-    pnm_param.XY_tmc_stealChop = true;
+    pnm_param.XY_tmc_stealChop = false;
     pnm_param.max_speed = 350;
     pnm_param.max_acc = 10000;
     break;

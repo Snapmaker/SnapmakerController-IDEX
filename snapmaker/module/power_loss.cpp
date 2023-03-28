@@ -228,7 +228,7 @@ void PowerLoss::resume_print_env() {
   fast_move_feedrate = stash_data.travel_feadrate;
   gcode.axis_relative = stash_data.axis_relative;
   duplicate_extruder_x_offset = stash_data.duplicate_extruder_x_offset;
-  print_control.set_noise_mode(print_noise_mode_e(stash_data.noise_mode));
+  print_control.set_noise_mode(print_noise_mode_e(stash_data.noise_mode & 0xFF));
 
   LOG_I("Resume x %f\r\n", stash_data.position[X_AXIS]);
   LOG_I("current s: %f\r\n", current_position.x);
