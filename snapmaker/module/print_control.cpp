@@ -449,6 +449,8 @@ ErrCode PrintControl::pause() {
     return E_FAILURE;
   }
   else {
+    // reset to normal
+    print_control.set_noise_mode(NOISE_NOIMAL_MODE);
     return E_SUCCESS;
   }
 }
@@ -560,6 +562,8 @@ ErrCode PrintControl::stop() {
     set_print_offset(0, 0, 0);
     stop_work_time();
   }
+  // reset to normal
+  print_control.set_noise_mode(NOISE_NOIMAL_MODE);
 
   return E_SUCCESS;
 }

@@ -6,6 +6,7 @@
 #include "power_loss.h"
 #include "fdm.h"
 #include "../module/motion_control.h"
+#include "../module/print_control.h"
 
 SystemService system_service;
 
@@ -425,6 +426,9 @@ void SystemService::return_to_idle() {
     fdm_head.set_fan_speed(e, 0, 0);
   }
   thermalManager.setTargetBed(0);
+
+  // reset to normal
+  print_control.set_noise_mode(NOISE_NOIMAL_MODE);
 
   /*
   for (uint8_t i = 0; i <= E_AXIS; i++) {
