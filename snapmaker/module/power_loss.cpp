@@ -22,7 +22,7 @@ extern feedRate_t fast_move_feedrate;
 void PowerLoss::stash_print_env() {
 
   xyze_pos_t cur_position;
-  cur_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS) - Planner::eda;
+  cur_position[E_AXIS] = planner.get_axis_position_mm(E_AXIS) - Planner::eda / planner.settings.axis_steps_per_mm[E_AXIS];
   cur_position[X_AXIS] = planner.get_axis_position_mm(X_AXIS);
   cur_position[Y_AXIS] = planner.get_axis_position_mm(Y_AXIS);
   cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);

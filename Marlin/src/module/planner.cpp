@@ -1307,7 +1307,6 @@ void Planner::shaped_loop() {
     const uint8_t nr_moves = movesplanned();
 
     if (axisManager.req_abort) {
-      Planner::eda = axisManager.axis[3].delta_e;
       axisManager.abort();
       clear_block_buffer();
       axisManager.req_abort = false;

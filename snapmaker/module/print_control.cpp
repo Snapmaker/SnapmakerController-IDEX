@@ -357,6 +357,7 @@ ErrCode PrintControl::pause() {
     if (stepper.can_pause) {
       // LOG_I("--- can_pause\r\n");
       stepper.can_pause = false;
+      Planner::eda = axisManager.axis[3].delta_e;
       quickstop_stepper();
       // LOG_I("--- pause done\r\n");
       stepper.delta_t = 0;
