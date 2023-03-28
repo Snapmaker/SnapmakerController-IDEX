@@ -2838,12 +2838,14 @@ void Stepper::_set_position(const abce_long_t &spos) {
     // default non-h-bot planning
     count_position = spos;
     Planner::flow_control_e_delta = 0;
+    Planner::eda = 0;
   #endif
 }
 
 void Stepper::_set_e_position(const_float_t spos_e) {
   count_position.e = spos_e;
   Planner::flow_control_e_delta = 0;
+  Planner::eda = 0;
 }
 
 /**
