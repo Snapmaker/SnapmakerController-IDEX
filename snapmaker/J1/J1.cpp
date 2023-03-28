@@ -380,6 +380,15 @@ void setting_save_loop() {
   }
 }
 
+void E_position_log(void) {
+  static uint32_t last_ms = 0;
+  if (PENDING(millis(), last_ms + 1000))
+    return;
+
+  last_ms = millis();
+  // LOG_I("stash print env E position %f, current line %d, EDA %f\r\n", planner.get_axis_position_mm(E_AXIS), power_loss.cur_line, axisManager.axis[3].delta_e);
+}
+
 void j1_main_task(void *args) {
 
   uint32_t syslog_timeout = millis();
@@ -401,6 +410,7 @@ void j1_main_task(void *args) {
     printer_event_loop();
     exception_event_loop();
     local_event_loop();
+    E_position_log();
 
     axis_speed_update();
     sg_set();

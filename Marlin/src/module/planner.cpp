@@ -141,6 +141,7 @@ volatile uint8_t Planner::block_buffer_head,    // Index of the next block to be
 uint16_t Planner::cleaning_buffer_counter;      // A counter to disable queuing of blocks
 uint8_t Planner::delay_before_delivering;       // This counter delays delivery of blocks when queue becomes empty to allow the opportunity of merging blocks
 float Planner::flow_control_e_delta = 0.0;
+float Planner::eda = 0.0;
 
 planner_settings_t Planner::settings;           // Initialized by settings.load()
 
@@ -1306,6 +1307,7 @@ void Planner::shaped_loop() {
     const uint8_t nr_moves = movesplanned();
 
     if (axisManager.req_abort) {
+      Planner::eda = axisManager.axis[3].delta_e;
       axisManager.abort();
       clear_block_buffer();
       axisManager.req_abort = false;
