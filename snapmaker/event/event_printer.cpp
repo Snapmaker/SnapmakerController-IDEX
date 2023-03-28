@@ -395,6 +395,7 @@ static ErrCode get_noise_mode(event_param_t& event) {
   LOG_V("SC get noise mode %d\n", pnm);
   event.data[0] = E_SUCCESS;
   event.data[1] = (uint8_t)pnm;
+  event.length = 2;
   return send_event(event);
 }
 
@@ -506,7 +507,7 @@ event_cb_info_t printer_cb_info[PRINTER_ID_CB_COUNT] = {
   {PRINTER_ID_GET_TEMPERATURE_LOCK    , EVENT_CB_DIRECT_RUN, get_temperature_lock},
   {PRINTER_ID_GET_FDM_ENABLE          , EVENT_CB_DIRECT_RUN, get_fdm_enable},
   {PRINTER_ID_SET_NOISE_MODE          , EVENT_CB_DIRECT_RUN, set_noise_mode},
-  {PRINTER_ID_GET_NOISE_ENABLE        , EVENT_CB_DIRECT_RUN, get_noise_mode},
+  {PRINTER_ID_GET_NOISE_MODE          , EVENT_CB_DIRECT_RUN, get_noise_mode},
   {PRINTER_ID_REQ_LINE                , EVENT_CB_DIRECT_RUN, request_cur_line},
   {PRINTER_ID_SUBSCRIBE_PRINT_MODE    , EVENT_CB_DIRECT_RUN, subscribe_print_mode},
   {PRINTER_ID_GET_WORK_FEEDRATE       , EVENT_CB_DIRECT_RUN, get_work_feedrate},
