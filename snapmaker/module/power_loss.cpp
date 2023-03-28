@@ -409,6 +409,7 @@ ErrCode PowerLoss::power_loss_resume() {
   clear();
   print_control.set_work_time(stash_data.work_time);
   print_control.mode_ = (print_mode_e)stash_data.print_mode;
+  print_control.set_noise_mode(print_noise_mode_e(stash_data.noise_mode & 0xFF));
 
   // The print needs to be extruded before resuming
   if (extrude_before_resume() != E_SUCCESS) {

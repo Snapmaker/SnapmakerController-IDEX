@@ -26,7 +26,11 @@ uint16_t buffer_tail = 0;
 static uint8_t gcode_buffer[GCODE_BUFFER_SIZE];
 
 void PrintControl::init() {
-
+  print_noise_mode = NOISE_NOIMAL_MODE;
+  pnm_param.max_acc = 3000;
+  pnm_param.max_speed = 350;
+  pnm_param.XY_tmc_stealChop = true;
+  noise_mode_apply();
 }
 
 bool PrintControl::buffer_is_empty() {

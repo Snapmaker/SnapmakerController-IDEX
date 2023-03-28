@@ -385,6 +385,7 @@ void j1_main_task(void *args) {
   uint32_t syslog_timeout = millis();
   log_reset_source();
   power_loss.show_power_loss_info();
+  print_control.init();
 
   #if 0
   // LOG_I("LROUND(0.1) = %d, LROUND(0.5) = %d, LROUND(-0.1) = %d, LROUND(-0.5) = %d\n", LROUND(0.1), LROUND(0.5), LROUND(-0.1), LROUND(-0.5));
