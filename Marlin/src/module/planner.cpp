@@ -2452,8 +2452,13 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
     feedRate_t max_fr;
                  // max_fr = settings.max_feedrate_mm_s[i];
                  // Limite the max speed by print noise mode
-                if (system_service.is_working() && (i == X_AXIS || i == Y_AXIS)) {
-                  max_fr = min(settings.max_feedrate_mm_s[i], print_control.pnm_param.max_speed);
+                if (system_service.is_working()) {
+                  if (i == X_AXIS)
+                    max_fr = min(settings.max_feedrate_mm_s[i], print_control.pnm_param.max_x_speed);
+                  else if (i == Y_AXIS)
+                    max_fr = min(settings.max_feedrate_mm_s[i], print_control.pnm_param.max_y_speed);
+                  else
+                    max_fr = settings.max_feedrate_mm_s[i];
                 }
                 else {
                   max_fr = settings.max_feedrate_mm_s[i];
@@ -2531,6 +2536,14 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
     }
 
   #endif // XY_FREQUENCY_LIMIT
+
+  if (system_service.is_working()) {
+    const feedRate_t cs = ABS(block->nominal_speed * speed_factor);
+    const feedRate_t ms = ABS(print_control.pnm_param.max_speed);
+    if (cs > ms) {
+      NOMORE(speed_factor, ms / cs);
+    }
+  }
 
   // Correct the speed
   if (speed_factor < 1.0f) {

@@ -33,6 +33,8 @@ typedef enum : uint8_t {
 typedef struct {
   bool XY_tmc_stealChop;
   float max_speed;
+  float max_x_speed;
+  float max_y_speed;
   float max_acc;
 } print_noise_mode_param_t;
 
