@@ -37,7 +37,6 @@ void PowerLoss::stash_print_env() {
   else {
     stash_data.file_position = 0;
   }
-  LOG_I("### stash print env E position %f, current line %d\r\n", cur_position[E_AXIS], stash_data.file_position);
 
   stash_data.dual_x_carriage_mode = dual_x_carriage_mode;
   stash_data.print_feadrate = feedrate_mm_s;
