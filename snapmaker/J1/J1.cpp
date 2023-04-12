@@ -28,6 +28,14 @@ uint32_t feed_dog_time = 0;
 uint32_t max_starve_dog_time = 0;
 bool ml_setting_need_save = false;
 
+bool got_stepper_debug_info = false;
+xyze_pos_t stepper_cur_position;
+xyze_pos_t motion_cur_position;
+xyze_pos_t motion_get_position;
+
+float diff_x = 0.0f;
+float diff_y = 0.0f;
+
 void log_reset_source(void) {
   extern unsigned int ahbrst_reg;
   LOG_I("Reset source: ");
@@ -428,10 +436,6 @@ void j1_main_task(void *args) {
     step_isr_usage_log();
     #endif
 
-    #if ENABLED(DEBUG_ISR_CPU_USAGE)
-    step_isr_usage_log();
-    #endif
-
     if (ELAPSED(millis(), syslog_timeout)) {
       syslog_timeout = millis() + 20000;
       LOG_I("%s: c0: %d/t0: %d, c1: %d/t1: %d, cb: %d/tb: %d, ", J1_BUILD_VERSION,
@@ -454,6 +458,20 @@ void j1_main_task(void *args) {
 
     watchdog_refresh();
     vTaskDelay(pdMS_TO_TICKS(5));
+
+
+    if (got_stepper_debug_info) {
+      LOG_I("\r\n ======================================================= \r\n");
+      LOG_I("stepper: %f %f %f\r\n", stepper_cur_position[X_AXIS], stepper_cur_position[Y_AXIS], stepper_cur_position[Z_AXIS]);
+      LOG_I("motion_cur: %f %f %f\r\n", motion_cur_position[X_AXIS], motion_cur_position[Y_AXIS], motion_cur_position[Z_AXIS]);
+      LOG_I("motion_tag: %f %f %f\r\n", motion_get_position[X_AXIS], motion_get_position[Y_AXIS], motion_get_position[Z_AXIS]);
+
+      diff_x += (motion_cur_position[X_AXIS] - stepper_cur_position[X_AXIS]);
+      diff_y += (motion_cur_position[Y_AXIS] - stepper_cur_position[Y_AXIS]);
+      LOG_I("diff x: %f, diff y: %f\r\n", diff_x, diff_y);
+
+      // got_stepper_debug_info = false;
+    }
   }
 }
 

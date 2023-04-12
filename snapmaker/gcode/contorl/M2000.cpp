@@ -247,14 +247,15 @@ void GcodeSuite::M2000() {
       axisManager.T0_T1_calc_steps = target_steps - axisManager.inactive_x_step_pos;
       int32_t float_d_to_step_d = L * planner.settings.axis_steps_per_mm[X_AXIS];
       if (abs(float_d_to_step_d - axisManager.T0_T1_calc_steps) > 5) {
-        LOG_E("Differ of float_d_to_step_d and axisManager.T0_T1_calc_steps too large, the inavtive X may has been move unexpected\r\n");
+        // LOG_E("Differ of float_d_to_step_d and axisManager.T0_T1_calc_steps too large, the inavtive X may has been move unexpected\r\n");
         axisManager.T0_T1_calc_steps = L * planner.settings.axis_steps_per_mm[X_AXIS];
       }
 
-      LOG_I("### M2000 S200: target_step_pos %d, current X step pos\r\n", target_steps, axisManager.inactive_x_step_pos);
-      LOG_I("### M2000 S200: axisManager.T0_T1_calc_steps = %d, run float distance %f\r\n", axisManager.T0_T1_calc_steps, L);
+      // LOG_I("### M2000 S200: target_step_pos %d, current X step pos\r\n", target_steps, axisManager.inactive_x_step_pos);
+      // LOG_I("### M2000 S200: axisManager.T0_T1_calc_steps = %d, run float distance %f\r\n", axisManager.T0_T1_calc_steps, L);
       if (0 == axisManager.T0_T1_calc_steps){
         axisManager.T0_T1_simultaneously_move_req = false;
+        // LOG_I("Cancel M2000 S200\r\n");
         return;
       }
 

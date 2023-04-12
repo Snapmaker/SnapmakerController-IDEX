@@ -1931,6 +1931,15 @@ void Planner::synchronize() {
       || TERN0(EXTERNAL_CLOSED_LOOP_CONTROLLER, CLOSED_LOOP_WAITING())
       || axisManager.req_abort
   ) idle();
+
+  extern bool got_stepper_debug_info;
+  extern xyze_pos_t stepper_cur_position;
+  if (got_stepper_debug_info) {
+    current_position[X_AXIS] = stepper_cur_position[X_AXIS];
+    current_position[Y_AXIS] = stepper_cur_position[Y_AXIS];
+    current_position[Z_AXIS] = stepper_cur_position[Z_AXIS];
+    got_stepper_debug_info = false;
+  }
 }
 
 /**

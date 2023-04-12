@@ -2004,13 +2004,31 @@ uint32_t Stepper::block_phase_isr() {
 
       if (is_done || done_count > 100) {
         if (current_block) {
+          if (done_count > 100) {
+            #ifdef DEBUG_IO
+              WRITE(DEBUG_IO, 1);
+            #endif
+            #ifdef DEBUG_IO
+              WRITE(DEBUG_IO, 0);
+            #endif
+            extern bool got_stepper_debug_info;
+            extern xyze_pos_t stepper_cur_position;
+            extern xyze_pos_t motion_cur_position;
+            extern xyze_pos_t motion_get_position;
+
+            stepper_cur_position[X_AXIS] = planner.get_axis_position_mm(X_AXIS);
+            stepper_cur_position[Y_AXIS] = planner.get_axis_position_mm(Y_AXIS);
+            stepper_cur_position[Z_AXIS] = planner.get_axis_position_mm(Z_AXIS);
+            motion_cur_position = current_position;
+            motion_get_position = destination;
+            got_stepper_debug_info = true;
+          }
           discard_current_block();
           power_loss.cur_line++; // this block motion finish
           // axisManager.abort();
           axisManager.req_abort = true;
           is_start = true;
         }
-
         return interval;
       } else {
         if (done_count <= 1) {
@@ -2484,7 +2502,7 @@ uint32_t Stepper::block_phase_isr() {
 uint32_t Stepper::other_axis_block_phase_isr() {
 
   static float delta_time = 0.0;
-  uint32_t interval = (STEPPER_TIMER_RATE) / 20UL; // 50 ms
+  uint32_t interval = 2 * STEPPER_TIMER_TICKS_PER_MS;
 
   if (!axisManager.T0_T1_simultaneously_move)
     return interval;
