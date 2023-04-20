@@ -150,6 +150,8 @@
 
 #endif // SWITCHING_NOZZLE
 
+bool tool_changeing = false;
+
 void _line_to_current(const AxisEnum fr_axis, const float fscale=1) {
   line_to_current_position(planner.settings.max_feedrate_mm_s[fr_axis] * fscale);
 }
@@ -1016,16 +1018,21 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
   #elif HAS_MULTI_EXTRUDER
 
+    tool_changeing = true;
     planner.synchronize();
     while(axisManager.T0_T1_simultaneously_move) {idle();}
 
     #if ENABLED(DUAL_X_CARRIAGE)  // Only T0 allowed if the Printer is in DXC_DUPLICATION_MODE or DXC_MIRRORED_MODE
-      if (new_tool != 0 && idex_is_duplicating())
-         return invalid_extruder_error(new_tool);
+      if (new_tool != 0 && idex_is_duplicating()) {
+        tool_changeing = false;
+        return invalid_extruder_error(new_tool);
+      }
     #endif
 
-    if (new_tool >= EXTRUDERS)
+    if (new_tool >= EXTRUDERS) {
+      tool_changeing = false;
       return invalid_extruder_error(new_tool);
+    }
 
     if (!no_move && homing_needed()) {
       no_move = true;
@@ -1344,6 +1351,8 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
     SERIAL_ECHO_MSG(STR_ACTIVE_EXTRUDER, active_extruder);
 
   #endif // HAS_MULTI_EXTRUDER
+
+  tool_changeing = false;
 }
 
 #if ENABLED(TOOLCHANGE_MIGRATION_FEATURE)

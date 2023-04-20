@@ -125,3 +125,5 @@
  * previous tool out of the way and the new tool into place.
  */
 void tool_change(const uint8_t tmp_extruder, bool no_move=false);
+
+extern bool tool_changeing;

@@ -351,7 +351,7 @@ ErrCode PrintControl::pause() {
   buffer_head = buffer_tail = 0;
 
   // wait for auto park finish
-  while(axisManager.T0_T1_simultaneously_move || axisManager.T0_T1_simultaneously_move_req) {
+  while(axisManager.T0_T1_simultaneously_move || axisManager.T0_T1_simultaneously_move_req || tool_changeing) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 
@@ -518,7 +518,7 @@ ErrCode PrintControl::stop() {
     power_loss.clear();
 
     // wait for auto park finish
-    while(axisManager.T0_T1_simultaneously_move || axisManager.T0_T1_simultaneously_move_req) {
+    while(axisManager.T0_T1_simultaneously_move || axisManager.T0_T1_simultaneously_move_req || tool_changeing) {
       vTaskDelay(pdMS_TO_TICKS(10));
     }
 
