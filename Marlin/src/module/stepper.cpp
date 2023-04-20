@@ -2502,7 +2502,7 @@ uint32_t Stepper::block_phase_isr() {
 uint32_t Stepper::other_axis_block_phase_isr() {
 
   static float delta_time = 0.0;
-  uint32_t interval = 2 * STEPPER_TIMER_TICKS_PER_MS;
+  uint32_t interval = HAL_TIMER_TYPE_MAX;
 
   if (!axisManager.T0_T1_simultaneously_move)
     return interval;
