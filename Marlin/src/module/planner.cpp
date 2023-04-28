@@ -141,7 +141,9 @@ volatile uint8_t Planner::block_buffer_head,    // Index of the next block to be
 uint16_t Planner::cleaning_buffer_counter;      // A counter to disable queuing of blocks
 uint8_t Planner::delay_before_delivering;       // This counter delays delivery of blocks when queue becomes empty to allow the opportunity of merging blocks
 float Planner::flow_control_e_delta = 0.0;
+
 float Planner::eda = 0.0;
+float Planner::g92_e0_compensation = 0.0;
 
 planner_settings_t Planner::settings;           // Initialized by settings.load()
 
@@ -3329,6 +3331,7 @@ void Planner::set_position_mm(const xyze_pos_t &xyze) {
     delta.e = machine.e;
     set_machine_position_mm(delta);
   #else
+    g92_e0_compensation = get_axis_position_mm(E_AXIS) - xyze.e;
     set_machine_position_mm(machine);
   #endif
 }
@@ -3347,6 +3350,7 @@ void Planner::set_position_mm(const xyze_pos_t &xyze) {
     TERN_(HAS_POSITION_FLOAT, position_float.e = e_new);
     TERN_(IS_KINEMATIC, TERN_(HAS_EXTRUDERS, position_cart.e = e));
 
+    g92_e0_compensation = get_axis_position_mm(E_AXIS) - e;
     if (has_blocks_queued())
       buffer_sync_block(true);
     else
