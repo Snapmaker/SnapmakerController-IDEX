@@ -459,19 +459,18 @@ void j1_main_task(void *args) {
     watchdog_refresh();
     vTaskDelay(pdMS_TO_TICKS(5));
 
+    // if (got_stepper_debug_info) {
+    //   LOG_I("\r\n ======================================================= \r\n");
+    //   LOG_I("stepper: %f %f %f\r\n", stepper_cur_position[X_AXIS], stepper_cur_position[Y_AXIS], stepper_cur_position[Z_AXIS]);
+    //   LOG_I("motion_cur: %f %f %f\r\n", motion_cur_position[X_AXIS], motion_cur_position[Y_AXIS], motion_cur_position[Z_AXIS]);
+    //   LOG_I("motion_tag: %f %f %f\r\n", motion_get_position[X_AXIS], motion_get_position[Y_AXIS], motion_get_position[Z_AXIS]);
 
-    if (got_stepper_debug_info) {
-      LOG_I("\r\n ======================================================= \r\n");
-      LOG_I("stepper: %f %f %f\r\n", stepper_cur_position[X_AXIS], stepper_cur_position[Y_AXIS], stepper_cur_position[Z_AXIS]);
-      LOG_I("motion_cur: %f %f %f\r\n", motion_cur_position[X_AXIS], motion_cur_position[Y_AXIS], motion_cur_position[Z_AXIS]);
-      LOG_I("motion_tag: %f %f %f\r\n", motion_get_position[X_AXIS], motion_get_position[Y_AXIS], motion_get_position[Z_AXIS]);
+    //   diff_x += (motion_cur_position[X_AXIS] - stepper_cur_position[X_AXIS]);
+    //   diff_y += (motion_cur_position[Y_AXIS] - stepper_cur_position[Y_AXIS]);
+    //   LOG_I("diff x: %f, diff y: %f\r\n", diff_x, diff_y);
 
-      diff_x += (motion_cur_position[X_AXIS] - stepper_cur_position[X_AXIS]);
-      diff_y += (motion_cur_position[Y_AXIS] - stepper_cur_position[Y_AXIS]);
-      LOG_I("diff x: %f, diff y: %f\r\n", diff_x, diff_y);
-
-      // got_stepper_debug_info = false;
-    }
+    //   got_stepper_debug_info = false;
+    // }
   }
 }
 
