@@ -1851,7 +1851,8 @@ void Stepper::pulse_phase_isr() {
         PULSE_START(Z);
         PULSE_PREP(Z);
         PULSE_STOP(Z);
-      } else if(axis_stepper.axis == 3 && !req_pause) {
+      // } else if(axis_stepper.axis == 3 && !req_pause) {
+      } else if(axis_stepper.axis == 3) {
         PULSE_START(E);
         // PULSE_PREP(E);
         current_block_e_position += count_direction[E_AXIS];
