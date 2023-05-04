@@ -394,11 +394,6 @@ void E_position_log(void) {
     return;
 
   last_ms = millis();
-  LOG_I( "stash print env E position %f, current line %d, EDA %f, g92_e0_compensaton %f\r\n",
-          planner.get_axis_position_mm(E_AXIS),
-          power_loss.cur_line,
-          axisManager.axis[3].delta_e,
-          Planner::g92_e0_compensation);
 }
 
 void j1_main_task(void *args) {

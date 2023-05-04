@@ -160,6 +160,7 @@ uint8_t Stepper::current_direction_bits = 0,
 
 bool Stepper::abort_current_block;
 uint32_t Stepper::delta_t = 0;
+int32_t Stepper::current_block_e_position = 0;
 
 #if DISABLED(MIXING_EXTRUDER) && HAS_MULTI_EXTRUDER
   uint8_t Stepper::last_moved_extruder = 0xFF;
@@ -1501,7 +1502,10 @@ void Stepper::isr() {
       extrude_enable[0] = false;
       extrude_enable[1] = false;
 
-      if (current_block) discard_current_block();
+      if (current_block) {
+        count_position.e += LROUND((float)current_block_e_position / current_block->steps.e * current_block->origin_de);
+        discard_current_block();
+      }
     }
     HAL_timer_set_compare(  STEP_TIMER_NUM,
                             hal_timer_t(HAL_timer_get_count(STEP_TIMER_NUM) + STEPPER_TIMER_TICKS_PER_US));
@@ -1754,7 +1758,10 @@ void Stepper::pulse_phase_isr() {
     extrude_enable[0] = false;
     extrude_enable[1] = false;
 
-    if (current_block) discard_current_block();
+    if (current_block) {
+      count_position.e += LROUND((float)current_block_e_position / current_block->steps.e * current_block->origin_de);
+      discard_current_block();
+    }
   }
 
   if (is_only_extrude) {
@@ -1846,7 +1853,8 @@ void Stepper::pulse_phase_isr() {
         PULSE_STOP(Z);
       } else if(axis_stepper.axis == 3 && !req_pause) {
         PULSE_START(E);
-        PULSE_PREP(E);
+        // PULSE_PREP(E);
+        current_block_e_position += count_direction[E_AXIS];
         PULSE_STOP(E);
       }
 
@@ -1981,6 +1989,7 @@ uint32_t Stepper::block_phase_isr() {
       }
 
       if (axis_stepper.print_time >= block_print_time) {
+        count_position.e = current_block->destination.e * planner.settings.axis_steps_per_mm[E_AXIS];
         discard_current_block();
       }
 
@@ -2023,7 +2032,10 @@ uint32_t Stepper::block_phase_isr() {
             motion_get_position = destination;
             got_stepper_debug_info = true;
           }
+
+          count_position.e = current_block->destination.e * planner.settings.axis_steps_per_mm[E_AXIS];
           discard_current_block();
+
           power_loss.cur_line++; // this block motion finish
           // axisManager.abort();
           axisManager.req_abort = true;
@@ -2056,7 +2068,6 @@ uint32_t Stepper::block_phase_isr() {
         #endif
 
         if (!is_sync_fans) {
-          Planner::g92_e0_compensation += (float)count_position.e - current_block->G92_E_current_e * planner.settings.axis_steps_per_mm[E_AXIS];
           if (current_block->is_sync_e) {
             _set_e_position(current_block->position.e);
           } else {
@@ -2171,6 +2182,9 @@ uint32_t Stepper::block_phase_isr() {
       #else
         #define Z_MOVE_TEST !!current_block->steps.c
       #endif
+
+      // reset the e current block positin
+      current_block_e_position = 0;
 
       // No acceleration / deceleration time elapsed so far
       acceleration_time = deceleration_time = 0;
@@ -2856,14 +2870,14 @@ void Stepper::_set_position(const abce_long_t &spos) {
   #else
     // default non-h-bot planning
     count_position = spos;
-    Planner::flow_control_e_delta = 0;
+    // Planner::flow_control_e_delta = 0;
     // axisManager.axis[3].delta_e = 0;
   #endif
 }
 
 void Stepper::_set_e_position(const_float_t spos_e) {
   count_position.e = spos_e;
-  Planner::flow_control_e_delta = 0;
+  // Planner::flow_control_e_delta = 0;
   // axisManager.axis[3].delta_e = 0;
 }
 
@@ -2885,9 +2899,9 @@ int32_t Stepper::position(const AxisEnum axis) {
     if (was_enabled) wake_up();
   #endif
 
-  if (axis == E_AXIS) {
-    v -= (int)(Planner::flow_control_e_delta);
-  }
+  // if (axis == E_AXIS) {
+  //   v -= (int)(Planner::flow_control_e_delta);
+  // }
 
   return v;
 }

@@ -283,6 +283,7 @@ class Stepper {
 
     static bool abort_current_block;        // Signals to the stepper that current block should be aborted
     static uint32_t delta_t;
+    static int32_t current_block_e_position;
 
     #if ENABLED(X_DUAL_ENDSTOPS)
       static bool locked_X_motor, locked_X2_motor;

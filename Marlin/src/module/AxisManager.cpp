@@ -207,6 +207,7 @@ FORCE_INLINE bool Axis::generateEAxisFuncParams(uint8_t block_index, uint8_t mov
     } else {
         move_index = moveQueue.nextMoveIndex(generated_move_index);
     }
+    float l_eda = 0.0;
 
     while (move_index != moveQueue.nextMoveIndex(move_end)) {
         Move *move = &moveQueue.moves[move_index];
@@ -284,9 +285,11 @@ FORCE_INLINE bool Axis::generateEAxisFuncParams(uint8_t block_index, uint8_t mov
         }
 
         delta_e += eda;
+        l_eda += eda;
         move_index = moveQueue.nextMoveIndex(move_index);
     }
 
+    planner.block_buffer[block_index].steps.e += l_eda;
     generated_move_index = move_end;
     return true;
 }

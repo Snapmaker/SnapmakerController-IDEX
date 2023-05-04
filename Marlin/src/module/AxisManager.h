@@ -102,9 +102,6 @@ class Axis {
         is_get_next_step_null = false;
 
         delta_e = 0;
-        if (axis == E_AXIS) {
-          Planner::g92_e0_compensation = 0.0;
-        }
 
         if (axis_input_shaper != nullptr) {
             axis_input_shaper->reset();

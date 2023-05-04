@@ -140,11 +140,7 @@ volatile uint8_t Planner::block_buffer_head,    // Index of the next block to be
                  Planner::block_buffer_tail;    // Index of the busy block, if any
 uint16_t Planner::cleaning_buffer_counter;      // A counter to disable queuing of blocks
 uint8_t Planner::delay_before_delivering;       // This counter delays delivery of blocks when queue becomes empty to allow the opportunity of merging blocks
-float Planner::flow_control_e_delta = 0.0;
-
-float Planner::eda = 0.0;
-float Planner::g92_e0_compensation = 0.0;
-float Planner::G92_E_current_e = 0.0;
+// float Planner::flow_control_e_delta = 0.0;
 
 planner_settings_t Planner::settings;           // Initialized by settings.load()
 
@@ -1989,7 +1985,10 @@ bool Planner::_buffer_steps(const xyze_long_t &target
     //  Simply accept that as movement queued and done
     return true;
   }
+
   block->file_position = queue.file_line_number();
+  block->destination = destination;
+
   // If this is the first added movement, reload the delay, otherwise, cancel it.
   if (block_buffer_head == block_buffer_tail) {
     // If it was the first queued block, restart the 1st block delivery delay, to
@@ -2122,6 +2121,8 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
   #if HAS_EXTRUDERS
     if (de < 0) SBI(dm, E_AXIS);
   #endif
+
+  block->origin_de = de;
 
   #if HAS_EXTRUDERS
     const float esteps_float = de * e_factor[extruder];
@@ -2282,7 +2283,7 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
       block->axis_r.z = dc / block->millimeters;
       // block->axis_r.e = de / block->millimeters;
       block->axis_r.e = de * e_factor[extruder] / block->millimeters;
-      flow_control_e_delta += (de * e_factor[extruder] - de);
+      // flow_control_e_delta += (de * e_factor[extruder] - de);
   } else {
     LINEAR_AXIS_CODE(
       block->axis_r.x = 0,
@@ -3044,8 +3045,6 @@ void Planner::buffer_sync_block(bool is_sync_e OPTARG(LASER_SYNCHRONOUS_M106_M10
 
   block->position = position;
 
-  block->G92_E_current_e = Planner::G92_E_current_e;
-
   #if BOTH(HAS_FAN, LASER_SYNCHRONOUS_M106_M107)
     FANS_LOOP(i) block->fan_speed[i] = thermalManager.fan_speed[i];
   #endif
@@ -3321,10 +3320,8 @@ void Planner::set_machine_position_mm(const abce_pos_t &abce) {
     //previous_speed.reset();
     buffer_sync_block();
   }
-  else {
-    Planner::g92_e0_compensation = 0.0;
+  else
     stepper.set_position(position);
-  }
 }
 
 void Planner::set_position_mm(const xyze_pos_t &xyze) {
@@ -3356,10 +3353,8 @@ void Planner::set_position_mm(const xyze_pos_t &xyze) {
 
     if (has_blocks_queued())
       buffer_sync_block(true);
-    else {
-      Planner::g92_e0_compensation = 0.0;
+    else
       stepper.set_axis_position(E_AXIS, position.e);
-    }
   }
 
 #endif

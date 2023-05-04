@@ -284,7 +284,8 @@ typedef struct block_t {
     block_laser_t laser;
   #endif
   uint32_t file_position;                        // position of gcode of this block in the file
-  float    G92_E_current_e;
+  int32_t origin_de;
+  xyze_pos_t destination;
 } block_t;
 
 #if ANY(LIN_ADVANCE, SCARA_FEEDRATE_SCALING, GRADIENT_MIX, LCD_SHOW_E_TOTAL)
@@ -371,12 +372,7 @@ class Planner {
                             block_buffer_tail;      // Index of the busy block, if any
     static uint16_t cleaning_buffer_counter;        // A counter to disable queuing of blocks
     static uint8_t delay_before_delivering;         // This counter delays delivery of blocks when queue becomes empty to allow the opportunity of merging blocks
-    static float flow_control_e_delta;
-
-    static float eda;
-    static float g92_e0_compensation;
-    static float G92_E_current_e;
-
+    // static float flow_control_e_delta;
 
     #if ENABLED(DISTINCT_E_FACTORS)
       static uint8_t last_extruder;                 // Respond to extruder change
