@@ -2057,6 +2057,7 @@ uint32_t Stepper::block_phase_isr() {
 
         if (!is_sync_fans) {
           if (current_block->is_sync_e) {
+            Planner::g92_e0_compensation = (float)count_position.e - current_block->G92_E_current_e * planner.settings.axis_steps_per_mm[E_AXIS];
             _set_e_position(current_block->position.e);
           } else {
             _set_position(current_block->position);

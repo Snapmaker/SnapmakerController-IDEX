@@ -144,6 +144,7 @@ float Planner::flow_control_e_delta = 0.0;
 
 float Planner::eda = 0.0;
 float Planner::g92_e0_compensation = 0.0;
+float Planner::G92_E_current_e = 0.0;
 
 planner_settings_t Planner::settings;           // Initialized by settings.load()
 
@@ -3043,6 +3044,8 @@ void Planner::buffer_sync_block(bool is_sync_e OPTARG(LASER_SYNCHRONOUS_M106_M10
 
   block->position = position;
 
+  block->G92_E_current_e = Planner::G92_E_current_e;
+
   #if BOTH(HAS_FAN, LASER_SYNCHRONOUS_M106_M107)
     FANS_LOOP(i) block->fan_speed[i] = thermalManager.fan_speed[i];
   #endif
@@ -3331,7 +3334,6 @@ void Planner::set_position_mm(const xyze_pos_t &xyze) {
     delta.e = machine.e;
     set_machine_position_mm(delta);
   #else
-    g92_e0_compensation = get_axis_position_mm(E_AXIS) - xyze.e;
     set_machine_position_mm(machine);
   #endif
 }
@@ -3350,7 +3352,6 @@ void Planner::set_position_mm(const xyze_pos_t &xyze) {
     TERN_(HAS_POSITION_FLOAT, position_float.e = e_new);
     TERN_(IS_KINEMATIC, TERN_(HAS_EXTRUDERS, position_cart.e = e));
 
-    g92_e0_compensation = get_axis_position_mm(E_AXIS) - e;
     if (has_blocks_queued())
       buffer_sync_block(true);
     else

@@ -284,6 +284,7 @@ typedef struct block_t {
     block_laser_t laser;
   #endif
   uint32_t file_position;                        // position of gcode of this block in the file
+  float    G92_E_current_e;
 } block_t;
 
 #if ANY(LIN_ADVANCE, SCARA_FEEDRATE_SCALING, GRADIENT_MIX, LCD_SHOW_E_TOTAL)
@@ -374,6 +375,7 @@ class Planner {
 
     static float eda;
     static float g92_e0_compensation;
+    static float G92_E_current_e;
 
 
     #if ENABLED(DISTINCT_E_FACTORS)

@@ -59,6 +59,8 @@ void GcodeSuite::G92() {
     constexpr uint8_t subcode_G92 = 0;
   #endif
 
+  Planner::G92_E_current_e = current_position.e;
+
   switch (subcode_G92) {
     default: return;                                                  // Ignore unknown G92.x
 
