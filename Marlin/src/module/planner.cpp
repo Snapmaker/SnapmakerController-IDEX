@@ -3321,8 +3321,10 @@ void Planner::set_machine_position_mm(const abce_pos_t &abce) {
     //previous_speed.reset();
     buffer_sync_block();
   }
-  else
+  else {
+    Planner::g92_e0_compensation = 0.0;
     stepper.set_position(position);
+  }
 }
 
 void Planner::set_position_mm(const xyze_pos_t &xyze) {
@@ -3354,8 +3356,10 @@ void Planner::set_position_mm(const xyze_pos_t &xyze) {
 
     if (has_blocks_queued())
       buffer_sync_block(true);
-    else
+    else {
+      Planner::g92_e0_compensation = 0.0;
       stepper.set_axis_position(E_AXIS, position.e);
+    }
   }
 
 #endif
