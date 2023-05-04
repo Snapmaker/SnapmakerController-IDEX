@@ -1,3 +1,24 @@
+/*
+ * Snapmaker 3D Printer Firmware
+ * Copyright (C) 2023 Snapmaker [https://github.com/Snapmaker]
+ *
+ * This file is part of SnapmakerController-IDEX
+ * (see https://github.com/Snapmaker/SnapmakerController-IDEX)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "AxisInputShaper.h"
 #include "MoveQueue.h"
 #include "../../../../snapmaker/debug/debug.h"
@@ -251,7 +272,7 @@ FORCE_INLINE void AxisInputShaper::addFuncParamsToManager(FuncManager *func_mana
             int type = a > 0 ? -1 : 1;
             time_double_t middle_time = func_manager->last_time + middle;
             func_manager->addFuncParams(a, b, c, type, middle_time, middle_pos);
-            
+
             type = -type;
             b = 0.0f;
             c = middle_pos;
@@ -341,7 +362,7 @@ bool AxisInputShaper::moveShaperWindowToNext(FuncManager *func_manager, uint8_t 
     {
         return false;
     }
-    
+
 
     zero_p->move_index = moveQueue.nextMoveIndex(zero_p->move_index);
 
@@ -396,7 +417,7 @@ bool AxisInputShaper::moveShaperWindowToNext(FuncManager *func_manager, uint8_t 
     addFuncParamsToManager(func_manager, shaper_window.func_params.a, new_time, y2, x2, y1, y2);
     // shaper_window.updateABC();
     // shaper_window.updateABC(x1, y1, x2, y2);
-    
+
 
     // LOG_I("a:%lf %lf, b: %lf %lf, c: %lf %lf\n",
         // shaper_window.func_params.a, shaper_window.new_func_params.a,
@@ -424,7 +445,7 @@ bool AxisInputShaper::generateShapedFuncParams(FuncManager* func_manager, uint8_
     // {
         // func_manager.max_size = func_manager.getSize();
     // }
-    
+
 
     return true;
 }

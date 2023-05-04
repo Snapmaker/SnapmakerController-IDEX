@@ -1,4 +1,3 @@
-
 /**
  * Marlin 3D Printer Firmware
  */
@@ -18,7 +17,7 @@ extern TMCDriver tmc_driver;
 #define SELB_PIN  TMC_SEL1_PIN
 #define SELC_PIN  TMC_SEL2_PIN
 
-uint8_t TMCDriver::sel_table[8][3] = { 
+uint8_t TMCDriver::sel_table[8][3] = {
   //SELA, SELB， SELC
   { LOW,    HIGH,    LOW},    //X1
   { LOW,    LOW,     HIGH},   //X2
@@ -71,7 +70,7 @@ tmc_configure_t TMCDriver::local_configures[] = {
 };
 
 /**
-  * @brief  Initialize  
+  * @brief  Initialize
   * @retval None
   */
 void TMCDriver::init() {
@@ -161,8 +160,8 @@ void TMCDriver::configure_for_idle() {
 }
 
 /**
-  * @brief    
-  * @param   
+  * @brief
+  * @param
   * @retval None
   */
 void TMCDriver::stall_guard_init(uint8_t index, uint8_t sg_value) {
@@ -181,7 +180,7 @@ void TMCDriver::stall_guard_init(uint8_t index, uint8_t sg_value) {
   */
 void TMCDriver::cool_step_init(uint8_t index, bool enable, uint8_t low_limit, uint8_t high_limit) {
   uint32_t tmp_value;
-  
+
   TMCDriver::select(index);
   if(enable == false) {
     tmp_value = 0;
@@ -194,8 +193,8 @@ void TMCDriver::cool_step_init(uint8_t index, bool enable, uint8_t low_limit, ui
 }
 
 /**
-  * @brief    
-  * @param   
+  * @brief
+  * @param
   * @retval None
   */
 void TMCDriver::stall_guard_deinit(uint8_t index) {
@@ -279,7 +278,7 @@ void TMCDriver::configure(uint8_t index, tmc_configure_t *configure) {
 }
 
 /**
-  * @brief    
+  * @brief
   * @param  rw: Read write flag, 0 for write, 1 for read
   * @param  reg_address: Register address
   * @param  value: The pointer to the value
@@ -475,7 +474,7 @@ void TMCDriver::update_stepper_tick(uint32_t tick) {
 
 /**
   * @brief  Set stepper tick threshold
-  * @param  tick: 
+  * @param  tick:
   * @retval None
   */
 void TMCDriver::set_stepper_tick_threshold(uint32_t tick) {

@@ -1,6 +1,9 @@
 /*
- * Snapmaker2-J1 Firmware
- * Copyright (C) 2019-2020 Snapmaker [https://github.com/Snapmaker]
+ * Snapmaker 3D Printer Firmware
+ * Copyright (C) 2023 Snapmaker [https://github.com/Snapmaker]
+ *
+ * This file is part of SnapmakerController-IDEX
+ * (see https://github.com/Snapmaker/SnapmakerController-IDEX)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
