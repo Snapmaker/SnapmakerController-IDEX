@@ -147,14 +147,17 @@ class FuncManager {
 
         last_time = 0;
         last_pos = 0;
-        last_pos_e = 0;
+        last_pos_e = (16.0 * 4157 * 138);
         last_is_zero = false;
 
         left_time = 0;
         print_time = 0;
         print_pos = 0;
-        print_pos_e = 0;
-        print_step = 0;
+        print_pos_e = (16.0 * 4157 * 138);
+        if (E_AXIS == axis)
+          print_step = (16.0 * 4157 * 138);
+        else
+          print_step = 0;
 
         average_index = 0;
         average_count = 0;

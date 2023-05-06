@@ -73,6 +73,7 @@ class Axis {
         this->func_manager.init(axis);
         this->mm_to_step = mm_to_step;
         this->half_step_mm = 0.5 / mm_to_step;
+        this->func_manager.reset();
     }
 
     void initShaper() {

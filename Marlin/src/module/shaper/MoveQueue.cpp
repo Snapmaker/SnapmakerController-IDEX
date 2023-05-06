@@ -155,7 +155,15 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
     }
 
     for (int i = 0; i < AXIS_SIZE; ++i) {
-        move.start_pos[i] = is_first ? 0 : last_move.end_pos[i];
+
+        if (E_AXIS == i) {
+          move.start_pos[i] = is_first ? (16.0 * 4157 * 138) : last_move.end_pos[i];
+        }
+        else {
+          move.start_pos[i] = is_first ? 0 : last_move.end_pos[i];
+        }
+
+        // move.start_pos[i] = is_first ? 0 : last_move.end_pos[i];
         move.end_pos[i] = move.start_pos[i] + move.distance * move.axis_r[i];
 
         if (IS_ZERO(move.end_pos[i]) && !IS_ZERO(move.start_pos[i])) {
@@ -166,7 +174,7 @@ void MoveQueue::setMove(uint8_t move_index, float start_v, float end_v, float ac
             // LOG_I("debug: %d, %lf, %lf\n", i, move.distance, move.end_pos[i]);
         }
     }
-    move.start_pos_e = is_first ? 0 : last_move.end_pos_e;
+    move.start_pos_e = is_first ? (16.0 * 4157 * 138) : last_move.end_pos_e;
     move.end_pos_e = move.start_pos_e + move.distance * move.axis_r[E_AXIS];
 
     is_first = false;
