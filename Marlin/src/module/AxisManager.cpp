@@ -229,19 +229,19 @@ FORCE_INLINE bool Axis::generateEAxisFuncParams(uint8_t block_index, uint8_t mov
 
         // LOG_I("k: %lf, d_v: %lf, eda: %lf\n", K, delta_v, eda);
 
-        float a = 0.5f * move->accelerate * move->axis_r[axis];
-        float b, c;
+        double a = 0.5f * move->accelerate * move->axis_r[axis];
+        double b, c, x2, y2, dx, dy;
 
         if (delta_v < 0 && move->start_v + delta_v > 0 && move->end_v + delta_v < 0) {
             float zero_t = ABS((move->start_v + delta_v) / move->accelerate);
             float zero_pos = ((move->start_v + delta_v) * zero_t + 0.5f * move->accelerate * sq(zero_t)) * move->axis_r[axis];
 
-            float y2 = move->start_pos[axis] + delta_e + zero_pos;
-            float dy = zero_pos;
-            float x2 = zero_t;
-            float dx = zero_t;
+            y2 = move->start_pos_e + delta_e + zero_pos;
+            dy = zero_pos;
+            x2 = zero_t;
+            dx = zero_t;
 
-            c = move->start_pos[axis] + delta_e;
+            c = move->start_pos_e + delta_e;
             b = dy / dx - a * x2;
 
             int type;
@@ -252,7 +252,7 @@ FORCE_INLINE bool Axis::generateEAxisFuncParams(uint8_t block_index, uint8_t mov
             }
 
             time_double_t end_t = move->start_t + zero_t;
-            func_manager.addFuncParams(a, b, c, type, end_t, y2);
+            func_manager.addFuncParamsExtend(a, b, c, type, end_t, y2);
 
             y2 = move->end_pos_e + delta_e + eda;
             dy = move->end_pos_e - move->start_pos_e + eda - zero_pos;
@@ -271,12 +271,12 @@ FORCE_INLINE bool Axis::generateEAxisFuncParams(uint8_t block_index, uint8_t mov
             end_t = move->end_t;
             func_manager.addFuncParamsExtend(a, b, c, type, end_t, y2);
         } else {
-            float y2 = move->end_pos[axis] + delta_e + eda;
-            float dy = move->end_pos[axis] - move->start_pos[axis] + eda;
-            float x2 = move->t;
-            float dx = move->t;
+            y2 = move->end_pos_e + delta_e + eda;
+            dy = move->end_pos_e - move->start_pos_e + eda;
+            x2 = move->t;
+            dx = move->t;
 
-            c = move->start_pos[axis] + delta_e;
+            c = move->start_pos_e + delta_e;
             b = dy / dx - a * x2;
 
             int type;

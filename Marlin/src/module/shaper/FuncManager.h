@@ -64,7 +64,7 @@ class FuncManager {
     int average_index = 0;
     int average_count = 0;
     int average_step = 0;
-    float average_delta_time = 0;
+    time_double_t average_delta_time = 0;
     time_double_t average_print = 0;
 
   public:

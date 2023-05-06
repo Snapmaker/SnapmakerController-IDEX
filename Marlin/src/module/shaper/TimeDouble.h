@@ -117,4 +117,5 @@ class TimeDouble {
     }
 };
 
-typedef TimeDouble time_double_t;
+// typedef TimeDouble time_double_t;
+typedef double time_double_t;

@@ -30,7 +30,7 @@ class AxisStepper {
     int8_t last_axis = -1;
     int8_t dir = 0;
     time_double_t print_time = 0;
-    float delta_time = 0;
+    time_double_t delta_time = 0;
 };
 
 class Axis {
@@ -55,7 +55,7 @@ class Axis {
     time_double_t last_print_time = 0;
     bool time_interval_valid = false;
 
-    float delta_e = 0;
+    double delta_e = 0;
 
   private:
     int8_t axis;
