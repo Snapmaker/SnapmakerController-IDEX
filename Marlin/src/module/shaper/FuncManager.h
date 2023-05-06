@@ -5,6 +5,8 @@
 #include "../../MarlinCore.h"
 #include "../../../../snapmaker/debug/debug.h"
 
+#define E_START_POS     (0.0)
+// #define E_START_POS     ((16.0 * 4157 * 138))
 #define FUNC_PARAMS_SIZE 512
 #define FUNC_PARAMS_MOD(n, size) ((n + size) % size)
 
@@ -147,15 +149,15 @@ class FuncManager {
 
         last_time = 0;
         last_pos = 0;
-        last_pos_e = (16.0 * 4157 * 138);
+        last_pos_e = E_START_POS;
         last_is_zero = false;
 
         left_time = 0;
         print_time = 0;
         print_pos = 0;
-        print_pos_e = (16.0 * 4157 * 138);
+        print_pos_e = E_START_POS;
         if (E_AXIS == axis)
-          print_step = (16.0 * 4157 * 138);
+          print_step = E_START_POS;
         else
           print_step = 0;
 
