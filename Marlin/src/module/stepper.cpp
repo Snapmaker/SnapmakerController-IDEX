@@ -2212,6 +2212,7 @@ uint32_t Stepper::block_phase_isr() {
       for (int i = 0; i < AXIS_SIZE; ++i) {
           block_move_target_steps[i] = LROUND(end_move.end_pos[i]);
       }
+      block_move_target_steps[E_AXIS] = (int)(end_move.end_pos_e + 0.5);
 
       // Initialize Bresenham delta errors to 1/2
       // delta_error = -int32_t(step_event_count);
