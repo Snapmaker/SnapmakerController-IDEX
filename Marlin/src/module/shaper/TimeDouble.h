@@ -6,7 +6,8 @@
 #define IS_ZERO(x) (ABS(x) < EPSILON)
 
 class TimeDouble {
-  private:
+  // private:
+  public:
     int i = 0;
     float d = 0;
 
@@ -117,5 +118,5 @@ class TimeDouble {
     }
 };
 
-// typedef TimeDouble time_double_t;
-typedef double time_double_t;
+typedef TimeDouble time_double_t;
+// typedef double time_double_t;
