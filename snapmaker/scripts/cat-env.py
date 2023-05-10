@@ -5,9 +5,9 @@ from os.path import join,isfile,getsize
 Import("env", "projenv")
 
 
-# print("++++++++++++++++++++++++++++++CPPDEFINES start++++++++++++++++++++++++++++++")
+print("++++++++++++++++++++++++++++++CPPDEFINES start++++++++++++++++++++++++++++++")
 # print(projenv.get("CPPDEFINES", [])[:])
-# print("++++++++++++++++++++++++++++++CPPDEFINES end++++++++++++++++++++++++++++++\n")
+print("++++++++++++++++++++++++++++++CPPDEFINES end++++++++++++++++++++++++++++++\n")
 
 print("++++++++++++++++++++++++++++++CPPPATH start++++++++++++++++++++++++++++++")
 cpp_path = projenv.get("CPPPATH", [])[:]
