@@ -35,6 +35,7 @@
 #include "../module/factory_data.h"
 #include "../module/calibtration.h"
 
+
 #pragma pack(1)
 
 typedef struct {
@@ -52,6 +53,21 @@ static ErrCode subscribe_event(event_param_t& event) {
 
 static ErrCode unsubscribe_event(event_param_t& event) {
   event.data[0] = subscribe.disable(event);
+  event.length = 1;
+  return send_event(event);
+}
+
+static ErrCode run_gcode(event_param_t& event) {
+  if (event.length > 96 + 2) {
+    LOG_E("Gcode is too large\n");
+    event.data[0] = E_PARAM;
+  }
+  else {
+    uint16_t gcode_len = event.data[0] + (event.data[1]<<8);
+    event.data[gcode_len + 2] = 0;
+    memset(event.data + gcode_len + 2, 0, PACK_PARSE_MAX_SIZE - gcode_len - 2);
+    event.data[0] = req_run_gcode((char *)event.data + 2) ? E_SUCCESS : E_COMMON_ERROR;
+  }
   event.length = 1;
   return send_event(event);
 }
@@ -457,27 +473,28 @@ static ErrCode set_motor_enable(event_param_t& event) {
 
 
 event_cb_info_t system_cb_info[SYS_ID_CB_COUNT] = {
-  {SYS_ID_SUBSCRIBE             , EVENT_CB_DIRECT_RUN, subscribe_event},
-  {SYS_ID_UNSUBSCRIBE           , EVENT_CB_DIRECT_RUN, unsubscribe_event},
-  {SYS_ID_SET_LOG_GRADE         , EVENT_CB_DIRECT_RUN, set_log_grade},
-  {SYS_ID_PC_PORT_TO_GCODE      , EVENT_CB_DIRECT_RUN, req_pc_port_to_gcode},
-  {SYS_ID_SET_DEBUG_MODE        , EVENT_CB_DIRECT_RUN, set_debug_mode},
-  {SYS_ID_FACTORY_RESET         , EVENT_CB_TASK_RUN  , factory_reset},
-  {SYS_ID_HEARTBEAT             , EVENT_CB_DIRECT_RUN, heart_event},
-  {SYS_ID_REPORT_LOG            , EVENT_CB_DIRECT_RUN, retport_log},
-  {SYS_ID_REQ_MODULE_INFO       , EVENT_CB_DIRECT_RUN, req_module_info},
-  {SYS_ID_REQ_MACHINE_INFO      , EVENT_CB_DIRECT_RUN, req_machine_info},
-  {SYS_ID_REQ_MACHINE_SIZE      , EVENT_CB_DIRECT_RUN, req_machine_size},
-  {SYS_ID_SAVE_SETTING          , EVENT_CB_DIRECT_RUN, req_save_setting},
-  {SYS_ID_REQ_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, req_coordinate_system},
-  {SYS_ID_SET_COORDINATE_SYSTEM , EVENT_CB_DIRECT_RUN, set_coordinate_system},
-  {SYS_ID_SET_ORIGIN            , EVENT_CB_DIRECT_RUN, set_origin},
-  {SYS_ID_MOVE_RELATIVE         , EVENT_CB_TASK_RUN  , move_relative},
-  {SYS_ID_MOVE                  , EVENT_CB_TASK_RUN  , move},
-  {SYS_ID_HOME                  , EVENT_CB_TASK_RUN  , home},
-  {SYS_ID_GET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN, get_motor_enable},
-  {SYS_ID_SET_MOTOR_ENABLE      , EVENT_CB_DIRECT_RUN, set_motor_enable},
-  {SYS_ID_MOVE_TO_RELATIVE_HOME , EVENT_CB_TASK_RUN  , move_relative_home},
+  {SYS_ID_SUBSCRIBE             ,         EVENT_CB_DIRECT_RUN,    subscribe_event},
+  {SYS_ID_UNSUBSCRIBE           ,         EVENT_CB_DIRECT_RUN,    unsubscribe_event},
+  {SYS_ID_RUN_GCODE             ,         EVENT_CB_DIRECT_RUN,    run_gcode},
+  {SYS_ID_SET_LOG_GRADE         ,         EVENT_CB_DIRECT_RUN,    set_log_grade},
+  {SYS_ID_PC_PORT_TO_GCODE      ,         EVENT_CB_DIRECT_RUN,    req_pc_port_to_gcode},
+  {SYS_ID_SET_DEBUG_MODE        ,         EVENT_CB_DIRECT_RUN,    set_debug_mode},
+  {SYS_ID_FACTORY_RESET         ,         EVENT_CB_TASK_RUN  ,    factory_reset},
+  {SYS_ID_HEARTBEAT             ,         EVENT_CB_DIRECT_RUN,    heart_event},
+  {SYS_ID_REPORT_LOG            ,         EVENT_CB_DIRECT_RUN,    retport_log},
+  {SYS_ID_REQ_MODULE_INFO       ,         EVENT_CB_DIRECT_RUN,    req_module_info},
+  {SYS_ID_REQ_MACHINE_INFO      ,         EVENT_CB_DIRECT_RUN,    req_machine_info},
+  {SYS_ID_REQ_MACHINE_SIZE      ,         EVENT_CB_DIRECT_RUN,    req_machine_size},
+  {SYS_ID_SAVE_SETTING          ,         EVENT_CB_DIRECT_RUN,    req_save_setting},
+  {SYS_ID_REQ_COORDINATE_SYSTEM ,         EVENT_CB_DIRECT_RUN,    req_coordinate_system},
+  {SYS_ID_SET_COORDINATE_SYSTEM ,         EVENT_CB_DIRECT_RUN,    set_coordinate_system},
+  {SYS_ID_SET_ORIGIN            ,         EVENT_CB_DIRECT_RUN,    set_origin},
+  {SYS_ID_MOVE_RELATIVE         ,         EVENT_CB_TASK_RUN  ,    move_relative},
+  {SYS_ID_MOVE                  ,         EVENT_CB_TASK_RUN  ,    move},
+  {SYS_ID_HOME                  ,         EVENT_CB_TASK_RUN  ,    home},
+  {SYS_ID_GET_MOTOR_ENABLE      ,         EVENT_CB_DIRECT_RUN,    get_motor_enable},
+  {SYS_ID_SET_MOTOR_ENABLE      ,         EVENT_CB_DIRECT_RUN,    set_motor_enable},
+  {SYS_ID_MOVE_TO_RELATIVE_HOME ,         EVENT_CB_TASK_RUN  ,    move_relative_home},
 
   {SYS_ID_INPUTSHAPER_SET ,               EVENT_CB_TASK_RUN,      inputshaper_set},
   {SYS_ID_INPUTSHAPER_GET ,               EVENT_CB_TASK_RUN,      inputshaper_get},
