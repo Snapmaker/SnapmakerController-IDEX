@@ -426,6 +426,51 @@ void startOrResumeJob() {
 
 #endif // SDSUPPORT
 
+bool req_run_gcode_flag = false;
+char marlin_gcode_str[MAX_CMD_SIZE + 1];
+
+bool req_run_gcode(char *gcode_str) {
+  uint32_t wait_cnt = 100;
+
+  while (req_run_gcode_flag && wait_cnt--) {
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+
+  if (req_run_gcode_flag)
+    return false;
+
+  memcpy(marlin_gcode_str, gcode_str, MAX_CMD_SIZE + 1);
+  gcode_str[MAX_CMD_SIZE] = 0;
+  req_run_gcode_flag = true;
+  wait_cnt = 100;
+  while (req_run_gcode_flag && wait_cnt--) {
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+
+  if (req_run_gcode_flag)
+    return false;
+  else
+    return true;
+}
+
+void run_req_gcode(void) {
+  static bool doing = false;
+
+  if (doing)
+    return;
+  else {
+    doing = true;
+    if (req_run_gcode_flag) {
+      // Parse the next command in the queue
+      parser.parse(marlin_gcode_str);
+      gcode.process_parsed_command();
+      planner.synchronize();
+      req_run_gcode_flag = false;
+    }
+    doing = false;
+  }
+}
+
 /**
  * Minimal management of Marlin's core activities:
  *  - Keep the command buffer full
@@ -442,6 +487,9 @@ void startOrResumeJob() {
 inline void manage_inactivity(const bool no_stepper_sleep=false) {
 
   queue.get_available_commands();
+
+  // Run hmi gcode
+  run_req_gcode();
 
   const millis_t ms = millis();
 

@@ -110,5 +110,7 @@ bool pin_is_protected(const pin_t pin);
   inline bool kill_state() { return READ(KILL_PIN) == KILL_PIN_STATE; }
 #endif
 
+bool req_run_gcode(char *gcode_str);
+
 extern const char M112_KILL_STR[];
 extern TaskHandle_t thandle_marlin;
