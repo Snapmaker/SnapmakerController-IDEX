@@ -92,6 +92,8 @@ typedef enum {
 
 // 这里的变量应该统一结构体管理
 event_source_e print_source = EVENT_SOURCE_HMI;
+event_source_e rep_gcode_source = EVENT_SOURCE_HMI;
+uint8_t rep_gcode_recever_id = 0;
 uint8_t source_recever_id = 0;
 uint16_t source_sequence = 0;
 gcode_req_status_e gcode_req_status = GCODE_PACK_REQ_IDLE;
@@ -106,11 +108,17 @@ bool pause_hotend_tmp_down = 0;
 
 static void req_gcode_pack();
 static void report_status_info(ErrCode status);
+static void save_event_suorce_info(event_param_t& event, bool update_get_gcode_info=false);
 
-static void save_event_suorce_info(event_param_t& event) {
+static void save_event_suorce_info(event_param_t& event, bool update_get_gcode_info) {
   print_source = event.source;
   source_recever_id = event.info.recever_id;
   source_sequence = event.info.sequence;
+
+  if (update_get_gcode_info) {
+    rep_gcode_source = event.source;
+    rep_gcode_recever_id = event.info.recever_id;
+  }
 }
 
 static uint16_t load_gcode_file_info(uint8_t *buf) {
@@ -182,7 +190,7 @@ static ErrCode request_start_work(event_param_t& event) {
     data_len = *((uint16_t *)&event.data[data_len + 2]);
     power_loss.set_file_name(data, data_len);
 
-    save_event_suorce_info(event);
+    save_event_suorce_info(event, true);
   }
   event.data[0] = result;
   event.length = 1;
@@ -295,14 +303,14 @@ static ErrCode request_power_loss_resume(event_param_t& event) {
     event.data[0] = E_SUCCESS;
     event.length = 1;
     send_event(event);
-    save_event_suorce_info(event);
+    save_event_suorce_info(event, true);
     req_gcode_pack();
   } else if (ret == E_SYSTEM_EXCEPTION) {
     SERIAL_ECHOLNPAIR("power loss resume success but lilament trigger");
     event.data[0] = E_SUCCESS;
     event.length = 1;
     send_event(event);
-    save_event_suorce_info(event);
+    save_event_suorce_info(event, true);
     report_status_info(STATUS_PAUSE_BE_FILAMENT);
   } else {
     event.data[0] = ret;
@@ -544,7 +552,8 @@ static void req_gcode_pack() {
   if (free_buf >= GCODE_MAX_PACK_SIZE) {
     info.line_number = print_control.next_req_line();
     info.buf_max_size = GCODE_MAX_PACK_SIZE;
-    send_event(print_source, source_recever_id, SACP_ATTR_REQ,
+    // send_event(print_source, source_recever_id, SACP_ATTR_REQ,
+    send_event(rep_gcode_source, rep_gcode_recever_id, SACP_ATTR_REQ,
         COMMAND_SET_PRINTER, PRINTER_ID_REQ_GCODE, (uint8_t *)&info, sizeof(info));
     gcode_req_status = GCODE_PACK_REQ_WAIT_RECV;
     gcode_req_timeout = millis() + (GCODE_REQ_TIMEOUT_MS<<gcode_req_timeout_times) + gcode_req_base_wait_ms;
