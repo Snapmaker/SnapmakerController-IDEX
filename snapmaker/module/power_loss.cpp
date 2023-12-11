@@ -128,6 +128,9 @@ bool PowerLoss::wait_temp_resume() {
 
 ErrCode PowerLoss::extrude_before_resume() {
 
+  uint8_t need_active_extruder = 0;
+  bool tool_change_no_move = false;
+
   filament_sensor.reset();
 
   HOTEND_LOOP() {
@@ -136,7 +139,8 @@ ErrCode PowerLoss::extrude_before_resume() {
 
   if (stash_data.dual_x_carriage_mode >= DXC_DUPLICATION_MODE) {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-    tool_change(0, true);
+    // tool_change(0, true);
+    tool_change_no_move = true;
     // Use mirror mode to facilitate both heads extruding together
     dual_x_carriage_mode = DXC_MIRRORED_MODE;
     duplicate_extruder_x_offset = MIRRORED_MODE_X_OFFSET;
@@ -145,7 +149,8 @@ ErrCode PowerLoss::extrude_before_resume() {
   }
   else {
     dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-    tool_change(stash_data.active_extruder);
+    // tool_change(stash_data.active_extruder);
+    need_active_extruder = stash_data.active_extruder;
     set_duplication_enabled(false);
   }
 
@@ -177,6 +182,9 @@ ErrCode PowerLoss::extrude_before_resume() {
   // else {
   //   motion_control.home_x();
   // }
+
+  tool_change(need_active_extruder, tool_change_no_move);
+
   if(fabs(current_position.x - x_home_pos(active_extruder)) > 0.1) {
     motion_control.home_x();
   }
