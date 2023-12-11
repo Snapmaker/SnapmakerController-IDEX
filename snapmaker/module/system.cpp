@@ -245,7 +245,8 @@ ErrCode SystemService::set_status(system_status_e req_status, system_status_sour
       if (SYSTEM_STATUE_PAUSING == status_ ||
           SYSTEM_STATUE_RESUMING == status_ ||
           SYSTEM_STATUE_PRINTING == status_ ||
-          SYSTEM_STATUE_CAlIBRATION == status_) {
+          SYSTEM_STATUE_CAlIBRATION == status_ ||
+          SYSTEM_STATUE_POWER_LOSS_RESUMING == status_) {
         status_ = req_status;
         ret = E_SUCCESS;
       }
