@@ -100,6 +100,11 @@ void GcodeSuite::M104_M109(const bool isM109) {
     }
   #endif
 
+  if (thermalManager.is_nozzle_pid_autoturn_run()) {
+    LOG_E("nozzle pid_autotune is running, setting of nozzle temperature is not allowed!\n");
+    return;
+  }
+
   // Get the temperature from 'S' or 'R'
   bool no_wait_for_cooling = false;
   if (!got_temp) {

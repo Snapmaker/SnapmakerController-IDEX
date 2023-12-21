@@ -400,6 +400,10 @@ const char str_t_thermal_runaway[] PROGMEM = STR_T_THERMAL_RUNAWAY,
   #endif
 #endif
 
+  #if HAS_PID_HEATING
+    TUNE_PID_INFO Temperature::tune_pid_info = {{0, 0, 0}, 0, PID_AUTOTUNE_IDLE, 0};
+  #endif
+
 #if HAS_TEMP_COOLER
   cooler_info_t Temperature::temp_cooler; // = { 0 }
   #if HAS_COOLER
@@ -561,6 +565,15 @@ volatile bool Temperature::raw_temps_ready = false;
       return;
     }
 
+    if (tune_pid_info.pid_autotune_step == PID_AUTOTUNE_RUNNING) {
+      return;
+    }
+
+    // reset autotune info
+    tune_pid_info.pid_autotune_step = PID_AUTOTUNE_RUNNING;
+    tune_pid_info.autotune_hid = heater_id;
+    tune_pid_info.pid_autotune_err = 0;
+
     SERIAL_ECHOLNPGM(STR_PID_AUTOTUNE_START);
 
     disable_all_heaters();
@@ -679,6 +692,8 @@ volatile bool Temperature::raw_temps_ready = false;
                   exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT);
                 else if (heater_id == 1)
                   exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP_TIMEOUT);
+                tune_pid_info.pid_autotune_err |= PID_AUTOTUNE_HEATING_FAILED_MASK;
+                goto EXIT_M303_EXCE;
               }
             }
             else if (current_temp < target - (MAX_OVERSHOOT_PID_AUTOTUNE)) { // Heated, then temperature fell too far?
@@ -690,6 +705,8 @@ volatile bool Temperature::raw_temps_ready = false;
                 exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
               else if (heater_id == 1)
                 exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
+              tune_pid_info.pid_autotune_err |= PID_AUTOTUNE_TEMP_RUNAWAY_MASK;
+              goto EXIT_M303_EXCE;
             }
           }
         #endif
@@ -748,12 +765,14 @@ volatile bool Temperature::raw_temps_ready = false;
         #endif
 
         // Use the result? (As with "M303 U1")
-        if (set_result)
+        if (set_result && !tune_pid_info.pid_autotune_err)
           GHV(_set_chamber_pid(tune_pid), _set_bed_pid(tune_pid), _set_hotend_pid(heater_id, tune_pid));
 
         TERN_(PRINTER_EVENT_LEDS, printerEventLEDs.onPidTuningDone(color));
 
         TERN_(EXTENSIBLE_UI, ExtUI::onPidTuning(ExtUI::result_t::PID_DONE));
+
+        tune_pid_info.tune_pid_value = tune_pid;
 
         goto EXIT_M303;
       }
@@ -764,20 +783,30 @@ volatile bool Temperature::raw_temps_ready = false;
       // Run UI update
       TERN(DWIN_CREALITY_LCD, DWIN_Update(), ui.update());
     }
-    wait_for_heatup = false;
 
-    disable_all_heaters();
+    EXIT_M303_EXCE:
+      wait_for_heatup = false;
 
-    TERN_(PRINTER_EVENT_LEDS, printerEventLEDs.onPidTuningDone(color));
+      disable_all_heaters();
 
-    TERN_(EXTENSIBLE_UI, ExtUI::onPidTuning(ExtUI::result_t::PID_DONE));
+      TERN_(PRINTER_EVENT_LEDS, printerEventLEDs.onPidTuningDone(color));
+
+      TERN_(EXTENSIBLE_UI, ExtUI::onPidTuning(ExtUI::result_t::PID_DONE));
 
     EXIT_M303:
       TERN_(NO_FAN_SLOWING_IN_PID_TUNING, adaptive_fan_slowing = true);
+
+      // pid_autotune end
+      tune_pid_info.pid_autotune_step = PID_AUTOTUNE_IDLE;
       return;
   }
 
 #endif // HAS_PID_HEATING
+
+bool Temperature::is_nozzle_pid_autoturn_run(void) {
+  return (thermalManager.tune_pid_info.pid_autotune_step == PID_AUTOTUNE_RUNNING &&
+          (thermalManager.tune_pid_info.autotune_hid >= H_E0 && thermalManager.tune_pid_info.autotune_hid <= H_E0 + EXTRUDERS));
+}
 
 /**
  * Class and Instance Methods
@@ -1316,7 +1345,9 @@ void Temperature::manage_heater() {
         tr_state_machine[e].run(temp_hotend[e].celsius, temp_hotend[e].target, (heater_id_t)e, THERMAL_PROTECTION_PERIOD, THERMAL_PROTECTION_HYSTERESIS);
       #endif
 
-      temp_hotend[e].soft_pwm_amount = (temp_hotend[e].celsius > temp_range[e].mintemp || is_preheating(e)) && temp_hotend[e].celsius < temp_range[e].maxtemp ? (int)get_pid_output_hotend(e) >> 1 : 0;
+      // nozzle pid_autoturn does not allow pwm modification based on target temperature
+      if (!is_nozzle_pid_autoturn_run())
+        temp_hotend[e].soft_pwm_amount = (temp_hotend[e].celsius > temp_range[e].mintemp || is_preheating(e)) && temp_hotend[e].celsius < temp_range[e].maxtemp ? (int)get_pid_output_hotend(e) >> 1 : 0;
 
       #if WATCH_HOTENDS
         // Make sure temperature is increasing

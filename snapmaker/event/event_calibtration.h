@@ -37,10 +37,11 @@ enum {
   CAlIBRATION_ID_START_XY            = 0x21,
   CAlIBRATION_ID_SET_XY_OFFSET       = 0x22,
   CAlIBRATION_ID_REPORT_XY_OFFSET    = 0x23,
+  CAlIBRATION_ID_START_PID_AUTOTUNE  = 0x40,
   CAlIBRATION_ID_SUBSCRIBE_Z_OFFSET    = 0xA2,
 };
 
-#define CAlIBRATION_ID_CB_COUNT 13
+#define CAlIBRATION_ID_CB_COUNT 14
 
 extern event_cb_info_t calibtration_cb_info[CAlIBRATION_ID_CB_COUNT];
 #endif

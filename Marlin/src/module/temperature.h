@@ -44,6 +44,9 @@
 #define HOTEND_INDEX TERN(HAS_MULTI_HOTEND, e, 0)
 #define E_NAME TERN_(HAS_MULTI_HOTEND, e)
 
+#define PID_AUTOTUNE_HEATING_FAILED_MASK       (1 << 0)
+#define PID_AUTOTUNE_TEMP_RUNAWAY_MASK         (1 << 1)
+
 // Element identifiers. Positive values are hotends. Negative values are other heaters or coolers.
 typedef enum : int8_t {
   H_NONE = -6,
@@ -56,6 +59,18 @@ typedef struct { float Kp, Ki, Kd;     } PID_t;
 typedef struct { float Kp, Ki, Kd, Kc; } PIDC_t;
 typedef struct { float Kp, Ki, Kd, Kf; } PIDF_t;
 typedef struct { float Kp, Ki, Kd, Kc, Kf; } PIDCF_t;
+
+typedef enum : uint8_t {
+  PID_AUTOTUNE_IDLE = 0,
+  PID_AUTOTUNE_RUNNING,
+} PID_AUTOTUNE_STEP;
+
+typedef struct {
+  PID_t tune_pid_value;
+  int8_t autotune_hid;
+  uint8_t pid_autotune_step;
+  uint32_t pid_autotune_err;
+}TUNE_PID_INFO;
 
 typedef
   #if BOTH(PID_EXTRUSION_SCALING, PID_FAN_SCALING)
@@ -370,6 +385,10 @@ class Temperature {
     #if ENABLED(FAN_SOFT_PWM)
       static uint8_t soft_pwm_amount_fan[FAN_COUNT],
                      soft_pwm_count_fan[FAN_COUNT];
+    #endif
+
+    #if HAS_PID_HEATING
+      static TUNE_PID_INFO tune_pid_info;
     #endif
 
     #if ENABLED(PREVENT_COLD_EXTRUSION)
@@ -853,6 +872,7 @@ class Temperature {
         static inline void updatePID() {
           TERN_(PID_EXTRUSION_SCALING, last_e_position = 0);
         }
+        static bool is_nozzle_pid_autoturn_run(void);
       #endif
 
     #endif
