@@ -42,6 +42,8 @@ typedef int float_to_int_t;  // float * 1000 to int
 
 #define HW_1_2(p1, p2) (system_service.get_hw_version() == HW_VER_1 ? (p1) : (p2))
 
+#define PRIVATE_ERROR_BASE  200
+
 typedef enum : uint8_t {
   E_SUCCESS = 0,      /* non error */
   E_IN_PROGRESS,      /*Notification receives instructions and starts work*/

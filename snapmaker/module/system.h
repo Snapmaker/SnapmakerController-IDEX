@@ -64,6 +64,7 @@ typedef enum : uint8_t {
   SYSTEM_STATUE_CAlIBRATION = 31,
   SYSTEM_STATUE_CAlIBRATION_Z_PROBING,
   SYSTEM_STATUE_CAlIBRATION_XY_PROBING,
+  SYSTEM_STATUE_PID_AUTOTUNE,
 } system_status_e;
 
 typedef enum {
@@ -125,7 +126,7 @@ class SystemService {
     uint8_t *get_sn_addr(uint16_t *sn_len);
     system_status_source_e get_source() {return source_;}
     ErrCode set_status(system_status_e status, system_status_source_e source=SYSTEM_STATUE_SCOURCE_NONE);
-    bool is_calibtration_status() { return (status_ >= SYSTEM_STATUE_CAlIBRATION) && (status_ <= SYSTEM_STATUE_CAlIBRATION_XY_PROBING);}
+    bool is_calibtration_status() { return (status_ >= SYSTEM_STATUE_CAlIBRATION) && (status_ <= SYSTEM_STATUE_PID_AUTOTUNE);}
     bool is_working();
     bool is_printing();
     bool is_idle() {return status_ == SYSTEM_STATUE_IDLE;}
