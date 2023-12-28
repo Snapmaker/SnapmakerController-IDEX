@@ -330,18 +330,30 @@ probe_result_e Calibtration::probe(uint8_t axis, float distance, uint16_t feedra
   bool probe_status;
   // int32_t count;
   // uint32_t trigger_cnt;
+  int8_t retry_check_cnt = 5;
   probe_result_e ret = PROBR_RESULT_SUCCESS;
   float pos_before_probe = current_position[axis];
 
-  probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
-  if (probe_status) {
-    vTaskDelay(pdMS_TO_TICKS(10));
+  for (; retry_check_cnt-- > 0; ) {
     probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
-    if (probe_status) {
-      LOG_E("probe touch before probe move\r\n");
-      return PROBR_RESULT_SENSOR_ERROR;
-    }
+    if (!probe_status)
+      break;
+    vTaskDelay(pdMS_TO_TICKS(10));
   }
+
+  if (retry_check_cnt < 0) {
+    LOG_E("probe touch before probe move\r\n");
+    return PROBR_RESULT_SENSOR_ERROR;
+  }
+
+  // if (probe_status) {
+  //   vTaskDelay(pdMS_TO_TICKS(10));
+  //   probe_status = active_extruder ? switch_detect.read_e1_probe_status() : switch_detect.read_e0_probe_status();
+  //   if (probe_status) {
+  //     LOG_E("probe touch before probe move\r\n");
+  //     return PROBR_RESULT_SENSOR_ERROR;
+  //   }
+  // }
 
   set_calibration_move_param();
 
@@ -644,6 +656,7 @@ ErrCode Calibtration::bed_start_beat_mode() {
   if (mode == CAlIBRATION_MODE_BED) {
     LOG_I("Calibration status set to CAlIBRATION_STATE_BED_BEAT\r\n");
     status = CAlIBRATION_STATE_BED_BEAT;
+    calibtration.probe_offset = -CAlIBRATIONING_ERR_CODE;
     return E_SUCCESS;
   } else if (mode == CAlIBRATION_MODE_NOZZLE) {
     LOG_I("Calibration status set to CAlIBRATION_STATE_BED_BEAT\r\n");

@@ -151,6 +151,7 @@ static ErrCode calibtration_exit(event_param_t& event) {
     vTaskDelay(100);
   }
   LOG_V("exit calibtration over\n");
+  calibtration.probe_offset = -CAlIBRATIONING_ERR_CODE;
   event.data[0] = ret;
   event.length = 1;
   return send_event(event);
