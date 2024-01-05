@@ -50,7 +50,7 @@
 #define Y_STANDBY_POS                         (Y_MIN_POS)
 #define Z_STANDBY_POS                         (100)
 #define Z_PREPARE_POS                         (15.0)  // mm
-#define XY_CALI_Z_POS                         (-2.0 - build_plate_thickness)
+#define XY_CALI_Z_POS                         (-1.2 - build_plate_thickness)
 #define XY_CENTER_OFFSET_Z_POS                (0.5)
 #define PROBE_DISTANCE                        (15)    // mm
 
