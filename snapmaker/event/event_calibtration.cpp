@@ -23,6 +23,17 @@
 #include "../module/calibtration.h"
 #include "../module/system.h"
 #include "../module/print_control.h"
+#include "../module/exception.h"
+#include "../../../Marlin/src/module/temperature.h"
+#include "../../../Marlin/src/module/settings.h"
+
+#define PID_AUTOTUNE_TEMP                     (235)
+#define PID_AUTOTUNE_NCYCLES                  (8)
+#define E_PID_AUTOTUNE_HARDWARE               (PRIVATE_ERROR_BASE + 0)
+#define E_PID_AUTOTUNE_INVALID_STATE          (PRIVATE_ERROR_BASE + 1)
+#define E_PID_AUTOTUNE_BUSY                   (PRIVATE_ERROR_BASE + 2)
+#define E_PID_AUTOTUNE_PARAM                  (PRIVATE_ERROR_BASE + 3)
+#define E_PID_AUTOTUNE_FAILURE                (PRIVATE_ERROR_BASE + 4)
 
 enum {
   DED_AUTO_CAlIBRATION_MODE = 0,
@@ -31,6 +42,7 @@ enum {
   NOZZLE_MANUAL_CAlIBRATION_MODE = 51,
   XY_AUTO_CAlIBRATION_MODE = 100,
   XY_CAlIBRATION_MODE_TEST = 102,
+  PID_AUTOTUNE_MODE = 150,
 };
 
 #pragma pack(1)
@@ -76,6 +88,7 @@ static ErrCode calibtration_set_mode(event_param_t& event) {
       case NOZZLE_AUTO_CAlIBRATION_MODE:
       case NOZZLE_MANUAL_CAlIBRATION_MODE:
       case XY_AUTO_CAlIBRATION_MODE:
+      case PID_AUTOTUNE_MODE:
         event.data[0] = E_SUCCESS;
         break;
       case XY_CAlIBRATION_MODE_TEST:
@@ -138,6 +151,7 @@ static ErrCode calibtration_exit(event_param_t& event) {
     vTaskDelay(100);
   }
   LOG_V("exit calibtration over\n");
+  calibtration.probe_offset = -CAlIBRATIONING_ERR_CODE;
   event.data[0] = ret;
   event.length = 1;
   return send_event(event);
@@ -236,6 +250,75 @@ static ErrCode calibtration_get_z_offset(event_param_t& event) {
   return send_event(event);
 }
 
+static ErrCode calibtration_start_pid_autotune(event_param_t& event) {
+  ErrCode ret = E_SUCCESS;
+  heater_id_t hid;
+
+  LOG_I("SC req start pid autotune\n");
+
+  if (!exception_server.is_allow_heat_nozzle(false)) {
+    LOG_E("nozzle heating is limited\n");
+    ret = E_PID_AUTOTUNE_HARDWARE;
+    goto EXIT;
+  }
+
+  if (system_service.set_status(SYSTEM_STATUE_PID_AUTOTUNE)) {
+    LOG_E("the current state does not allow pid autotune\n");
+    ret = E_PID_AUTOTUNE_INVALID_STATE;
+    goto EXIT;
+  }
+
+  if (thermalManager.tune_pid_info.pid_autotune_step == PID_AUTOTUNE_RUNNING) {
+    LOG_E("pid_autotune is running, current operation not allowed\n");
+    ret = E_PID_AUTOTUNE_BUSY;
+    goto EXIT;
+  }
+
+  // if the key of the left and right nozzles change you can't judge it that way.
+  hid = (heater_id_t)MODULE_INDEX(event.data[0]);
+  LOG_I("heater_id: %d\n", hid);
+
+  // currently only the nozzle pid_autoturn is supported.
+  if (hid < H_E0 || hid > H_E0 + EXTRUDERS) {
+    LOG_E("heater_id error, range [%d - %d], recv hid: %d\n", H_E0, H_E0 + EXTRUDERS, hid);
+    ret = E_PID_AUTOTUNE_PARAM;
+    goto EXIT;
+  }
+
+  thermalManager.PID_autotune(PID_AUTOTUNE_TEMP, hid, PID_AUTOTUNE_NCYCLES, true);
+
+  if (thermalManager.tune_pid_info.pid_autotune_err) {
+    LOG_E("hid: %d pid_autotune failed, error sta: 0x%x\n", hid, thermalManager.tune_pid_info.pid_autotune_err);
+    ret = E_PID_AUTOTUNE_FAILURE;
+    goto EXIT;
+  }
+  else {
+    LOG_I("pid_autotune success\n    Kp: %f, Ki: %f, Kd: %f\n", thermalManager.tune_pid_info.tune_pid_value.Kp,
+          thermalManager.tune_pid_info.tune_pid_value.Ki, thermalManager.tune_pid_info.tune_pid_value.Kd);
+    settings.save();
+    ret = E_SUCCESS;
+  }
+
+  // if (thermalManager.tune_pid_info.autotune_hid  != hid) {
+  //   LOG_E("pid_autotune failed, autotune id does not match, cur: %d target: %d\n",
+  //         hid, thermalManager.tune_pid_info.pid_autotune_err, hid);
+  //   ret = E_FAILURE;
+  //   goto EXIT;
+  // }
+
+EXIT:
+  LOG_I("pid autotune result: %d\n", ret);
+  event.data[0] = ret;
+  event.length = 1;
+  send_event(event);
+
+  if (thermalManager.tune_pid_info.pid_autotune_step == PID_AUTOTUNE_IDLE &&
+      (system_service.get_status() == SYSTEM_STATUE_CAlIBRATION || system_service.get_status() == SYSTEM_STATUE_PID_AUTOTUNE))
+    system_service.set_status(SYSTEM_STATUE_IDLE);
+
+  return E_SUCCESS;
+}
+
 event_cb_info_t calibtration_cb_info[CAlIBRATION_ID_CB_COUNT] = {
   {CAlIBRATION_ID_SET_MODE         , EVENT_CB_DIRECT_RUN,   calibtration_set_mode},
   {CAlIBRATION_ID_MOVE_TO_POSITION , EVENT_CB_TASK_RUN,     calibtration_move_to_pos},
@@ -250,4 +333,5 @@ event_cb_info_t calibtration_cb_info[CAlIBRATION_ID_CB_COUNT] = {
   {CAlIBRATION_ID_SET_XY_OFFSET    , EVENT_CB_TASK_RUN,     calibtration_set_xy_offset},
   {CAlIBRATION_ID_REPORT_XY_OFFSET , EVENT_CB_DIRECT_RUN,   calibtration_report_xy_offset},
   {CAlIBRATION_ID_SUBSCRIBE_Z_OFFSET , EVENT_CB_DIRECT_RUN, calibtration_get_z_offset},
+  {CAlIBRATION_ID_START_PID_AUTOTUNE , EVENT_CB_TASK_RUN,   calibtration_start_pid_autotune},
 };

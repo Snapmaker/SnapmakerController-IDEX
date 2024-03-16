@@ -245,7 +245,8 @@ ErrCode SystemService::set_status(system_status_e req_status, system_status_sour
       if (SYSTEM_STATUE_PAUSING == status_ ||
           SYSTEM_STATUE_RESUMING == status_ ||
           SYSTEM_STATUE_PRINTING == status_ ||
-          SYSTEM_STATUE_CAlIBRATION == status_) {
+          SYSTEM_STATUE_CAlIBRATION == status_ ||
+          SYSTEM_STATUE_POWER_LOSS_RESUMING == status_) {
         status_ = req_status;
         ret = E_SUCCESS;
       }
@@ -327,7 +328,8 @@ ErrCode SystemService::set_status(system_status_e req_status, system_status_sour
     case SYSTEM_STATUE_CAlIBRATION:
       if (SYSTEM_STATUE_IDLE == status_ ||
           SYSTEM_STATUE_CAlIBRATION_Z_PROBING == status_ ||
-          SYSTEM_STATUE_CAlIBRATION_XY_PROBING == status_) {
+          SYSTEM_STATUE_CAlIBRATION_XY_PROBING == status_ ||
+          SYSTEM_STATUE_PID_AUTOTUNE == status_) {
         status_ = req_status;
         ret = E_SUCCESS;
       }
@@ -352,6 +354,17 @@ ErrCode SystemService::set_status(system_status_e req_status, system_status_sour
       if (SYSTEM_STATUE_IDLE == status_ ||
           SYSTEM_STATUE_CAlIBRATION == status_ ||
           SYSTEM_STATUE_CAlIBRATION_Z_PROBING == status_) {
+        status_ = req_status;
+        ret = E_SUCCESS;
+      }
+      else {
+        ret = E_BUSY;
+      }
+      break;
+
+    case SYSTEM_STATUE_PID_AUTOTUNE:
+      if (SYSTEM_STATUE_IDLE == status_ ||
+          SYSTEM_STATUE_CAlIBRATION == status_) {
         status_ = req_status;
         ret = E_SUCCESS;
       }
