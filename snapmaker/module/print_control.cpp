@@ -341,7 +341,7 @@ ErrCode PrintControl::start() {
       x_first_move = false;
     else
       x_first_move = true;
-    // motion_control.home_x(); // 2.1.21d <
+     motion_control.home_x(); // 2.1.21d < Uncommented if bug will be patched, ID NoDupli001
   }
 
   power_loss.stash_data.file_position = 0;
