@@ -338,10 +338,10 @@ ErrCode PrintControl::start() {
     first_start_gcode = true; // 2.1.21d >
     extern bool x_first_move;
     if (DXC_DUPLICATION_MODE == dual_x_carriage_mode)
-      x_first_move = false;
+      x_first_move = true; // was false, 2.2.13v1
     else
       x_first_move = true;
-     motion_control.home_x(); // 2.1.21d < Uncommented if bug will be patched, ID NoDupli001
+     // motion_control.home_x(); // 2.1.21d < No change
   }
 
   power_loss.stash_data.file_position = 0;
