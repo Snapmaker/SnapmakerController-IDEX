@@ -35,10 +35,10 @@
   #include "../../module/stepper.h"
 #endif
 
-#include "../../../snapmaker/module/print_control.h"// 2.1.21d 
+#include "../../../snapmaker/module/print_control.h"
 
 extern xyze_pos_t destination;
-bool x_first_move = false;// 2.1.21d 
+bool x_first_move = false;
 
 #if ENABLED(VARIABLE_G0_FEEDRATE)
   feedRate_t fast_move_feedrate = MMM_TO_MMS(G0_FEEDRATE);
@@ -78,11 +78,11 @@ void GcodeSuite::G0_G1(TERN_(HAS_FAST_MOVES, const bool fast_move/*=false*/)) {
      * @brief only x move then move the extruder
      *
      */
-    float bf_x = destination[X_AXIS];// 2.1.21d 
+    float bf_x = destination[X_AXIS];
     get_destination_from_command();                 // Get X Y Z E F (and set cutter power)
-    if (bf_x != destination[X_AXIS] && print_control.first_start_gcode) {// 2.1.21d 
-      print_control.first_start_gcode = false;// 2.1.21d 
-      x_first_move = true;// 2.1.21d 
+    if (bf_x != destination[X_AXIS] && print_control.first_start_gcode) {
+      print_control.first_start_gcode = false;
+      x_first_move = true;
     }
 
     #ifdef G0_FEEDRATE

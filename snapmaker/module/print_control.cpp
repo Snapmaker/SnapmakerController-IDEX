@@ -319,8 +319,8 @@ ErrCode PrintControl::start() {
     return PRINT_RESULT_START_ERR_E;
   }
 
-  if (homing_needed()) { // 2.1.21d
-    motion_control.home(); // 2.1.21d
+  if (homing_needed()) {
+    motion_control.home();
   }
   if (SYSTEM_STATUE_PRINTING != system_service.get_status()) {
     LOG_I("Work start abort\r\n");
@@ -335,13 +335,13 @@ ErrCode PrintControl::start() {
     duplicate_extruder_x_offset = (dual_x_carriage_mode == DXC_DUPLICATION_MODE) ? \
                                   DUPLICATION_MODE_X_OFFSET : MIRRORED_MODE_X_OFFSET;
     idex_set_mirrored_mode(dual_x_carriage_mode == DXC_MIRRORED_MODE);
-    first_start_gcode = true; // 2.1.21d >
+    first_start_gcode = true;
     extern bool x_first_move;
     if (DXC_DUPLICATION_MODE == dual_x_carriage_mode)
-      x_first_move = true; // was false, 2.2.13v1
+      x_first_move = false;
     else
       x_first_move = true;
-     // motion_control.home_x(); // 2.1.21d < No change
+    // motion_control.home_x();
   }
 
   power_loss.stash_data.file_position = 0;

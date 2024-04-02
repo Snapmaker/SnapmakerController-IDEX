@@ -21,7 +21,7 @@
  */
 #pragma once
 
-#define J1_BUILD_VERSION "2.2.13v1"
+#define J1_BUILD_VERSION "2.2.13"
 
 /**
  * Release version. Leave the Marlin version or apply a custom scheme.
@@ -44,7 +44,7 @@
  * version was tagged.
  */
 #ifndef STRING_DISTRIBUTION_DATE
-  #define STRING_DISTRIBUTION_DATE "2024-03-31"
+  #define STRING_DISTRIBUTION_DATE "2024-01-05"
 #endif
 
 /**
@@ -75,7 +75,7 @@
  * Define a generic printer name to be output to the LCD after booting Marlin.
  */
 #ifndef MACHINE_NAME
-  #define MACHINE_NAME "SM J1s_0"
+  #define MACHINE_NAME "3D Printer"
 #endif
 
 /**

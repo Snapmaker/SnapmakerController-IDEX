@@ -1252,7 +1252,7 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
           // Restore planner to parked head (T1) X position
           float pos_now_x = current_position.x;
           // pos_now.x = inactive_extruder_x;
-          // xyze_pos_t head0_pos = current_position;  // in 2.1.21d is uncommented 
+          // xyze_pos_t head0_pos = current_position;
           // Keep the same X or add the duplication X offset
           if (dual_mode == DXC_DUPLICATION_MODE) {
             tool_change(1);
@@ -1358,7 +1358,7 @@ void prepare_line_to_destination() {
 
   #endif // PREVENT_COLD_EXTRUSION || PREVENT_LENGTHY_EXTRUDE
 
-  // extern bool x_first_move;  // 2.1.21d >
+  // extern bool x_first_move;
   // if (x_first_move || dual_x_carriage_mode == DXC_MIRRORED_MODE) {
   //   if (TERN0(DUAL_X_CARRIAGE, dual_x_carriage_unpark())) return;
   // }
@@ -1370,14 +1370,7 @@ void prepare_line_to_destination() {
   }
   else {
     if (TERN0(DUAL_X_CARRIAGE, dual_x_carriage_unpark())) return;
-  }  // 2.1.21d <
-  
-  /*
-   extern bool x_first_move; // 2.1.21d version
-  if (x_first_move) { 
- if (TERN0(DUAL_X_CARRIAGE, dual_x_carriage_unpark())) return;
-  }  
-  */ // 2.1.21d 
+  }
 
   if (
     #if UBL_SEGMENTED

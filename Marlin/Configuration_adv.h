@@ -736,7 +736,7 @@
   #define DEFAULT_DUPLICATION_X_OFFSET 100
 
   // Default action to execute following M605 mode change commands. Typically G28X to apply new mode.
-  #define EVENT_GCODE_IDEX_AFTER_MODECHANGE "G28X"
+  //#define EVENT_GCODE_IDEX_AFTER_MODECHANGE "G28X"
 #endif
 
 // Activate a solenoid on the active extruder with M380. Disable all with M381.
@@ -3788,7 +3788,7 @@
  * Host Prompt Support enables Marlin to use the host for user prompts so
  * filament runout and other processes can be managed from the host side.
  */
-#define HOST_ACTION_COMMANDS
+//#define HOST_ACTION_COMMANDS
 #if ENABLED(HOST_ACTION_COMMANDS)
   //#define HOST_PROMPT_SUPPORT
   //#define HOST_START_MENU_ITEM  // Add a menu item that tells the host to start
