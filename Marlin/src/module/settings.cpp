@@ -1642,6 +1642,8 @@ void MarlinSettings::postprocess() {
     // Number of esteppers may change
     uint8_t esteppers;
     EEPROM_READ_ALWAYS(esteppers);
+    // make sure esteppers is valid
+    esteppers = COUNT(planner.settings.axis_steps_per_mm) - LINEAR_AXES;
 
     //
     // Planner Motion
@@ -1758,6 +1760,9 @@ void MarlinSettings::postprocess() {
           for (uint16_t q = mesh_num_x * mesh_num_y; q--;) EEPROM_READ(dummyf);
         }
       #else
+        // make sure grid numbers are valid
+        mesh_num_x = TERN(MESH_BED_LEVELING, GRID_MAX_POINTS_X, 3),
+        mesh_num_y = TERN(MESH_BED_LEVELING, GRID_MAX_POINTS_Y, 3);
         // MBL is disabled - skip the stored data
         for (uint16_t q = mesh_num_x * mesh_num_y; q--;) EEPROM_READ(dummyf);
       #endif // MESH_BED_LEVELING
@@ -1804,6 +1809,9 @@ void MarlinSettings::postprocess() {
         else // EEPROM data is stale
       #endif // AUTO_BED_LEVELING_BILINEAR
         {
+          // make sure the grid number is valid
+          grid_max_x = TERN(AUTO_BED_LEVELING_BILINEAR, GRID_MAX_POINTS_X, 3),
+          grid_max_y = TERN(AUTO_BED_LEVELING_BILINEAR, GRID_MAX_POINTS_Y, 3);
           // Skip past disabled (or stale) Bilinear Grid data
           xy_pos_t bgs, bs;
           EEPROM_READ(bgs);
