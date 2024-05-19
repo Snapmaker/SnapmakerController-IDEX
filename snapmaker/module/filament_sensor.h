@@ -27,6 +27,7 @@
 #define FILAMENT_SENSOR_COUNT 2
 #define FILAMENT_LOOP(i) for (uint8_t i = 0; i < FILAMENT_SENSOR_COUNT; i++)
 #define FILAMENT_CHECK_DISTANCE 2  // mm
+#define FILAMENT_CHECK_EXTRAS_DISTANCE  1  // mm
 #define FILAMENT_THRESHOLD 8  // ADC diff value
 #define FILAMENT_THRESHOLD_HW2 15  // ADC diff value
 #define FILAMENT_CHECK_TIMES 3
