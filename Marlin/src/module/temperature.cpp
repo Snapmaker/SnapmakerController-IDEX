@@ -1016,9 +1016,9 @@ void Temperature::max_temp_error(const heater_id_t heater_id) {
   if (heater_id == H_BED)
     exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
   else if (heater_id == 0)
-    exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
+    exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_OVERTEMP);
   else if (heater_id == 1)
-    exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
+    exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_OVERTEMP);
 }
 
 void Temperature::min_temp_error(const heater_id_t heater_id) {
@@ -1030,9 +1030,9 @@ void Temperature::min_temp_error(const heater_id_t heater_id) {
   if (heater_id == H_BED)
     exception_server.trigger_exception(EXCEPTION_TYPE_BED_TEMP);
   else if (heater_id == 0)
-    exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP);
+    exception_server.trigger_exception(EXCEPTION_TYPE_LEFT_NOZZLE_OVERTEMP);
   else if (heater_id == 1)
-    exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_TEMP);
+    exception_server.trigger_exception(EXCEPTION_TYPE_RIGHT_NOZZLE_OVERTEMP);
 }
 
 #if ANY(PID_DEBUG, PID_BED_DEBUG, PID_CHAMBER_DEBUG)
