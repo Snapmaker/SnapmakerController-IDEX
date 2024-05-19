@@ -57,7 +57,7 @@ void FilamentSensor::reset() {
     start_adc[i] = 0;
     triggered[i] = false;
     err_times[i] = 0;
-    check_step_count[i] = filament_param.distance * planner.settings.axis_steps_per_mm[E_AXIS_N(i)];
+    check_step_count[i] = (filament_param.distance + FILAMENT_CHECK_EXTRAS_DISTANCE) * planner.settings.axis_steps_per_mm[E_AXIS_N(i)];
   }
   err_mask = ~(0xff << filament_param.check_times);
 }
