@@ -219,6 +219,20 @@ void GcodeSuite::M2000() {
     }
     break;
 
+    case 115:
+    {
+      LOG_I("trun on probe power\n");
+      switch_detect.trun_on_probe_pwr();
+    }
+    break;
+
+    case 116:
+    {
+      LOG_I("trun off probe power\n");
+      switch_detect.trun_off_probe_pwr();
+    }
+    break;
+
     case 200:
     {
       if (print_control.get_mode() >= PRINT_DUPLICATION_MODE) {
