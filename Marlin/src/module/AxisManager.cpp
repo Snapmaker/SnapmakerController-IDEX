@@ -58,7 +58,7 @@ void AxisManager::input_shaper_reset() {
 
 ErrCode AxisManager::input_shaper_set(int axis, int type, float freq, float dampe)  {
 
-  if (axis != X_AXIS && axis != Y_AXIS) return E_PARAM;
+  if ((axis != X_AXIS && axis != Y_AXIS) || freq == 0 || (InputShaperType)type > InputShaperType::zvddd) return E_PARAM;
 
   AxisInputShaper* axis_input_shaper = axisManager.axis[axis].axis_input_shaper;
   if (freq != axis_input_shaper->frequency || dampe != axis_input_shaper->zeta || type != (int)axis_input_shaper->type) {
@@ -134,11 +134,21 @@ void GcodeSuite::M593() {
         if (frequency != axis_input_shaper->frequency || zeta != axis_input_shaper->zeta || type != (int)axis_input_shaper->type) {
             update = true;
         }
-        LOG_I("X type: %s, frequency: %lf, zeta: %lf\n", input_shaper_type_name[type], frequency, zeta);
+        if ((InputShaperType)type <= InputShaperType::zvddd)
+            LOG_I("X type: %s, frequency: %lf, zeta: %lf\n", input_shaper_type_name[type], frequency, zeta);
+        else
+            LOG_I("X type: %d, frequency: %lf, zeta: %lf\n", type, frequency, zeta);
+
         if (!update) {
             axis_input_shaper->logParams();
         } else {
-            axis_input_shaper->setConfig(type, frequency, zeta);
+            if (frequency != 0 && (InputShaperType)type <= InputShaperType::zvddd) {
+                axis_input_shaper->setConfig(type, frequency, zeta);
+            }
+            else {
+                update = false;
+                LOG_I("X input shaper setting failed, frequency cannot be zero or type error!!!\n");
+            }
         }
     }
     if (y) {
@@ -149,11 +159,21 @@ void GcodeSuite::M593() {
         if (frequency != axis_input_shaper->frequency || zeta != axis_input_shaper->zeta || type != (int)axis_input_shaper->type) {
             update = true;
         }
-        LOG_I("Y type: %s, frequency: %lf, zeta: %lf\n", input_shaper_type_name[type], frequency, zeta);
+        if ((InputShaperType)type <= InputShaperType::zvddd)
+            LOG_I("Y type: %s, frequency: %lf, zeta: %lf\n", input_shaper_type_name[type], frequency, zeta);
+        else
+            LOG_I("Y type: %d, frequency: %lf, zeta: %lf\n", type, frequency, zeta);
+
         if (!update) {
             axis_input_shaper->logParams();
         } else {
-            axis_input_shaper->setConfig(type, frequency, zeta);
+            if (frequency != 0 && (InputShaperType)type <= InputShaperType::zvddd) {
+                axis_input_shaper->setConfig(type, frequency, zeta);
+            }
+            else {
+                update = false;
+                LOG_I("Y input shaper setting failed, frequency cannot be zero or type error!!!\n");
+            }
         }
     }
     LOG_I("update: %d\n", update);
