@@ -21,7 +21,7 @@
  */
 #pragma once
 
-#define J1_BUILD_VERSION "2.2.13"
+#define J1_BUILD_VERSION "2.2.14"
 
 /**
  * Release version. Leave the Marlin version or apply a custom scheme.
@@ -44,7 +44,7 @@
  * version was tagged.
  */
 #ifndef STRING_DISTRIBUTION_DATE
-  #define STRING_DISTRIBUTION_DATE "2024-01-05"
+  #define STRING_DISTRIBUTION_DATE "2024-05-23"
 #endif
 
 /**
