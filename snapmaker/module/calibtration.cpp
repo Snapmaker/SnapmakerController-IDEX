@@ -111,8 +111,19 @@ void Calibtration::extrude_e(float distance, uint16_t feedrate) {
   set_duplication_enabled(false);
 }
 
+// Usually used for initialization
 void Calibtration::updateBuildPlateThickness(float bpt) {
   build_plate_thickness = bpt;
+}
+
+// Usually used to modify the build_plate_thickness
+void Calibtration::updateBuildPlateThicknessWithHomeOffset(float bpt) {
+  float last_bpt = build_plate_thickness;
+
+  build_plate_thickness = bpt;
+  home_offset[Z_AXIS] = home_offset[Z_AXIS] + last_bpt - build_plate_thickness;
+  LOG_I("Set z_offset to :%f\n", home_offset[Z_AXIS]);
+  settings.save();
 }
 
 void Calibtration::set_heat_bed_center_offset(const float offset[2]) {
