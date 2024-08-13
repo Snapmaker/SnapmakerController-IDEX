@@ -119,6 +119,7 @@ class Calibtration {
     void retrack_e();
     void extrude_e(float distance, uint16_t feedrate=MOTION_RETRACK_E_FEEDRATE);
     void updateBuildPlateThickness(float bpt);
+    void updateBuildPlateThicknessWithHomeOffset(float bpt);
 
     void set_heat_bed_center_offset(const float offset[2]);
     void get_heat_bed_center_offset(float *offset);

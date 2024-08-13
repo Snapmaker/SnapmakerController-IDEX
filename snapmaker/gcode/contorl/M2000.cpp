@@ -189,10 +189,9 @@ void GcodeSuite::M2000() {
     {
       LOG_I("Set factory build plate thickness data\r\n");
       float bpt = (float)parser.floatval('B', (float)5.0);
-      if (fd_srv.setBuildPlateThickness(bpt)) {
-        fd_srv.save();
+      if (fd_srv.setBuildPlateThickness(bpt) && fd_srv.save()) {
         fd_srv.log();
-        calibtration.updateBuildPlateThickness(fd_srv.getBuildPlateThickness());
+        calibtration.updateBuildPlateThicknessWithHomeOffset(bpt);
       }
       else {
         LOG_W("Build plate thickness is not valid\n\n");
