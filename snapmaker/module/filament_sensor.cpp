@@ -54,9 +54,9 @@ uint16_t FilamentSensor::get_adc_val(uint8_t e) {
 
 void FilamentSensor::reset() {
   FILAMENT_LOOP(i) {
-    reset(i);  // Call per-extruder reset
+    reset(i);
   }
-  err_mask = ~(0xFFFF << filament_param.check_times);
+  err_mask = ~(0xff << filament_param.check_times); // Revert to 8-bit mask
 }
 
 void FilamentSensor::reset(uint8_t e) {

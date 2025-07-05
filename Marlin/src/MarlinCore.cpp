@@ -830,11 +830,12 @@ void idle(bool no_stepper_sleep/*=false*/) {
   (void)check_tool_sensor_stats(active_extruder, true);
 
   // Handle filament runout sensors
-  TERN_(HAS_FILAMENT_SENSOR, if (!is_hmi_printing) {
-    filament_sensor.check();
-    HOTEND_LOOP() {
-      if (filament_sensor.is_trigger(e) && !FilamentMonitor::is_triggered(e)) {  // Only if not already triggered
-        FilamentMonitor::runout_detected(e);
+  TERN_(HAS_FILAMENT_SENSOR, {
+    if (!is_hmi_printing && marlin_state != MF_INITIALIZING) {  // OctoPrint: Custom runout detection
+      HOTEND_LOOP() {
+        if (filament_sensor.is_trigger(e) && !FilamentMonitor::is_triggered(e)) {
+          FilamentMonitor::runout_detected(e);
+        }
       }
     }
   });
