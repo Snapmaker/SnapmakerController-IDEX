@@ -28,7 +28,7 @@
 GCodeQueue queue;
 
 #include "gcode.h"
-
+#include "../feature/e_parser.h"
 #include "../lcd/marlinui.h"
 #include "../sd/cardreader.h"
 #include "../module/motion.h"
@@ -389,7 +389,12 @@ inline bool process_line_done(uint8_t &sis, char (&buff)[MAX_CMD_SIZE], int &ind
  * Exit when the buffer is full or when no more characters are
  * left on the serial port.
  */
+
 void GCodeQueue::get_serial_commands() {
+  // Static Emergency Parser state for MSerial1 (port 0)
+  static EmergencyParser emergency_parser;
+  static EmergencyParser::State emergency_state = EmergencyParser::EP_RESET;
+
   #if ENABLED(BINARY_FILE_TRANSFER)
     if (card.flag.binary_mode) {
       /**
@@ -421,7 +426,7 @@ void GCodeQueue::get_serial_commands() {
       // Check if the queue is full and exit if it is.
       if (ring_buffer.full()) return;
 
-      // No data for this port ? Skip it
+      // No data for this port? Skip it
       if (!serial_data_available(p)) continue;
 
       // Ok, we have some data to process, let's make progress here
@@ -441,8 +446,12 @@ void GCodeQueue::get_serial_commands() {
       const char serial_char = (char)c;
       SerialState &serial = serial_state[p];
 
-      if (ISEOL(serial_char)) {
+      // Parse emergency commands for MSerial1 (port 0, USART1 for OctoPrint)
+      if (p == 0) {
+        emergency_parser.update(emergency_state, serial_char);
+      }
 
+      if (ISEOL(serial_char)) {
         // Reset our state, continue if the line was empty
         if (process_line_done(serial.input_state, serial.line_buffer, serial.count))
           continue;
@@ -453,7 +462,6 @@ void GCodeQueue::get_serial_commands() {
         char *npos = (*command == 'N') ? command : nullptr;  // Require the N parameter to start the line
 
         if (npos) {
-
           const bool M110 = !!strstr_P(command, PSTR("M110"));
 
           if (M110) {
@@ -498,7 +506,6 @@ void GCodeQueue::get_serial_commands() {
         //
         // Movement commands give an alert when the machine is stopped
         //
-
         if (IsStopped()) {
           char* gpos = strchr(command, 'G');
           if (gpos) {

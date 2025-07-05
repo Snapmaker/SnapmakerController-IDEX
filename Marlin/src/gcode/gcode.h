@@ -906,9 +906,9 @@ private:
     static void M407();
   #endif
 
-  #if ENABLED(HAS_FILAMENT_SENSOR)
-    static void M412();
-  #endif
+  //#if ENABLED(HAS_FILAMENT_SENSOR)
+  //  static void M412();
+  //#endif
   static void M412();
 
   #if ENABLED(HAS_MULTI_LANGUAGE)

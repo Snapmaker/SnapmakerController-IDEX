@@ -217,3 +217,4 @@ __weak void __irq_otg_fs() {
 #ifdef __cplusplus
   } /* C-declarations for C++ */
 #endif
+

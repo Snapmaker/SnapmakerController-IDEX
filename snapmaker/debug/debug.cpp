@@ -29,7 +29,7 @@
 #include "../module/exception.h"
 #include "../module/motion_control.h"
 #include "../module/print_control.h"
-#include "../j1/switch_detect.h"
+#include "../J1/switch_detect.h"
 #include "../module/enclosure.h"
 #include "../../Marlin/src/inc/Version.h"
 #include "../../Marlin/src/module/motion.h"

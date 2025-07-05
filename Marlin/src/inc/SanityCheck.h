@@ -892,26 +892,26 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
  * Filament Runout needs one or more pins and either SD Support or Auto print start detection
  */
 #if HAS_FILAMENT_SENSOR
-  #if !PIN_EXISTS(FIL_RUNOUT)
-    #error "FILAMENT_RUNOUT_SENSOR requires FIL_RUNOUT_PIN."
+  #if !PIN_EXISTS(FIL_RUNOUT) && !defined(CUSTOM_FILAMENT_SENSOR)
+    #error "FILAMENT_RUNOUT_SENSOR requires FIL_RUNOUT_PIN unless CUSTOM_FILAMENT_SENSOR is defined."
   #elif HAS_PRUSA_MMU2 && NUM_RUNOUT_SENSORS != 1
-      #error "NUM_RUNOUT_SENSORS must be 1 with MMU2 / MMU2S."
-  #elif NUM_RUNOUT_SENSORS != 1 && NUM_RUNOUT_SENSORS != E_STEPPERS
-    #error "NUM_RUNOUT_SENSORS must be either 1 or number of E steppers."
-  #elif NUM_RUNOUT_SENSORS >= 8 && !PIN_EXISTS(FIL_RUNOUT8)
-    #error "FIL_RUNOUT8_PIN is required with NUM_RUNOUT_SENSORS >= 8."
-  #elif NUM_RUNOUT_SENSORS >= 7 && !PIN_EXISTS(FIL_RUNOUT7)
-    #error "FIL_RUNOUT7_PIN is required with NUM_RUNOUT_SENSORS >= 7."
-  #elif NUM_RUNOUT_SENSORS >= 6 && !PIN_EXISTS(FIL_RUNOUT6)
-    #error "FIL_RUNOUT6_PIN is required with NUM_RUNOUT_SENSORS >= 6."
-  #elif NUM_RUNOUT_SENSORS >= 5 && !PIN_EXISTS(FIL_RUNOUT5)
-    #error "FIL_RUNOUT5_PIN is required with NUM_RUNOUT_SENSORS >= 5."
-  #elif NUM_RUNOUT_SENSORS >= 4 && !PIN_EXISTS(FIL_RUNOUT4)
-    #error "FIL_RUNOUT4_PIN is required with NUM_RUNOUT_SENSORS >= 4."
-  #elif NUM_RUNOUT_SENSORS >= 3 && !PIN_EXISTS(FIL_RUNOUT3)
-    #error "FIL_RUNOUT3_PIN is required with NUM_RUNOUT_SENSORS >= 3."
-  #elif NUM_RUNOUT_SENSORS >= 2 && !PIN_EXISTS(FIL_RUNOUT2)
-    #error "FIL_RUNOUT2_PIN is required with NUM_RUNOUT_SENSORS >= 2."
+    #error "NUM_RUNOUT_SENSORS must be 1 with MMU2 / MMU2S."
+  #elif NUM_RUNOUT_SENSORS != 1 && NUM_RUNOUT_SENSORS != E_STEPPERS && !defined(CUSTOM_FILAMENT_SENSOR)
+    #error "NUM_RUNOUT_SENSORS must be either 1 or number of E steppers unless CUSTOM_FILAMENT_SENSOR is defined."
+  #elif NUM_RUNOUT_SENSORS >= 8 && !PIN_EXISTS(FIL_RUNOUT8) && !defined(CUSTOM_FILAMENT_SENSOR)
+    #error "FIL_RUNOUT8_PIN is required with NUM_RUNOUT_SENSORS >= 8 unless CUSTOM_FILAMENT_SENSOR is defined."
+  #elif NUM_RUNOUT_SENSORS >= 7 && !PIN_EXISTS(FIL_RUNOUT7) && !defined(CUSTOM_FILAMENT_SENSOR)
+    #error "FIL_RUNOUT7_PIN is required with NUM_RUNOUT_SENSORS >= 7 unless CUSTOM_FILAMENT_SENSOR is defined."
+  #elif NUM_RUNOUT_SENSORS >= 6 && !PIN_EXISTS(FIL_RUNOUT6) && !defined(CUSTOM_FILAMENT_SENSOR)
+    #error "FIL_RUNOUT6_PIN is required with NUM_RUNOUT_SENSORS >= 6 unless CUSTOM_FILAMENT_SENSOR is defined."
+  #elif NUM_RUNOUT_SENSORS >= 5 && !PIN_EXISTS(FIL_RUNOUT5) && !defined(CUSTOM_FILAMENT_SENSOR)
+    #error "FIL_RUNOUT5_PIN is required with NUM_RUNOUT_SENSORS >= 5 unless CUSTOM_FILAMENT_SENSOR is defined."
+  #elif NUM_RUNOUT_SENSORS >= 4 && !PIN_EXISTS(FIL_RUNOUT4) && !defined(CUSTOM_FILAMENT_SENSOR)
+    #error "FIL_RUNOUT4_PIN is required with NUM_RUNOUT_SENSORS >= 4 unless CUSTOM_FILAMENT_SENSOR is defined."
+  #elif NUM_RUNOUT_SENSORS >= 3 && !PIN_EXISTS(FIL_RUNOUT3) && !defined(CUSTOM_FILAMENT_SENSOR)
+    #error "FIL_RUNOUT3_PIN is required with NUM_RUNOUT_SENSORS >= 3 unless CUSTOM_FILAMENT_SENSOR is defined."
+  #elif NUM_RUNOUT_SENSORS >= 2 && !PIN_EXISTS(FIL_RUNOUT2) && !defined(CUSTOM_FILAMENT_SENSOR)
+    #error "FIL_RUNOUT2_PIN is required with NUM_RUNOUT_SENSORS >= 2 unless CUSTOM_FILAMENT_SENSOR is defined."
   #elif BOTH(FIL_RUNOUT1_PULLUP, FIL_RUNOUT1_PULLDOWN)
     #error "You can't enable FIL_RUNOUT1_PULLUP and FIL_RUNOUT1_PULLDOWN at the same time."
   #elif BOTH(FIL_RUNOUT2_PULLUP, FIL_RUNOUT2_PULLDOWN)
@@ -961,12 +961,25 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
 #endif
 
 #if ENABLED(NOZZLE_PARK_FEATURE)
-  constexpr float npp[] = NOZZLE_PARK_POINT;
-  static_assert(COUNT(npp) == XYZ, "NOZZLE_PARK_POINT requires X, Y, and Z values.");
-  constexpr xyz_pos_t npp_xyz = NOZZLE_PARK_POINT;
-  static_assert(WITHIN(npp_xyz.x, X_MIN_POS, X_MAX_POS), "NOZZLE_PARK_POINT.X is out of bounds (X_MIN_POS, X_MAX_POS).");
-  static_assert(WITHIN(npp_xyz.y, Y_MIN_POS, Y_MAX_POS), "NOZZLE_PARK_POINT.Y is out of bounds (Y_MIN_POS, Y_MAX_POS).");
-  static_assert(WITHIN(npp_xyz.z, Z_MIN_POS, Z_MAX_POS), "NOZZLE_PARK_POINT.Z is out of bounds (Z_MIN_POS, Z_MAX_POS).");
+  // Check NOZZLE_PARK_POINT_T0
+  constexpr float npp_t0[] = NOZZLE_PARK_POINT_T0;
+  static_assert(COUNT(npp_t0) == XYZ, "NOZZLE_PARK_POINT_T0 requires X, Y, and Z values.");
+  constexpr xyz_pos_t npp_t0_xyz = NOZZLE_PARK_POINT_T0;
+  static_assert(WITHIN(npp_t0_xyz.x, X_MIN_POS, X_MAX_POS), "NOZZLE_PARK_POINT_T0.X is out of bounds (X_MIN_POS, X_MAX_POS).");
+  static_assert(WITHIN(npp_t0_xyz.y, Y_MIN_POS, Y_MAX_POS), "NOZZLE_PARK_POINT_T0.Y is out of bounds (Y_MIN_POS, Y_MAX_POS).");
+  static_assert(WITHIN(npp_t0_xyz.z, Z_MIN_POS, Z_MAX_POS), "NOZZLE_PARK_POINT_T0.Z is out of bounds (Z_MIN_POS, Z_MAX_POS).");
+
+  // Check NOZZLE_PARK_POINT_T1
+  constexpr float npp_t1[] = NOZZLE_PARK_POINT_T1;
+  static_assert(COUNT(npp_t1) == XYZ, "NOZZLE_PARK_POINT_T1 requires X, Y, and Z values.");
+  constexpr xyz_pos_t npp_t1_xyz = NOZZLE_PARK_POINT_T1;
+  #if ENABLED(DUAL_X_CARRIAGE)
+    static_assert(WITHIN(npp_t1_xyz.x, X_MIN_POS, 340), "NOZZLE_PARK_POINT_T1.X is out of bounds (X_MIN_POS, hotend_offset[1].x).");
+  #else
+    static_assert(WITHIN(npp_t1_xyz.x, X_MIN_POS, X_MAX_POS), "NOZZLE_PARK_POINT_T1.X is out of bounds (X_MIN_POS, X_MAX_POS).");
+  #endif
+  static_assert(WITHIN(npp_t1_xyz.y, Y_MIN_POS, Y_MAX_POS), "NOZZLE_PARK_POINT_T1.Y is out of bounds (Y_MIN_POS, Y_MAX_POS).");
+  static_assert(WITHIN(npp_t1_xyz.z, Z_MIN_POS, Z_MAX_POS), "NOZZLE_PARK_POINT_T1.Z is out of bounds (Z_MIN_POS, Z_MAX_POS).");
 #endif
 
 /**

@@ -59,6 +59,7 @@
 #include "gcode/parser.h"
 #include "gcode/queue.h"
 
+#include "feature/runout.h"
 #include "feature/pause.h"
 #include "sd/cardreader.h"
 
@@ -72,6 +73,7 @@
 #include "../snapmaker/module/filament_sensor.h"
 #include "../snapmaker/module/print_control.h"
 #include "../snapmaker/module/system.h"
+
 #if HAS_TOUCH_BUTTONS
   #include "lcd/touch/touch_buttons.h"
 #endif
@@ -828,7 +830,15 @@ void idle(bool no_stepper_sleep/*=false*/) {
   (void)check_tool_sensor_stats(active_extruder, true);
 
   // Handle filament runout sensors
-  TERN_(HAS_FILAMENT_SENSOR, runout.run());
+  TERN_(HAS_FILAMENT_SENSOR, {
+    if (!is_hmi_printing && marlin_state != MF_INITIALIZING) {  // OctoPrint: Custom runout detection
+      HOTEND_LOOP() {
+        if (filament_sensor.is_trigger(e) && !FilamentMonitor::is_triggered(e)) {
+          FilamentMonitor::runout_detected(e);
+        }
+      }
+    }
+  });
 
   // Run HAL idle tasks
   TERN_(HAL_IDLETASK, HAL_idletask());
@@ -1675,6 +1685,8 @@ AT_END_OF_TEXT void setup() {
   #if BOTH(HAS_LCD_MENU, TOUCH_SCREEN_CALIBRATION) && EITHER(TFT_CLASSIC_UI, TFT_COLOR_UI)
     ui.check_touch_calibration();
   #endif
+
+  is_hmi_printing = false; // Default to OctoPrint/serial
 
   marlin_state = MF_RUNNING;
 

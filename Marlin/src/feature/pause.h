@@ -33,7 +33,7 @@ typedef struct {
 #include "../inc/MarlinConfigPre.h"
 
 #if ENABLED(ADVANCED_PAUSE_FEATURE)
-
+extern bool is_m600_pause;
 #include "../libs/nozzle.h"
 
 enum PauseMode : char {
@@ -128,6 +128,8 @@ bool unload_filament(
     , const_float_t mix_multiplier=1.0f                       // Extrusion multiplier (for a Mixing Extruder)
   #endif
 );
+
+bool ensure_safe_temperature(const bool wait=true, const PauseMode mode=PAUSE_MODE_SAME);
 
 #else // !ADVANCED_PAUSE_FEATURE
 

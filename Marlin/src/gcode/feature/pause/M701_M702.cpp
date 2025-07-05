@@ -20,13 +20,14 @@
  *
  */
 
-#include "../../../inc/MarlinConfigPre.h"
+ #include "../../../inc/MarlinConfigPre.h"
 
 #if ENABLED(FILAMENT_LOAD_UNLOAD_GCODES)
 
 #include "../../gcode.h"
 #include "../../../MarlinCore.h"
 #include "../../../module/motion.h"
+#include "../../module/endstops.h"  // Added for DUAL_X_CARRIAGE endstop handling
 #include "../../../module/temperature.h"
 #include "../../../feature/pause.h"
 #include "../../../lcd/marlinui.h"
@@ -54,38 +55,43 @@
  *  Default values are used for omitted arguments.
  */
 void GcodeSuite::M701() {
-  xyz_pos_t park_point = NOZZLE_PARK_POINT;
+  // Define park_point based on target extruder
+  xyz_pos_t park_point;
+  const int8_t target_extruder = get_target_extruder_from_command();
+  if (target_extruder < 0) return; // Early return if no valid extruder
+  if (target_extruder == 0) {
+    park_point = xyz_pos_t{NOZZLE_PARK_POINT_T0};
+  } else {
+    park_point = xyz_pos_t{NOZZLE_PARK_POINT_T1};
+  }
 
   // Don't raise Z if the machine isn't homed
   if (TERN0(NO_MOTION_BEFORE_HOMING, axes_should_home())) park_point.z = 0;
 
   #if ENABLED(MIXING_EXTRUDER)
-    const int8_t target_e_stepper = get_target_e_stepper_from_command();
-    if (target_e_stepper < 0) return;
-
+    const int8_t target_e_stepper = target_extruder; // Use target_extruder directly
     const uint8_t old_mixing_tool = mixer.get_current_vtool();
     mixer.T(MIXER_DIRECT_SET_TOOL);
 
     MIXER_STEPPER_LOOP(i) mixer.set_collector(i, (i == (uint8_t)target_e_stepper) ? 1.0 : 0.0);
     mixer.normalize();
 
-    const int8_t target_extruder = active_extruder;
+    const int8_t target_extruder_local = active_extruder; // Rename to avoid shadowing
   #else
-    const int8_t target_extruder = get_target_extruder_from_command();
-    if (target_extruder < 0) return;
+    const int8_t target_extruder_local = target_extruder; // Already set above
   #endif
 
   // Z axis lift
   if (parser.seenval('Z')) park_point.z = parser.linearval('Z');
 
   // Show initial "wait for load" message
-  ui.pause_show_message(PAUSE_MESSAGE_LOAD, PAUSE_MODE_LOAD_FILAMENT, target_extruder);
+  ui.pause_show_message(PAUSE_MESSAGE_LOAD, PAUSE_MODE_LOAD_FILAMENT, target_extruder_local);
 
   #if HAS_MULTI_EXTRUDER && (HAS_PRUSA_MMU1 || !HAS_MMU)
     // Change toolhead if specified
     uint8_t active_extruder_before_filament_change = active_extruder;
-    if (active_extruder != target_extruder)
-      tool_change(target_extruder, false);
+    if (active_extruder != target_extruder_local)
+      tool_change(target_extruder_local, false);
   #endif
 
   auto move_z_by = [](const_float_t zdist) {
@@ -102,20 +108,20 @@ void GcodeSuite::M701() {
 
   // Load filament
   #if HAS_PRUSA_MMU2
-    mmu2.load_filament_to_nozzle(target_extruder);
+    mmu2.load_filament_to_nozzle(target_extruder_local);
   #else
     constexpr float     purge_length = ADVANCED_PAUSE_PURGE_LENGTH,
-                    slow_load_length = FILAMENT_CHANGE_SLOW_LOAD_LENGTH;
-        const float fast_load_length = ABS(parser.seen('L') ? parser.value_axis_units(E_AXIS)
-                                                            : fc_settings[active_extruder].load_length);
+                        slow_load_length = FILAMENT_CHANGE_SLOW_LOAD_LENGTH;
+    const float fast_load_length = ABS(parser.seen('L') ? parser.value_axis_units(E_AXIS)
+                                                        : fc_settings[active_extruder].load_length);
     load_filament(
       slow_load_length, fast_load_length, purge_length,
       FILAMENT_CHANGE_ALERT_BEEPS,
       true,                                           // show_lcd
-      thermalManager.still_heating(target_extruder),  // pause_for_user
+      thermalManager.still_heating(target_extruder_local),  // pause_for_user
       PAUSE_MODE_LOAD_FILAMENT                        // pause_mode
       #if ENABLED(DUAL_X_CARRIAGE)
-        , target_extruder                             // Dual X target
+        , target_extruder_local                       // Dual X target
       #endif
     );
   #endif
@@ -147,7 +153,15 @@ void GcodeSuite::M701() {
  *  Default values are used for omitted arguments.
  */
 void GcodeSuite::M702() {
-  xyz_pos_t park_point = NOZZLE_PARK_POINT;
+  // Define park_point based on target extruder
+  xyz_pos_t park_point;
+  const int8_t target_extruder = get_target_extruder_from_command();
+  if (target_extruder < 0) return; // Early return if no valid extruder
+  if (target_extruder == 0) {
+    park_point = xyz_pos_t{NOZZLE_PARK_POINT_T0};
+  } else {
+    park_point = xyz_pos_t{NOZZLE_PARK_POINT_T1};
+  }
 
   // Don't raise Z if the machine isn't homed
   if (TERN0(NO_MOTION_BEFORE_HOMING, axes_should_home())) park_point.z = 0;
@@ -167,30 +181,28 @@ void GcodeSuite::M702() {
     #endif
 
     if (seenT) {
-      const int8_t target_e_stepper = get_target_e_stepper_from_command();
-      if (target_e_stepper < 0) return;
+      const int8_t target_e_stepper = target_extruder; // Use target_extruder directly
       mixer.T(MIXER_DIRECT_SET_TOOL);
       MIXER_STEPPER_LOOP(i) mixer.set_collector(i, (i == (uint8_t)target_e_stepper) ? 1.0 : 0.0);
       mixer.normalize();
     }
 
-    const int8_t target_extruder = active_extruder;
+    const int8_t target_extruder_local = active_extruder; // Rename to avoid shadowing
   #else
-    const int8_t target_extruder = get_target_extruder_from_command();
-    if (target_extruder < 0) return;
+    const int8_t target_extruder_local = target_extruder; // Already set above
   #endif
 
   // Z axis lift
   if (parser.seenval('Z')) park_point.z = parser.linearval('Z');
 
   // Show initial "wait for unload" message
-  ui.pause_show_message(PAUSE_MESSAGE_UNLOAD, PAUSE_MODE_UNLOAD_FILAMENT, target_extruder);
+  ui.pause_show_message(PAUSE_MESSAGE_UNLOAD, PAUSE_MODE_UNLOAD_FILAMENT, target_extruder_local);
 
   #if HAS_MULTI_EXTRUDER && (HAS_PRUSA_MMU1 || !HAS_MMU)
     // Change toolhead if specified
     uint8_t active_extruder_before_filament_change = active_extruder;
-    if (active_extruder != target_extruder)
-      tool_change(target_extruder, false);
+    if (active_extruder != target_extruder_local)
+      tool_change(target_extruder_local, false);
   #endif
 
   // Lift Z axis
@@ -213,7 +225,7 @@ void GcodeSuite::M702() {
     {
       // Unload length
       const float unload_length = -ABS(parser.seen('U') ? parser.value_axis_units(E_AXIS)
-                                                        : fc_settings[target_extruder].unload_length);
+                                                        : fc_settings[target_extruder_local].unload_length);
 
       unload_filament(unload_length, true, PAUSE_MODE_UNLOAD_FILAMENT
         #if ALL(FILAMENT_UNLOAD_ALL_EXTRUDERS, MIXING_EXTRUDER)

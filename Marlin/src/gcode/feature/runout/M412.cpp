@@ -20,83 +20,53 @@
  *
  */
 
-#include "../../../inc/MarlinConfig.h"
+ #include "../../../inc/MarlinConfig.h"
 
-// #if HAS_FILAMENT_SENSOR
-
-#include "../../gcode.h"
-// #include "../../../feature/runout.h"
-#include "../../../../../snapmaker/module/filament_sensor.h"
-#include "../../../module/settings.h"
-
-/**
- * M412: Enable / Disable filament runout detection
- *
- * Parameters
- *  R         : Reset the runout sensor
- *  S<bool>   : Reset and enable/disable the runout sensor
- *  H<bool>   : Enable/disable host handling of filament runout
- *  D<linear> : Extra distance to continue after runout is triggered
- */
-void GcodeSuite::M412() {
-
-  bool need_save = false;
-
-  if (parser.seenval('S')) {
-    bool enable = parser.value_bool();
-    uint8_t e = 0;
-    if (parser.seenval('T')) {
-      e = parser.value_bool();
-    }
-    filament_sensor.filament_param.enabled[e] = enable;
-    need_save = true;
-  }
-
-  if (parser.seenval('D')) {
-    uint8_t d = parser.value_byte();
-    if (d < 1) {
-      d = 1;
-    }
-    filament_sensor.filament_param.distance = d;
-    need_save = true;
-  }
-
-  // if (parser.seenval('H')) {
-  //   uint16_t h = parser.value_ushort();
-  //   if (h < 1) {
-  //     h = 1;
-  //   }
-  //   filament_sensor.filament_param.threshold = h;
-  //   need_save = true;
-  // }
-
-  // if (parser.seenval('N')) {
-  //   uint8_t n = parser.value_byte();
-  //   if (n < 1) {
-  //     n = 1;
-  //   } else if (n > 8){
-  //     n = 8;
-  //   }
-  //   filament_sensor.filament_param.check_times = n;
-  //   need_save = true;
-  // }
-
-  if (parser.seen('R') || need_save) {
-    if (need_save)
-      (void)settings.save();
-    filament_sensor.reset();
-  }
-
-  SERIAL_ECHOLNPAIR("filament check enable T[0]:", filament_sensor.filament_param.enabled[0],
-                    ", T[1]:", filament_sensor.filament_param.enabled[1]);
-
-  // SERIAL_ECHOLNPAIR("filament check param - diatance:", filament_sensor.filament_param.distance,
-  //                   ", threshold:", filament_sensor.filament_param.threshold,
-  //                   ", times:", filament_sensor.filament_param.check_times);
-  SERIAL_ECHOLNPAIR("filament check param - diatance:", filament_sensor.filament_param.distance);
-
-  SERIAL_ECHOLNPAIR("filament sensor value T[0]:", filament_sensor.get_adc_val(0),
-                    ", T[1]:", filament_sensor.get_adc_val(1));
-}
-
-// #endif // HAS_FILAMENT_SENSOR
+ #include "../../gcode.h"
+ #include "../../snapmaker/module/filament_sensor.h"  
+ #include "../../../module/settings.h"
+ 
+ /**
+  * M412: Enable / Disable filament runout detection
+  *
+  * Parameters
+  *  R         : Reset the runout sensor
+  *  S<bool>   : Reset and enable/disable the runout sensor
+  *  H<bool>   : Enable/disable host handling of filament runout
+  *  D<linear> : Extra distance to continue after runout is triggered
+  */
+ void GcodeSuite::M412() {
+ 
+   bool need_save = false;
+ 
+   if (parser.seenval('S')) {
+     bool enable = parser.value_bool();
+     uint8_t e = 0;
+     if (parser.seenval('T')) {
+       e = parser.value_bool();
+     }
+     filament_sensor.filament_param.enabled[e] = enable;
+     need_save = true;
+   }
+ 
+   if (parser.seenval('D')) {
+     uint8_t d = parser.value_byte();
+     if (d < 1) {
+       d = 1;
+     }
+     filament_sensor.filament_param.distance = d;
+     need_save = true;
+   }
+ 
+   if (parser.seen('R') || need_save) {
+     if (need_save)
+       (void)settings.save();
+     filament_sensor.reset();
+   }
+ 
+   SERIAL_ECHOLNPAIR("filament check enable T[0]:", filament_sensor.filament_param.enabled[0],
+                     ", T[1]:", filament_sensor.filament_param.enabled[1]);
+   SERIAL_ECHOLNPAIR("filament check param - diatance:", filament_sensor.filament_param.distance);
+   SERIAL_ECHOLNPAIR("filament sensor value T[0]:", filament_sensor.get_adc_val(0),
+                     ", T[1]:", filament_sensor.get_adc_val(1));
+ }

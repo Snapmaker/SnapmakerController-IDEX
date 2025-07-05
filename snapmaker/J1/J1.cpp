@@ -318,8 +318,8 @@ void step_isr_usage_log(void) {
   last_log_tick = millis();
 
   if (need_log) {
-    LOG_E("### max_stepper_isr_usage %.2f%\r\n", max_stepper_isr_usage);
-    LOG_E("### max_stepper_isr_delay %d us\r\n", max_stepper_isr_delay / STEPPER_TIMER_TICKS_PER_US);
+    LOG_V("### max_stepper_isr_usage %.2f%\r\n", max_stepper_isr_usage);
+    LOG_V("### max_stepper_isr_delay %d us\r\n", max_stepper_isr_delay / STEPPER_TIMER_TICKS_PER_US);
     need_log = false;
   }
 }
@@ -458,11 +458,11 @@ void j1_main_task(void *args) {
 
     if (ELAPSED(millis(), syslog_timeout)) {
       syslog_timeout = millis() + 20000;
-      LOG_I("%s: c0: %d/t0: %d, c1: %d/t1: %d, cb: %d/tb: %d, ", J1_BUILD_VERSION,
+      LOG_V("%s: c0: %d/t0: %d, c1: %d/t1: %d, cb: %d/tb: %d, ", J1_BUILD_VERSION,
         (int)thermalManager.degHotend(0), thermalManager.degTargetHotend(0),
         (int)thermalManager.degHotend(1), thermalManager.degTargetHotend(1),
         (int)thermalManager.degBed(), thermalManager.degTargetBed());
-      LOG_I("sta: %u, excep sta: 0x%x, excep beh: 0x%x\n", system_service.get_status(),
+      LOG_V("sta: %u, excep sta: 0x%x, excep beh: 0x%x\n", system_service.get_status(),
         exception_server.get_exception(), exception_server.get_behavior());
     }
 

@@ -49,7 +49,7 @@ for line in lines:
     break
 
 if not version:
-  print("cannot get app version from Marlin\src\inc\Version.h")
+  print("cannot get app version from Marlin\\src\\inc\\Version.h")
   print("won't use default version: V0.0.0-2201")
   version = "V0.0.0"
 else:

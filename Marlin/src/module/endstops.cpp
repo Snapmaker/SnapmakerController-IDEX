@@ -576,7 +576,7 @@ void _O2 Endstops::report_states() {
   #if HAS_J_MAX
     ES_REPORT(J_MAX);
   #endif
-    #if HAS_K_MIN
+  #if HAS_K_MIN
     ES_REPORT(K_MIN);
   #endif
   #if HAS_K_MAX
@@ -588,32 +588,38 @@ void _O2 Endstops::report_states() {
   #if HAS_CUSTOM_PROBE_PIN
     print_es_state(PROBE_TRIGGERED(), PSTR(STR_Z_PROBE));
   #endif
-  #if MULTI_FILAMENT_SENSOR
-    #define _CASE_RUNOUT(N) case N: pin = FIL_RUNOUT##N##_PIN; state = FIL_RUNOUT##N##_STATE; break;
-    LOOP_S_LE_N(i, 1, NUM_RUNOUT_SENSORS) {
-      pin_t pin;
-      uint8_t state;
-      switch (i) {
-        default: continue;
-        REPEAT_1(NUM_RUNOUT_SENSORS, _CASE_RUNOUT)
-      }
-      SERIAL_ECHOPGM(STR_FILAMENT_RUNOUT_SENSOR);
-      if (i > 1) SERIAL_CHAR(' ', '0' + i);
-      print_es_state(extDigitalRead(pin) != state);
-    }
-    #undef _CASE_RUNOUT
-  #elif HAS_FILAMENT_SENSOR
-    print_es_state(READ(FIL_RUNOUT1_PIN) != FIL_RUNOUT1_STATE, PSTR(STR_FILAMENT_RUNOUT_SENSOR));
-  #endif
-  print_es_state(switch_detect.read_e0_probe_status(), "PROBE_0");
-  print_es_state(switch_detect.read_e1_probe_status(), "PROBE_1");
 
-  print_es_state(filament_sensor.is_trigger(0), "filament_0");
-  print_es_state(filament_sensor.is_trigger(1), "filament_1");
-  print_es_state(power_loss.is_power_220v_pin_trigger(), "220V_power_loss");
+  #if HAS_FILAMENT_SENSOR
+    #ifdef CUSTOM_FILAMENT_SENSOR
+      print_es_state(filament_sensor.is_trigger(0), PSTR("filament_0"));
+      print_es_state(filament_sensor.is_trigger(1), PSTR("filament_1"));
+    #else
+      #if MULTI_FILAMENT_SENSOR
+        #define _CASE_RUNOUT(N) case N: pin = FIL_RUNOUT##N##_PIN; state = FIL_RUNOUT##N##_STATE; break;
+        LOOP_S_LE_N(i, 1, NUM_RUNOUT_SENSORS) {
+          pin_t pin;
+          uint8_t state;
+          switch (i) {
+            default: continue;
+            REPEAT_1(NUM_RUNOUT_SENSORS, _CASE_RUNOUT)
+          }
+          SERIAL_ECHOPGM(STR_FILAMENT_RUNOUT_SENSOR);
+          if (i > 1) SERIAL_CHAR(' ', '0' + i);
+          print_es_state(extDigitalRead(pin) != state, PSTR(STR_FILAMENT_RUNOUT_SENSOR));
+        }
+        #undef _CASE_RUNOUT
+      #else
+        print_es_state(READ(FIL_RUNOUT1_PIN) != FIL_RUNOUT1_STATE, PSTR(STR_FILAMENT_RUNOUT_SENSOR));
+      #endif
+    #endif
+  #endif
+
+  print_es_state(switch_detect.read_e0_probe_status(), PSTR("PROBE_0"));
+  print_es_state(switch_detect.read_e1_probe_status(), PSTR("PROBE_1"));
+  print_es_state(power_loss.is_power_220v_pin_trigger(), PSTR("220V_power_loss"));
+
   TERN_(BLTOUCH, bltouch._reset_SW_mode());
   TERN_(JOYSTICK_DEBUG, joystick.report());
-
 } // Endstops::report_states
 
 // The following routines are called from an ISR context. It could be the temperature ISR, the

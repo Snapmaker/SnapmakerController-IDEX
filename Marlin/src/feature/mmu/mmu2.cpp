@@ -770,8 +770,12 @@ bool MMU2::get_response() {
  * Wait for response and deal with timeout if necessary
  */
 void MMU2::manage_response(const bool move_axes, const bool turn_off_nozzle) {
-
-  constexpr xyz_pos_t park_point = NOZZLE_PARK_POINT;
+  xyz_pos_t park_point;
+  if (active_extruder == 0) {
+    park_point = xyz_pos_t{NOZZLE_PARK_POINT_T0};
+  } else {
+    park_point = xyz_pos_t{NOZZLE_PARK_POINT_T1};
+  }
   bool response = false;
   mmu_print_saved = false;
   xyz_pos_t resume_position;
@@ -795,8 +799,15 @@ void MMU2::manage_response(const bool move_axes, const bool turn_off_nozzle) {
         resume_hotend_temp = thermalManager.degTargetHotend(active_extruder);
         resume_position = current_position;
 
-        if (move_axes && all_axes_homed())
-          nozzle.park(0, park_point /*= NOZZLE_PARK_POINT*/);
+        if (move_axes && all_axes_homed()) {
+          #if ENABLED(DUAL_X_CARRIAGE)
+            if (active_extruder == 1) endstops.enable_globally(false);
+          #endif
+          nozzle.park(0, park_point);
+          #if ENABLED(DUAL_X_CARRIAGE)
+            if (active_extruder == 1) endstops.enable_globally(true);
+          #endif
+        }
 
         if (turn_off_nozzle) thermalManager.setTargetHotend(0, active_extruder);
 

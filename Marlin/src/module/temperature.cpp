@@ -27,6 +27,8 @@
 // Useful when debugging thermocouples
 //#define IGNORE_THERMOCOUPLE_ERRORS
 
+//#include "../../feature/runout.h"               // For FilamentMonitor
+//#include "../../../snapmaker/module/system.h"    // For system_service
 #include "../MarlinCore.h"
 #include "../HAL/shared/Delay.h"
 #include "../lcd/marlinui.h"
@@ -1290,82 +1292,100 @@ void Temperature::min_temp_error(const heater_id_t heater_id) {
  *  - Apply filament width to the extrusion rate (may move)
  *  - Update the heated bed PID output value
  */
-void Temperature::manage_heater() {
-  extern uint32_t feed_dog_time;
-  feed_dog_time = millis();
-  if (marlin_state == MF_INITIALIZING) return watchdog_refresh(); // If Marlin isn't started, at least reset the watchdog!
 
-  #if ENABLED(EMERGENCY_PARSER)
-    if (emergency_parser.killed_by_M112) kill(M112_KILL_STR, nullptr, true);
-
-    if (emergency_parser.quickstop_by_M410) {
-      emergency_parser.quickstop_by_M410 = false; // quickstop_stepper may call idle so clear this now!
-      quickstop_stepper();
-    }
-  #endif
-
-  if (!updateTemperaturesIfReady()) return; // Will also reset the watchdog if temperatures are ready
-
-  #if DISABLED(IGNORE_THERMOCOUPLE_ERRORS)
-    #if TEMP_SENSOR_0_IS_MAX_TC
-      if (degHotend(0) > _MIN(HEATER_0_MAXTEMP, TEMP_SENSOR_0_MAX_TC_TMAX - 1.0)) max_temp_error(H_E0);
-      if (degHotend(0) < _MAX(HEATER_0_MINTEMP, TEMP_SENSOR_0_MAX_TC_TMIN + .01)) min_temp_error(H_E0);
-    #endif
-    #if TEMP_SENSOR_1_IS_MAX_TC
-      if (degHotend(1) > _MIN(HEATER_1_MAXTEMP, TEMP_SENSOR_1_MAX_TC_TMAX - 1.0)) max_temp_error(H_E1);
-      if (degHotend(1) < _MAX(HEATER_1_MINTEMP, TEMP_SENSOR_1_MAX_TC_TMIN + .01)) min_temp_error(H_E1);
-    #endif
-    #if TEMP_SENSOR_REDUNDANT_IS_MAX_TC
-      if (degRedundant() > TEMP_SENSOR_REDUNDANT_MAX_TC_TMAX - 1.0) max_temp_error(H_REDUNDANT);
-      if (degRedundant() < TEMP_SENSOR_REDUNDANT_MAX_TC_TMIN + .01) min_temp_error(H_REDUNDANT);
-    #endif
-  #endif
-
-  millis_t ms = millis();
-
-  #if HAS_HOTEND
-
-    HOTEND_LOOP() {
-      #if ENABLED(THERMAL_PROTECTION_HOTENDS)
-        if (degHotend(e) > temp_range[e].maxtemp) {
-          // turn off power of toolheads
-          WRITE(HEATER_PWR_PIN, LOW);
-          max_temp_error((heater_id_t)e);
-        } else {
-          // turn on power of toolheads
-          WRITE(HEATER_PWR_PIN, HIGH);
-          // exception_server.clean_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP+e));
-        }
-      #endif
-
-      TERN_(HEATER_IDLE_HANDLER, heater_idle[e].update(ms));
-
-      #if ENABLED(THERMAL_PROTECTION_HOTENDS)
-        // Check for thermal runaway
-        tr_state_machine[e].run(temp_hotend[e].celsius, temp_hotend[e].target, (heater_id_t)e, THERMAL_PROTECTION_PERIOD, THERMAL_PROTECTION_HYSTERESIS);
-      #endif
-
-      // nozzle pid_autoturn does not allow pwm modification based on target temperature
-      if (!is_nozzle_pid_autoturn_run())
-        temp_hotend[e].soft_pwm_amount = (temp_hotend[e].celsius > temp_range[e].mintemp || is_preheating(e)) && temp_hotend[e].celsius < temp_range[e].maxtemp ? (int)get_pid_output_hotend(e) >> 1 : 0;
-
-      #if WATCH_HOTENDS
-        // Make sure temperature is increasing
-        if (watch_hotend[e].elapsed(ms)) {          // Enabled and time to check?
-          if (watch_hotend[e].check(degHotend(e))) { // Increased enough?
-            start_watching_hotend(e);               // If temp reached, turn off elapsed check
-          }
-          else {
-            TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
-            _temp_error((heater_id_t)e, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
-            exception_server.trigger_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT+e));
-          }
-        }
-      #endif
-    } // HOTEND_LOOP
-
-  #endif // HAS_HOTEND
-
+ 
+ void Temperature::manage_heater() {
+   extern uint32_t feed_dog_time;
+   feed_dog_time = millis();
+   if (marlin_state == MF_INITIALIZING) return watchdog_refresh(); // If Marlin isn't started, at least reset the watchdog!
+ 
+   #if ENABLED(EMERGENCY_PARSER)
+     if (emergency_parser.killed_by_M112) kill(M112_KILL_STR, nullptr, true);
+ 
+     if (emergency_parser.quickstop_by_M410) {
+       emergency_parser.quickstop_by_M410 = false; // quickstop_stepper may call idle so clear this now!
+       quickstop_stepper();
+     }
+   #endif
+ 
+   if (!updateTemperaturesIfReady()) return; // Will also reset the watchdog if temperatures are ready
+ 
+   #if DISABLED(IGNORE_THERMOCOUPLE_ERRORS)
+     #if TEMP_SENSOR_0_IS_MAX_TC
+       if (degHotend(0) > _MIN(HEATER_0_MAXTEMP, TEMP_SENSOR_0_MAX_TC_TMAX - 1.0)) max_temp_error(H_E0);
+       if (degHotend(0) < _MAX(HEATER_0_MINTEMP, TEMP_SENSOR_0_MAX_TC_TMIN + .01)) min_temp_error(H_E0);
+     #endif
+     #if TEMP_SENSOR_1_IS_MAX_TC
+       if (degHotend(1) > _MIN(HEATER_1_MAXTEMP, TEMP_SENSOR_1_MAX_TC_TMAX - 1.0)) max_temp_error(H_E1);
+       if (degHotend(1) < _MAX(HEATER_1_MINTEMP, TEMP_SENSOR_1_MAX_TC_TMIN + .01)) min_temp_error(H_E1);
+     #endif
+     #if TEMP_SENSOR_REDUNDANT_IS_MAX_TC
+       if (degRedundant() > TEMP_SENSOR_REDUNDANT_MAX_TC_TMAX - 1.0) max_temp_error(H_REDUNDANT);
+       if (degRedundant() < TEMP_SENSOR_REDUNDANT_MAX_TC_TMIN + .01) min_temp_error(H_REDUNDANT);
+     #endif
+   #endif
+ 
+   millis_t ms = millis();
+ 
+   #if HAS_HOTEND
+ 
+   HOTEND_LOOP() {
+     #if ENABLED(THERMAL_PROTECTION_HOTENDS)
+       if (degHotend(e) > temp_range[e].maxtemp) {
+         // turn off power of toolheads
+         WRITE(HEATER_PWR_PIN, LOW);
+         max_temp_error((heater_id_t)e);
+       } else {
+         // turn on power of toolheads
+         WRITE(HEATER_PWR_PIN, HIGH);
+         // exception_server.clean_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP+e));
+       }
+     #endif
+ 
+     TERN_(HEATER_IDLE_HANDLER, heater_idle[e].update(ms));
+ 
+     #if ENABLED(THERMAL_PROTECTION_HOTENDS)
+       // Check for thermal runaway
+       tr_state_machine[e].run(temp_hotend[e].celsius, temp_hotend[e].target, (heater_id_t)e, THERMAL_PROTECTION_PERIOD, THERMAL_PROTECTION_HYSTERESIS);
+     #endif
+ 
+     // nozzle pid_autoturn does not allow pwm modification based on target temperature
+     if (!is_nozzle_pid_autoturn_run())
+       temp_hotend[e].soft_pwm_amount = (temp_hotend[e].celsius > temp_range[e].mintemp || is_preheating(e)) && temp_hotend[e].celsius < temp_range[e].maxtemp ? (int)get_pid_output_hotend(e) >> 1 : 0;
+ 
+     #if WATCH_HOTENDS
+       // Make sure temperature is increasing
+       if (watch_hotend[e].elapsed(ms)) {          // Enabled and time to check?
+         if (watch_hotend[e].check(degHotend(e))) { // Increased enough?
+           start_watching_hotend(e);               // If temp reached, turn off elapsed check
+         }
+         else {
+           TERN_(DWIN_CREALITY_LCD, DWIN_Popup_Temperature(0));
+           _temp_error((heater_id_t)e, str_t_heating_failed, GET_TEXT(MSG_HEATING_FAILED_LCD));
+           exception_server.trigger_exception((exception_type_e)(EXCEPTION_TYPE_LEFT_NOZZLE_TEMP_TIMEOUT+e));
+         }
+       }
+     #endif
+   } // HOTEND_LOOP
+ 
+   // Check filament sensor status
+   //#if HAS_FILAMENT_SENSOR
+   //  filament_sensor.check();                    // Poll the filament sensor
+   //  HOTEND_LOOP() {
+   //    if (filament_sensor.is_trigger(e)) {    
+   //      if (!runout.is_triggered(e)) {
+   //        runout.runout_detected(e);
+   //        system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_FILAMENT);
+   //      }
+   //    }
+   //    else {
+   //      runout.set_triggered(e, false);
+   //    }
+   //  }
+   //#endif
+ 
+   #endif // HAS_HOTEND
+ 
   #if HAS_TEMP_REDUNDANT
     // Make sure measured temperatures are close together
     if (ABS(degRedundantTarget() - degRedundant()) > TEMP_SENSOR_REDUNDANT_MAX_DIFF)

@@ -20,7 +20,7 @@
  */
 
 #include "update.h"
-#include "../../marlin/src/core/serial.h"
+#include "../../Marlin/src/core/serial.h"
 #include "flash_stm32.h"
 #include HAL_PATH(src/HAL, HAL_watchdog_STM32F1.h)
 

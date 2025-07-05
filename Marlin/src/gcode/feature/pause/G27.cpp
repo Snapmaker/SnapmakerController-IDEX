@@ -21,21 +21,36 @@
  */
 
 
-#include "../../../inc/MarlinConfig.h"
+ #include "../../../inc/MarlinConfig.h"
 
 #if ENABLED(NOZZLE_PARK_FEATURE)
 
 #include "../../gcode.h"
 #include "../../../libs/nozzle.h"
 #include "../../../module/motion.h"
-
+#include "../../module/endstops.h"
 /**
  * G27: Park the nozzle
  */
 void GcodeSuite::G27() {
   // Don't allow nozzle parking without homing first
   if (homing_needed_error()) return;
-  nozzle.park(parser.ushortval('P'));
+
+  // Define park_point based on active extruder with direct initialization
+  xyz_pos_t park_point;
+  if (active_extruder == 0) {
+    park_point = xyz_pos_t{NOZZLE_PARK_POINT_T0};
+  } else {
+    park_point = xyz_pos_t{NOZZLE_PARK_POINT_T1};
+  }
+
+  #if ENABLED(DUAL_X_CARRIAGE)
+    if (active_extruder == 1) endstops.enable_globally(false); // Allow T1 to reach X=331
+  #endif
+  nozzle.park(parser.ushortval('P'), park_point);
+  #if ENABLED(DUAL_X_CARRIAGE)
+    if (active_extruder == 1) endstops.enable_globally(true); // Restore endstops
+  #endif
 }
 
 #endif // NOZZLE_PARK_FEATURE

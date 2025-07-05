@@ -19,169 +19,95 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
-
 #include "../../../inc/MarlinConfig.h"
-
+#include "../../../module/temperature.h"
 #include "../../gcode.h"
 #include "../../../feature/pause.h"
 #include "../../../module/motion.h"
 #include "../../../module/planner.h"
 #include "../../../module/printcounter.h"
 #include "../../../lcd/marlinui.h"
+#include "../../../module/tool_change.h"
+#include "../../../feature/runout.h"
 #include "../../../../../snapmaker/debug/debug.h"
 #include "../../../../../snapmaker/module/print_control.h"
 #include "../../../../../snapmaker/module/power_loss.h"
+#include "../../../../../snapmaker/module/filament_sensor.h"
 #include "../../../../../snapmaker/module/system.h"
-
+#include "../../module/endstops.h"
 
 void GcodeSuite::M600() {
-  planner.synchronize();
-  power_loss.m600_cur_line = queue.file_line_number();
-  LOG_I("power_loss.m600_cur_line set to %d\r\n", power_loss.cur_line);
-  system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_M600);
-}
-
-#if ENABLED(ADVANCED_PAUSE_FEATURE)
-
-#include "../../gcode.h"
-#include "../../../feature/pause.h"
-#include "../../../module/motion.h"
-#include "../../../module/printcounter.h"
-#include "../../../lcd/marlinui.h"
-
-#if HAS_MULTI_EXTRUDER
-  #include "../../../module/tool_change.h"
-#endif
-
-#if ENABLED(MMU2_MENUS)
-  #include "../../../lcd/menu/menu_mmu2.h"
-#endif
-
-#if ENABLED(MIXING_EXTRUDER)
-  #include "../../../feature/mixing.h"
-#endif
-
-#if HAS_FILAMENT_SENSOR
-  #include "../../../feature/runout.h"
-#endif
-
-/**
- * M600: Pause for filament change
- *
- *  E[distance] - Retract the filament this far
- *  Z[distance] - Move the Z axis by this distance
- *  X[position] - Move to this X position, with Y
- *  Y[position] - Move to this Y position, with X
- *  U[distance] - Retract distance for removal (manual reload)
- *  L[distance] - Extrude distance for insertion (manual reload)
- *  B[count]    - Number of times to beep, -1 for indefinite (if equipped with a buzzer)
- *  T[toolhead] - Select extruder for filament change
- *  R[temp]     - Resume temperature (in current units)
- *
- *  Default values are used for omitted arguments.
- */
-void GcodeSuite::M600() {
-
-  #if ENABLED(MIXING_EXTRUDER)
-    const int8_t target_e_stepper = get_target_e_stepper_from_command();
-    if (target_e_stepper < 0) return;
-
-    const uint8_t old_mixing_tool = mixer.get_current_vtool();
-    mixer.T(MIXER_DIRECT_SET_TOOL);
-
-    MIXER_STEPPER_LOOP(i) mixer.set_collector(i, i == uint8_t(target_e_stepper) ? 1.0 : 0.0);
-    mixer.normalize();
-
-    const int8_t target_extruder = active_extruder;
-  #else
-    const int8_t target_extruder = get_target_extruder_from_command();
-    if (target_extruder < 0) return;
-  #endif
-
-  #if ENABLED(DUAL_X_CARRIAGE)
-    int8_t DXC_ext = target_extruder;
-    if (!parser.seen_test('T')) {  // If no tool index is specified, M600 was (probably) sent in response to filament runout.
-                                   // In this case, for duplicating modes set DXC_ext to the extruder that ran out.
-      #if MULTI_FILAMENT_SENSOR
-        if (idex_is_duplicating())
-          DXC_ext = (READ(FIL_RUNOUT2_PIN) == FIL_RUNOUT2_STATE) ? 1 : 0;
-      #else
-        DXC_ext = active_extruder;
-      #endif
-    }
-  #endif
-
-  // Show initial "wait for start" message
-  #if DISABLED(MMU2_MENUS)
-    ui.pause_show_message(PAUSE_MESSAGE_CHANGING, PAUSE_MODE_PAUSE_PRINT, target_extruder);
-  #endif
-
-  #if ENABLED(HOME_BEFORE_FILAMENT_CHANGE)
-    // If needed, home before parking for filament change
-    home_if_needed(true);
-  #endif
-
-  #if HAS_MULTI_EXTRUDER
-    // Change toolhead if specified
-    const uint8_t active_extruder_before_filament_change = active_extruder;
-    if (active_extruder != target_extruder && TERN1(DUAL_X_CARRIAGE, !idex_is_duplicating()))
-      tool_change(target_extruder, false);
-  #endif
-
-  // Initial retract before move to filament change position
-  const float retract = -ABS(parser.axisunitsval('E', E_AXIS, PAUSE_PARK_RETRACT_LENGTH));
-
-  xyz_pos_t park_point NOZZLE_PARK_POINT;
-
-  // Lift Z axis
-  if (parser.seenval('Z')) park_point.z = parser.linearval('Z');
-
-  // Move XY axes to filament change position or given position
-  if (parser.seenval('X')) park_point.x = parser.linearval('X');
-  if (parser.seenval('Y')) park_point.y = parser.linearval('Y');
-
-  #if HAS_HOTEND_OFFSET && NONE(DUAL_X_CARRIAGE, DELTA)
-    park_point += hotend_offset[active_extruder];
-  #endif
-
-  #if ENABLED(MMU2_MENUS)
-    // For MMU2 reset retract and load/unload values so they don't mess with MMU filament handling
-    constexpr float unload_length = 0.5f,
-                    slow_load_length = 0.0f,
-                    fast_load_length = 0.0f;
-  #else
-    // Unload filament
-    const float unload_length = -ABS(parser.axisunitsval('U', E_AXIS, fc_settings[active_extruder].unload_length));
-    // Slow load filament
-    constexpr float slow_load_length = FILAMENT_CHANGE_SLOW_LOAD_LENGTH;
-    // Fast load filament
-    const float fast_load_length = ABS(parser.axisunitsval('L', E_AXIS, fc_settings[active_extruder].load_length));
-  #endif
-
-  const int beep_count = parser.intval('B', -1
-    #ifdef FILAMENT_CHANGE_ALERT_BEEPS
-      + 1 + FILAMENT_CHANGE_ALERT_BEEPS
-    #endif
-  );
-
-  if (pause_print(retract, park_point, true, unload_length DXC_PASS)) {
-    #if ENABLED(MMU2_MENUS)
-      mmu2_M600();
-      resume_print(slow_load_length, fast_load_length, 0, beep_count DXC_PASS);
-    #else
-      wait_for_confirmation(true, beep_count DXC_PASS);
-      resume_print(slow_load_length, fast_load_length, ADVANCED_PAUSE_PURGE_LENGTH,
-                   beep_count, (parser.seenval('R') ? parser.value_celsius() : 0) DXC_PASS);
-    #endif
+  if (is_hmi_printing) {
+    planner.synchronize();
+    power_loss.m600_cur_line = queue.file_line_number();
+    LOG_I("power_loss.m600_cur_line set to %d\r\n", power_loss.cur_line);
+    system_service.set_status(SYSTEM_STATUE_PAUSING, SYSTEM_STATUE_SCOURCE_M600);
   }
 
-  #if HAS_MULTI_EXTRUDER
-    // Restore toolhead if it was changed
-    if (active_extruder_before_filament_change != active_extruder)
-      tool_change(active_extruder_before_filament_change, false);
-  #endif
+  #if ENABLED(ADVANCED_PAUSE_FEATURE) && !IS_HMI_PRINTING
+    const int8_t target_extruder = get_target_extruder_from_command();
+    if (target_extruder < 0) return;
 
-  TERN_(MIXING_EXTRUDER, mixer.T(old_mixing_tool)); // Restore original mixing tool
+    #if ENABLED(DUAL_X_CARRIAGE)
+      int8_t DXC_ext = target_extruder;
+      if (!parser.seen_test('T')) {
+        DXC_ext = filament_sensor.is_trigger(1) ? 1 : 0;
+      }
+    #else
+      #define DXC_ext target_extruder
+    #endif
+
+    #if HAS_MULTI_EXTRUDER
+      const uint8_t active_extruder_before_filament_change = active_extruder;
+      if (active_extruder != target_extruder && TERN1(DUAL_X_CARRIAGE, !idex_is_duplicating()))
+        tool_change(target_extruder, false);
+    #endif
+
+    const float retract = -ABS(parser.axisunitsval('E', E_AXIS, PAUSE_PARK_RETRACT_LENGTH));
+    // Select park point based on target extruder using separate macros
+    xyz_pos_t park_point;
+    if (target_extruder == 0) {
+      park_point = xyz_pos_t{NOZZLE_PARK_POINT_T0};
+    } else {
+      park_point = xyz_pos_t{NOZZLE_PARK_POINT_T1};
+    }
+    // Override with command parameters if provided
+    if (parser.seenval('Z')) park_point.z = parser.linearval('Z');
+    if (parser.seenval('X')) park_point.x = parser.linearval('X');
+    if (parser.seenval('Y')) park_point.y = parser.linearval('Y');
+
+    const float unload_length = -ABS(parser.axisunitsval('U', E_AXIS, fc_settings[active_extruder].unload_length));
+    constexpr float slow_load_length = FILAMENT_CHANGE_SLOW_LOAD_LENGTH;
+    const float fast_load_length = ABS(parser.axisunitsval('L', E_AXIS, fc_settings[active_extruder].load_length));
+    const int8_t beep_count = parser.intval('B', -1);
+
+    SERIAL_ECHOLNPAIR("M600: Pausing print for extruder ", target_extruder);
+    SERIAL_ECHOLNPAIR("M600: Parking at X=", park_point.x, " Y=", park_point.y, " Z=", park_point.z);
+    is_m600_pause = true;
+
+    #if ENABLED(DUAL_X_CARRIAGE)
+      if (target_extruder == 1) endstops.enable_globally(false);
+    #endif
+    if (pause_print(retract, park_point, true, unload_length DXC_PASS)) {
+      SERIAL_ECHOLNPGM("M600: Pause succeeded");
+      wait_for_confirmation(false, beep_count DXC_PASS);
+
+      SERIAL_ECHOLNPGM("M600: Resuming print");
+      resume_print(slow_load_length, fast_load_length, ADVANCED_PAUSE_PURGE_LENGTH,
+                   beep_count, (parser.seenval('R') ? parser.value_celsius() : 0) DXC_PASS);
+    }
+    else {
+      SERIAL_ECHOLNPGM("M600: Pause failed");
+    }
+    #if ENABLED(DUAL_X_CARRIAGE)
+      if (target_extruder == 1) endstops.enable_globally(true);
+    #endif
+
+    is_m600_pause = false;
+
+    #if HAS_MULTI_EXTRUDER
+      if (active_extruder_before_filament_change != active_extruder)
+        tool_change(active_extruder_before_filament_change, false);
+    #endif
+  #endif // ADVANCED_PAUSE_FEATURE && !IS_HMI_PRINTING
 }
-
-#endif // ADVANCED_PAUSE_FEATURE

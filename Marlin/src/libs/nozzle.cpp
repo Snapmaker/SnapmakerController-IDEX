@@ -20,7 +20,7 @@
  *
  */
 
-#include "../inc/MarlinConfig.h"
+ #include "../inc/MarlinConfig.h"
 
 #if EITHER(NOZZLE_CLEAN_FEATURE, NOZZLE_PARK_FEATURE)
 
@@ -226,18 +226,17 @@ Nozzle nozzle;
 #if ENABLED(NOZZLE_PARK_FEATURE)
 
   float Nozzle::park_mode_0_height(const_float_t park_z) {
-    // Apply a minimum raise, if specified. Use park.z as a minimum height instead.
-    return _MAX(park_z,                       // Minimum height over 0 based on input
-      _MIN(Z_MAX_POS,                         // Maximum height is fixed
+    return _MAX(park_z,
+      _MIN(Z_MAX_POS,
         #ifdef NOZZLE_PARK_Z_RAISE_MIN
-          NOZZLE_PARK_Z_RAISE_MIN +           // Minimum raise...
+          NOZZLE_PARK_Z_RAISE_MIN +
         #endif
-        current_position.z                    // ...over current position
+        current_position.z
       )
     );
   }
 
-  void Nozzle::park(const uint8_t z_action, const xyz_pos_t &park/*=NOZZLE_PARK_POINT*/) {
+  void Nozzle::park(const uint8_t z_action, const xyz_pos_t &park) {
     constexpr feedRate_t fr_xy = NOZZLE_PARK_XY_FEEDRATE, fr_z = NOZZLE_PARK_Z_FEEDRATE;
 
     switch (z_action) {
@@ -261,6 +260,14 @@ Nozzle nozzle;
     );
 
     report_current_position();
+  }
+
+  xyz_pos_t Nozzle::get_park_point(uint8_t extruder) {
+    if (extruder == 0) {
+      return NOZZLE_PARK_POINT_T0;
+    } else {
+      return NOZZLE_PARK_POINT_T1;
+    }
   }
 
 #endif // NOZZLE_PARK_FEATURE

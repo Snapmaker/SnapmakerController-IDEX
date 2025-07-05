@@ -35,6 +35,7 @@
 #include "../module/filament_sensor.h"
 #include "exception.h"
 
+bool is_hmi_printing = false;  // Default to false (not HMI)
 
 #define PAUSE_RESUME_MOVE_FEEDRATE_MMM (9000)
 
@@ -84,6 +85,7 @@ uint32_t PrintControl::next_req_line() {
 
 
 bool PrintControl::filament_check() {
+  if (!is_hmi_printing) return false; // Skip for OctoPrint prints
   bool is_trigger = false;
   if (dual_x_carriage_mode < DXC_DUPLICATION_MODE) {
     is_trigger = filament_sensor.is_trigger(active_extruder);
@@ -318,6 +320,8 @@ ErrCode PrintControl::start() {
     system_service.return_to_idle();
     return PRINT_RESULT_START_ERR_E;
   }
+  
+  is_hmi_printing = true; // Set for HMI-initiated prints
 
   if (homing_needed()) {
     motion_control.home();
@@ -591,6 +595,9 @@ ErrCode PrintControl::stop() {
   }
   // reset to normal
   print_control.set_noise_mode(NOISE_NOIMAL_MODE);
+  
+  // Reset HMI printing flag after print stops
+  is_hmi_printing = false;
 
   return E_SUCCESS;
 }
@@ -642,4 +649,6 @@ void PrintControl::error_and_stop() {
   motion_control.retrack_e(PRINT_RETRACK_DISTANCE, CHANGE_FILAMENT_SPEED);
   motion_control.home();
   system_service.set_status(SYSTEM_STATUE_IDLE);
+  // Reset HMI printing flag after print stops
+  is_hmi_printing = false;
 }

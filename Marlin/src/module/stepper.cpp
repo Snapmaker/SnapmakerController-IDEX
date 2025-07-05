@@ -1832,7 +1832,6 @@ void Stepper::pulse_phase_isr() {
       //   set_directions(current_direction_bits);
       // }
 
-
       if (current_direction_bits != last_direction_bits) {
         // TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
         // TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
@@ -1856,6 +1855,8 @@ void Stepper::pulse_phase_isr() {
         PULSE_START(E);
         // PULSE_PREP(E);
         current_block_e_position += count_direction[E_AXIS];
+        filament_sensor.e0_step(active_extruder == 0 ? count_direction[E_AXIS] : 0); // [NEW]
+        filament_sensor.e1_step(active_extruder == 1 ? count_direction[E_AXIS] : 0); // [NEW]
         PULSE_STOP(E);
       }
 

@@ -54,12 +54,17 @@ uint16_t FilamentSensor::get_adc_val(uint8_t e) {
 
 void FilamentSensor::reset() {
   FILAMENT_LOOP(i) {
-    start_adc[i] = 0;
-    triggered[i] = false;
-    err_times[i] = 0;
-    check_step_count[i] = (filament_param.distance + FILAMENT_CHECK_EXTRAS_DISTANCE) * planner.settings.axis_steps_per_mm[E_AXIS_N(i)];
+    reset(i);
   }
-  err_mask = ~(0xff << filament_param.check_times);
+  err_mask = ~(0xff << filament_param.check_times); // Revert to 8-bit mask
+}
+
+void FilamentSensor::reset(uint8_t e) {
+  if (e >= FILAMENT_SENSOR_COUNT) return;
+  start_adc[e] = 0;
+  triggered[e] = false;
+  err_times[e] = 0;
+  check_step_count[e] = (filament_param.distance + FILAMENT_CHECK_EXTRAS_DISTANCE) * planner.settings.axis_steps_per_mm[E_AXIS_N(e)];
 }
 
 void FilamentSensor::used_default_param() {
@@ -100,22 +105,9 @@ void FilamentSensor::check() {
       continue;
     }
     if (start_adc[i] == 0) {
-      // The value is assigned once at startup
       next_sample(i);
       continue;
     }
-
-    // {
-    //   static uint32_t last_log_tick_ms = 0;
-    //   if (ELAPSED(millis(), last_log_tick_ms + 200)) {
-    //     uint16_t adc = get_adc_val(0);
-    //     LOG_I("E0 adc: %d\r\n", adc);
-
-    //     adc = get_adc_val(1);
-    //     LOG_I("E1 adc: %d\r\n", adc);
-    //     last_log_tick_ms = millis();
-    //   }
-    // }
 
     if (e_step_count[i] > check_step_count[i]) {
       uint16_t adc = get_adc_val(i);
@@ -127,22 +119,6 @@ void FilamentSensor::check() {
 
       bool is_err = (diff < filament_param.threshold);
 
-      // if ((adc > dead_space) || (adc < dead_space_min)) {
-      //   dead_space_times[i]++;
-      //   LOG_I("extruder %d in dead_space_time ");
-      //   if (dead_space_times[i] >= (filament_param.check_times + (SENSOR_DEAD_SPACE_DISTANCE / FILAMENT_CHECK_DISTANCE))) {
-      //     dead_space_times[i] = 0;
-      //     err_times[i] = err_mask;
-      //   }
-      //   else {
-      //     err_times[i] = 0;
-      //   }
-      // }
-      // else {
-      //   dead_space_times[i] = 0;
-      //   err_times[i] = err_times[i] << 1 | is_err;
-      // }
-
       if (is_err && ((start_adc[i] > dead_space) || (start_adc[i] < dead_space_min)) &&
                     ((adc > dead_space) || (adc < dead_space_min))) {
         dead_space_times[i]++;
@@ -150,17 +126,15 @@ void FilamentSensor::check() {
           LOG_I("extruder %d blocked in dead_space\r\n", i);
           dead_space_times[i] = 0;
           err_times[i] = err_mask;
-        }
-        else {
+        } else {
           err_times[i] = 0;
         }
-      }
-      else {
+      } else {
         if (is_err) {
           LOG_I("diff %d\r\n", diff);
         }
         dead_space_times[i] = 0;
-        err_times[i] = err_times[i] << 1 | is_err;
+        err_times[i] = (err_times[i] << 1) | is_err;
         if ((err_times[i] & err_mask) == err_mask) {
           LOG_I("extruder %d blocked as diff too small\r\n", i);
         }
@@ -178,13 +152,13 @@ void FilamentSensor::check() {
 }
 
 void FilamentSensor::test_adc(uint8_t e, float step_mm, uint32_t count) {
-  uint16_t max = 0x0, min=0xffff;
-  uint32_t acc = 0, time=0;
+  uint16_t max = 0, min = 0xFFFF;
+  uint32_t acc = 0, time = 0;
   if (e >= FILAMENT_SENSOR_COUNT) {
     return;
   }
   uint16_t last_adc = get_adc_val(e);
-  SERIAL_ECHOLNPAIR("tast filament sensor ", e);
+  SERIAL_ECHOLNPAIR("test filament sensor: ", e);
   for (uint32_t i = 0; i < count; i++) {
     motion_control.extrude_e(step_mm, 15 * 60);
     planner.synchronize();

@@ -24,6 +24,8 @@
 #include "../J1/common_type.h"
 #include "src/core/types.h"
 
+extern bool is_hmi_printing; // Global flag for print source
+
 typedef enum {
   PRINT_RESULT_GCODE_RECV_DONE_E = 201,
   PRINT_RESULT_START_ERR_E = 202,
